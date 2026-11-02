@@ -9,7 +9,7 @@
 // frame at second `t`. Playback, pause and reduced motion are only a choice of
 // `t`, so they cannot drift apart.
 
-import { APP_LOGO_CORNER, APP_LOGO_EYE_POINTS, APP_LOGO_SIZE } from "@buildersbot/brand/app-logo-shape";
+import { APP_LOGO_CORNER, APP_LOGO_CUBE, APP_LOGO_SIZE } from "@buildersbot/brand/app-logo-shape";
 
 /** A node with no avatar is the Builders Bot mark at the centre. */
 const HUB = -1;
@@ -889,21 +889,41 @@ function drawNetwork(
       context.beginPath();
       context.roundRect(x - radius, y - radius, side, side, APP_LOGO_CORNER * unit);
       context.fill();
-      context.strokeStyle = assets.colors.hubEye;
-      context.lineWidth = 9.5 * unit;
-      context.lineCap = "round";
+      context.save();
+      context.translate(x - radius + 14 * unit, y - radius + 14 * unit);
+      context.scale(2.12 * unit, 2.12 * unit);
       context.lineJoin = "round";
-      for (const points of [APP_LOGO_EYE_POINTS.left, APP_LOGO_EYE_POINTS.right]) {
+      for (const [face, opacity] of [
+        [APP_LOGO_CUBE.top, 1],
+        [APP_LOGO_CUBE.left, 0.88],
+        [APP_LOGO_CUBE.right, 0.72],
+      ] as const) {
+        const path = new Path2D(face);
+        context.globalAlpha = opacity;
+        context.fillStyle = assets.colors.hubEye;
+        context.strokeStyle = assets.colors.hub;
+        context.lineWidth = 1.1;
+        context.fill(path);
+        context.stroke(path);
+      }
+      context.globalAlpha = 1;
+      context.strokeStyle = assets.colors.hub;
+      context.lineWidth = 1.1;
+      context.lineCap = "round";
+      for (const points of [APP_LOGO_CUBE.eyes.left, APP_LOGO_CUBE.eyes.right]) {
         const values = points.split(" ").map(Number);
         context.beginPath();
-        for (let index = 0; index < values.length; index += 2) {
-          const px = x - radius + (values[index] ?? 0) * unit;
-          const py = y - radius + (values[index + 1] ?? 0) * unit;
-          if (index === 0) context.moveTo(px, py);
-          else context.lineTo(px, py);
+        context.moveTo(values[0] ?? 0, values[1] ?? 0);
+        for (let index = 2; index < values.length; index += 2) {
+          context.lineTo(values[index] ?? 0, values[index + 1] ?? 0);
         }
         context.stroke();
       }
+      context.fillStyle = assets.colors.hub;
+      context.beginPath();
+      context.arc(APP_LOGO_CUBE.dot.cx, APP_LOGO_CUBE.dot.cy, APP_LOGO_CUBE.dot.r, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
     } else {
       const image = assets.avatars[node.avatar];
       if (image) {

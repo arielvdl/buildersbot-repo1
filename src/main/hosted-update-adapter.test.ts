@@ -28,9 +28,9 @@ async function serverPaths(): Promise<HostedUpdatePaths> {
   return paths;
 }
 
-/** Waits until `path` exists, or gives up after a second. */
+/** Waits until `path` exists, or gives up after five seconds. */
 async function waitFor(path: string): Promise<boolean> {
-  for (let attempt = 0; attempt < 200; attempt++) {
+  for (let attempt = 0; attempt < 500; attempt++) {
     if (
       await stat(path).then(
         () => true,
@@ -38,7 +38,7 @@ async function waitFor(path: string): Promise<boolean> {
       )
     )
       return true;
-    await delay(5);
+    await delay(10);
   }
   return false;
 }

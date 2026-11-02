@@ -2,33 +2,13 @@
   "fill-specializations": [
     {
       "value": {
-        "linear-gradient": ["display-p3:0.86726,0.73451,1.00000,1.00000", "display-p3:0.66522,0.56340,0.76704,1.00000"],
-        "orientation": {
-          "start": {
-            "x": 0.5,
-            "y": 0
-          },
-          "stop": {
-            "x": 0.5,
-            "y": 0.7
-          }
-        }
+        "solid": "srgb:0.04314,0.05098,0.03922,1.00000"
       }
     },
     {
       "appearance": "dark",
       "value": {
-        "linear-gradient": ["display-p3:0.11699,0.11737,0.11850,1.00000", "display-p3:0.07498,0.07395,0.07647,1.00000"],
-        "orientation": {
-          "start": {
-            "x": 0.5,
-            "y": 0
-          },
-          "stop": {
-            "x": 0.5,
-            "y": 0.7
-          }
-        }
+        "solid": "srgb:0.01961,0.02353,0.01569,1.00000"
       }
     }
   ],

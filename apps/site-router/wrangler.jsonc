@@ -9,7 +9,7 @@
   "routes": [
     {
       "pattern": "*.sites.buildersbot.culturabuilder.com/*",
-      "zone_name": "sites.buildersbot.culturabuilder.com"
+      "zone_name": "culturabuilder.com"
     }
   ],
   "vars": {

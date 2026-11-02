@@ -42,8 +42,8 @@
     --buildersbot-action-foreground: #f2f2f2;
     --buildersbot-accent: #6960f1;
     --buildersbot-accent-text: #5b52df;
-    --buildersbot-logo-production: #cdadec;
-    --buildersbot-logo-eye: #040007;
+    --buildersbot-logo-production: #0b0d0a;
+    --buildersbot-logo-eye: #9ee34f;
     --buildersbot-success: #32a85d;
     --buildersbot-warning: #c58a23;
     --buildersbot-danger: #d85f58;
@@ -112,8 +112,8 @@
     --buildersbot-action-foreground: #141414;
     --buildersbot-accent: #007cf7;
     --buildersbot-accent-text: #42a0ff;
-    --buildersbot-logo-production: #98f94f;
-    --buildersbot-logo-eye: #040007;
+    --buildersbot-logo-production: #0b0d0a;
+    --buildersbot-logo-eye: #9ee34f;
     --buildersbot-success: #31cf76;
     --buildersbot-warning: #ff9412;
     --buildersbot-danger: #fd2f3b;

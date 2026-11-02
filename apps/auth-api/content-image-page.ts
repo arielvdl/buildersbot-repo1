@@ -5,7 +5,7 @@
 // Workers have no WebGL, so the card artwork cannot be produced at request time.
 // This is the one place that turns the shared gradient description into pixels.
 
-import { APP_LOGO_CORNER, APP_LOGO_EYE_POINTS, APP_LOGO_SIZE } from "@buildersbot/brand/app-logo-shape";
+import { APP_LOGO_CORNER, APP_LOGO_CUBE, APP_LOGO_SIZE } from "@buildersbot/brand/app-logo-shape";
 import { getShaderColorFromString, meshGradientFragmentShader, ShaderMount } from "@paper-design/shaders";
 import type { ContentImageJob, ContentImageLockup, ContentImageMark } from "./content-images";
 import { RIVAL_MARK_SHAPES, type RivalMarkName } from "./src/components/compare/rival-mark-shapes";
@@ -23,8 +23,8 @@ const TITLE_MAX_LINES = 3;
 /** Under a lockup or a row of marks there is room for two lines. */
 const TITLE_MAX_LINES_WITH_LOCKUP = 2;
 /** `--buildersbot-logo-production` and `--buildersbot-logo-eye`. */
-const LOGO_BACKGROUND = "#d6adf2";
-const LOGO_EYE = "#040007";
+const LOGO_BACKGROUND = "#0b0d0a";
+const LOGO_FACE = "#9ee34f";
 const FONT_FAMILY = '"Inter Variable", Inter, system-ui, sans-serif';
 
 window.openBotContentImage = { render: renderContentImage };
@@ -253,7 +253,18 @@ function drawMark(context: CanvasRenderingContext2D, mark: ContentImageMark, x: 
   else drawRivalMark(context, mark, x, y, size);
 }
 
-/** `AppLogo`: the rounded square and the two scribbled eyes. */
+/** One eye of the cube: a list of `x y` points, as the mark data stores it. */
+function cubeEye(points: string): Path2D {
+  const path = new Path2D();
+  const values = points.split(/\s+/u).map(Number);
+  path.moveTo(values[0] ?? 0, values[1] ?? 0);
+  for (let index = 2; index + 1 < values.length; index += 2) {
+    path.lineTo(values[index] ?? 0, values[index + 1] ?? 0);
+  }
+  return path;
+}
+
+/** `AppLogo`: the rounded square and the cube of the icon. */
 function drawBuildersBotMark(context: CanvasRenderingContext2D, x: number, y: number, size: number): void {
   context.save();
   context.translate(x, y);
@@ -262,18 +273,31 @@ function drawBuildersBotMark(context: CanvasRenderingContext2D, x: number, y: nu
   context.fillStyle = LOGO_BACKGROUND;
   context.fill();
   context.clip();
-  context.strokeStyle = LOGO_EYE;
-  context.lineWidth = 9.5;
-  context.lineCap = "round";
+  context.translate(14, 14);
+  context.scale(2.12, 2.12);
   context.lineJoin = "round";
-  for (const points of [APP_LOGO_EYE_POINTS.left, APP_LOGO_EYE_POINTS.right]) {
-    const values = points.split(/\s+/u).map(Number);
-    context.beginPath();
-    for (let index = 0; index + 1 < values.length; index += 2) {
-      context.lineTo(values[index] ?? 0, values[index + 1] ?? 0);
-    }
-    context.stroke();
+  for (const [face, opacity] of [
+    [APP_LOGO_CUBE.top, 1],
+    [APP_LOGO_CUBE.left, 0.88],
+    [APP_LOGO_CUBE.right, 0.72],
+  ] as const) {
+    const path = new Path2D(face);
+    context.globalAlpha = opacity;
+    context.fillStyle = LOGO_FACE;
+    context.strokeStyle = LOGO_BACKGROUND;
+    context.lineWidth = 1.1;
+    context.fill(path);
+    context.stroke(path);
   }
+  context.globalAlpha = 1;
+  context.strokeStyle = LOGO_BACKGROUND;
+  context.lineWidth = 1.1;
+  context.lineCap = "round";
+  for (const eye of [APP_LOGO_CUBE.eyes.left, APP_LOGO_CUBE.eyes.right]) context.stroke(cubeEye(eye));
+  context.fillStyle = LOGO_BACKGROUND;
+  context.beginPath();
+  context.arc(APP_LOGO_CUBE.dot.cx, APP_LOGO_CUBE.dot.cy, APP_LOGO_CUBE.dot.r, 0, Math.PI * 2);
+  context.fill();
   context.restore();
 }
 

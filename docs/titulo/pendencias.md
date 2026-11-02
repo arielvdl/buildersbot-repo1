@@ -17,8 +17,8 @@ quando refeita.
 
   | Nome | Tipo | Destino | Proxy |
   | --- | --- | --- | --- |
-  | `signal.buildersbot` | A | `95.216.243.233` | DNS only |
-  | `turn.buildersbot` | A | `95.216.243.233` | DNS only |
+  | `signal.buildersbot` | CNAME | `signal.bb-aws.culturabuilder.com` | DNS only |
+  | `turn.buildersbot` | CNAME | `turn.bb-aws.culturabuilder.com` | DNS only |
   | `api.buildersbot` | CNAME | `buildersbot.culturabuilder.com` | proxied |
   | `status.buildersbot` | CNAME | `nextlevelcommunity.github.io` | proxied |
   | `analytics.buildersbot` | CNAME | `analytics.openbot.run` | DNS only |
@@ -32,12 +32,11 @@ quando refeita.
   chave `.env.keys` do dotenvx só é necessária para trocar um secret.
 - **Publicação:** feita em 02/11/2026: um commit, `origin` único, `v1.0.0` assinada, release publicada
   e `main` protegida. O build de release ainda depende dos dois itens acima.
-- **Release do runtime de desktop remoto:** `native-runtime.lock.json` já aponta
-  `artifactRelease.repository` para `nextlevelcommunity/buildersbot`, mas os artefatos
-  (`remote-desktop-runtime-<inputDigest>`, tag e `remote-desktop-runtime-manifest.json`) ainda não
-  existem aqui: foram publicados em `nightly-labs/openbot`. Enquanto a release não for publicada
-  neste repositório, `scripts/install-remote-desktop-runtime.ts` não baixa o runtime e o build usa o
-  que estiver em `build/remote-desktop-runtime`.
+- **Release do runtime de desktop remoto:** o `native-runtime.lock.json` ainda aponta para
+  `nightly-labs/openbot`, onde os artefatos e os patches `*-openbot.patch` estão publicados.
+  Republicar o runtime aqui com os nomes novos exige um build do Sunshine que hoje falha no macOS
+  por incompatibilidade de OpenSSL (`ASN1_BIT_STRING` opaco). Até lá, `verify` aceita os dois nomes
+  de source e o build usa o runtime publicado lá.
 
 ## Imagens a regerar
 
