@@ -30,7 +30,7 @@ async function act(request: Parameters<typeof ask>[0]): Promise<void> {
 
 function brand(): HTMLElement {
   const logo = el("img", { className: "logo" });
-  logo.src = "icons/32.png";
+  logo.src = "icons/48.png";
   logo.alt = "";
   return el("span", { className: "brand" }, logo, el("span", { text: t("chromeExtension.extName") }));
 }

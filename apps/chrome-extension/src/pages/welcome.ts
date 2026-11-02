@@ -16,7 +16,7 @@ let busy = false;
 
 function brand(): HTMLElement {
   const logo = el("img", { className: "logo" });
-  logo.src = "icons/48.png";
+  logo.src = "icons/128.png";
   logo.alt = "";
   return el("div", { className: "brand" }, logo, el("span", { text: t("chromeExtension.extName") }));
 }
