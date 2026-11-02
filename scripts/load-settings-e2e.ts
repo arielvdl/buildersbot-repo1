@@ -32,6 +32,8 @@ declare global {
 }
 
 const OUT = resolve(import.meta.dirname, "../.buildersbot-build/load-settings");
+// A second folder for the screenshot of the agents-per-tab number, when the caller sets it.
+const EXTRA_SHOTS = process.env.LOAD_SETTINGS_SHOTS_DIR;
 const REQUESTS = 52;
 
 const instances = readDevInstanceRecords().filter(
@@ -320,6 +322,57 @@ try {
   await waitForRows(page, channelId, 0);
   await page.screenshot({ path: resolve(OUT, `load-page-partial-${locale}.png`) });
   pass(`A removal of ${total} rows reports the 1 row that was removed first, and removes the others.`);
+
+  // "Agents of one tab at the same time": the number on the page saves through the same preference as
+  // the other limits, whole and clamped from 1 to 8, in the language of the app.
+  const linesInput = page.getByRole("spinbutton", { name: new RegExp(`^${escaped(t("settings.load.lines.label"))}`) });
+  await linesInput.scrollIntoViewIfNeeded();
+  await page.getByText(t("settings.load.lines.unit"), { exact: true }).waitFor();
+  await page.getByText(t("settings.load.lines.hint"), { exact: true }).waitFor();
+  const savedLimit = await page.evaluate(() => window.buildersbot.getAgentLimit());
+  const savedLines = savedLimit.agentsPerTab ?? 4;
+  const savedLinesNow = () => page.evaluate(async () => (await window.buildersbot.getAgentLimit()).agentsPerTab ?? 4);
+  try {
+    assert.equal(await linesInput.inputValue(), String(savedLines), "the number shows the saved value");
+    await linesInput.fill("6");
+    await linesInput.blur();
+    await page.waitForFunction(async () => (await window.buildersbot.getAgentLimit()).agentsPerTab === 6, undefined, {
+      timeout: 15_000,
+      polling: 250,
+    });
+    assert.equal(await savedLinesNow(), 6, "6 is saved");
+    await linesInput.fill("9");
+    await linesInput.blur();
+    await page.waitForFunction(async () => (await window.buildersbot.getAgentLimit()).agentsPerTab === 8, undefined, {
+      timeout: 15_000,
+      polling: 250,
+    });
+    assert.equal(await linesInput.inputValue(), "8", "9 shows as 8");
+    await linesInput.fill("6");
+    await linesInput.blur();
+    await page.waitForFunction(async () => (await window.buildersbot.getAgentLimit()).agentsPerTab === 6, undefined, {
+      timeout: 15_000,
+      polling: 250,
+    });
+    const kept = await page.evaluate(async () => (await window.buildersbot.getAgentLimit()).max);
+    assert.equal(kept, savedLimit.max, "the other limits keep their values");
+    await linesInput.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: resolve(OUT, `load-page-lines-${locale}.png`) });
+    if (EXTRA_SHOTS) {
+      mkdirSync(EXTRA_SHOTS, { recursive: true });
+      await page.screenshot({ path: resolve(EXTRA_SHOTS, `load-page-lines-${locale}.png`) });
+    }
+  } finally {
+    await page.evaluate(
+      (value) =>
+        window.buildersbot
+          .getAgentLimit()
+          .then((current) => window.buildersbot.setAgentLimit({ ...current, agentsPerTab: value })),
+      savedLines,
+    );
+  }
+  assert.equal(await savedLinesNow(), savedLines, "the saved value is back");
+  pass("The number of agents of one tab shows its texts, saves 6, clamps 9 to 8, and keeps the other limits.");
 
   await closeSettings(page, t);
 } finally {
