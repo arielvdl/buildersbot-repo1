@@ -57,7 +57,7 @@ older event replay and a client without tabs send.
   created by the service is written with its first tab in the same command.
 - A routine, the Team API and an older client name no tab, so they land in the first one.
 - A tab belongs to its channel. `open(channelId, topicId?)` in the channels controller is the one
-  way in, from the sidebar, global search, a notification, Back and Forward or Orbits: it opens the
+  way in, from the sidebar, global search, a notification, the feed, or Back and Forward: it opens the
   tab given, else the open tab of the same channel, else the tab last open in that channel on this
   device (`buildersbot:channel-last-tab:v1`), else the first tab. It never carries a tab id of another
   channel. A read that names a tab which is not in the channel fails (`readTopicId`), as `send`
