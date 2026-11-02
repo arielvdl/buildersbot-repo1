@@ -174,7 +174,6 @@ kbd {
   padding: 3px 6px;
   border-radius: 5px;
   border: 1px solid currentcolor;
-  opacity: 0.8;
 }
 .icon {
   width: 20px;
@@ -290,6 +289,7 @@ kbd {
   padding: 12px 14px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
+  order: 0;
 }
 .scroll {
   flex: 1 1 auto;
@@ -299,6 +299,7 @@ kbd {
   display: grid;
   gap: 10px;
   align-content: start;
+  order: 1;
 }
 .state,
 .stopped,
@@ -340,6 +341,7 @@ kbd {
   position: relative;
   overflow: hidden;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   padding: 12px 12px 12px 16px;
   border: 1px solid var(--line);
@@ -392,6 +394,7 @@ kbd {
 }
 .agents {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 3px 3px 3px 5px;
 }
@@ -456,6 +459,7 @@ kbd {
   padding: 10px 12px 6px;
   background: var(--surface);
   border-top: 1px solid var(--line);
+  order: 2;
 }
 .bar .danger {
   width: 100%;

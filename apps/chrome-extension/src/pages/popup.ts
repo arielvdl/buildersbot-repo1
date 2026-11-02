@@ -120,7 +120,9 @@ function render(status: StatusView): void {
         ? emptyState()
         : el("ul", { className: "projects" }, ...status.projects.map(renderProject));
   const body = el("div", { className: "scroll" }, status.stopped && stoppedBanner(), content);
-  root.replaceChildren(el("header", { className: "top" }, brand(), seal(status.link)), body, footer(status));
+  // The footer comes second in the DOM, so Stop all is the first control after the header for the
+  // keyboard; CSS `order` still draws it at the bottom.
+  root.replaceChildren(el("header", { className: "top" }, brand(), seal(status.link)), footer(status), body);
   body.scrollTop = scrolled;
 }
 

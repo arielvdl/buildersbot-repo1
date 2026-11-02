@@ -77,6 +77,24 @@ const SHOTS: Shot[] = [
   { page: "popup", state: "connected", status: { ...base, projects } },
   { page: "popup", state: "allow-prompt", status: { ...base, projects }, click: ".floor .row button" },
   { page: "popup", state: "empty", status: base },
+  {
+    page: "popup",
+    state: "long",
+    status: {
+      ...base,
+      projects: [
+        {
+          ...projects[0],
+          title: "Pesquisa de concorrentes e preços para a campanha de fim de ano da loja",
+          agents: Array.from({ length: 12 }, (_, index) => ({
+            label: `Agente ${index + 1}`,
+            initials: `A${index + 1}`,
+            active: index === 0,
+          })),
+        },
+      ],
+    },
+  },
   { page: "popup", state: "stopped", status: { ...base, stopped: true, projects } },
   {
     page: "welcome",
@@ -196,6 +214,15 @@ try {
         check((await page.locator("button.danger").count()) === 1, `${label}: Stop all is not in view`);
         if (shot.state === "connected")
           check((await page.locator(".project").count()) === 2, `${label}: not 2 projects`);
+        // A long title or many agents wrap or cut inside the card: no part of a card may pass its right
+        // edge (the card hides what passes, so the page itself never grows).
+        const overflow = await page.evaluate(() =>
+          [...document.querySelectorAll(".project")].some((card) => {
+            const edge = card.getBoundingClientRect().right + 0.5;
+            return [...card.querySelectorAll("*")].some((part) => part.getBoundingClientRect().right > edge);
+          }),
+        );
+        check(!overflow, `${label}: a part of a project card passes its edge`);
         await page.locator("body").screenshot({ path: join(out, `${label}.png`) });
       } else {
         if (shot.state === "pairing") {
