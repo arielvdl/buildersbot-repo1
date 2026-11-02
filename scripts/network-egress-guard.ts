@@ -181,9 +181,9 @@ await check("the policy levels are the five of the plan, and a level 3 host is n
   if (wrong.length > 0) fail(`Level 3 and 4 only in TRANSITION: ${wrong.map((entry) => entry.host).join(", ")}.`);
   const openpanel = classifyHost("api.openpanel.dev");
   if (openpanel?.level !== 3) fail("api.openpanel.dev is not level 3: the OpenPanel host must fail.");
-  const registry = classifyHost("ghcr.io/nightly-labs/buildersbot");
+  const registry = classifyHost("ghcr.io/nextlevelcommunity/buildersbot");
   if (registry?.level !== 3)
-    fail("ghcr.io/nightly-labs/buildersbot is not level 3: the specific path must beat ghcr.io.");
+    fail("ghcr.io/nextlevelcommunity/buildersbot is not level 3: the specific path must beat ghcr.io.");
   const ours = classifyHost("signal.buildersbot.culturabuilder.com");
   if (ours?.level !== 0) fail("a culturabuilder.com subdomain is not level 0.");
   const site = classifyHost("demo.sites.buildersbot.culturabuilder.com");

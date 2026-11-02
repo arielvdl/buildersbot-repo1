@@ -5,7 +5,7 @@
 //
 // A host is written without a scheme. An entry without `*.` matches the host itself and every
 // subdomain; an entry with `*.` matches subdomains only. The most specific match wins, so
-// `ghcr.io/nightly-labs/*` beats `ghcr.io`.
+// `ghcr.io/nextlevelcommunity/*` beats `ghcr.io`.
 //
 // Level 3 and level 4 have no permanent entry: they live in TRANSITION, because both are debt.
 // Level 3 is a host of the previous project that must stop being called; level 4 is a third-party
@@ -199,7 +199,7 @@ export const TRANSITION: readonly TransitionEntry[] = [
   },
   {
     level: 3,
-    host: "ghcr.io/nightly-labs/*",
+    host: "ghcr.io/nextlevelcommunity/*",
     until: "F3",
     reason: "the previous project's container registry path; a pull that still names it gets their image, not ours",
   },
@@ -277,7 +277,7 @@ function bestMatch(host: string): EgressEntry | null {
 
 /**
  * The entry that governs a host, or null when the policy does not know it. The most specific entry
- * wins: `ghcr.io/nightly-labs/*` is level 3 even though `ghcr.io` is level 2. A path is tried whole
+ * wins: `ghcr.io/nextlevelcommunity/*` is level 3 even though `ghcr.io` is level 2. A path is tried whole
  * first, so a registry path can have its own rule, then without it.
  */
 export function classifyHost(value: string): EgressEntry | null {
