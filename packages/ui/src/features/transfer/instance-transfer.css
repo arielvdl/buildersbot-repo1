@@ -1,0 +1,152 @@
+/* Settings > Transfer. Rows, messages and steps reuse the Storage page and the agent import
+   (features/files/files.css, features/import/agent-import.css), so the screens read as one set. */
+
+.instance-transfer {
+  display: flex;
+  max-width: 720px;
+  flex-direction: column;
+  gap: var(--buildersbot-space-4);
+}
+
+.instance-transfer-start {
+  justify-content: flex-start;
+}
+
+.instance-transfer-back {
+  align-self: flex-start;
+  padding-inline: 0;
+}
+
+.instance-transfer-link {
+  align-self: flex-start;
+  padding-inline: 0;
+}
+
+.instance-transfer-chip {
+  padding: 0 var(--buildersbot-space-1-5);
+  border: 1px solid var(--buildersbot-border-grouped);
+  border-radius: var(--buildersbot-radius-pill);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  white-space: nowrap;
+}
+
+/* Old computer → file → new computer, as one line. */
+.instance-transfer-flow {
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-3);
+  margin: 0;
+  padding: var(--buildersbot-space-3) var(--buildersbot-space-4);
+  border: 1px solid var(--buildersbot-border-grouped);
+  border-radius: var(--buildersbot-radius-lg);
+  list-style: none;
+}
+
+.instance-transfer-flow-item {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--buildersbot-space-1-5);
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+  text-align: center;
+}
+
+.instance-transfer-flow-icon {
+  width: var(--buildersbot-icon-md);
+  height: var(--buildersbot-icon-md);
+  color: var(--buildersbot-text-primary);
+}
+
+.instance-transfer-flow-arrow {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  flex: none;
+  color: var(--buildersbot-text-muted);
+}
+
+.instance-transfer-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--buildersbot-space-3);
+}
+
+.instance-transfer-tile {
+  display: flex;
+  height: auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--buildersbot-space-1);
+  padding: var(--buildersbot-space-4);
+  text-align: left;
+  white-space: normal;
+}
+
+.instance-transfer-tile-icon {
+  width: var(--buildersbot-icon-md);
+  height: var(--buildersbot-icon-md);
+  margin-bottom: var(--buildersbot-space-2);
+}
+
+.instance-transfer-tile-title {
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-medium);
+}
+
+.instance-transfer-tile-text {
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-regular);
+}
+
+/* What moves, as counts with icons. */
+.instance-transfer-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--buildersbot-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.instance-transfer-summary-item {
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-md);
+}
+
+.instance-transfer-summary-icon {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  flex: none;
+  color: var(--buildersbot-text-muted);
+}
+
+.instance-transfer-not-moved {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--buildersbot-space-2);
+  margin: 0;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  line-height: 1.45;
+}
+
+.instance-transfer-not-moved-icon {
+  width: var(--buildersbot-icon-xs);
+  height: var(--buildersbot-icon-xs);
+  flex: none;
+  margin-top: 2px;
+}
+
+@media (max-width: 640px) {
+  .instance-transfer-tiles,
+  .instance-transfer-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

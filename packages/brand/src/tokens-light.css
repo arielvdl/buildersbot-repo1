@@ -1,0 +1,153 @@
+/*
+ * The light palette of the desktop app and the web client. tokens.css declares every
+ * token, dark; this file changes only the colors that must change, when the root element
+ * has data-buildersbot-color-scheme="light". Each desktop window and the web client set that
+ * attribute from the saved choice, and resolve System from prefers-color-scheme. The public
+ * site never sets it, so it stays dark.
+ *
+ * The rules of the dark palette stay true here, turned over: a raised surface is lighter
+ * than the canvas, and a hover or a border is a translucent ink. In the dark palette that
+ * ink is white; here it is the primary text color, #141414.
+ *
+ * Not here, on purpose:
+ * - The native-only tokens (bg-native-canvas, chrome-*): mobile has its own light theme in
+ *   tokens-native.css. The desktop uses the native sidebar, sheet and grouped tokens, so they are here.
+ * - The landing-page materials (price-*, hero-grid, download-card-*): the public site is dark only.
+ * - The paper-* tokens: they stay on paper that is always light, such as a QR code.
+ * - Illustration and brand colors (logo-*, onboarding-*, sound-*, provider logos): a drawing
+ *   keeps its colors in both themes.
+ * - The Dynamic Island: it imitates the camera housing, so its window never sets the attribute.
+ */
+
+:root[data-buildersbot-color-scheme="light"] {
+  color-scheme: light;
+
+  --buildersbot-bg-canvas: #f5f5f6;
+  --buildersbot-bg-canvas-clear: rgba(245, 245, 246, 0);
+  --buildersbot-bg-frame: #e8e8eb;
+  --buildersbot-bg-sidebar: #f5f5f6;
+  --buildersbot-bg-native-sidebar: #f5f5f6;
+  --buildersbot-bg-sheet: #ffffff;
+  --buildersbot-bg-sheet-inset: #f0f0f2;
+  --buildersbot-bg-grouped: #ffffff;
+  --buildersbot-text-grouped-secondary: #6b6b70;
+  --buildersbot-border-grouped: #e3e3e6;
+  --buildersbot-marketplace-detail-bg: #ececee;
+  --buildersbot-bg-surface: #ffffff;
+  --buildersbot-bg-surface-raised: #fcfcfc;
+  --buildersbot-bg-control: #ffffff;
+  --buildersbot-bg-control-hover: #f0f0f2;
+  --buildersbot-bg-control-active: #e8e8eb;
+  --buildersbot-tabs-bar-bg: #ececee;
+  --buildersbot-tabs-pill-bg: #ffffff;
+  --buildersbot-bg-overlay: rgba(245, 245, 246, 0.92);
+  --buildersbot-dialog-overlay: rgba(20, 20, 20, 0.12);
+  --buildersbot-dialog-ring: rgba(20, 20, 20, 0.1);
+  --buildersbot-bg-glass: rgba(255, 255, 255, 0.76);
+  --buildersbot-glass-surface: rgba(20, 20, 20, 0.04);
+  --buildersbot-glass-surface-hover: rgba(20, 20, 20, 0.07);
+  --buildersbot-glass-border: rgba(20, 20, 20, 0.12);
+  --buildersbot-glass-highlight: rgba(255, 255, 255, 0.6);
+  --buildersbot-glass-shadow: transparent;
+  --buildersbot-scroll-edge-overlay: rgba(245, 245, 246, 0.72);
+
+  --buildersbot-border: rgba(20, 20, 20, 0.07);
+  --buildersbot-border-strong: rgba(20, 20, 20, 0.1);
+  --buildersbot-image-outline: rgba(20, 20, 20, 0.1);
+  --buildersbot-hover: rgba(20, 20, 20, 0.05);
+
+  /* Contrast on the canvas: primary 17:1, secondary 10:1, muted 4.9:1. Dim is for
+     marks and disabled text, as in the dark palette. */
+  --buildersbot-text-primary: #141414;
+  --buildersbot-text-secondary: #3a3a3c;
+  --buildersbot-text-muted: #6b6b70;
+  --buildersbot-text-dim: #8e8e93;
+  --buildersbot-text-placeholder: #5c5c61;
+  --buildersbot-text-readable: rgba(20, 20, 20, 0.6);
+  --buildersbot-settings-text-muted: rgba(20, 20, 20, 0.6);
+
+  /* The on-light family is the high-contrast inverted element: the default button, a checked
+     switch, the user's bubble, the light tooltip. On a light canvas it turns dark. */
+  --buildersbot-surface-light: #1c1c1e;
+  --buildersbot-text-on-light: #ffffff;
+  --buildersbot-text-muted-on-light: rgba(255, 255, 255, 0.64);
+  --buildersbot-text-dim-on-light: rgba(255, 255, 255, 0.4);
+  --buildersbot-border-on-light: rgba(255, 255, 255, 0.16);
+
+  /* The same hue 210 as the dark accent. The fill keeps its value, so a button looks the same
+     in both themes; text and hover go darker for contrast (accent-text 5.3:1 on the canvas). */
+  --buildersbot-accent-hover: #006ad4;
+  --buildersbot-accent-text: #0064c8;
+  --buildersbot-accent-soft: rgba(0, 124, 247, 0.12);
+  --buildersbot-accent-strong: rgba(0, 124, 247, 0.26);
+
+  /* Chart series: darker steps of the dark-palette hues, so each series reads on white.
+     Not yet checked with the dataviz palette validator in light mode. */
+  --buildersbot-chart-series-codex: #8e4fc0;
+  --buildersbot-chart-series-grok: #16849b;
+  --buildersbot-chart-storage-workspaces: #2f74c9;
+  --buildersbot-chart-storage-files: #c64d1d;
+  --buildersbot-chart-storage-chats: #148a61;
+  --buildersbot-chart-storage-downloads: #6f62d6;
+  --buildersbot-chart-storage-runtimes: #a86f00;
+
+  /* Status fills keep their hue. Status text is darker, for AA on white. */
+  --buildersbot-success: #1fa85a;
+  --buildersbot-success-text: #187a41;
+  --buildersbot-success-soft: rgba(31, 168, 90, 0.12);
+  --buildersbot-success-wash: rgba(31, 168, 90, 0.06);
+  --buildersbot-warning: #f08a00;
+  --buildersbot-warning-text: #9c5200;
+  --buildersbot-warning-soft: rgba(240, 138, 0, 0.14);
+  --buildersbot-approval-badge-soft: rgba(240, 138, 0, 0.18);
+  --buildersbot-danger: #e8222d;
+  --buildersbot-danger-hover: #f04a53;
+  --buildersbot-danger-text: #c0141d;
+  --buildersbot-danger-soft: rgba(232, 34, 45, 0.12);
+  --buildersbot-danger-soft-hover: rgba(232, 34, 45, 0.2);
+  --buildersbot-danger-focus: rgba(232, 34, 45, 0.36);
+  --buildersbot-danger-border: rgba(232, 34, 45, 0.45);
+
+  --buildersbot-question-option: #16849b;
+  --buildersbot-question-option-soft: rgba(22, 132, 155, 0.12);
+  --buildersbot-question-option-hover: rgba(22, 132, 155, 0.18);
+  --buildersbot-question-option-pressed: rgba(22, 132, 155, 0.24);
+  --buildersbot-question-badge-text: #0f6a7d;
+  --buildersbot-question-badge-soft: rgba(22, 132, 155, 0.14);
+  --buildersbot-message-badge-text: #0a5fb8;
+  --buildersbot-message-badge-soft: rgba(0, 124, 247, 0.12);
+  --buildersbot-badge-new: #e0004a;
+  --buildersbot-badge-new-soft: rgba(224, 0, 74, 0.12);
+
+  /* File references: the hues of the dark palette, darker so the name reads on white. */
+  --buildersbot-file-blue: #1a66c4;
+  --buildersbot-file-blue-soft: rgba(31, 111, 209, 0.12);
+  --buildersbot-file-yellow: #9c5200;
+  --buildersbot-file-yellow-soft: rgba(240, 138, 0, 0.14);
+  --buildersbot-file-orange: #a8521a;
+  --buildersbot-file-orange-soft: rgba(181, 90, 31, 0.12);
+  --buildersbot-file-teal: #127589;
+  --buildersbot-file-teal-soft: rgba(22, 132, 155, 0.12);
+  --buildersbot-file-green: #187a41;
+  --buildersbot-file-green-soft: rgba(31, 168, 90, 0.12);
+  --buildersbot-file-red: #c0141d;
+  --buildersbot-file-red-soft: rgba(232, 34, 45, 0.12);
+  --buildersbot-file-pink: #a3478f;
+  --buildersbot-file-pink-soft: rgba(163, 71, 143, 0.12);
+  --buildersbot-file-default: #0064c8;
+  --buildersbot-file-default-soft: rgba(0, 124, 247, 0.12);
+
+  --buildersbot-data-table-border: #e3e3e6;
+  --buildersbot-data-table-header-text: #6b6b70;
+  --buildersbot-data-table-text: #1c1c1e;
+  --buildersbot-data-table-outer-border: rgba(20, 20, 20, 0);
+  --buildersbot-data-table-ring: rgba(20, 20, 20, 0.1);
+
+  /* No drop shadows: on the dark canvas they do not show, but on white they read as a halo.
+     A raised surface keeps its 1px ring. */
+  --buildersbot-shadow-popover-ambient: transparent;
+  --buildersbot-shadow-dialog: transparent;
+  --buildersbot-shadow-menu: transparent;
+  --buildersbot-shadow-ring: rgba(20, 20, 20, 0.04);
+  --buildersbot-shadow-overlay: 0 0 0 transparent;
+}

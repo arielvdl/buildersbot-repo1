@@ -1,0 +1,10 @@
+{
+  "version": "0.56.0",
+  "highlights": [
+    "Agents do many browser actions in one step, so browser tasks finish sooner and use fewer tokens, and Cloudflare checks pass in the built-in browser.",
+    "Right-click an agent message and select Mark unread to come back to it later.",
+    "Hide the Local server when you have another server; its agents, chats and files stay on your computer.",
+    "Choose the sound that plays when a task finishes, in Settings › Notifications.",
+    "Each provider CLI now uses about half the disk space, and Builders Bot uses the CLI you installed when it is as new as its own copy."
+  ]
+}

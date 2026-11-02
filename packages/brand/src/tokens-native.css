@@ -1,0 +1,154 @@
+/*
+ * The mobile theme layer. Only apps/mobile imports this file. The desktop app and
+ * the web client have their own light layer, tokens-light.css, which a root
+ * attribute turns on; the public site is always dark.
+ *
+ * It cannot be folded into tokens.css. `@variant light` is not a Tailwind v4
+ * variant at all; uniwind registers it as a custom variant, so desktop and web
+ * would fail to compile the block. And `@variant dark` in stock Tailwind means
+ * `prefers-color-scheme: dark`, which would turn the public site light for anyone
+ * running a light system.
+ *
+ * The dark block repeats the base values from tokens.css instead of inheriting
+ * them, which looks like something to tidy up. It is not. uniwind hard-codes its
+ * theme list to ['light', 'dark'] and discovers a theme's variables only by
+ * reading `@variant` at-rules, so a name present in one block and absent from the
+ * other is a theme that cannot resolve it. uniwind notices, but only writes a red
+ * line to the console - it does not fail the build. Keep every value here equal to
+ * the base, so that mobile dark does not drift away from desktop.
+ */
+
+:root {
+  @variant light {
+    --buildersbot-bg-canvas: #f5f5f7;
+    --buildersbot-bg-native-canvas: #f5f5f7;
+    --buildersbot-bg-native-sidebar: #ffffff;
+    --buildersbot-bg-sidebar: #ffffff;
+    --buildersbot-bg-surface: #ffffff;
+    --buildersbot-bg-surface-raised: #f0f0f3;
+    --buildersbot-bg-control: #e9e9ed;
+    --buildersbot-bg-control-active: #dedee4;
+    --buildersbot-bg-overlay: rgba(20, 20, 20, 0.28);
+    --buildersbot-border: rgba(20, 20, 20, 0.1);
+    --buildersbot-border-strong: rgba(20, 20, 20, 0.16);
+    --buildersbot-text-primary: #141414;
+    --buildersbot-text-secondary: rgba(20, 20, 20, 0.72);
+    --buildersbot-text-muted: rgba(20, 20, 20, 0.64);
+    --buildersbot-text-dim: rgba(20, 20, 20, 0.34);
+    --buildersbot-text-on-accent: #ffffff;
+    --buildersbot-text-on-light: #141414;
+    --buildersbot-text-on-status: #07130c;
+    --buildersbot-action: #141414;
+    --buildersbot-action-foreground: #f2f2f2;
+    --buildersbot-accent: #6960f1;
+    --buildersbot-accent-text: #5b52df;
+    --buildersbot-logo-production: #cdadec;
+    --buildersbot-logo-eye: #040007;
+    --buildersbot-success: #32a85d;
+    --buildersbot-warning: #c58a23;
+    --buildersbot-danger: #d85f58;
+    --buildersbot-success-text: #1e6f3b;
+    --buildersbot-warning-text: #865700;
+    --buildersbot-danger-text: #b02a2f;
+    --buildersbot-drawer-scrim: #000000;
+    --buildersbot-scroll-edge-overlay: rgba(245, 245, 247, 0.46);
+    --buildersbot-shadow-card: 0 1px 2px rgba(20, 20, 20, 0.05);
+    --buildersbot-shadow-overlay: 0 12px 32px rgba(20, 20, 20, 0.12);
+
+    /* Not a colour, and identical in both themes. uniwind only ever learns a
+     * variable from a @variant block, so a token @theme inline reaches through
+     * var() has to be declared here or the utility resolves to nothing on native.
+     * These two back tracking-buildersbot-tight and tracking-buildersbot-wide. */
+    --buildersbot-tracking-tight: -0.1px;
+    --buildersbot-tracking-wide: 0.02em;
+    --buildersbot-bg-sheet: #fcfcfc;
+    --buildersbot-bg-grouped: #f2f2f2;
+    --buildersbot-text-grouped-secondary: #69696e;
+    --buildersbot-border-grouped: #dddddf;
+    --buildersbot-radius-grouped: 16px;
+    --buildersbot-bg-chrome-glass: rgba(250, 250, 252, 0.94);
+    --buildersbot-border-chrome-glass: rgba(20, 20, 20, 0.1);
+    --buildersbot-bg-chrome-blur: rgba(255, 255, 255, 0.55);
+    /* File references: the same hues as dark, darker so the name reads on a light surface. */
+    --buildersbot-file-blue: #1f6fd1;
+    --buildersbot-file-blue-soft: rgba(31, 111, 209, 0.12);
+    --buildersbot-file-yellow: #865700;
+    --buildersbot-file-yellow-soft: rgba(197, 138, 35, 0.14);
+    --buildersbot-file-orange: #b55a1f;
+    --buildersbot-file-orange-soft: rgba(181, 90, 31, 0.12);
+    --buildersbot-file-teal: #1c7f92;
+    --buildersbot-file-teal-soft: rgba(28, 127, 146, 0.12);
+    --buildersbot-file-green: #1e6f3b;
+    --buildersbot-file-green-soft: rgba(50, 168, 93, 0.14);
+    --buildersbot-file-red: #b02a2f;
+    --buildersbot-file-red-soft: rgba(216, 95, 88, 0.14);
+    --buildersbot-file-pink: #a3478f;
+    --buildersbot-file-pink-soft: rgba(163, 71, 143, 0.12);
+    --buildersbot-file-default: #5b52df;
+    --buildersbot-file-default-soft: rgba(91, 82, 223, 0.12);
+  }
+
+  @variant dark {
+    /* biome-ignore lint/suspicious/noDuplicateCustomProperties: Theme variants intentionally share semantic token names. */
+    --buildersbot-bg-canvas: #1a1a1a;
+    --buildersbot-bg-native-canvas: #141414;
+    --buildersbot-bg-native-sidebar: #141414;
+    --buildersbot-bg-sidebar: #1a1a1a;
+    --buildersbot-bg-surface: #212121;
+    --buildersbot-bg-surface-raised: #242424;
+    --buildersbot-bg-control: #212121;
+    --buildersbot-bg-control-active: #2a2a2a;
+    --buildersbot-bg-overlay: rgba(26, 26, 26, 0.92);
+    --buildersbot-border: rgba(255, 255, 255, 0.035);
+    --buildersbot-border-strong: rgba(255, 255, 255, 0.045);
+    --buildersbot-text-primary: #ffffff;
+    --buildersbot-text-secondary: #dcdcdc;
+    --buildersbot-text-muted: #979797;
+    --buildersbot-text-dim: #6a6a6a;
+    --buildersbot-text-on-accent: #ffffff;
+    --buildersbot-text-on-light: #141414;
+    --buildersbot-text-on-status: #07130c;
+    --buildersbot-action: #f0f0f0;
+    --buildersbot-action-foreground: #141414;
+    --buildersbot-accent: #007cf7;
+    --buildersbot-accent-text: #42a0ff;
+    --buildersbot-logo-production: #98f94f;
+    --buildersbot-logo-eye: #040007;
+    --buildersbot-success: #31cf76;
+    --buildersbot-warning: #ff9412;
+    --buildersbot-danger: #fd2f3b;
+    --buildersbot-success-text: #31cf76;
+    --buildersbot-warning-text: #ff9412;
+    --buildersbot-danger-text: #ff6069;
+    --buildersbot-drawer-scrim: #000000;
+    --buildersbot-scroll-edge-overlay: rgba(0, 0, 0, 0.72);
+    --buildersbot-shadow-card: 0 0 0 transparent;
+    --buildersbot-shadow-overlay: 0 12px 32px rgba(0, 0, 0, 0.48);
+    --buildersbot-tracking-tight: -0.1px;
+    --buildersbot-tracking-wide: 0.02em;
+    --buildersbot-bg-sheet: #141414;
+    --buildersbot-bg-grouped: #212121;
+    --buildersbot-text-grouped-secondary: #96969b;
+    --buildersbot-border-grouped: #333335;
+    --buildersbot-radius-grouped: 16px;
+    --buildersbot-bg-chrome-glass: rgba(38, 38, 40, 0.96);
+    --buildersbot-border-chrome-glass: rgba(255, 255, 255, 0.08);
+    --buildersbot-bg-chrome-blur: rgba(26, 26, 28, 0.62);
+    --buildersbot-file-blue: #74b9ff;
+    --buildersbot-file-blue-soft: rgba(116, 185, 255, 0.14);
+    --buildersbot-file-yellow: #ff9412;
+    --buildersbot-file-yellow-soft: rgba(255, 148, 18, 0.12);
+    --buildersbot-file-orange: #f0a06a;
+    --buildersbot-file-orange-soft: rgba(240, 160, 106, 0.14);
+    --buildersbot-file-teal: #6bc7d9;
+    --buildersbot-file-teal-soft: rgba(107, 199, 217, 0.14);
+    --buildersbot-file-green: #31cf76;
+    --buildersbot-file-green-soft: rgba(49, 207, 118, 0.12);
+    --buildersbot-file-red: #fd2f3b;
+    --buildersbot-file-red-soft: rgba(253, 47, 59, 0.16);
+    --buildersbot-file-pink: #d98ac9;
+    --buildersbot-file-pink-soft: rgba(217, 138, 201, 0.14);
+    --buildersbot-file-default: #42a0ff;
+    --buildersbot-file-default-soft: rgba(0, 124, 247, 0.14);
+  }
+}

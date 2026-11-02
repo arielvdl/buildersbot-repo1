@@ -1,0 +1,488 @@
+// The /download pages: one per operating system and phone, and a hub that lists them. Each statement
+// here comes from the release configuration, README.md or docs/TROUBLESHOOTING.md, and for the phones
+// from the web client (docs/web-client.md): a phone installs it from its browser, never from a store.
+// Keep it to what the released app does, because these pages are what a search engine shows for
+// "Builders Bot for Linux".
+
+import { BUILDERSBOT_CONTROL_PLANE_ORIGIN } from "@buildersbot/contracts/invite-links";
+import { DOWNLOAD_PLATFORM_ORDER, type DownloadPlatform } from "./download-platforms";
+import { LANDING_FAQ, type LandingQuestion } from "./landing-faq";
+import {
+  BUILDERSBOT_ALTERNATE_DOWNLOAD_LINKS,
+  BUILDERSBOT_DOWNLOAD_LINKS,
+  BUILDERSBOT_DOWNLOAD_PAGE_LINKS,
+} from "./landing-links";
+import { MOBILE_APP_ORDER, type MobilePlatform } from "./mobile-apps";
+import {
+  BUILDERSBOT_SITE_URL,
+  BUILDERSBOT_SOCIAL_IMAGE_ALT,
+  BUILDERSBOT_SOCIAL_IMAGE_META,
+  BUILDERSBOT_SOCIAL_IMAGE_URL,
+  BUILDERSBOT_X_HANDLE,
+} from "./site-metadata";
+import { BUILDERSBOT_SOFTWARE_APPLICATION } from "./software-application";
+
+/** The sitemap date of the pages. Change it when their text changes. */
+export const DOWNLOAD_PAGES_UPDATED_AT = "2026-10-31";
+
+/** A system with its own page: a desktop installer or a phone app. */
+export type DownloadPagePlatform = DownloadPlatform | MobilePlatform;
+
+/** The desktop systems first, then the phone apps, as the hub and the landing page list them. */
+export const DOWNLOAD_PAGE_ORDER: readonly DownloadPagePlatform[] = [...DOWNLOAD_PLATFORM_ORDER, ...MOBILE_APP_ORDER];
+
+export interface DownloadInstaller {
+  /** The button text where the system is not on screen, such as a list of every installer. */
+  label: string;
+  /** The button text inside a card or panel that already names the system. */
+  shortLabel: string;
+  /** Which computer the file is for, for a reader who has to choose between two. */
+  detail: string;
+  href: string;
+  /** A store page on another site, which opens in a new tab. */
+  external?: boolean;
+}
+
+/** One line of the spec sheet: what the computer needs, or what the download is. */
+interface DownloadSpec {
+  label: string;
+  value: string;
+}
+
+/** One instruction. `code` is a command to copy, shown under the text. */
+export interface DownloadStep {
+  text: string;
+  code?: string;
+}
+
+interface DownloadPageSection {
+  title: string;
+  steps: readonly DownloadStep[];
+}
+
+export interface DownloadPageContent {
+  platform: DownloadPagePlatform;
+  /** The name a reader uses for the system, which the headings and the breadcrumb show. */
+  name: string;
+  title: string;
+  description: string;
+  heading: string;
+  intro: string;
+  installers: readonly DownloadInstaller[];
+  specs: readonly DownloadSpec[];
+  installSteps: readonly DownloadStep[];
+  /** Optional steps for one situation, such as a distribution that needs a security profile. */
+  extraSections: readonly DownloadPageSection[];
+  notes: readonly string[];
+  faq: readonly LandingQuestion[];
+  /** schema.org `operatingSystem` for this page's installer. */
+  operatingSystem: string;
+}
+
+const PROVIDERS_ANSWER = LANDING_FAQ.find(
+  (entry) => entry.question === "Which AI models can Builders Bot use?",
+)?.answer;
+const FREE_ANSWER =
+  "Yes. The app costs $0, with no locked features. You pay only your AI provider, through the plan or API key you already have.";
+const CONNECT_STEP: DownloadStep = {
+  text: "Connect a provider, such as Codex with your ChatGPT plan or Claude Code with your Claude plan. Then describe the agent you want in one prompt and save it.",
+};
+const UPDATES_NOTE = "Builders Bot checks for new versions and updates itself.";
+const NETWORK_NOTE = "The AI provider you choose needs an internet connection. A local model needs none.";
+const UPDATES_SPEC: DownloadSpec = { label: "Updates", value: "Automatic" };
+
+const COMPUTER_STEP: DownloadStep = {
+  text: "Install Builders Bot on the Mac, Windows or Linux computer that runs your agents, and sign in with your Cultura Builder account.",
+};
+// A phone uses the web client at `/app` of the Builders Bot account service, installed from its
+// browser. There is no phone app to get from a store, and no openbot.run address.
+const WEB_APP_PATH = "/app";
+const WEB_APP_ADDRESS = `${new URL(BUILDERSBOT_CONTROL_PLANE_ORIGIN).host}${WEB_APP_PATH}`;
+const PHONE_SIGN_IN_STEP: DownloadStep = {
+  text: "Open the web app from its new icon, select Sign in with Cultura Builder, and approve the code on the Cultura Builder Hub.",
+};
+const WEB_APP_UPDATES_SPEC: DownloadSpec = { label: "Updates", value: "When the app opens again" };
+const PHONE_NOTES = [
+  "Your chats and files stay on the computer that runs your agents. The phone connects to it over an encrypted connection, directly between your devices when it can, and no cloud stores your chats or files.",
+  "You set up no VPN or tunnel. Remote access needs a Cultura Builder account.",
+  "The computer must be on and running Builders Bot for the phone to reach your agents.",
+  "To remove a phone, sign out in the web app, or end its session in Settings, then Profile, then Account sessions, on the computer.",
+];
+const PHONE_COMPUTER_QUESTION: LandingQuestion = {
+  question: "Do I need a computer to use Builders Bot on my phone?",
+  answer:
+    "Yes. The web app controls the agents that run in Builders Bot on your Mac, Windows or Linux computer, or on a server that runs Builders Bot. Your chats and files stay there.",
+};
+const PHONE_FREE_ANSWER =
+  "Yes. The web app costs $0. You pay only your AI provider, through the plan or API key you already have.";
+
+function providersQuestion(system: string): LandingQuestion {
+  return {
+    question: `Which AI agents can I run on ${system}?`,
+    answer:
+      PROVIDERS_ANSWER ??
+      "Codex, Claude Code, Gemini, Grok and OpenCode, and any OpenAI-compatible endpoint, also one on your own computer.",
+  };
+}
+
+export const DOWNLOAD_PAGES: Record<DownloadPagePlatform, DownloadPageContent> = {
+  macos: {
+    platform: "macos",
+    name: "macOS",
+    title: "Download Builders Bot for Mac: AI agent app for macOS",
+    description:
+      "Download Builders Bot for macOS 13 or later on Apple silicon or Intel. A free app that runs Codex, Claude Code, Gemini and Grok agents as a team on your Mac.",
+    heading: "Builders Bot for Mac",
+    intro:
+      "Run a team of AI agents on your Mac with the ChatGPT, Claude, Gemini or Grok plan you already pay for, or with your own model. Your chats and files stay on your Mac.",
+    installers: [
+      {
+        label: "Download for Apple silicon",
+        shortLabel: "Apple silicon",
+        detail: "For a Mac with M1 or newer",
+        href: BUILDERSBOT_DOWNLOAD_LINKS.macos,
+      },
+      {
+        label: "Download for Intel Mac",
+        shortLabel: "Intel",
+        detail: "For a Mac with an Intel processor",
+        href: BUILDERSBOT_ALTERNATE_DOWNLOAD_LINKS.macos,
+      },
+    ],
+    specs: [
+      { label: "System", value: "macOS 13 Ventura or later" },
+      { label: "Processor", value: "Apple silicon or Intel" },
+      { label: "File", value: "DMG, notarized by Apple" },
+      UPDATES_SPEC,
+    ],
+    installSteps: [
+      {
+        text: "Download the DMG for your Mac. To find which one you need, open the Apple menu and choose About This Mac: a “Chip” line means Apple silicon, a “Processor” line means Intel.",
+      },
+      { text: "Open the DMG and drag Builders Bot to the Applications folder." },
+      {
+        text: "Open Builders Bot from Applications. The app is signed by its developer and notarized by Apple, so macOS only asks you once to confirm that you want to open an app from the internet.",
+      },
+      CONNECT_STEP,
+    ],
+    extraSections: [],
+    notes: [
+      UPDATES_NOTE,
+      NETWORK_NOTE,
+      "Computer Use needs the Screen Recording and Accessibility permissions. macOS asks for them, and Builders Bot does not go around the prompts.",
+    ],
+    faq: [
+      { question: "Is Builders Bot free on Mac?", answer: FREE_ANSWER },
+      {
+        question: "Does Builders Bot run on an Intel Mac?",
+        answer: "Yes. Download the Intel installer. It needs macOS 13 or later, like the Apple silicon one.",
+      },
+      providersQuestion("a Mac"),
+    ],
+    operatingSystem: "macOS 13 or later (Apple silicon or Intel)",
+  },
+  windows: {
+    platform: "windows",
+    name: "Windows",
+    title: "Download Builders Bot for Windows: AI agent app for Windows 10 and 11",
+    description:
+      "Download Builders Bot for Windows 10 or 11 on x64. A free app that runs Codex, Claude Code, Gemini and Grok agents as a team on your PC.",
+    heading: "Builders Bot for Windows",
+    intro:
+      "Run a team of AI agents on your PC with the ChatGPT, Claude, Gemini or Grok plan you already pay for, or with your own model. Your chats and files stay on your PC.",
+    installers: [
+      {
+        label: "Download for Windows",
+        shortLabel: "Windows x64",
+        detail: "For a PC with a 64-bit Intel or AMD processor",
+        href: BUILDERSBOT_DOWNLOAD_LINKS.windows,
+      },
+    ],
+    specs: [
+      { label: "System", value: "Windows 10 or 11" },
+      { label: "Processor", value: "x64, Intel or AMD" },
+      { label: "File", value: "Installer (.exe)" },
+      UPDATES_SPEC,
+    ],
+    installSteps: [
+      { text: "Download the installer." },
+      {
+        text: "Run the installer. For a new release, Windows can show “Windows protected your PC”. Select More info, make sure that the publisher is CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA, then select Run anyway.",
+      },
+      { text: "The installer installs Builders Bot for your user and opens it. Later, open it from the Start menu." },
+      CONNECT_STEP,
+    ],
+    extraSections: [],
+    notes: [
+      UPDATES_NOTE,
+      NETWORK_NOTE,
+      "There is no build for Windows on Arm yet.",
+      "To check the installer before you run it, compare its checksum with the one on the GitHub release, or check the GitHub build attestation.",
+    ],
+    faq: [
+      { question: "Is Builders Bot free on Windows?", answer: FREE_ANSWER },
+      {
+        question: "Why does Windows warn about the installer?",
+        answer:
+          "The installer is code-signed by CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA, but SmartScreen can warn about a new release until enough people download it. Select More info, make sure that the publisher is CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA, then select Run anyway. The source code and every release build are public on GitHub, where you can check the checksum and the build attestation.",
+      },
+      providersQuestion("Windows"),
+    ],
+    operatingSystem: "Windows 10 or later (x64)",
+  },
+  linux: {
+    platform: "linux",
+    name: "Linux",
+    title: "Download Builders Bot for Linux: AI agent app as an AppImage",
+    description:
+      "Download Builders Bot for Linux as an AppImage for x64 or arm64. A free app that runs Codex, Claude Code, Gemini and Grok agents as a team on your computer.",
+    heading: "Builders Bot for Linux",
+    intro:
+      "Run a team of AI agents on your Linux computer with the ChatGPT, Claude, Gemini or Grok plan you already pay for, or with your own model. Your chats and files stay on your computer.",
+    installers: [
+      {
+        label: "Download for Linux x64",
+        shortLabel: "x64",
+        detail: "When uname -m shows x86_64",
+        href: BUILDERSBOT_DOWNLOAD_LINKS.linux,
+      },
+      {
+        label: "Download for Linux arm64",
+        shortLabel: "arm64",
+        detail: "When uname -m shows aarch64",
+        href: BUILDERSBOT_ALTERNATE_DOWNLOAD_LINKS.linux,
+      },
+    ],
+    specs: [
+      { label: "System", value: "Any 64-bit distribution" },
+      { label: "Processor", value: "x64 or arm64" },
+      { label: "File", value: "AppImage" },
+      UPDATES_SPEC,
+    ],
+    installSteps: [
+      {
+        text: "Download the AppImage for your processor. To find which one you need, run this command: x86_64 means x64, and aarch64 means arm64.",
+        code: "uname -m",
+      },
+      { text: "Make the AppImage executable.", code: "chmod +x Builders Bot-*.AppImage" },
+      {
+        text: "Run it. On the first start, Builders Bot adds itself to your app launcher, so that buildersbot:// links open it.",
+        code: "./Builders Bot-*.AppImage",
+      },
+      CONNECT_STEP,
+    ],
+    extraSections: [
+      {
+        title: "Ubuntu 23.10 or newer, and Debian 13",
+        steps: [
+          {
+            text: "These distributions restrict the user namespaces that the Electron sandbox needs, so Builders Bot exits during launch until you install its AppArmor profile. Take the profile out of the AppImage:",
+            code: "./Builders Bot-*.AppImage --appimage-extract resources/linux/buildersbot.apparmor",
+          },
+          {
+            text: "Install the profile, then reload AppArmor:",
+            code: "sudo install -m 0644 squashfs-root/resources/linux/buildersbot.apparmor /etc/apparmor.d/buildersbot\nsudo systemctl reload apparmor",
+          },
+          {
+            text: "The profile applies to an AppImage in ~/Applications, ~/Desktop, ~/Downloads, ~/.local/bin or /opt/OpenBot. Keep it in one of these, or edit the path in the profile before you install it. Do not start Builders Bot with --no-sandbox: the sandbox is the boundary between a web page and the rest of your computer.",
+          },
+        ],
+      },
+      {
+        title: "A server with no screen",
+        steps: [
+          {
+            // The upstream install script installs the upstream release, so this page names none.
+            text: "The install as an always-on server is not available for this build yet. Until it is, run the AppImage on a computer that stays on.",
+          },
+          { text: `Then use it from the desktop app, or from ${WEB_APP_ADDRESS} in a browser or on a phone.` },
+        ],
+      },
+    ],
+    notes: [
+      "Each release is tested on Ubuntu 24.04 on x64. Builders Bot also runs on Ubuntu 26.04.",
+      UPDATES_NOTE,
+      NETWORK_NOTE,
+      "Remote desktop works with the x64 AppImage in an X11 session, such as Xorg or Xvfb. It does not work under Wayland, and the arm64 AppImage does not include it.",
+    ],
+    faq: [
+      {
+        question: "Is there an AI agent app for Linux?",
+        answer:
+          "Yes. Builders Bot runs on Linux as an AppImage for x64 and arm64. It runs Codex, Claude Code, Gemini, Grok and OpenCode agents as a team, with the plans you already pay for or a local model.",
+      },
+      {
+        question: "Why does Builders Bot exit at once on Ubuntu?",
+        answer:
+          "Ubuntu 23.10 and newer, and Debian 13, restrict the user namespaces that the Electron sandbox needs. Install the AppArmor profile that ships in the AppImage, as the steps on this page show.",
+      },
+      {
+        question: "Does Builders Bot run on arm64 Linux?",
+        answer: "Yes. Download the arm64 AppImage. It has the features of the x64 AppImage except remote desktop.",
+      },
+    ],
+    operatingSystem: "Linux (x64 or arm64)",
+  },
+  ios: {
+    platform: "ios",
+    name: "iPhone",
+    title: "Builders Bot on iPhone: install the web app from Safari",
+    description:
+      "Add the Builders Bot web app to the Home Screen of your iPhone from Safari. Chat with the AI agents on your computer, follow their work and send files from anywhere.",
+    heading: "Builders Bot on iPhone",
+    intro:
+      "Chat with the agents on your computer from anywhere, follow their progress and send them files. The web app installs from Safari and opens from the Home Screen.",
+    installers: [
+      {
+        label: "Open the web app",
+        shortLabel: "Web app",
+        detail: "Open it in Safari on the iPhone",
+        href: WEB_APP_PATH,
+      },
+    ],
+    specs: [
+      { label: "System", value: "iOS 16.4 or later, for notifications" },
+      { label: "Install", value: "Safari, Share, Add to Home Screen" },
+      { label: "Needs", value: "Builders Bot on a computer" },
+      WEB_APP_UPDATES_SPEC,
+    ],
+    installSteps: [
+      COMPUTER_STEP,
+      { text: `On your iPhone, open ${WEB_APP_ADDRESS} in Safari.` },
+      { text: "Tap Share, then Add to Home Screen, then Add." },
+      PHONE_SIGN_IN_STEP,
+    ],
+    extraSections: [],
+    notes: [
+      ...PHONE_NOTES,
+      "Notifications need iOS 16.4 or later and the app on the Home Screen. Turn them on in Settings in the web app.",
+    ],
+    faq: [{ question: "Is Builders Bot on iPhone free?", answer: PHONE_FREE_ANSWER }, PHONE_COMPUTER_QUESTION],
+    operatingSystem: "iOS 16.4 or later",
+  },
+  android: {
+    platform: "android",
+    name: "Android",
+    title: "Builders Bot on Android: install the web app from Chrome",
+    description:
+      "Install the Builders Bot web app on your Android phone from Chrome. Chat with the AI agents on your computer, follow their work and send files from anywhere.",
+    heading: "Builders Bot on Android",
+    intro:
+      "Chat with the agents on your computer from anywhere, follow their progress and send them files. The web app installs from Chrome and opens from the Home screen.",
+    installers: [
+      {
+        label: "Open the web app",
+        shortLabel: "Web app",
+        detail: "Open it in Chrome on the phone",
+        href: WEB_APP_PATH,
+      },
+    ],
+    specs: [
+      { label: "Browser", value: "A current version of Chrome" },
+      { label: "Install", value: "Chrome menu, Install app" },
+      { label: "Needs", value: "Builders Bot on a computer" },
+      WEB_APP_UPDATES_SPEC,
+    ],
+    installSteps: [
+      COMPUTER_STEP,
+      { text: `On your phone, open ${WEB_APP_ADDRESS} in Chrome.` },
+      { text: "Open the Chrome menu, then tap Install app. Some versions show Add to Home screen." },
+      PHONE_SIGN_IN_STEP,
+    ],
+    extraSections: [],
+    notes: [
+      ...PHONE_NOTES,
+      "To get notifications, turn them on in Settings in the web app and allow them when Chrome asks.",
+    ],
+    faq: [{ question: "Is Builders Bot on Android free?", answer: PHONE_FREE_ANSWER }, PHONE_COMPUTER_QUESTION],
+    operatingSystem: "Android",
+  },
+};
+
+export const DOWNLOAD_HUB = {
+  title: "Download Builders Bot for Mac, Windows and Linux",
+  description:
+    "Download Builders Bot, the free app that runs AI agents as a team on your computer. For macOS 13 or later, Windows 10 or later, and Linux on x64 or arm64.",
+  heading: "Download Builders Bot",
+  intro:
+    "Free for Mac, Windows and Linux, with a web app for iPhone and Android. Get the installer for this computer, or choose a system below for its requirements and install steps.",
+} as const;
+
+export function downloadPagePath(platform: DownloadPagePlatform | "hub"): string {
+  return BUILDERSBOT_DOWNLOAD_PAGE_LINKS[platform];
+}
+
+export function downloadPageUrl(
+  platform: DownloadPagePlatform | "hub",
+  siteUrl: string = BUILDERSBOT_SITE_URL,
+): string {
+  return new URL(downloadPagePath(platform), siteUrl).toString();
+}
+
+function breadcrumbData(platform: DownloadPagePlatform | "hub", siteUrl: string) {
+  const trail = [
+    { name: "Builders Bot", url: siteUrl },
+    { name: "Download", url: downloadPageUrl("hub", siteUrl) },
+    ...(platform === "hub" ? [] : [{ name: DOWNLOAD_PAGES[platform].name, url: downloadPageUrl(platform, siteUrl) }]),
+  ];
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: trail.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
+function faqData(faq: readonly LandingQuestion[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map((entry) => ({
+      "@type": "Question",
+      name: entry.question,
+      acceptedAnswer: { "@type": "Answer", text: entry.answer },
+    })),
+  };
+}
+
+export function downloadPageHead(platform: DownloadPagePlatform | "hub", siteUrl: string) {
+  const page = platform === "hub" ? undefined : DOWNLOAD_PAGES[platform];
+  const title = page?.title ?? DOWNLOAD_HUB.title;
+  const description = page?.description ?? DOWNLOAD_HUB.description;
+  const url = downloadPageUrl(platform, siteUrl);
+  const application = page
+    ? {
+        ...BUILDERSBOT_SOFTWARE_APPLICATION,
+        operatingSystem: page.operatingSystem,
+        downloadUrl: page.installers.map((installer) => new URL(installer.href, siteUrl).toString()),
+      }
+    : BUILDERSBOT_SOFTWARE_APPLICATION;
+
+  return {
+    meta: [
+      { title },
+      { name: "description", content: description },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Builders Bot" },
+      { property: "og:locale", content: "en_US" },
+      { property: "og:url", content: url },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      ...BUILDERSBOT_SOCIAL_IMAGE_META,
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:site", content: BUILDERSBOT_X_HANDLE },
+      { name: "twitter:title", content: title },
+      { name: "twitter:description", content: description },
+      { name: "twitter:image", content: BUILDERSBOT_SOCIAL_IMAGE_URL },
+      { name: "twitter:image:alt", content: BUILDERSBOT_SOCIAL_IMAGE_ALT },
+      { "script:ld+json": application },
+      { "script:ld+json": breadcrumbData(platform, siteUrl) },
+      ...(page ? [{ "script:ld+json": faqData(page.faq) }] : []),
+    ],
+    links: [{ rel: "canonical", href: url }],
+  };
+}

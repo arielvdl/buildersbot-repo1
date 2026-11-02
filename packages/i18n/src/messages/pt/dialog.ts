@@ -1,0 +1,40 @@
+import type { PartialTranslation } from "../../message";
+import type { messages as source } from "../en/dialog";
+
+export const messages = {
+  "dialog.chooseSiteDirectory": "Escolha um diretório de site estático",
+  "dialog.chooseAgentFolder": "Escolha uma pasta para {agent}",
+  "dialog.chooseAgentExclusion": "Escolha uma pasta que {agent} não deve alterar",
+  "dialog.chooseSkill": "Escolha uma pasta de habilidade ou um ZIP",
+  "dialog.filter.skillPackages": "Pacotes de habilidades",
+  "dialog.chooseSound": "Escolha um arquivo de som",
+  "dialog.filter.soundFiles": "Arquivos de som",
+  "dialog.filter.images": "Imagens",
+  "dialog.filter.supportedFiles": "Arquivos compatíveis",
+  "dialog.filter.attachment": "Anexo",
+  "dialog.filter.zipArchive": "Arquivo ZIP",
+  "dialog.filter.jsonDocument": "Documento JSON",
+  "dialog.chooseAgentExport": "Escolha uma exportação de agente",
+  "dialog.filter.agentExports": "Exportações de agentes",
+  "dialog.saveExportSkill": "Salvar a habilidade de exportação",
+  "dialog.saveTransfer": "Salvar o arquivo de transferência",
+  "dialog.chooseTransfer": "Escolher um arquivo de transferência",
+  "dialog.filter.transfer": "Arquivos de transferência do Builders Bot",
+  "dialog.chooseExternalLinkApp": "Escolha um navegador",
+  "dialog.filter.applications": "Aplicativos",
+  "dialog.siteSession.message": "Usar seu login do Chrome em {site}?",
+  "dialog.siteSession.detail":
+    "Um agente pediu para abrir {site} já logado. O Builders Bot copia do seu Chrome só os cookies de {site}, de nenhum outro site, para o navegador do Builders Bot. O macOS pode pedir uma vez para liberar a chave do Chrome.",
+  "dialog.siteSession.always": "Sempre permitir {site}",
+  "dialog.siteSession.once": "Permitir desta vez",
+  "dialog.siteSession.deny": "Não permitir",
+  "dialog.cleanup.message": "Mover {name} para a Lixeira?",
+  "dialog.cleanup.detail": "Ocupa cerca de {size}. Você ainda pode recuperar da Lixeira até esvaziá-la.",
+  "dialog.cleanup.confirm": "Mover para a Lixeira",
+  "dialog.cleanup.cancel": "Cancelar",
+  "dialog.chromePairing.message": "Conectar o seu Chrome ao Builders Bot?",
+  "dialog.chromePairing.messageUnexpected": "Um Chrome deste computador quer se conectar",
+  "dialog.chromePairing.detail":
+    "No Chrome, toque em: {appWords}\n\nDepois toque aqui nas palavras que o Chrome mostra. Informado pela extensão: {browser}.",
+  "dialog.chromePairing.notNow": "Agora não",
+} as const satisfies PartialTranslation<typeof source>;

@@ -1,0 +1,13 @@
+# A daily backup of instance %i. Enable it with
+# `systemctl enable --now buildersbot-instance-backup@<name>.timer`, and change the time with
+# `systemctl edit buildersbot-instance-backup@<name>.timer`.
+[Unit]
+Description=Daily backup of Builders Bot instance %i
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

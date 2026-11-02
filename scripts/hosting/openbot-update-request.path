@@ -1,0 +1,11 @@
+# Builders Bot asks for an update now with an empty file in its runtime directory. This starts
+# openbot-update-request.service as root, which removes the file and never reads it.
+[Unit]
+Description=Watch for an Builders Bot update request
+
+[Path]
+PathExists=/run/buildersbot/update-stage
+PathExists=/run/buildersbot/update-install
+
+[Install]
+WantedBy=paths.target

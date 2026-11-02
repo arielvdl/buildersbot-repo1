@@ -1,0 +1,41 @@
+{
+  "fill-specializations": [
+    {
+      "value": {
+        "solid": "srgb:0.04314,0.05098,0.03922,1.00000"
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "solid": "srgb:0.01961,0.02353,0.01569,1.00000"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "cube.png",
+          "name": "cube",
+          "hidden": false,
+          "opacity": 1,
+          "position": {
+            "scale": 1.0,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.35
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

@@ -1,0 +1,56 @@
+/* The logo color swatches, in the same shape as the agent avatar color grid. */
+.logo-color-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 32px);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  gap: 4px;
+}
+
+.logo-color-choice {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--buildersbot-radius-md);
+  background: transparent;
+  transition-property: scale, background-color, box-shadow;
+  transition-duration:
+    var(--buildersbot-duration-normal), var(--buildersbot-duration-hover), var(--buildersbot-duration-hover);
+  transition-timing-function: ease-out;
+}
+
+.logo-color-choice:hover {
+  background: var(--buildersbot-hover);
+}
+
+.logo-color-choice:active {
+  scale: 0.96;
+}
+
+.logo-color-choice-selected {
+  background: var(--buildersbot-border);
+  box-shadow:
+    inset 0 0 0 1px var(--buildersbot-text-muted),
+    0 1px 3px var(--buildersbot-shadow-popover-ambient);
+}
+
+.logo-color-swatch {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: var(--buildersbot-radius-sm);
+  box-shadow: inset 0 0 0 1px var(--buildersbot-border-strong);
+}
+
+/* The eye of the mark, so two colorways that share a face still read apart. */
+.logo-color-swatch-eye {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--buildersbot-radius-pill);
+}

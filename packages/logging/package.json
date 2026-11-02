@@ -1,0 +1,31 @@
+{
+  "name": "@buildersbot/logging",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nextlevelcommunity/buildersbot-repo1.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nextlevelcommunity/buildersbot-repo1/issues"
+  },
+  "homepage": "https://buildersbot.culturabuilder.com",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "bun ../../scripts/type-checker.ts --noEmit -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts src"
+  },
+  "dependencies": {
+    "ts-log": "3.0.3"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

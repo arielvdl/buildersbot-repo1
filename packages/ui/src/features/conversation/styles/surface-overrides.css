@@ -1,0 +1,76 @@
+.settings-panel,
+.browser-panel,
+.remote-desktop-workspace {
+  background: var(--buildersbot-bg-canvas);
+}
+
+.composer-reply-preview {
+  border-color: var(--buildersbot-border);
+  background: var(--buildersbot-bg-surface);
+  color: var(--buildersbot-text-primary);
+}
+
+.message-reaction-pill {
+  border-color: var(--buildersbot-border);
+  background: transparent;
+  color: var(--buildersbot-text-primary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .message-reaction-pill:not(.message-reaction-pill-readonly):hover {
+    background: var(--buildersbot-hover);
+  }
+}
+
+.composer,
+.direct-composer {
+  background: var(--buildersbot-bg-surface);
+}
+
+.direct-composer > button:hover:not(:disabled) {
+  background: var(--buildersbot-accent-hover);
+}
+
+.remote-desktop-stage,
+.remote-desktop-viewer {
+  background: var(--buildersbot-bg-canvas);
+  color: var(--buildersbot-text-secondary);
+}
+
+.remote-desktop-header {
+  background: var(--buildersbot-bg-sidebar);
+}
+
+.voice-button:active,
+.voice-button-active:active {
+  transform: scale(0.97);
+}
+
+/* A filled field with no border, in the menu item shape. */
+.provider-model-search {
+  height: var(--buildersbot-control-md);
+  flex-shrink: 0;
+  margin-bottom: var(--ui-menu-padding);
+  border-color: transparent;
+  border-radius: var(--ui-menu-item-radius);
+  background: var(--ui-menu-item-hover);
+  padding-inline: var(--ui-menu-inset);
+  font-size: var(--buildersbot-text-md);
+}
+
+.provider-model-search:focus-visible {
+  border-color: var(--ui-menu-edge);
+}
+
+.provider-model-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.provider-model-group {
+  padding: var(--buildersbot-space-2) var(--ui-menu-inset) var(--buildersbot-space-1);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: 500;
+}

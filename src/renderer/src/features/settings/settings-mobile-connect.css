@@ -1,0 +1,429 @@
+/* Mobile Connect: the phones as cards. "Add phone" opens a dialog with one code, the address of the
+ * web app, which the phone adds to its Home Screen. The code holds no sign-in secret. */
+.settings-mobile-app-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--buildersbot-space-1-5);
+}
+
+.settings-mobile-app-tab > svg {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  flex: 0 0 auto;
+}
+
+.settings-mobile-app-qr-logo {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+/* The code and the tag that says what it opens. */
+.settings-mobile-qr {
+  display: grid;
+  justify-items: center;
+  gap: var(--buildersbot-space-2);
+}
+
+.settings-mobile-qr .ui-qr-code {
+  overflow: hidden;
+  border-radius: var(--buildersbot-radius-md);
+}
+
+/* A new code settles in, so a change of code reads as a new code. */
+.settings-mobile-qr-code {
+  animation: settings-mobile-qr-in var(--buildersbot-duration-overlay) var(--buildersbot-ease-out);
+}
+
+.settings-mobile-qr-slot {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: var(--buildersbot-space-2);
+  border: 1px dashed var(--buildersbot-border-strong);
+  border-radius: var(--buildersbot-radius-md);
+}
+
+.settings-mobile-qr-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--buildersbot-space-1-5);
+  min-height: 24px;
+  padding: 0 var(--buildersbot-space-2);
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-bg-control);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-medium);
+  white-space: nowrap;
+}
+
+.settings-mobile-qr-tag > svg {
+  width: var(--buildersbot-icon-xs);
+  height: var(--buildersbot-icon-xs);
+  flex: 0 0 auto;
+}
+
+.settings-mobile-qr-tag[data-kind="web"] {
+  background: var(--buildersbot-accent-soft);
+  color: var(--buildersbot-accent-text);
+}
+
+.settings-mobile-phones {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--buildersbot-space-2);
+}
+
+/* Whether a phone can reach this computer, with its error under it. */
+.settings-mobile-reach {
+  display: grid;
+  gap: var(--buildersbot-space-2);
+}
+
+.settings-mobile-phones-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  justify-items: center;
+  gap: var(--buildersbot-space-2);
+  padding: var(--buildersbot-space-8) var(--buildersbot-space-6);
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-bg-surface);
+  text-align: center;
+}
+
+.settings-mobile-phones-empty > .ui-button {
+  margin-top: var(--buildersbot-space-2);
+}
+
+.settings-mobile-phones-empty-title,
+.settings-mobile-phone-name {
+  color: var(--buildersbot-text-primary);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.settings-mobile-phones-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--buildersbot-space-1);
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-accent-soft);
+  color: var(--buildersbot-accent-text);
+}
+
+.settings-mobile-phones-empty-icon > svg {
+  width: var(--buildersbot-icon-lg);
+  height: var(--buildersbot-icon-lg);
+}
+
+.settings-mobile-phone-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--buildersbot-space-3);
+  min-width: 0;
+  padding: var(--buildersbot-space-3) var(--buildersbot-space-4);
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-bg-surface);
+  /* A phone that signs in while the tab is open fades into the grid. */
+  transition: opacity var(--buildersbot-duration-overlay) var(--buildersbot-ease-out);
+}
+
+@starting-style {
+  .settings-mobile-phone-card {
+    opacity: 0;
+  }
+}
+
+.settings-mobile-phone-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--buildersbot-radius-md);
+  background: var(--buildersbot-bg-control-active);
+  color: var(--buildersbot-text-secondary);
+}
+
+.settings-mobile-phone-icon > svg {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+}
+
+.settings-mobile-phone-copy {
+  min-width: 0;
+  display: grid;
+  flex: 1;
+  gap: var(--buildersbot-space-0-5);
+}
+
+.settings-mobile-phone-via {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--buildersbot-space-1);
+  margin-top: var(--buildersbot-space-1);
+  color: var(--buildersbot-text-dim);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.settings-mobile-phone-via > svg {
+  width: var(--buildersbot-icon-xs);
+  height: var(--buildersbot-icon-xs);
+}
+
+/* How devices connect: the current route as a chip, and both routes in a popover. */
+.settings-mobile-route-chip.ui-button > svg:last-child {
+  width: var(--buildersbot-icon-xs);
+  height: var(--buildersbot-icon-xs);
+  color: var(--buildersbot-text-dim);
+}
+
+.settings-mobile-route-popover.ui-popover-menu-surface {
+  width: 340px;
+  display: grid;
+  gap: var(--buildersbot-space-1);
+  padding: var(--buildersbot-space-3);
+}
+
+.settings-mobile-route-popover-title {
+  margin: 0;
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.settings-mobile-route-popover-description {
+  margin: 0 0 var(--buildersbot-space-2);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+/* The dialog: one code per screen. */
+.settings-mobile-dialog.ui-dialog-content {
+  width: min(460px, 100%);
+  display: grid;
+  overflow: hidden;
+  outline: 0;
+  background: var(--buildersbot-bg-sidebar);
+}
+
+.settings-mobile-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--buildersbot-space-4) var(--buildersbot-space-4) 0 var(--buildersbot-space-6);
+}
+
+.settings-mobile-dialog-title {
+  margin: 0;
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-xl);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.settings-mobile-dialog-body {
+  min-height: 300px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--buildersbot-space-4);
+  padding: var(--buildersbot-space-4) var(--buildersbot-space-6) var(--buildersbot-space-6);
+  text-align: center;
+}
+
+.settings-mobile-dialog-note {
+  max-width: 320px;
+}
+
+.settings-mobile-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-2);
+  padding: var(--buildersbot-space-3) var(--buildersbot-space-4);
+  border-top: 1px solid var(--buildersbot-border);
+}
+
+.settings-mobile-choices {
+  width: 100%;
+  display: grid;
+  gap: var(--buildersbot-space-2);
+}
+
+.settings-mobile-choice.ui-button {
+  height: auto;
+  justify-content: flex-start;
+  gap: var(--buildersbot-space-3);
+  padding: var(--buildersbot-space-3) var(--buildersbot-space-4);
+  text-align: left;
+  white-space: normal;
+}
+
+.settings-mobile-choice.ui-button > svg {
+  width: var(--buildersbot-icon-md);
+  height: var(--buildersbot-icon-md);
+  color: var(--buildersbot-text-secondary);
+}
+
+.settings-mobile-choice-text {
+  display: grid;
+  gap: var(--buildersbot-space-0-5);
+}
+
+.settings-mobile-choice-title {
+  color: var(--buildersbot-text-primary);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.settings-mobile-choice-hint {
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-regular);
+}
+
+.settings-mobile-steps {
+  display: grid;
+  gap: var(--buildersbot-space-1-5);
+  margin: 0;
+  padding-left: var(--buildersbot-space-4);
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+  line-height: var(--buildersbot-leading-sm);
+  text-align: left;
+}
+
+.settings-mobile-steps > li::marker {
+  color: var(--buildersbot-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-mobile-enter {
+  animation: settings-mobile-enter var(--buildersbot-duration-slow) var(--buildersbot-ease-out);
+}
+
+@keyframes settings-mobile-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes settings-mobile-qr-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-mobile-phone-card {
+    transition: none;
+  }
+
+  .settings-mobile-enter,
+  .settings-mobile-qr-code {
+    animation: none;
+  }
+}
+
+/* How devices connect: two cards with a radio dot, as in the sound theme picker. */
+.settings-mobile-route-choice {
+  display: grid;
+  gap: var(--buildersbot-space-2);
+}
+
+.settings-mobile-route-option {
+  display: flex;
+  min-width: 0;
+}
+
+.settings-mobile-route-card {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: var(--buildersbot-space-3);
+  min-width: 0;
+  padding: var(--buildersbot-space-3) var(--buildersbot-space-4);
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-bg-control);
+  box-shadow: inset 0 0 0 1px var(--buildersbot-border);
+  cursor: pointer;
+  transition-property: background-color, box-shadow;
+  transition-duration: var(--buildersbot-duration-hover), var(--buildersbot-duration-normal);
+  transition-timing-function: var(--buildersbot-ease-out);
+}
+
+.settings-mobile-route-card:hover {
+  background: var(--buildersbot-bg-control-hover);
+}
+
+.settings-mobile-route-card[data-disabled] {
+  cursor: default;
+}
+
+.settings-mobile-route-card[data-checked] {
+  box-shadow:
+    inset 0 0 0 1.5px var(--buildersbot-accent),
+    0 1px 3px var(--buildersbot-shadow-popover-ambient);
+}
+
+/* A ring, filled when the route is selected. */
+.settings-mobile-route-dot {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: var(--buildersbot-icon-md);
+  height: var(--buildersbot-icon-md);
+  margin-top: 1px;
+  border-radius: var(--buildersbot-radius-pill);
+  box-shadow: inset 0 0 0 1.5px var(--buildersbot-text-muted);
+  transition: box-shadow var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
+}
+
+.settings-mobile-route-dot::after {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-accent);
+  content: "";
+  transform: scale(0);
+  transition: transform var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
+}
+
+.settings-mobile-route-card[data-checked] .settings-mobile-route-dot {
+  box-shadow: inset 0 0 0 1.5px var(--buildersbot-accent);
+}
+
+.settings-mobile-route-card[data-checked] .settings-mobile-route-dot::after {
+  transform: scale(1);
+}
+
+.settings-mobile-route-option:has(:focus-visible) .settings-mobile-route-card {
+  box-shadow: var(--buildersbot-focus-ring);
+}
+
+.settings-mobile-route-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--buildersbot-space-1);
+  min-width: 0;
+}
+
+.settings-mobile-route-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-medium);
+}
+
+.settings-mobile-route-hint {
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
