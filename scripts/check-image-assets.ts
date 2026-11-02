@@ -11,6 +11,8 @@ const ALLOWED_DIRECTORIES = [
   "src/renderer/stories/assets/",
   // Expo icons and splash screens.
   "apps/mobile/assets/",
+  // Icons of the Chrome extension, referenced by its manifest.
+  "apps/chrome-extension/icons/",
   // Public site files, news and guide art, and guide images.
   "apps/auth-api/public/",
   "apps/auth-api/content-art/",
