@@ -113,8 +113,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The metadata guard reads every commit, its author and its trailers.
+          # The metadata guard reads every commit, its author, its trailers and the signed tags.
           fetch-depth: 0
+          fetch-tags: true
 
       - name: Set up Bun
         uses: ./.github/actions/setup-bun

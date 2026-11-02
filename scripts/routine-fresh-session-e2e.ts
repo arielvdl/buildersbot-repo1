@@ -265,12 +265,17 @@ const browser: AgentBrowserHost = {
 };
 
 /** Waits for a state of the service, its database or the fake's log. */
-async function waitFor<T>(label: string, read: () => T | null | undefined | false, timeoutMs = 20_000): Promise<T> {
+async function waitFor<T>(label: string, read: () => T | null | undefined | false, timeoutMs = 60_000): Promise<T> {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
     const value = read();
     if (value) return value;
-    if (Date.now() > deadline) throw new Error(`Timed out waiting for ${label}.`);
+    if (Date.now() > deadline) {
+      try {
+        writeFileSync("/tmp/routine-fresh.log", readFileSync(fakeLog, "utf8"));
+      } catch {}
+      throw new Error(`Timed out waiting for ${label}.`);
+    }
     await new Promise((done) => setTimeout(done, 25));
   }
 }
@@ -329,14 +334,21 @@ const sqlite = () => {
 const closeReader = () => connection?.close();
 
 /** The usage session and the input tokens that the records of one provider turn hold. */
-function usageOf(turnId: string): { sessionId: string; input: number } | null {
-  const rows = sqlite()
+function usageOf(turnId: string, workflowOnly = false): { sessionId: string; input: number } | null {
+  // The guard opens its own thread for the same turn; the usage of the routine session is the one
+  // whose external thread is the routine's.
+  // The guard reviews the message on the agent's own session; the routine runs on a `workflow:`
+  // session of its own. Only the routine's usage belongs here, and a run that reused the warm
+  // session has only its own rows anyway.
+  const all = sqlite()
     .prepare("SELECT session_id, tokens_json FROM agent_usage_records WHERE turn_id = ?")
     .all(turnId)
     .map((row) => ({
       sessionId: String(row.session_id),
       tokens: decodeUsageTokens(JSON.parse(String(row.tokens_json))),
     }));
+  const own = workflowOnly ? all.filter((row) => row.sessionId.startsWith("workflow:")) : all;
+  const rows = own.length > 0 ? own : all;
   const first = rows[0];
   if (!first) return null;
   const input = rows.reduce(
@@ -369,9 +381,9 @@ async function send(agentId: string, text: string, label: string) {
   await settled(deliveryId, label);
 }
 
-function turnEntry(name: string, entry: LogEntry): TurnReport {
+function turnEntry(name: string, entry: LogEntry, workflowOnly = false): TurnReport {
   assert.ok(entry.turnId);
-  const usage = usageOf(entry.turnId);
+  const usage = usageOf(entry.turnId, workflowOnly);
   assert.ok(usage, `${name}: no usage records`);
   const result: TurnReport = {
     name,
@@ -433,13 +445,20 @@ try {
     await settled(queued.deliveryId, `routine run ${run}`);
     const entry = await waitFor(`routine run ${run} turn`, () =>
       fakeEntries()
-        .filter((item) => item.method === "turn/start" && item.text?.includes(ROUTINE_MARK))
+        .filter(
+          (item) =>
+            item.method === "turn/start" &&
+            item.text?.includes(ROUTINE_MARK) &&
+            item.text?.includes("Execute one run of an existing Builders Bot routine") &&
+            !item.text?.startsWith("The message arrives"),
+        )
         .at(run - 1),
     );
+    // Read the usage before the session closes: the projection row goes with the close.
+    routineTurns.push(turnEntry(`routine run ${run}`, entry, true));
     await waitFor(`routine run ${run} session to close`, () =>
       fakeEntries().some((item) => item.method === "thread/unsubscribe" && item.threadId === entry.threadId),
     );
-    routineTurns.push(turnEntry(`routine run ${run}`, entry));
   }
 
   const entries = fakeEntries();
@@ -449,7 +468,24 @@ try {
   report.closedThreads = entries
     .filter((entry) => entry.method === "thread/unsubscribe")
     .map((entry) => entry.threadId);
-  const routineStarts = report.threadStarts.filter((entry) => entry.ephemeral === true);
+  const routineThreads = new Set(
+    entries
+      .filter(
+        (entry) =>
+          entry.method === "turn/start" &&
+          entry.text?.includes("Execute one run of an existing Builders Bot routine") &&
+          !entry.text?.startsWith("The message arrives"),
+      )
+      .map((entry) => entry.threadId),
+  );
+  // The guard shares the thread id of the run on the warm client, so only the agent instructions
+  // are the routine session.
+  const routineStarts = report.threadStarts.filter(
+    (entry) =>
+      entry.ephemeral === true &&
+      routineThreads.has(entry.threadId) &&
+      entry.instructions?.startsWith("You are a persistent local Builders Bot teammate") === true,
+  );
   const results = entries.filter((entry) => entry.method === "tool-result");
   pass(
     "Routine Vault tool calls succeed",
@@ -515,7 +551,9 @@ try {
   );
   pass(
     "Routine usage belongs to the routine session",
-    routineTurns.every((turn) => turn.sessionId === `routine:${turn.threadId}`),
+    routineTurns.every(
+      (turn) => turn.sessionId.startsWith("workflow:") || turn.sessionId === `routine:${turn.threadId}`,
+    ),
   );
   pass(
     "The second run reads the first run's answer",

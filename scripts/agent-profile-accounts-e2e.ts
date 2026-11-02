@@ -318,6 +318,21 @@ try {
       .providers?.find((row) => row.id === "codex")
       ?.accounts?.some((account) => account.id === second.id && account.state === "connected"),
   );
+  // The user already let the worker switch backups without asking. The coordinator may then add an
+  // account without asking for the automatic switch as well.
+  await runCauseEffect(
+    agents.updateAgent({
+      agentId: worker.id,
+      providerAccountId: second.id,
+      backupModels: {
+        automatic: true,
+        order: [
+          { provider: "codex", model: MODEL },
+          { provider: "codex", model: MODEL, providerAccountId: second.id },
+        ],
+      },
+    }),
+  );
 
   // 1. list_models lists both accounts, the provider's own sign-in first, without emails or folders.
   const listed = await callTool("list models", coordinator.id, "list_models", { provider: "codex" });

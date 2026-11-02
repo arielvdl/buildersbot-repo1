@@ -438,8 +438,12 @@ try {
   );
   pass("The run's answer shows in the chat", turnAnswer(checker.id, healthRun.delivery.turnId ?? "") === FAILED_ANSWER);
   pass("A Test-run turn completes as usual", turnCompleted(healthRun.delivery.turnId)?.status === "completed");
+  // The guard also opens a turn with the same id; the routine brief is the one with the task.
   const healthPrompt = fakeEntries().find(
-    (entry) => entry.method === "turn/start" && entry.turnId === healthRun.delivery.turnId,
+    (entry) =>
+      entry.method === "turn/start" &&
+      entry.turnId === healthRun.delivery.turnId &&
+      entry.text?.includes("--- routine task ---"),
   )?.text;
   pass("The Test-run prompt names the tool", healthPrompt?.includes("call the routine_report_failure tool") === true);
   const healthTransitions = (await runCauseEffect(agents.readConversation(checker.id))).messages
@@ -521,7 +525,10 @@ try {
     noUpdateAfterFailure,
   );
   const scriptPrompt = fakeEntries().find(
-    (entry) => entry.method === "turn/start" && entry.turnId === quietFailedRun.delivery.turnId,
+    (entry) =>
+      entry.method === "turn/start" &&
+      entry.turnId === quietFailedRun.delivery.turnId &&
+      entry.text?.includes("--- routine task ---"),
   )?.text;
   pass("The script-run prompt names the tool", scriptPrompt?.includes("call the routine_report_failure tool") === true);
 

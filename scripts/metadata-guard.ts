@@ -39,6 +39,8 @@ const REPOSITORY_URL = `git+${ORIGIN_URL}`;
 const BUGS_URL = "https://github.com/nextlevelcommunity/buildersbot/issues";
 const HOMEPAGE_URL = "https://buildersbot.culturabuilder.com";
 const TAG = /^v\d+\.\d+\.\d+$/u;
+/** The build publishes its own artifact tag; it is not a release of the app. */
+const RUNTIME_TAG = /^remote-desktop-runtime-[0-9a-f]{64}$/u;
 /** The fields of a manifest that must point at the new repository and site. Each is optional. */
 const MANIFEST = z.object({
   repository: z.union([z.string(), z.object({ url: z.string().optional() })]).optional(),
@@ -175,6 +177,7 @@ await check("every tag is a three-number version, and signed", () => {
   const tags = git("tag", "--list").split("\n").filter(Boolean);
   const wrong: string[] = [];
   for (const tag of tags) {
+    if (RUNTIME_TAG.test(tag)) continue;
     if (!TAG.test(tag)) {
       wrong.push(`  ${tag}: not v<major>.<minor>.<patch>`);
       continue;
