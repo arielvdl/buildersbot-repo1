@@ -35,21 +35,23 @@ const base: StatusView = {
   platform: "mac",
 };
 
+const aurora: ProjectView = {
+  projectKey: "p1",
+  title: "Loja Aurora",
+  color: "#007cf7",
+  paused: false,
+  pausedByPerson: false,
+  tabs: 3,
+  agents: [
+    { label: "Ana", initials: "AN", active: true },
+    { label: "Bruno", initials: "BR", active: false },
+  ],
+  blocked: ["https://www.itau.com.br"],
+  unlocked: ["https://docs.google.com"],
+};
+
 const projects: ProjectView[] = [
-  {
-    projectKey: "p1",
-    title: "Loja Aurora",
-    color: "#007cf7",
-    paused: false,
-    pausedByPerson: false,
-    tabs: 3,
-    agents: [
-      { label: "Ana", initials: "AN", active: true },
-      { label: "Bruno", initials: "BR", active: false },
-    ],
-    blocked: ["https://www.itau.com.br"],
-    unlocked: ["https://docs.google.com"],
-  },
+  aurora,
   {
     projectKey: "p2",
     title: "Relatórios de vendas",
@@ -84,7 +86,7 @@ const SHOTS: Shot[] = [
       ...base,
       projects: [
         {
-          ...projects[0],
+          ...aurora,
           title: "Pesquisa de concorrentes e preços para a campanha de fim de ano da loja",
           agents: Array.from({ length: 12 }, (_, index) => ({
             label: `Agente ${index + 1}`,
