@@ -146,9 +146,9 @@ export class QueueControls {
     });
   }
 
-  /** The turn that holds the agent's own chat: of the chat itself, or of a channel or messaging thread. */
+  /** The turn of the line of the agent's own chat: of the chat itself, or of a messaging thread. Never a tab's. */
   #laneTurn(agentId: string): LaneTurn | null {
-    const snapshot = this.#conversation.workingSnapshot(agentId);
+    const snapshot = this.#conversation.mainLaneSnapshot(agentId);
     if (!snapshot?.activeTurnId) return null;
     const ownThreadId = this.#store.list().find((agent) => agent.id === agentId)?.threadId ?? null;
     return {

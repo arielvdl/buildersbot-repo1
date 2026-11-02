@@ -1170,7 +1170,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         emit: (event) => this.#emit(event),
         emitError: (code, error, agentId) => this.#emitError(code, error, agentId),
         // Read late: `channels` is built after this.
-        queueHold: (agentId) => this.channels.queueHold(agentId),
+        // Only a provider that runs one turn at a time makes the chat wait for channel work.
+        queueHold: (agentId) => (this.#tasks.oneTurnAtATime(agentId) ? this.channels.queueHold(agentId) : null),
       },
     });
     this.#reader = new ConversationReader({
@@ -1302,12 +1303,14 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       forgetThread: (threadId) => this.#forgetExecutionThread(threadId).pipe(toChannelOperationError),
       loadedSnapshot: (threadId) => this.#conversation.loadedExecutionSnapshot(threadId),
       // A held agent gets no channel assignment: one that waited for the reset would hold its
-      // resources. A channel turn runs beside the agent's tasks and its other channel tabs, unless its
-      // provider runs one turn of the agent at a time. The agent's own chat holds new channel work
-      // while it runs, and while a message of the chat that came before the request waits.
+      // resources. A channel turn runs beside the agent's tasks, its own chat and its other channel
+      // tabs, unless its provider runs one turn of the agent at a time. Only that provider holds new
+      // channel work while the agent's own chat runs, and while a message of the chat that came
+      // before the request waits.
       busy: (agentId, since) => {
         if (!this.#usageLimits.mayDrain(agentId)) return true;
-        if (this.#tasks.oneTurnAtATime(agentId) && this.#conversation.anyWorkingSnapshot(agentId)) return true;
+        if (!this.#tasks.oneTurnAtATime(agentId)) return false;
+        if (this.#conversation.anyWorkingSnapshot(agentId)) return true;
         const chatTurn = this.#conversation
           .workingSnapshots(agentId)
           .some((snapshot) => !snapshot.threadId || !this.channels.store.channelForThread(snapshot.threadId));
@@ -1401,11 +1404,12 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       channelRoutinesChanged: (channelId) => this.#emit({ type: "channel-routines-changed", channelId }),
       routinesHeld: () => this.#routineTimer.held,
     });
+    this.#conversation.bindTabThreads((threadId) => this.channels.store.channelForThread(threadId) !== null);
     this.messaging = new MessagingThreads(store.database, mailbox, {
       schedule: (agentId) => this.#drain.scheduleDrain(agentId),
       queueChanged: (agentId) => this.#mailboxSync.emitQueue(agentId),
       busy: (agentId) =>
-        Boolean(this.#conversation.workingSnapshot(agentId)?.activeTurnId || this.#mailbox.nextQueued(agentId)),
+        Boolean(this.#conversation.mainLaneSnapshot(agentId)?.activeTurnId || this.#mailbox.nextQueued(agentId)),
       interrupt: (agentId, turnId, threadId) => this.interrupt(agentId, turnId, threadId).pipe(toMessagingThreadFailed),
       forgetThread: (threadId) => this.#forgetExecutionThread(threadId).pipe(toMessagingThreadFailed),
       ownChat: (threadId) => this.#store.ownsThread(threadId),
@@ -3903,11 +3907,11 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     const threadId = yield* lifecycleStep("clear agent context", () => {
       const agent = this.#conversation.requireKnownAgent(agentId);
       const activeTurn =
-        this.#conversation.workingSnapshot(agentId)?.activeTurnId ??
+        this.#conversation.mainLaneSnapshot(agentId)?.activeTurnId ??
         (agent.threadId ? this.#store.database.readActiveTurnId(agentId, agent.threadId) : null);
       if (
         activeTurn ||
-        this.#mailbox.hasUnfinishedDeliveryOutsideTasks(agentId) ||
+        this.#mailbox.hasUnfinishedMainLaneDelivery(agentId, this.#tasks.oneTurnAtATime(agentId)) ||
         this.#threads.mainContextBusy(agent)
       ) {
         throw new ContextResetBusyError(sourceText("error.agent.waitBeforeClearContext"));
@@ -3953,11 +3957,11 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     const externalThreadId = yield* lifecycleStep("compact agent context", () => {
       const agent = this.#conversation.requireKnownAgent(agentId);
       const activeTurn =
-        this.#conversation.workingSnapshot(agentId)?.activeTurnId ??
+        this.#conversation.mainLaneSnapshot(agentId)?.activeTurnId ??
         (agent.threadId ? this.#store.database.readActiveTurnId(agentId, agent.threadId) : null);
       if (
         activeTurn ||
-        this.#mailbox.hasUnfinishedDeliveryOutsideTasks(agentId) ||
+        this.#mailbox.hasUnfinishedMainLaneDelivery(agentId, this.#tasks.oneTurnAtATime(agentId)) ||
         this.#threads.mainContextBusy(agent)
       )
         throw new Error(sourceText("error.agent.waitBeforeCompactContext"));

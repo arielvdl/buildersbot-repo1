@@ -94,7 +94,7 @@ export class AgentInterruptTool {
     let deliveries: DeliveryContext[] = [];
     if (turnId) {
       deliveries = this.#mailbox.findDeliveriesByTurn(agentId, turnId);
-      const snapshot = this.#conversation.workingSnapshot(agentId);
+      const snapshot = this.#conversation.mainLaneSnapshot(agentId);
       if (
         (snapshot?.activeTurnId === turnId && this.#conversation.isExecutionThread(snapshot.threadId)) ||
         deliveries.some((context) => this.#channels.store.assignmentForDelivery(context.delivery.id))
@@ -132,14 +132,17 @@ export class AgentInterruptTool {
   }, Effect.uninterruptible);
 
   #activeTurnId(agentId: string): string | null {
-    const snapshotTurnId = this.#conversation.workingSnapshot(agentId)?.activeTurnId;
+    const snapshotTurnId = this.#conversation.mainLaneSnapshot(agentId)?.activeTurnId;
     if (snapshotTurnId) return snapshotTurnId;
     return (
       this.#mailbox
         .unresolvedDeliveries()
         .find(
           ({ delivery }) =>
-            delivery.recipientAgentId === agentId && delivery.turnId && !this.#mailbox.taskIdForDelivery(delivery.id),
+            delivery.recipientAgentId === agentId &&
+            delivery.turnId &&
+            !this.#mailbox.taskIdForDelivery(delivery.id) &&
+            !this.#mailbox.tabForDelivery(delivery.id),
         )?.delivery.turnId ?? null
     );
   }

@@ -2856,6 +2856,22 @@ export class MailboxStore {
     );
   }
 
+  /**
+   * As {@link hasUnfinishedDeliveryOutsideTasks}, and without the work of channel tabs when
+   * `withTabs` is false: a tab is its own line of work, so a new chat or a compaction of the agent's
+   * own chat does not wait for it. A provider that runs one turn at a time asks with `withTabs`.
+   */
+  hasUnfinishedMainLaneDelivery(agentId: string, withTabs: boolean): boolean {
+    if (withTabs) return this.hasUnfinishedDeliveryOutsideTasks(agentId);
+    const messages = this.#messagesById();
+    return this.#state.deliveries.some(
+      (delivery) =>
+        delivery.recipientAgentId === agentId &&
+        isActiveDelivery(delivery) &&
+        this.#inLane(delivery, null, null, messages),
+    );
+  }
+
   /** As {@link hasUnfinishedDelivery}, without the `queued` deliveries that a usage limit holds. */
   hasStartedDelivery(agentId: string): boolean {
     return this.#state.deliveries.some(

@@ -485,10 +485,8 @@ export class DrainScheduler {
         .filter((other) => other !== taskId && this.#laneRunning(taskLane(agentId, other))).length;
       if (running >= this.#tasks.limit(agentId)) return "task-limit";
     }
-    // A channel tab waits for a turn of the agent's own chat or messaging work, as that chat waits for
-    // the channel work (`channel`). The channel gives a tab no work while the chat has a message that
-    // came first, so the two do not wait for each other.
-    if (tab !== null && this.#laneRunning(mainLane(agentId))) return "agent-chat";
+    // The agent's own chat and its channel tabs are lines of their own: a turn of one does not hold
+    // the other. A provider that runs one turn at a time holds them above (`one-turn`).
     // The agent's own process restarts when its access or account changed. A turn of another lane
     // runs on it, so this lane waits for that turn to end.
     const agent = this.#store.list().find((candidate) => candidate.id === agentId);
@@ -500,10 +498,12 @@ export class DrainScheduler {
       return "agent-client-changing";
     // A hidden agent finishes the turn that runs. Its queued messages wait until the user restores it.
     if (agent?.hiddenAt !== undefined) return "hidden";
-    // Channel work holds only the agent's own chat. Its tasks and its other tabs run beside it.
+    // Only a provider that runs one turn of the agent at a time holds its chat for channel work. For
+    // any other, the chat and the tabs run beside each other. Tasks and tabs are never held here.
     if (
       taskId === null &&
       tab === null &&
+      this.#tasks.oneTurnAtATime(agentId) &&
       (besideTurn
         ? (this.#channels?.reservesBeside(agentId, besideTurn.turnId) ?? false)
         : !(this.#channels?.mayDrain(agentId) ?? true))

@@ -510,6 +510,31 @@ export class ConversationRuntime {
     )?.[1];
   }
 
+  #isTabThread: (threadId: string) => boolean = () => false;
+
+  /**
+   * Tells the runtime which threads are channel tabs. The channel service is built after the runtime,
+   * so `AgentService` gives this once both exist. Until then, no thread is a tab.
+   */
+  bindTabThreads(isTabThread: (threadId: string) => boolean): void {
+    this.#isTabThread = isTabThread;
+  }
+
+  /**
+   * The running turn of the line of the agent's own chat, which its messaging work shares: no task
+   * thread and no channel tab. A channel tab is its own line, so a control of the chat (stop, force a
+   * message, a new chat, compact) never reads a turn of a tab.
+   */
+  mainLaneSnapshot(agentId: string): ConversationSnapshot | undefined {
+    return [...this.activeSnapshots()].find(
+      ([id, snapshot]) =>
+        id === agentId &&
+        snapshot.activeTurnId &&
+        !this.isTaskThread(snapshot.threadId) &&
+        !(snapshot.threadId !== null && this.#isTabThread(snapshot.threadId)),
+    )?.[1];
+  }
+
   /**
    * Every running turn of the agent's own chat and of the channel and messaging threads it serves. An
    * agent runs a turn in several channel tabs at the same time, so the drain reads them all.

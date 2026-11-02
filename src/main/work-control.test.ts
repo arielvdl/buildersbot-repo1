@@ -70,6 +70,8 @@ async function setup(
     schedule: () => {},
     interrupt: () => Effect.void,
     busy: (agentId) => busyAgents.has(agentId),
+    // Two agents fill a tab here: the test needs a small tab, whatever the default is.
+    parallelLimit: () => 2,
     usageLimited: (agentId) => limited.has(agentId),
     lane: () => lane,
     awaitDrain: () => Effect.void,
