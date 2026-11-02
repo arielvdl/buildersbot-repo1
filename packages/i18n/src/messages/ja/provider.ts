@@ -16,6 +16,7 @@ export const messages = {
   "provider.refreshLabel": "プロバイダーを再確認",
   "provider.refreshingLabel": "プロバイダーを確認中",
   "provider.refreshing": "確認中…",
+  "provider.recommended": "おすすめ",
 
   "provider.status.connecting": "接続中",
   "provider.status.updateAvailable": "アップデートあり",

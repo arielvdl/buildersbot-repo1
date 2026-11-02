@@ -30,6 +30,7 @@ export const messages = {
   "provider.refreshLabel": "Обновить провайдеров",
   "provider.refreshingLabel": "Проверка провайдеров",
   "provider.refreshing": "Проверка…",
+  "provider.recommended": "Рекомендуется",
 
   "provider.status.connecting": "Подключение",
   "provider.status.updateAvailable": "Доступно обновление",

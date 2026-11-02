@@ -49,7 +49,7 @@ export const messages = {
   "onboarding.provider.openrouterKey": "OpenRouter API キーで使う多数のモデル",
   "onboarding.provider.tryFree": "無料で試す",
   "onboarding.provider.noSignIn": "サインイン不要",
-  "onboarding.provider.more": "その他のプロバイダー",
+  "onboarding.provider.more": "その他のオプション",
   "onboarding.provider.moreTitle": "リストにありませんか？",
   "onboarding.provider.moreDetail": "その他のプランはこちら",
   "onboarding.provider.moreSearch": "プロバイダーを検索",

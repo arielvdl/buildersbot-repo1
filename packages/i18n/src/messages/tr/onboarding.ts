@@ -50,7 +50,7 @@ export const messages = {
   "onboarding.provider.openrouterKey": "OpenRouter API anahtarıyla birçok model",
   "onboarding.provider.tryFree": "Ücretsiz deneyin",
   "onboarding.provider.noSignIn": "Oturum açmak gerekmez",
-  "onboarding.provider.more": "Daha fazla sağlayıcı",
+  "onboarding.provider.more": "Daha fazla seçenek",
   "onboarding.provider.moreTitle": "Listede yok mu?",
   "onboarding.provider.moreDetail": "Daha fazla plan burada",
   "onboarding.provider.moreSearch": "Sağlayıcıları ara",

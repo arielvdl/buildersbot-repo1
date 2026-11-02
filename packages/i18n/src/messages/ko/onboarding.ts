@@ -46,7 +46,7 @@ export const messages = {
   "onboarding.provider.openrouterKey": "OpenRouter API 키로 쓰는 다양한 모델",
   "onboarding.provider.tryFree": "무료로 사용해 보기",
   "onboarding.provider.noSignIn": "로그인 필요 없음",
-  "onboarding.provider.more": "더 많은 제공자",
+  "onboarding.provider.more": "더 많은 옵션",
   "onboarding.provider.moreTitle": "목록에 없나요?",
   "onboarding.provider.moreDetail": "더 많은 요금제가 여기에 있어요",
   "onboarding.provider.moreSearch": "제공자 검색",

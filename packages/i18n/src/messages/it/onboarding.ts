@@ -47,7 +47,7 @@ export const messages = {
   "onboarding.provider.openrouterKey": "Molti modelli con una chiave API di OpenRouter",
   "onboarding.provider.tryFree": "Provalo gratis",
   "onboarding.provider.noSignIn": "Nessun accesso necessario",
-  "onboarding.provider.more": "Altri provider",
+  "onboarding.provider.more": "Altre opzioni",
   "onboarding.provider.moreTitle": "Non è nell'elenco?",
   "onboarding.provider.moreDetail": "Qui trovi altri piani",
   "onboarding.provider.moreSearch": "Cerca provider",

@@ -49,7 +49,7 @@ export const messages = {
   "onboarding.provider.openrouterKey": "Viele Modelle mit einem OpenRouter-API-Schlüssel",
   "onboarding.provider.tryFree": "Kostenlos ausprobieren",
   "onboarding.provider.noSignIn": "Keine Anmeldung erforderlich",
-  "onboarding.provider.more": "Weitere Anbieter",
+  "onboarding.provider.more": "Weitere Optionen",
   "onboarding.provider.moreTitle": "Nicht in der Liste?",
   "onboarding.provider.moreDetail": "Hier gibt es weitere Tarife",
   "onboarding.provider.moreSearch": "Anbieter suchen",

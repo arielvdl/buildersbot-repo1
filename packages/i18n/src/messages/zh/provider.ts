@@ -16,6 +16,7 @@ export const messages = {
   "provider.refreshLabel": "刷新服务商",
   "provider.refreshingLabel": "正在检查服务商",
   "provider.refreshing": "检查中…",
+  "provider.recommended": "推荐",
 
   // What a provider row reports about itself. A percentage while downloading is a number, not a
   // message, so it has no key.

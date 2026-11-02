@@ -15,6 +15,7 @@ export const messages = {
   "provider.refreshLabel": "Aanbieders vernieuwen",
   "provider.refreshingLabel": "Aanbieders controleren",
   "provider.refreshing": "Controleren…",
+  "provider.recommended": "Aanbevolen",
   "provider.status.connecting": "Verbinden",
   "provider.status.updateAvailable": "Update beschikbaar",
   "provider.status.settingUp": "Instellen",

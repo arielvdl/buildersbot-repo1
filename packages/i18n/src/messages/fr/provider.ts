@@ -19,6 +19,7 @@ export const messages = {
   "provider.refreshLabel": "Actualiser les fournisseurs",
   "provider.refreshingLabel": "Vérification des fournisseurs",
   "provider.refreshing": "Vérification…",
+  "provider.recommended": "Recommandé",
 
   // What a provider row reports about itself. A percentage while downloading is a number, not a
   // message, so it has no key.

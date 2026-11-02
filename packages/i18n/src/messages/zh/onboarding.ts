@@ -45,7 +45,7 @@ export const messages = {
   "onboarding.provider.openrouterKey": "使用 OpenRouter API 密钥的众多模型",
   "onboarding.provider.tryFree": "免费试用",
   "onboarding.provider.noSignIn": "无需登录",
-  "onboarding.provider.more": "更多服务商",
+  "onboarding.provider.more": "更多选项",
   "onboarding.provider.moreTitle": "不在列表中？",
   "onboarding.provider.moreDetail": "更多套餐在这里",
   "onboarding.provider.moreSearch": "搜索服务商",

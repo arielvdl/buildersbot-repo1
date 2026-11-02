@@ -24,6 +24,7 @@ export const messages = {
   "provider.refreshLabel": "Anbieter aktualisieren",
   "provider.refreshingLabel": "Anbieter werden geprüft",
   "provider.refreshing": "Wird geprüft…",
+  "provider.recommended": "Empfohlen",
   "provider.status.connecting": "Wird verbunden",
   "provider.status.updateAvailable": "Update verfügbar",
   "provider.status.settingUp": "Wird eingerichtet",

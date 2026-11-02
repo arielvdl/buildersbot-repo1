@@ -15,6 +15,7 @@ export const messages = {
   "provider.refreshLabel": "Sağlayıcıları yenile",
   "provider.refreshingLabel": "Sağlayıcılar denetleniyor",
   "provider.refreshing": "Denetleniyor…",
+  "provider.recommended": "Önerilen",
 
   "provider.status.connecting": "Bağlanıyor",
   "provider.status.updateAvailable": "Güncelleme mevcut",

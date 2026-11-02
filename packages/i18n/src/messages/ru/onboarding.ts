@@ -49,7 +49,7 @@ export const messages = {
   "onboarding.provider.openrouterKey": "Множество моделей с ключом API OpenRouter",
   "onboarding.provider.tryFree": "Попробовать бесплатно",
   "onboarding.provider.noSignIn": "Вход не нужен",
-  "onboarding.provider.more": "Другие провайдеры",
+  "onboarding.provider.more": "Другие варианты",
   "onboarding.provider.moreTitle": "Нет в списке?",
   "onboarding.provider.moreDetail": "Другие тарифы здесь",
   "onboarding.provider.moreSearch": "Поиск провайдеров",

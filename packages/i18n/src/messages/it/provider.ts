@@ -15,6 +15,7 @@ export const messages = {
   "provider.refreshLabel": "Aggiorna i provider",
   "provider.refreshingLabel": "Controllo dei provider",
   "provider.refreshing": "Controllo…",
+  "provider.recommended": "Consigliato",
 
   "provider.status.connecting": "Connessione",
   "provider.status.updateAvailable": "Aggiornamento disponibile",

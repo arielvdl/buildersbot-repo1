@@ -15,6 +15,7 @@ export const messages = {
   "provider.refreshLabel": "제공자 새로 고침",
   "provider.refreshingLabel": "제공자 확인 중",
   "provider.refreshing": "확인 중…",
+  "provider.recommended": "추천",
 
   "provider.status.connecting": "연결 중",
   "provider.status.updateAvailable": "업데이트 가능",
