@@ -11610,7 +11610,7 @@ a {
   height: 82%;
 }
 
-/* The panel is the face. The logo square shows only its eyes, and its color changes move to the panel. */
+/* The panel is the logo square. The logo shows only its cube, and its color changes move to the panel. */
 .brand-stage .app-logo-background {
   visibility: hidden;
 }

@@ -1,6 +1,7 @@
+import { APP_LOGO_CORNER, APP_LOGO_CUBE, APP_LOGO_SIZE } from "@buildersbot/brand/app-logo-shape";
 import { Pressable, View } from "react-native";
 import Animated from "react-native-reanimated";
-import Svg, { Polyline, Rect } from "react-native-svg";
+import Svg, { Circle, G, Path, Polyline, Rect } from "react-native-svg";
 import { useCSSVariable } from "uniwind";
 
 import { type AppLogoAnimation, useAppLogoMotion } from "@/features/auth/components/use-app-logo-motion";
@@ -12,14 +13,17 @@ export interface AppLogoProps {
   size?: number;
 }
 
-const VIEWBOX_SIZE = 240;
-const LEFT_EYE_CENTER_X = 68.88;
-const RIGHT_EYE_CENTER_X = 170.88;
-const EYE_CENTER_Y = 117;
-const LEFT_EYE_POINTS =
-  "43.55 93.61 64.69 81.41 36.48 108.04 79.67 83.11 35.93 122.88 91.58 90.74 38.9 132.69 97.66 98.76 42.44 138.88 100.43 105.4 46.9 143.83 101.97 112.04 55.08 149.51 101.83 122.52 73.01 152.43 94.14 140.23";
-const RIGHT_EYE_POINTS =
-  "145.65 93.61 166.79 81.41 140.83 101.52 175.58 81.46 138.3 109.53 183.18 83.63 137.55 117.43 189.67 87.33 139.67 129.39 197.88 95.78 142.92 136.32 201.52 102.48 149.03 143.86 204.07 112.08 159.14 150.37 203.51 124.75 169.28 152.61 199.82 134.98";
+// The cube of the app icon, as `AppLogo` of `@buildersbot/brand` draws it on the desktop. Each eye turns
+// around its own center (the `transform-origin` of `.app-logo-eye-left/right` in `logo.css`).
+const VIEWBOX_SIZE = APP_LOGO_SIZE;
+const LEFT_EYE_CENTER_X = 0.357 * VIEWBOX_SIZE;
+const RIGHT_EYE_CENTER_X = 0.463 * VIEWBOX_SIZE;
+const EYE_CENTER_Y = 0.464 * VIEWBOX_SIZE;
+const FACES = [
+  [APP_LOGO_CUBE.top, 1],
+  [APP_LOGO_CUBE.left, 0.88],
+  [APP_LOGO_CUBE.right, 0.72],
+] as const;
 
 function resolveColor(value: string | number | undefined, fallback: string): string {
   return String(value ?? fallback);
@@ -27,8 +31,8 @@ function resolveColor(value: string | number | undefined, fallback: string): str
 
 export function AppLogo({ animation = "none", interactive = false, size = VIEWBOX_SIZE }: AppLogoProps) {
   const { t } = useText();
-  const backgroundColor = resolveColor(useCSSVariable("--buildersbot-logo-production"), "#d6adf2");
-  const eyeColor = resolveColor(useCSSVariable("--buildersbot-logo-eye"), "#040007");
+  const backgroundColor = resolveColor(useCSSVariable("--buildersbot-logo-production"), "#98f94f");
+  const faceColor = resolveColor(useCSSVariable("--buildersbot-logo-eye"), "#040007");
   const { handlePressIn, leftEyeAnimatedStyle, rightEyeAnimatedStyle } = useAppLogoMotion({ animation, size });
   const eyeLayerStyle = {
     height: size,
@@ -37,6 +41,20 @@ export function AppLogo({ animation = "none", interactive = false, size = VIEWBO
     top: 0,
     width: size,
   };
+  const eye = (points: string) => (
+    <Svg width={size} height={size} viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}>
+      <G transform={APP_LOGO_CUBE.fit}>
+        <Polyline
+          points={points}
+          fill="none"
+          stroke={backgroundColor}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={4}
+        />
+      </G>
+    </Svg>
+  );
 
   const logo = (
     <View
@@ -45,7 +63,27 @@ export function AppLogo({ animation = "none", interactive = false, size = VIEWBO
       importantForAccessibility="no-hide-descendants"
     >
       <Svg width={size} height={size} viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}>
-        <Rect width={VIEWBOX_SIZE} height={VIEWBOX_SIZE} rx={50} ry={50} fill={backgroundColor} />
+        <Rect
+          width={VIEWBOX_SIZE}
+          height={VIEWBOX_SIZE}
+          rx={APP_LOGO_CORNER}
+          ry={APP_LOGO_CORNER}
+          fill={backgroundColor}
+        />
+        <G transform={APP_LOGO_CUBE.fit}>
+          {FACES.map(([d, opacity]) => (
+            <Path
+              key={d}
+              d={d}
+              fill={faceColor}
+              fillOpacity={opacity}
+              stroke={backgroundColor}
+              strokeWidth={1.1}
+              strokeLinejoin="round"
+            />
+          ))}
+          <Circle cx={APP_LOGO_CUBE.dot.cx} cy={APP_LOGO_CUBE.dot.cy} r={APP_LOGO_CUBE.dot.r} fill={backgroundColor} />
+        </G>
       </Svg>
 
       <Animated.View
@@ -56,16 +94,7 @@ export function AppLogo({ animation = "none", interactive = false, size = VIEWBO
           leftEyeAnimatedStyle,
         ]}
       >
-        <Svg width={size} height={size} viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}>
-          <Polyline
-            points={LEFT_EYE_POINTS}
-            fill="none"
-            stroke={eyeColor}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={9.5}
-          />
-        </Svg>
+        {eye(APP_LOGO_CUBE.eyes.left)}
       </Animated.View>
 
       <Animated.View
@@ -76,16 +105,7 @@ export function AppLogo({ animation = "none", interactive = false, size = VIEWBO
           rightEyeAnimatedStyle,
         ]}
       >
-        <Svg width={size} height={size} viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}>
-          <Polyline
-            points={RIGHT_EYE_POINTS}
-            fill="none"
-            stroke={eyeColor}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={9.5}
-          />
-        </Svg>
+        {eye(APP_LOGO_CUBE.eyes.right)}
       </Animated.View>
     </View>
   );

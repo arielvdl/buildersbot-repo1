@@ -18,7 +18,7 @@ import { copyBrandSvg, saveBrandPng, saveBrandZip } from "./brand-files";
 /** How long "Copied" stays on a copy button. */
 const COPIED_MS = 1600;
 
-// The /brand page: the mark on a lilac panel, then every logo file in three groups. Each logo is an
+// The /brand page: the mark on a panel of the logo color, then every logo file in three groups. Each logo is an
 // <img> of its served SVG file, so a right-click opens the browser's own image menu.
 export function BrandPage() {
   onSettled(() => landingAnalytics.start(document, window.location.hostname, BRAND_ROUTE));
@@ -47,7 +47,7 @@ export function BrandPage() {
 }
 
 /**
- * The face of the mark on a lilac panel. The eyes follow the pointer anywhere on the panel, a click
+ * The cube of the mark on a panel of the logo color. Its eyes follow the pointer anywhere on the panel, a click
  * on it winks, and five fast clicks make the whole panel flash the brand colors.
  */
 function BrandStage() {
