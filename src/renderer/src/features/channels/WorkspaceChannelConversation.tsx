@@ -1,6 +1,7 @@
 import type { BrowserTakeoverRequest, CentralAuthUser } from "@buildersbot/contracts/ipc";
 import { hasVisibleToasts } from "@buildersbot/ui";
-import { createMemo, Show } from "solid-js";
+import { createMemo, Loading, Show } from "solid-js";
+import { ChannelStageHost } from "../../lazy-views";
 import { useNavigation } from "../../navigation";
 import { usePlatform } from "../../platform";
 import { useTurns } from "../../turns";
@@ -20,6 +21,7 @@ import { usePresence } from "../team/team-context";
 import { useWindowPage } from "../window/window-page-context";
 import { ChannelErrorNotice } from "./ChannelConversationParts";
 import { createChannelConversation } from "./channel-conversation";
+import { channelStageSettingsFor } from "./channel-stage-preference";
 import { useChannels } from "./channels-context";
 
 /**
@@ -43,7 +45,7 @@ function DesktopChannelConversation(props: { channelId: string; account: () => C
   const { selectAgent, messageFocusRequest, globalSearchOpen } = useNavigation();
   const auth = useAuth();
   const { teamPresence, currentTeamMember } = usePresence();
-  const { activeServer, activeServerSupportsCapability, joinServerOpen } = useServers();
+  const { activeServer, activeServerId, activeServerSupportsCapability, joinServerOpen } = useServers();
   const { serverSettingsOpen } = useServerSettings();
   const { appSettingsOpen, skillsMarketplaceOpen, generalSettings } = useSettings();
   const { agentStatus, agentList, updateAgent, setAgentAvatar, userHiddenAgentIds } = useAgents();
@@ -90,6 +92,13 @@ function DesktopChannelConversation(props: { channelId: string; account: () => C
     <Conversation
       channel={view.source}
       notice={<ChannelErrorNotice />}
+      stage={
+        channelStageSettingsFor(activeServerId(), props.channelId).enabled ? (
+          <Loading>
+            <ChannelStageHost channelId={props.channelId} workingTurns={view.source.workingTurns} />
+          </Loading>
+        ) : undefined
+      }
       platform={platform.appInfo()?.platform}
       connectors={connectors.active}
       agentStatus={scope.loaded() ? agentStatus() : { ...agentStatus(), phase: "starting" }}

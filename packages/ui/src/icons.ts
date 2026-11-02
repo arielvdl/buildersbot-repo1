@@ -62,6 +62,7 @@ export { default as File } from "lucide-solid/icons/file";
 export { default as FileInput } from "lucide-solid/icons/file-input";
 export { default as FileText } from "lucide-solid/icons/file-text";
 export { default as Film } from "lucide-solid/icons/film";
+export { default as Flag } from "lucide-solid/icons/flag";
 export { default as Folder } from "lucide-solid/icons/folder";
 export { default as FolderInput } from "lucide-solid/icons/folder-input";
 export { default as FolderOpen } from "lucide-solid/icons/folder-open";

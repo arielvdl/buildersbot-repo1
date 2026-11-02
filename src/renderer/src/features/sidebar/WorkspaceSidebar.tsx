@@ -31,6 +31,7 @@ import { attentionByAgent } from "../agents/agent-runtime-snapshot";
 import { agentThreadAttention } from "../agents/agent-thread-attention";
 import { createAgentWorkingTurns } from "../agents/agent-working-turns";
 import { useAgents } from "../agents/agents-context";
+import { createChannelStageFlag } from "../channels/channel-stage-flag";
 import { readChannelLastTopics, saveChannelLastTopic } from "../channels/channel-tabs-model";
 import { useChannels } from "../channels/channels-context";
 import { useConversation } from "../conversation/conversation-context";
@@ -298,6 +299,7 @@ export function WorkspaceSidebar(props: { peopleEnabled: boolean }) {
     }
     return routines;
   });
+  const stageFlag = createChannelStageFlag(activeServerId, () => channels.state.selectedId);
   const storageCard = createStorageCard(activeServer);
   const machineCard = createMachineCard(activeServer);
   // A clear in Server settings frees space and can change an alert level, so both cards read
@@ -462,7 +464,7 @@ export function WorkspaceSidebar(props: { peopleEnabled: boolean }) {
       // Only Agents, Routines, Workflows and Schedule show the rail; another page has no rail column.
       sectionRail={
         layout.sectionRailVisible() && sectionRailShowsOn(windowPage.page())
-          ? { selectedId: selectedRailSectionId(), onSelect: selectRailSection }
+          ? { selectedId: selectedRailSectionId(), onSelect: selectRailSection, stage: stageFlag() }
           : undefined
       }
       sectionIconsSupported={activeServer()?.kind === "local" && activeServerSupportsCapability("sidebar-layout")}

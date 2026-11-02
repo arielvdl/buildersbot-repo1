@@ -129,6 +129,32 @@ const LID_SYMBOLS: Partial<Record<AvatarMood, () => JSX.Element>> = {
 };
 
 /**
+ * What an agent does in a channel stage, as a symbol on the lid. It stands in the place of the mood's
+ * symbol and moves nothing: the caller draws the motion. `waiting` and `failed` are moods already.
+ */
+export type AgentMarkActivity = "reading" | "thinking" | "editing" | "running" | "delegating" | "done";
+
+const ACTIVITY_SYMBOLS: Readonly<Record<AgentMarkActivity, () => JSX.Element>> = {
+  reading: () => (
+    <>
+      <circle cx="42" cy="42" r="20" />
+      <path d="M57 57 76 76" />
+    </>
+  ),
+  thinking: () => (
+    <>
+      {[24, 50, 76].map((x) => (
+        <circle cx={x} cy="50" r="7" fill="currentColor" stroke="none" />
+      ))}
+    </>
+  ),
+  editing: () => <path d="M34 30 14 50l20 20M66 30l20 20-20 20M56 24 44 76" />,
+  running: () => <path d="M22 32 44 50 22 68M52 72h28" />,
+  delegating: () => <path d="M18 50h58M56 30l22 20-22 20" />,
+  done: () => <path d="M22 52 42 72 80 28" />,
+};
+
+/**
  * The symbol of each role, on the right face. The classes name the part that moves while the agent
  * works: `sweep` goes from side to side, `bob` up and down, `flicker` goes on and off, `pulse` grows
  * and shrinks, and `dash` runs along its line.
@@ -231,6 +257,8 @@ const ROLE_SYMBOLS: Readonly<Record<AgentMarkRole, () => JSX.Element>> = {
 
 export interface AgentMarkProps {
   mood?: AvatarMood;
+  /** A symbol for the lid that stands in the place of the symbol of the mood. */
+  activity?: AgentMarkActivity | undefined;
   /** The emblem of the agent's role on the right face. Without one, the right face is plain. */
   role?: AgentMarkRole | null | undefined;
   /**
@@ -334,7 +362,7 @@ export function AgentMark(props: AgentMarkProps) {
             stroke-linecap="round"
             opacity="0.38"
           />
-          <Show when={LID_SYMBOLS[mood()]}>
+          <Show when={props.activity ? ACTIVITY_SYMBOLS[props.activity] : LID_SYMBOLS[mood()]}>
             {(symbol) => (
               <g
                 class="agent-mark-lid"

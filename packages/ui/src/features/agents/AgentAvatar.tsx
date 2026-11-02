@@ -107,7 +107,7 @@ let onScreenObserver: IntersectionObserver | undefined;
  * intersection with no area, so an intersection counts only with some area. The second threshold
  * makes the observer report the change from no area to some area. Returns the function that stops.
  */
-function observeOnScreen(element: Element, listener: (onScreen: boolean) => void): () => void {
+export function observeOnScreen(element: Element, listener: (onScreen: boolean) => void): () => void {
   if (typeof IntersectionObserver === "undefined") return () => {};
   onScreenObserver ??= new IntersectionObserver(
     (entries) => {

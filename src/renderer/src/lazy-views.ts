@@ -82,3 +82,7 @@ export const ServerOnboarding = lazy(() =>
 export const RoutineFlowsCanvas = lazy(() =>
   import("./features/routine-flows/RoutineFlowsCanvas").then((module) => ({ default: module.RoutineFlowsCanvas })),
 );
+/** The agent stage of a channel. Its chunk loads only when a channel turns the stage on. */
+export const ChannelStageHost = lazy(() =>
+  import("./features/channels/ChannelStageHost").then((module) => ({ default: module.ChannelStageHost })),
+);

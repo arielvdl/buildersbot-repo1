@@ -692,3 +692,74 @@
     transform: none;
   }
 }
+
+/* The flag of the agent stage, fixed under the list. A dot shows while the stage is on. */
+.section-rail-stage-flag {
+  position: relative;
+  flex: none;
+  margin-top: var(--buildersbot-space-2);
+}
+
+.section-rail-stage-flag[data-active]::after {
+  position: absolute;
+  top: var(--buildersbot-space-1-5);
+  right: var(--buildersbot-space-1-5);
+  width: 7px;
+  height: 7px;
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-success);
+  content: "";
+  pointer-events: none;
+}
+
+.section-rail-stage-settings {
+  display: flex;
+  width: 280px;
+  flex-direction: column;
+  gap: var(--buildersbot-space-3);
+  padding: var(--buildersbot-space-3);
+}
+
+.section-rail-stage-scope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--buildersbot-space-1-5);
+}
+
+.section-rail-stage-scope-label {
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.section-rail-stage-scope-option {
+  display: flex;
+  min-height: var(--buildersbot-control-sm);
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  font-size: var(--buildersbot-text-md);
+}
+
+.section-rail-stage-scope-option[data-disabled] {
+  opacity: 0.5;
+}
+
+.section-rail-stage-scope-dot {
+  display: grid;
+  width: var(--buildersbot-icon-md);
+  height: var(--buildersbot-icon-md);
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--buildersbot-border-strong);
+  border-radius: var(--buildersbot-radius-pill);
+}
+
+.section-rail-stage-scope-dot[data-checked] {
+  border-color: var(--buildersbot-accent);
+  background: radial-gradient(circle, var(--buildersbot-accent) 40%, transparent 45%);
+}
+
+.section-rail-stage-title {
+  margin: 0;
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-semibold);
+}

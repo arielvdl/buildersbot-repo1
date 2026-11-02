@@ -43,6 +43,26 @@ export type SidebarActivityFilter = "channels" | "agents" | "finished";
 export type SidebarRoutineFilter = "active" | "inactive" | "created" | "edited";
 
 /** The fields of a routine that the routine filter reads. */
+/** The flag at the foot of the section rail that sets the agent stage of the open channel. */
+export interface SidebarChannelStageFlag {
+  enabled: boolean;
+  collapse: boolean;
+  /** Whether the choice is for the open channel or for all channels. */
+  scope: "channel" | "all";
+  /** Without an open channel, only "All channels" can be set. */
+  channelOpen: boolean;
+  onEnabledChange: (enabled: boolean) => void;
+  onCollapseChange: (collapse: boolean) => void;
+  onScopeChange: (scope: "channel" | "all") => void;
+}
+
+export interface SidebarSectionRailProps {
+  selectedId: string | null;
+  onSelect: (sectionId: string | null) => void;
+  /** Absent where the stage is not offered, such as the web client. */
+  stage?: SidebarChannelStageFlag | undefined;
+}
+
 export interface SidebarRoutineSummary {
   active: boolean;
   createdAt: string;
@@ -142,7 +162,7 @@ export interface SidebarProps {
    * and a button that creates a section. While a section is selected, the list shows only its chats.
    * `selectedId` null is "All". A section that is gone reads as "All".
    */
-  sectionRail?: { selectedId: string | null; onSelect: (sectionId: string | null) => void } | undefined;
+  sectionRail?: SidebarSectionRailProps | undefined;
   /** Whether this server keeps a section icon (`set-section-icon`). Only the local server does. */
   sectionIconsSupported?: boolean | undefined;
   /** Whether this server keeps markers in the list (`create-marker`). Only the local server does. */

@@ -32,6 +32,7 @@ import { createScrollFades } from "../../components/createScrollFades";
 import { createVerticalDragPreview } from "../../components/createVerticalDragPreview";
 import { useText } from "../../text";
 import { createTaskListPlayState } from "../conversation/TaskList";
+import { SidebarChannelStageFlag } from "./SidebarChannelStageFlag";
 import { SidebarSectionColorSubmenu } from "./SidebarSectionColorMenu";
 import { SidebarSectionMark } from "./SidebarSectionMark";
 import { sidebarSectionColorStyle } from "./section-color";
@@ -345,6 +346,7 @@ export function SidebarSectionRail() {
           {announcement()}
         </span>
       </div>
+      <Show when={props.sectionRail?.stage}>{(stage) => <SidebarChannelStageFlag stage={stage()} />}</Show>
     </nav>
   );
 }

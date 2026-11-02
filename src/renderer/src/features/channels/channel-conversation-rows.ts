@@ -227,7 +227,7 @@ export function waitingChannelPrompt(
  * thread of each member. An older host does not, so a request of a member whose task runs here is
  * taken as the channel's, as the channel view took it before.
  */
-function channelOwnsRequest(
+export function channelOwnsRequest(
   page: ChannelPage,
   threads: readonly ChannelThread[] | undefined,
   request: { agentId: string; threadId: string },

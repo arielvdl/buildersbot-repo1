@@ -138,6 +138,8 @@ export interface ConversationProps {
   contextState?: AgentContextState | undefined;
   runtime?: ConversationRuntime | undefined;
   notice?: JSX.Element | undefined;
+  /** The agent stage of a channel, above the messages. Absent with the stage off, which leaves the view as it is. */
+  stage?: JSX.Element | undefined;
   onOpenUsage?: ((trigger: HTMLButtonElement) => void) | undefined;
   onOpenMarketplace?: (() => void) | undefined;
   /**

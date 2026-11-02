@@ -48,3 +48,18 @@ export function computedBlur(filter: string): number {
   const blur = Number.parseFloat(match?.[1] ?? "");
   return Number.isFinite(blur) ? blur : 0;
 }
+
+/**
+ * A spring as one CSS `linear()` easing for a two-keyframe animation of `response` seconds. The
+ * caller computes it once per spring, at module load, so an animation costs no sampling. The
+ * progress is scaled so that the last point is exactly 1, as in `springKeyframes`.
+ */
+export function springLinearEasing(spring: Spring, sampleCount = 24): string {
+  const finalProgress = springProgress(spring.response, spring);
+  const points = Array.from({ length: sampleCount + 1 }, (_, index) => {
+    const progress =
+      index === sampleCount ? 1 : springProgress((index / sampleCount) * spring.response, spring) / finalProgress;
+    return Number(progress.toFixed(3));
+  });
+  return `linear(${points.join(", ")})`;
+}

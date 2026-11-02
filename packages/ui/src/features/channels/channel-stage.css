@@ -1,0 +1,492 @@
+/*
+ * The agent stage of a channel (`ChannelStage.tsx`). Every animation here moves `transform` or
+ * `opacity` only. Positions come from the component, in pixels, so no rule reads the layout. The
+ * root of the board takes `data-paused` while the stage is off screen or the window is hidden, and
+ * that one attribute pauses every animation below it.
+ */
+
+.channel-stage-frame {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+}
+
+/* The messages fade out under the stage. A plain gradient: a mask on the list would cost every scroll. */
+.channel-stage-frame::after {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  height: var(--buildersbot-control-xl);
+  background: linear-gradient(to bottom, var(--buildersbot-bg-canvas), transparent);
+  content: "";
+  pointer-events: none;
+}
+
+.channel-stage {
+  position: relative;
+  height: clamp(300px, 50vh, 460px);
+  overflow: hidden;
+  background:
+    radial-gradient(46% 58% at 50% 56%, color-mix(in srgb, var(--buildersbot-success) 5%, transparent), transparent 70%),
+    var(--buildersbot-bg-canvas);
+  contain: layout paint;
+}
+
+.channel-stage[data-collapsed] {
+  height: var(--buildersbot-control-xl);
+}
+
+.channel-stage-strip {
+  display: flex;
+  height: 100%;
+  margin: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--buildersbot-text-dim);
+  font-size: var(--buildersbot-text-sm);
+  animation: channel-stage-fade var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
+}
+
+.channel-stage-board {
+  position: absolute;
+  inset: 0;
+}
+
+/* The table */
+.channel-stage-table {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.channel-stage-table-top {
+  fill: var(--buildersbot-bg-surface-raised);
+  stroke: var(--buildersbot-border);
+}
+
+.channel-stage-table-left {
+  fill: var(--buildersbot-bg-frame);
+}
+
+.channel-stage-table-right {
+  fill: var(--buildersbot-bg-surface);
+}
+
+.channel-stage-table-grid {
+  fill: none;
+  stroke: var(--buildersbot-border);
+  opacity: 0.6;
+}
+
+/* The request on the table */
+.channel-stage-request {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  width: 190px;
+  flex-direction: column;
+  gap: var(--buildersbot-space-1);
+  padding: var(--buildersbot-space-2) var(--buildersbot-space-3);
+  border: 1px solid var(--buildersbot-border-strong);
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-bg-surface-raised);
+  box-shadow: var(--buildersbot-shadow-card);
+  translate: -50% -50%;
+  animation: channel-stage-fade var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
+}
+
+.channel-stage-request[data-complete] {
+  border-color: var(--buildersbot-success);
+}
+
+.channel-stage-request-kind {
+  color: var(--buildersbot-text-dim);
+  font-size: var(--buildersbot-text-sm);
+  letter-spacing: var(--buildersbot-tracking-wide);
+  text-transform: uppercase;
+}
+
+.channel-stage-request-title {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-semibold);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.channel-stage-request-bars {
+  display: flex;
+  gap: var(--buildersbot-space-1);
+}
+
+.channel-stage-request-bars i {
+  height: var(--buildersbot-space-1-5);
+  flex: 1;
+  border-radius: var(--buildersbot-radius-xs);
+  background: var(--buildersbot-bg-control-hover);
+  transition: background-color var(--buildersbot-duration-overlay) var(--buildersbot-ease-out);
+}
+
+.channel-stage-request-bars i[data-done] {
+  background: var(--buildersbot-success);
+}
+
+.channel-stage-request-count {
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+/* Hand-offs */
+.channel-stage-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.channel-stage-link {
+  fill: none;
+  stroke-dasharray: 3 7;
+  stroke-width: 1.6;
+  opacity: 0.55;
+}
+
+.channel-stage-packet {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  z-index: 900;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+}
+
+.channel-stage-packet .agent-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.channel-stage-more {
+  position: absolute;
+  top: var(--buildersbot-space-3);
+  right: var(--buildersbot-space-3);
+  z-index: 1000;
+  padding: var(--buildersbot-space-0-5) var(--buildersbot-space-2);
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-bg-surface);
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+}
+
+/* An actor */
+.channel-stage-actors {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.channel-stage-actor {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.channel-stage-figure {
+  position: absolute;
+  bottom: 0;
+  left: calc(var(--stage-width) / -2);
+  width: var(--stage-width);
+  height: var(--stage-height);
+  transform-origin: 50% 100%;
+}
+
+.channel-stage-hop,
+.channel-stage-body {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%;
+}
+
+.channel-stage-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* The provider and the model, above the agent. Static. */
+.channel-stage-model {
+  position: absolute;
+  bottom: calc(100% + var(--buildersbot-space-1));
+  left: 50%;
+  display: flex;
+  max-width: 140px;
+  align-items: center;
+  gap: var(--buildersbot-space-1);
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+  line-height: 1;
+  white-space: nowrap;
+  translate: -50% 0;
+}
+
+.channel-stage-model > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.channel-stage-model-logo {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  flex: none;
+  fill: currentcolor;
+}
+
+/* The name under the feet */
+.channel-stage-name {
+  position: absolute;
+  top: var(--buildersbot-space-2);
+  left: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--buildersbot-space-1-5);
+  font-size: var(--buildersbot-text-sm);
+  white-space: nowrap;
+  translate: -50% 0;
+}
+
+.channel-stage-name-text {
+  color: var(--buildersbot-text-primary);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.channel-stage-verb {
+  color: var(--buildersbot-text-muted);
+}
+
+.channel-stage-actor[data-activity="waiting"] .channel-stage-verb {
+  color: var(--buildersbot-accent-text);
+}
+
+.channel-stage-actor[data-activity="failed"] .channel-stage-verb {
+  color: var(--buildersbot-danger-text);
+}
+
+/* The speech bubble: opens to the outside of the table */
+.channel-stage-bubble {
+  position: absolute;
+  bottom: calc(var(--stage-height) * 0.5);
+  width: max-content;
+  min-width: 120px;
+  max-width: 210px;
+  padding: var(--buildersbot-space-1-5) var(--buildersbot-space-3);
+  border: 1px solid var(--buildersbot-border-strong);
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-bg-surface-raised);
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-md);
+  line-height: var(--buildersbot-leading-md);
+}
+
+.channel-stage-actor[data-anchor="right"] .channel-stage-bubble {
+  left: calc(var(--stage-width) / 2 + var(--buildersbot-space-2));
+}
+
+.channel-stage-actor[data-anchor="left"] .channel-stage-bubble {
+  right: calc(var(--stage-width) / 2 + var(--buildersbot-space-2));
+}
+
+.channel-stage-bubble[data-tone="waiting"] {
+  border-color: var(--buildersbot-accent);
+}
+
+.channel-stage-bubble[data-tone="failed"] {
+  border-color: var(--buildersbot-danger-border);
+}
+
+.channel-stage-bubble-tone {
+  display: block;
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.channel-stage-bubble[data-tone="waiting"] .channel-stage-bubble-tone {
+  color: var(--buildersbot-accent-text);
+}
+
+.channel-stage-bubble[data-tone="failed"] .channel-stage-bubble-tone {
+  color: var(--buildersbot-danger-text);
+}
+
+.channel-stage-bubble[data-tone="done"] .channel-stage-bubble-tone {
+  color: var(--buildersbot-success-text);
+}
+
+/* The text of the bubble comes in with a fade. It is not typed letter by letter. */
+.channel-stage-bubble-text {
+  display: block;
+  animation: channel-stage-fade var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
+}
+
+/* The motion of each activity: one loop on the body, `transform` only */
+.channel-stage-actor[data-activity="done"] .channel-stage-body {
+  animation: channel-stage-breathe 3.2s ease-in-out infinite;
+}
+
+.channel-stage-actor[data-activity="thinking"] .channel-stage-body {
+  animation: channel-stage-float 2.6s ease-in-out infinite;
+}
+
+.channel-stage-actor[data-activity="reading"] .channel-stage-body {
+  animation: channel-stage-scan 2.4s ease-in-out infinite;
+}
+
+.channel-stage-actor[data-activity="editing"] .channel-stage-body {
+  animation: channel-stage-type 0.38s ease-in-out infinite;
+}
+
+.channel-stage-actor[data-activity="running"] .channel-stage-body {
+  animation: channel-stage-buzz 0.24s linear infinite;
+}
+
+.channel-stage-actor[data-activity="waiting"] .channel-stage-body {
+  animation: channel-stage-nudge 2.1s var(--buildersbot-ease-out) infinite;
+}
+
+.channel-stage-actor[data-activity="delegating"] .channel-stage-body {
+  animation: channel-stage-breathe 3.2s ease-in-out infinite;
+}
+
+.channel-stage-actor[data-lean="left"] .channel-stage-hop {
+  transform: rotate(-8deg);
+}
+
+.channel-stage-actor[data-lean="right"] .channel-stage-hop {
+  transform: rotate(8deg);
+}
+
+.channel-stage-actor[data-activity="failed"] .channel-stage-body {
+  transform: translateY(4px) rotate(6deg);
+}
+
+@keyframes channel-stage-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes channel-stage-breathe {
+  0%,
+  100% {
+    transform: none;
+  }
+
+  50% {
+    transform: scale(1.022, 0.978);
+  }
+}
+
+@keyframes channel-stage-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+
+@keyframes channel-stage-scan {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+@keyframes channel-stage-type {
+  0%,
+  100% {
+    transform: none;
+  }
+
+  40% {
+    transform: translateY(-3px) scale(1.012, 0.988);
+  }
+}
+
+@keyframes channel-stage-buzz {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  25% {
+    transform: translate(0.8px, -0.7px);
+  }
+
+  50% {
+    transform: translate(0, 0.6px);
+  }
+
+  75% {
+    transform: translate(-0.8px, -0.4px);
+  }
+}
+
+@keyframes channel-stage-nudge {
+  0%,
+  55%,
+  100% {
+    transform: none;
+  }
+
+  12% {
+    transform: translateY(-9px);
+  }
+
+  24% {
+    transform: none;
+  }
+
+  34% {
+    transform: translateY(-4px);
+  }
+
+  44% {
+    transform: none;
+  }
+}
+
+/* One attribute pauses every loop while the stage is off screen or the window is hidden. */
+.channel-stage-board[data-paused] .channel-stage-actor[data-activity] .channel-stage-body {
+  animation-play-state: paused;
+}
+
+/* Without motion: no loops. The strip and the bubble keep their short fades. */
+@media (prefers-reduced-motion: reduce) {
+  .channel-stage-actor[data-activity] .channel-stage-body {
+    animation: none;
+  }
+
+  .channel-stage-request-bars i {
+    transition: none;
+  }
+}

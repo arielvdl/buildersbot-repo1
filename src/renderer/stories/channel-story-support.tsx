@@ -13,6 +13,7 @@ import { ChannelAvatar } from "@buildersbot/ui/features/channels/ChannelAvatar";
 import { ChannelStoppedTasks } from "@buildersbot/ui/features/channels/ChannelStoppedTasks";
 import { ChannelTaskWaitNotice } from "@buildersbot/ui/features/channels/ChannelTaskWaitNotice";
 import type { AwaitingReplyItem } from "@buildersbot/ui/features/conversation/AwaitingReplies";
+import type { JSX } from "@solidjs/web";
 import { createSignal, For, Show } from "solid-js";
 import { fn } from "storybook/test";
 import type { ConversationChannelSource } from "../src/features/conversation/conversation-types";
@@ -109,6 +110,8 @@ export interface ChannelStoryProps {
    * list above the composer shows each message sent, with its tab: each tab keeps its own draft.
    */
   tabs?: { id: string; name: string }[];
+  /** The agent stage above the messages, as the desktop gives it when the stage is on. */
+  stage?: JSX.Element;
 }
 
 /** The channel chat on a mocked bridge, for a story that shows a channel or composes screens. */
@@ -190,6 +193,7 @@ export function StoryChannelConversation(props: ChannelStoryProps) {
   return (
     <StoryConversation
       channel={source}
+      stage={props.stage}
       agent={undefined}
       modelOptions={[]}
       mentionAgents={STORY_AGENTS.slice(0, 3)}

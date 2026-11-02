@@ -98,6 +98,7 @@
     "./features/channels/ChannelActivityIndicator": "./src/features/channels/ChannelActivityIndicator.tsx",
     "./features/channels/ChannelAvatar": "./src/features/channels/ChannelAvatar.tsx",
     "./features/channels/ChannelMemberRow": "./src/features/channels/ChannelMemberRow.tsx",
+    "./features/channels/ChannelStage": "./src/features/channels/ChannelStage.tsx",
     "./features/channels/ChannelStartRetryNotice": "./src/features/channels/ChannelStartRetryNotice.tsx",
     "./features/channels/ChannelStoppedTasks": "./src/features/channels/ChannelStoppedTasks.tsx",
     "./features/channels/ChannelTaskWaitNotice": "./src/features/channels/ChannelTaskWaitNotice.tsx",
