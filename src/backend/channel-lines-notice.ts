@@ -1,5 +1,5 @@
 /** The most characters of the notice that a chat turn gets about the other lines of its agent. */
-export const LINES_NOTICE_LIMIT = 300;
+const LINES_NOTICE_LIMIT = 300;
 /** The first words of the notice. A reader of provider history uses them to find the notice. */
 export const LINES_NOTICE_START = "Builders Bot note: other lines of this agent work now:";
 const LINES_NOTICE_END = "Do not change the same files there without a reason.";

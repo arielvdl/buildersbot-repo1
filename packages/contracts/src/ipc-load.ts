@@ -328,13 +328,13 @@ export const AGENT_TABS_MAX = 8;
 /** Two tabs: the user sees a second tab answer, and the memory of one more provider session is small. */
 export const DEFAULT_AGENT_TABS = 2;
 /** The ceiling with `tabsMode` `memory`: the memory sets the real number, and this guards the plan quota. */
-export const DEFAULT_AGENT_TABS_CEILING = 4;
+const DEFAULT_AGENT_TABS_CEILING = 4;
 
-export const AGENT_TABS_MODES = ["fixed", "memory"] as const;
+const AGENT_TABS_MODES = ["fixed", "memory"] as const;
 export type AgentTabsMode = (typeof AGENT_TABS_MODES)[number];
 export const DEFAULT_AGENT_TABS_MODE: AgentTabsMode = "memory";
 
-export function isAgentTabsMode(value: unknown): value is AgentTabsMode {
+function isAgentTabsMode(value: unknown): value is AgentTabsMode {
   return value === "fixed" || value === "memory";
 }
 
@@ -352,7 +352,7 @@ export function isAgentTabsLimit(value: unknown): value is number {
   return isNumber(value) && Number.isInteger(value) && value >= AGENT_TABS_MIN && value <= AGENT_TABS_MAX;
 }
 
-export function isAgentsPerTabLimit(value: unknown): value is number {
+function isAgentsPerTabLimit(value: unknown): value is number {
   return isNumber(value) && Number.isInteger(value) && value >= AGENTS_PER_TAB_MIN && value <= AGENTS_PER_TAB_MAX;
 }
 
