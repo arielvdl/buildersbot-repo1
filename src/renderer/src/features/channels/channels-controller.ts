@@ -1,4 +1,4 @@
-import type { ChannelCommand, ChannelPage, ChannelSummary } from "@buildersbot/contracts/ipc";
+import type { ChannelCommand, ChannelPage, ChannelSummary, ChannelTabCloseReport } from "@buildersbot/contracts/ipc";
 import type { AppTextKey } from "@buildersbot/i18n";
 import type { AgentProfile } from "@buildersbot/ui/data";
 import { currentText } from "@buildersbot/ui/text";
@@ -552,11 +552,20 @@ export function createChannelsController(env: ChannelsEnvironment) {
         name,
         operationId: crypto.randomUUID(),
       }),
-    /** Closes a tab with its work. The open one falls back to the first tab of the channel. */
-    deleteTopic: async (topicId: string) => {
+    /**
+     * Closes a tab with its work. The open one falls back to the first tab of the channel. With a
+     * `report`, the service saves how the tab ended in the same step, and the tab stays if that fails.
+     */
+    deleteTopic: async (topicId: string, report?: ChannelTabCloseReport) => {
       const channelId = state.selectedId;
       if (!channelId) return false;
-      const removed = await command({ type: "topic-delete", channelId, topicId, operationId: crypto.randomUUID() });
+      const removed = await command({
+        type: "topic-delete",
+        channelId,
+        topicId,
+        ...(report ? { report } : {}),
+        operationId: crypto.randomUUID(),
+      });
       if (removed && state.topicId === topicId) {
         const first = state.channels.find((channel) => channel.id === channelId)?.topics?.[0]?.id ?? null;
         if (first) await controllerSetTopic(first);

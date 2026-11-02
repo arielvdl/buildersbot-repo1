@@ -1,0 +1,65 @@
+/* The answer of the close dialog of a channel tab: three radio rows, a note, and one quiet line. */
+.channel-tab-outcome {
+  display: grid;
+  gap: var(--buildersbot-space-3);
+  margin-top: var(--buildersbot-space-1);
+}
+
+.channel-tab-outcome-options {
+  display: grid;
+  gap: var(--buildersbot-space-0-5);
+}
+
+.channel-tab-outcome-label {
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-md);
+  line-height: var(--buildersbot-leading-md);
+}
+
+.channel-tab-outcome-control {
+  display: flex;
+  min-height: var(--buildersbot-control-lg);
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  cursor: pointer;
+  border-radius: var(--buildersbot-radius-md);
+  padding: var(--buildersbot-space-2) var(--buildersbot-space-3);
+}
+
+.channel-tab-outcome-control[data-checked] {
+  background: var(--buildersbot-hover);
+}
+
+.channel-tab-outcome-option:has(:focus-visible) .channel-tab-outcome-control {
+  box-shadow: var(--buildersbot-focus-ring);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .channel-tab-outcome-control:hover {
+    background: var(--buildersbot-hover);
+  }
+}
+
+.channel-tab-outcome-option-label {
+  flex: 1;
+  cursor: pointer;
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-lg);
+  line-height: var(--buildersbot-leading-lg);
+}
+
+.channel-tab-outcome-check {
+  width: var(--buildersbot-icon-md);
+  height: var(--buildersbot-icon-md);
+  flex: 0 0 auto;
+}
+
+.channel-tab-outcome-check svg {
+  width: 100%;
+  height: 100%;
+}
+
+.channel-tab-outcome-record {
+  margin: 0;
+  color: var(--buildersbot-text-muted);
+}

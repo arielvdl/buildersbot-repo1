@@ -86,6 +86,15 @@ export const messages = defineMessages("channel", {
   "channel.topic.closeDescription": "Its conversation is deleted.",
   "channel.topic.closeBusyTitle": "Close tab with work in progress?",
   "channel.topic.closeBusyDescription": "The agents stop and this tab’s conversation is deleted.",
+  // How the tab ended. The answer is saved as a short record in the Profile, on this computer only.
+  "channel.topic.outcome.label": "How did it go?",
+  "channel.topic.outcome.done": "Done",
+  "channel.topic.outcome.notDone": "Not done",
+  "channel.topic.outcome.other": "Other",
+  "channel.topic.outcome.note": "Note (optional)",
+  "channel.topic.outcome.noteRequired": "What happened? (required)",
+  "channel.topic.outcome.noteCount": "{count}/{max}",
+  "channel.topic.closeRecord": "A short record stays in your Profile, on this computer only.",
   // The list of tabs under the channel title: every tab, its age, the running ones first, and a search.
   "channel.topic.list": "Tabs",
   "channel.topic.search": "Search tabs",

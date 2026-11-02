@@ -41,6 +41,7 @@
 @import "./features/channels/channels.css";
 @import "./features/resume/resume.css";
 @import "@buildersbot/ui/features/channels/channel-activity.css";
+@import "@buildersbot/ui/features/channels/channel-tab-close-outcome.css";
 @import "@buildersbot/ui/features/diagrams/diagrams.css";
 @import "@buildersbot/ui/features/workflows/workflow-nodes.css";
 @import "@buildersbot/ui/features/workflows/workflows.css";

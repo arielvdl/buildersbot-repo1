@@ -1,5 +1,6 @@
-import type { ChannelTopic } from "@buildersbot/contracts/ipc";
+import type { ChannelTabOutcome, ChannelTopic } from "@buildersbot/contracts/ipc";
 import { Button, ConfirmDialog, ErrorReference, IconButton, Info, Input, Tooltip } from "@buildersbot/ui";
+import { ChannelTabCloseOutcome } from "@buildersbot/ui/features/channels/ChannelTabCloseOutcome";
 import { ThreadDetailsDialog } from "@buildersbot/ui/features/conversation/threads/ThreadDetailsDialog";
 import { chatPreviewLine, sameMessageText } from "@buildersbot/ui/features/conversation/threads/thread-preview-text";
 import {
@@ -9,7 +10,7 @@ import {
   createChatPreviewOpen,
 } from "@buildersbot/ui/features/sidebar/SidebarAgentIndicator";
 import { useText } from "@buildersbot/ui/text";
-import { createEffect, createMemo, createSignal, For, flush, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, createStore, For, flush, Show } from "solid-js";
 import {
   channelTabClose,
   channelTabDetails,
@@ -48,10 +49,15 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
   const [dragged, setDragged] = createSignal<string | null>(null);
   const [slot, setSlot] = createSignal<number | null>(null);
   /**
-   * The tab whose close waits for an answer, with the warning it got. It stays after the dialog
-   * closes, so the text does not change while the dialog fades out.
+   * The tab whose close waits for an answer, and how the person says it ended. It stays after the
+   * dialog closes, so the text does not change while the dialog fades out. Nothing is chosen when
+   * the dialog opens.
    */
-  const [closing, setClosing] = createSignal<{ topicId: string; work: boolean } | null>(null);
+  const [closing, setClosing] = createStore<{
+    topicId: string | null;
+    outcome: ChannelTabOutcome | null;
+    note: string;
+  }>({ topicId: null, outcome: null, note: "" });
   const [confirmOpen, setConfirmOpen] = createSignal(false);
   const [closeError, setCloseError] = createSignal<string | null>(null);
   /** The tab whose details show in a dialog. */
@@ -68,7 +74,14 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
   const working = (topic: ChannelTopic) => (topic.activeTasks ?? 0) > 0;
   const openTabButton = () => strip?.querySelector<HTMLElement>('.channel-tab-name[aria-current="true"]') ?? undefined;
   /** A tab that closes elsewhere while its dialog is open takes the dialog with it. */
-  const closingTopic = () => serviceTopics().find((topic) => topic.id === closing()?.topicId);
+  const closingTopic = () => serviceTopics().find((topic) => topic.id === closing.topicId);
+  /** The warning follows the tab as it is now: a task can start while the dialog is open. */
+  const closingWork = () => {
+    const topic = closingTopic();
+    return topic !== undefined && channelTabClose(topic) === "confirm-work";
+  };
+  /** Other needs a note that says what happened; Done and Not done need only the choice. */
+  const closeAnswered = () => closing.outcome !== null && (closing.outcome !== "other" || closing.note.trim() !== "");
 
   /** The tab whose details show. Undefined also when it left the channel, such as by a close elsewhere. */
   const detailsTopic = createMemo(() => {
@@ -140,7 +153,9 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
       return;
     }
     setCloseError(null);
-    setClosing({ topicId: topic.id, work: kind === "confirm-work" });
+    setClosing((state) => {
+      Object.assign(state, { topicId: topic.id, outcome: null, note: "" });
+    });
     setConfirmOpen(true);
   }
 
@@ -157,10 +172,11 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
 
   /** The dialog stays open on a failure, with the failure, so the user can try again or cancel. */
   async function confirmClose(): Promise<void> {
-    const target = closing();
-    if (!target) return;
+    const { topicId, outcome, note } = closing;
+    if (!topicId || !outcome || !closeAnswered()) return;
     setCloseError(null);
-    if (await channels.deleteTopic(target.topicId)) {
+    const text = note.trim();
+    if (await channels.deleteTopic(topicId, { outcome, ...(text ? { note: text } : {}) })) {
       flush();
       setConfirmOpen(false);
       return;
@@ -346,9 +362,10 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
       <ConfirmDialog
         open={confirmOpen() && closingTopic() !== undefined}
         initialFocus="cancel"
-        title={closing()?.work ? t("channel.topic.closeBusyTitle") : t("channel.topic.closeTitle")}
-        description={closing()?.work ? t("channel.topic.closeBusyDescription") : t("channel.topic.closeDescription")}
+        title={closingWork() ? t("channel.topic.closeBusyTitle") : t("channel.topic.closeTitle")}
+        description={closingWork() ? t("channel.topic.closeBusyDescription") : t("channel.topic.closeDescription")}
         confirmLabel={t("channel.topic.delete")}
+        confirmDisabled={!closeAnswered()}
         error={
           closeError() ? (
             <>
@@ -361,7 +378,22 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
         restoreFocusTarget={closingTopic() ? undefined : openTabButton()}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={confirmClose}
-      />
+      >
+        <ChannelTabCloseOutcome
+          outcome={closing.outcome}
+          note={closing.note}
+          onOutcomeChange={(outcome) => {
+            setClosing((state) => {
+              state.outcome = outcome;
+            });
+          }}
+          onNoteChange={(note) => {
+            setClosing((state) => {
+              state.note = note;
+            });
+          }}
+        />
+      </ConfirmDialog>
     </Show>
   );
 }

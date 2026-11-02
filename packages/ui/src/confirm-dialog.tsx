@@ -40,6 +40,8 @@ export interface ConfirmDialogProps {
   cancelLabel?: string;
   /** Marks the dialog pending in addition to a pending `onConfirm` promise. */
   pending?: boolean;
+  /** Disables the confirm button while the dialog still lacks an answer, such as a choice the body asks for. */
+  confirmDisabled?: boolean;
   error?: JSX.Element;
   /** The button that gets focus when the dialog opens. */
   initialFocus?: "confirm" | "cancel";
@@ -65,7 +67,7 @@ export function ConfirmDialog(props: ConfirmDialogProps): JSX.Element {
   });
 
   async function confirm(): Promise<void> {
-    if (pending()) return;
+    if (pending() || props.confirmDisabled) return;
     const result = props.onConfirm();
     if (!result) return;
     setRunning(true);
@@ -92,7 +94,11 @@ export function ConfirmDialog(props: ConfirmDialogProps): JSX.Element {
               event.preventDefault();
               const opener = document.activeElement;
               restoreTarget = opener instanceof HTMLElement && opener !== document.body ? opener : undefined;
-              const target = props.initialFocus === "cancel" && !props.hideCancel ? cancelButton : confirmButton;
+              // A disabled button cannot take focus, so Cancel gets it until the dialog has its answer.
+              const target =
+                (props.initialFocus === "cancel" || props.confirmDisabled) && !props.hideCancel
+                  ? cancelButton
+                  : confirmButton;
               target?.focus({ preventScroll: true });
             }}
             onCloseAutoFocus={(event) => {
@@ -168,6 +174,7 @@ export function ConfirmDialog(props: ConfirmDialogProps): JSX.Element {
                 data-cuelume-tap={tone() === "destructive" ? "close" : ""}
                 data-cuelume-emphasis={tone() === "destructive" ? "strong" : undefined}
                 class="ui-confirm-dialog-confirm"
+                disabled={props.confirmDisabled}
                 loading={pending()}
                 loadingLabel={props.pendingLabel}
                 onClick={() => void confirm()}
