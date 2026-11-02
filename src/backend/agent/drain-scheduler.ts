@@ -1229,15 +1229,28 @@ export class DrainScheduler {
       const deltaInput = delta ? promptInput(delta.text) : null;
       // The scan of this turn, once it ran: a block that says what the guard found, or null.
       let guardBlock: string | null = null;
+      // A turn of the agent's own chat runs beside its channel tabs. When a tab holds a browser or a
+      // workspace, the turn starts with one short note about it. A tab or a task turn gets none.
+      const linesNotice =
+        taskId === null &&
+        !channelDelivery &&
+        !messagingDelivery &&
+        !ownSession &&
+        !this.#tasks.oneTurnAtATime(agent.id)
+          ? (this.#channels?.linesNotice(agent.id) ?? null)
+          : null;
+      const linesNote = linesNotice ? `${linesNotice}${CURRENT_MESSAGE_SEPARATOR}` : "";
       const inputForThread = (providerThreadId: string) => {
         const sendsDelta = Boolean(deltaInput && shortened?.sendsDelta(delivery.id, providerThreadId));
         const input = sendsDelta && deltaInput ? deltaInput : completeInput;
         const handoff = this.#threads.consumePendingHandoff(providerThreadId);
         // A delta carries only the new text of a channel, so the block of the first delivery covers it.
         const guard = !sendsDelta && guardBlock ? `${guardBlock}${CURRENT_MESSAGE_SEPARATOR}` : "";
-        if (!handoff && !guard) return input;
+        if (!handoff && !guard && !linesNote) return input;
         return input.map((item, index) =>
-          index === 0 && item.type === "text" ? { ...item, text: `${handoff ?? ""}${guard}${item.text}` } : item,
+          index === 0 && item.type === "text"
+            ? { ...item, text: `${handoff ?? ""}${guard}${linesNote}${item.text}` }
+            : item,
         );
       };
 

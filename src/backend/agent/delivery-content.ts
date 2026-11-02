@@ -12,6 +12,7 @@ import type {
 } from "@buildersbot/contracts/ipc";
 import { redactText } from "@buildersbot/logging";
 import { wokenWaitsPromptText } from "../agent-waits/agent-waits";
+import { LINES_NOTICE_START } from "../channel-lines-notice";
 import { homeSkillRoot, homeSkillTagSlug } from "../home-skills";
 import type { DeliveryContext } from "../mailbox-store";
 import { quietRoutineRun, ROUTINE_NO_UPDATE_TOOL, ROUTINE_REPORT_FAILURE_TOOL } from "./routine-quiet-runs";
@@ -128,10 +129,17 @@ export function teammatePrompts(prompt: string): TeammatePrompt[] {
   const handoffEnd = `\n${HANDOFF_END}${CURRENT_MESSAGE_SEPARATOR}`;
   const handoff = prompt.startsWith(HANDOFF_START) ? prompt.lastIndexOf(handoffEnd) : -1;
   return (
-    currentTeammatePrompts(prompt) ??
-    (handoff < 0 ? null : currentTeammatePrompts(prompt.slice(handoff + handoffEnd.length))) ??
+    currentTeammatePrompts(withoutLinesNotice(prompt)) ??
+    (handoff < 0 ? null : currentTeammatePrompts(withoutLinesNotice(prompt.slice(handoff + handoffEnd.length)))) ??
     []
   );
+}
+
+/** The prompt without the note about the other lines of the agent that a chat turn can start with. */
+function withoutLinesNotice(prompt: string): string {
+  if (!prompt.startsWith(LINES_NOTICE_START)) return prompt;
+  const end = prompt.indexOf(CURRENT_MESSAGE_SEPARATOR);
+  return end < 0 ? prompt : prompt.slice(end + CURRENT_MESSAGE_SEPARATOR.length);
 }
 
 function currentTeammatePrompts(prompt: string): TeammatePrompt[] | null {

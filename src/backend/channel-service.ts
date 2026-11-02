@@ -46,6 +46,7 @@ import {
   sameRequest,
 } from "./channel-history";
 import { admittedChannels, nextLaneChannel } from "./channel-lane";
+import { type LineNoticeEntry, linesNotice } from "./channel-lines-notice";
 import {
   CHANNEL_MANAGEMENT_TOOLS,
   type ChannelChangeNote,
@@ -2388,6 +2389,32 @@ export class ChannelService {
       ...(topicName ? { topicName } : {}),
       tabs: Math.max(1, tabs),
     };
+  }
+
+  /**
+   * The note for a turn of the agent's own chat when channel tabs of the same agent hold a `browser`
+   * or a `workspace:`, or null. The chat does not wait for those tabs, so the agent learns what is in
+   * use. It has names and resources only (`linesNotice`), never text of a tab.
+   */
+  linesNotice(agentId: string): string | null {
+    const assignments = this.store.agentAssignments(agentId, ["starting", "running"]);
+    if (!assignments.length) return null;
+    const entries: LineNoticeEntry[] = [];
+    for (const assignment of assignments) {
+      const task = this.store.tasks(assignment.channelId).find((item) => item.id === assignment.taskId);
+      const resources = (task?.resources ?? []).filter(
+        (resource) => resource === "browser" || resource.startsWith("workspace:"),
+      );
+      if (!task || !resources.length) continue;
+      const channel = this.store.get(assignment.channelId);
+      const topic = task.topicId ? this.store.topic(assignment.channelId, task.topicId) : null;
+      entries.push({
+        channelName: channel.title.trim() || channel.name,
+        topicName: topic?.name ?? null,
+        resources,
+      });
+    }
+    return linesNotice(entries);
   }
 
   /**
