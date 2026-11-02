@@ -13,6 +13,14 @@
 //   4. A normal kernel level again lets the held agents start.
 //   5. Warn with less swap than a full Mac (6.9 GB) holds nothing, and the old rules still apply.
 //   6. Each level change reaches the log callback.
+//   7. The free memory in MB (`freeMb`, `totalMb`): none before a sample; the percent of the total
+//      after one; each start reserves a session until the next sample; a release gives it back once;
+//      a release that comes after a new sample gives nothing back; the level and the turn limit do
+//      not change with the reservations; `LOW_BELOW` is the threshold of the level `low`.
+//   8. The memory budget of the tabs (`LaneBudget`) on that reading: the floor is `LOW_BELOW` of the
+//      total plus two sessions; the spare sessions fall with each claim and come back at the next
+//      sample, which wakes a refused tab once; no reading gives no budget; the idle policy follows the
+//      table of the spec (warm sessions and idle time by room, `low` and `critical`).
 // No provider, account or network is used. `bun scripts/mac-memory-pressure-e2e.ts`. It writes
 // .buildersbot-build/mac-memory-pressure-e2e/report.json and exits non-zero on a failure.
 import assert from "node:assert/strict";
@@ -20,9 +28,12 @@ import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { Effect } from "effect";
+import { LaneBudget } from "../src/backend/agent/lane-budget";
 import { MemoryHold } from "../src/backend/agent/memory-hold";
 import type { HostMemoryLevel } from "../src/backend/host-memory";
-import { MacMemory, type MacMemorySample, parseKernelPressure, readMacMemory } from "../src/main/mac-memory";
+import { LANE_SESSION_MB } from "../src/backend/host-memory";
+import type { IdlePolicy } from "../src/backend/idle-thread-pool";
+import { LOW_BELOW, MacMemory, type MacMemorySample, parseKernelPressure, readMacMemory } from "../src/main/mac-memory";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const OUT = join(ROOT, ".buildersbot-build", "mac-memory-pressure-e2e");
@@ -36,6 +47,8 @@ interface Report {
   released: number;
   scheduledAll: number;
   told: string[];
+  freeMb?: { sample50: number; withTwoStarts: number; afterNewSample: number };
+  idlePolicies?: { [name: string]: IdlePolicy | null };
   error?: string;
 }
 
@@ -151,6 +164,103 @@ try {
   assert.equal(report.released, 1, "the idle threads close one time");
   await Effect.runPromise(hold.dispose());
   memory.stop();
+
+  // 7. The free memory in MB.
+  const sampleOf = (freePercent: number, kernelPressure: MacMemorySample["kernelPressure"] = "normal") => ({
+    freePercent,
+    swapUsedMb: 0,
+    kernelPressure,
+  });
+  let reading: MacMemorySample = sampleOf(50);
+  const sized = new MacMemory({
+    read: () => Promise.resolve(reading),
+    onError: (message) => {
+      throw new Error(message);
+    },
+    totalMb: 10_000,
+  });
+  assert.equal(sized.freeMb(), null, "no free memory before the first sample");
+  assert.equal(sized.totalMb(), 10_000);
+  await sized.sample();
+  assert.equal(sized.freeMb(), 5_000, "the free percent of the total");
+  const releaseOne = sized.reserveTurn();
+  const releaseTwo = sized.reserveTurn();
+  assert.equal(sized.freeMb(), 5_000 - 2 * LANE_SESSION_MB, "each start reserves one session");
+  releaseOne();
+  releaseOne();
+  assert.equal(sized.freeMb(), 5_000 - LANE_SESSION_MB, "a release gives the session back once");
+  assert.equal(sized.level(), "ok", "the reservations do not change the level");
+  assert.equal(sized.turnLimit(), 64, "or the turn limit");
+  reading = sampleOf(40);
+  await sized.sample();
+  assert.equal(sized.freeMb(), 4_000, "a new sample reads the real memory again and drops the reservations");
+  releaseTwo();
+  assert.equal(sized.freeMb(), 4_000, "a release after a new sample gives nothing back");
+  assert.equal(LOW_BELOW, 14);
+  for (const [percent, level] of [
+    [LOW_BELOW - 1, "low"],
+    [LOW_BELOW + 30, "ok"],
+  ] as const) {
+    reading = sampleOf(percent);
+    const probe = new MacMemory({ read: () => Promise.resolve(reading), onError: () => {}, totalMb: 10_000 });
+    await probe.sample();
+    assert.equal(probe.level(), level, `${percent}% free is ${level}`);
+  }
+  report.freeMb = { sample50: 5_000, withTwoStarts: 5_000 - 2 * LANE_SESSION_MB, afterNewSample: 4_000 };
+
+  // 8. The memory budget of the tabs, on a simulated 24 GB.
+  const total = 24_000;
+  const floorMb = Math.round((total * LOW_BELOW) / 100) + 2 * LANE_SESSION_MB;
+  const policies: { [name: string]: IdlePolicy | null } = {};
+  async function budgetAt(sample: MacMemorySample) {
+    reading = sample;
+    const budgetMemory = new MacMemory({ read: () => Promise.resolve(reading), onError: () => {}, totalMb: total });
+    await budgetMemory.sample();
+    return { budgetMemory, budget: new LaneBudget({ memory: budgetMemory, lowBelowPercent: LOW_BELOW }) };
+  }
+  {
+    const { budgetMemory, budget } = await budgetAt(sampleOf(30));
+    assert.equal(budget.floorMb(), floorMb, "the floor is LOW_BELOW of the total plus two sessions");
+    const spare = Math.floor((7_200 - floorMb) / LANE_SESSION_MB);
+    assert.equal(budget.spareSessions(), spare);
+    assert.equal(budget.hasRoom(), true);
+    budget.claim();
+    assert.equal(budget.spareSessions(), spare - 1, "a claim takes one session from the spare");
+    // Claims until no room is left, then a sample that brings room wakes the refused tab once.
+    for (let claim = 1; claim < spare; claim += 1) budget.claim();
+    assert.equal(budget.spareSessions(), 0);
+    assert.equal(budget.hasRoom(), false, "no room left: the extra tab waits");
+    let woken = 0;
+    budget.start(() => {
+      woken += 1;
+    });
+    reading = sampleOf(30);
+    await budgetMemory.sample();
+    assert.equal(woken, 1, "a sample with room wakes the refused tab");
+    assert.equal(budget.spareSessions(), spare, "the claims end at the next sample");
+    await budgetMemory.sample();
+    assert.equal(woken, 1, "and wakes it once");
+    budget.dispose();
+  }
+  {
+    const none = new LaneBudget({ memory: null, lowBelowPercent: LOW_BELOW });
+    assert.equal(none.spareSessions(), null, "no reading: no budget");
+    assert.equal(none.hasRoom(), true, "so the fixed limit decides");
+    assert.equal(none.idlePolicy(), null, "and the client keeps its fixed idle values");
+  }
+  for (const [name, sample, warm, minutes] of [
+    ["ok-comfort", sampleOf(60), 8, 10],
+    ["ok-some-room", sampleOf(30), 5, 5],
+    ["ok-no-room", sampleOf(17), 2, 2],
+    ["low", sampleOf(12), 2, 2],
+    ["critical", sampleOf(6), 0, 2],
+  ] as const) {
+    const { budget } = await budgetAt(sample);
+    const policy = budget.idlePolicy();
+    policies[name] = policy;
+    assert.deepEqual(policy, { idleLimit: warm, releaseAfterMs: minutes * 60_000 }, `idle policy at ${name}`);
+  }
+  report.idlePolicies = policies;
   report.passed = true;
 } catch (cause) {
   report.error = cause instanceof Error ? cause.message : String(cause);

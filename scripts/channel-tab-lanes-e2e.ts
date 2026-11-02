@@ -46,17 +46,20 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
   AGENT_PROVIDERS,
+  type AgentTabsMode,
   agentProviderDescriptor,
   type ChannelTask,
   DEFAULT_START_RETRY_SETTINGS,
 } from "@buildersbot/contracts/ipc";
 import { sourceText } from "@buildersbot/i18n/source";
 import { Effect } from "effect";
+import { LaneBudget } from "../src/backend/agent/lane-budget";
 import type { StoredStartBreaker } from "../src/backend/agent/start-retry";
 import type { AgentBrowserHost } from "../src/backend/agent/turn-lifecycle";
 import { LINES_NOTICE_START } from "../src/backend/channel-lines-notice";
-import type { HostMemory, HostMemoryLevel } from "../src/backend/host-memory";
+import { type HostMemory, type HostMemoryLevel, LANE_SESSION_MB } from "../src/backend/host-memory";
 import { getString, isRecord } from "../src/backend/protocol";
+import { LOW_BELOW } from "../src/main/mac-memory";
 
 const OUT = resolve(import.meta.dirname, "../.buildersbot-build/channel-tab-lanes-e2e");
 const root = await mkdtemp(join(tmpdir(), "buildersbot-tab-lanes-"));
@@ -392,8 +395,14 @@ const ask = async (mark: string) => {
 /** The memory reading of this computer, which the check moves between ok and low. */
 let memoryLevel: HostMemoryLevel = "ok";
 const memoryListeners = new Set<() => void>();
+/** The free memory that the check gives, or null for a computer that gives no reading. */
+let simulatedFreeMb: number | null = null;
+/** The memory of the simulated computer, in MB. */
+const SIMULATED_TOTAL_MB = 10_000;
 const memoryPressure: HostMemory = {
   level: () => memoryLevel,
+  freeMb: () => simulatedFreeMb,
+  totalMb: () => (simulatedFreeMb === null ? null : SIMULATED_TOTAL_MB),
   turnLimit: () => 64,
   reserveTurn: () => () => {},
   subscribe: (listener) => {
@@ -407,11 +416,21 @@ const setMemory = (level: HostMemoryLevel) => {
   memoryLevel = level;
   for (const listener of memoryListeners) listener();
 };
+/** A new sample with this free memory: the budget drops its claims and wakes the tabs that waited. */
+const setFreeMb = (freeMb: number | null) => {
+  simulatedFreeMb = freeMb;
+  for (const listener of memoryListeners) listener();
+};
+/** The mode of the tabs of an agent, as the person set it. */
+let tabsMode: AgentTabsMode = "fixed";
+/** The free MB at which the budget has this many spare sessions (the floor is 14% plus two sessions). */
+const freeMbForSpare = (spare: number) =>
+  Math.round(SIMULATED_TOTAL_MB * 0.14) + 2 * LANE_SESSION_MB + spare * LANE_SESSION_MB;
 
 await writeControl();
 await writeFile(fakeCodex, FAKE_CODEX, { mode: 0o755 });
 /** The most tabs of one agent that run a turn at the same time, as the person set it. */
-const tabLimit = 2;
+let tabLimit = 2;
 /** The most agents that run a turn at the same time in one tab, as the person set it. */
 let parallelLimit = 4;
 
@@ -431,6 +450,8 @@ function openServices(withoutParallelLimit = false) {
     offProviders: AGENT_PROVIDERS.filter((provider) => provider !== "codex"),
     memoryPressure,
     channelTabLimit: () => tabLimit,
+    channelTabsMode: () => tabsMode,
+    laneBudget: new LaneBudget({ memory: memoryPressure, lowBelowPercent: LOW_BELOW }),
     // Omitted, the service uses its default (`DEFAULT_AGENTS_PER_TAB`).
     ...(withoutParallelLimit ? {} : { channelParallelLimit: () => parallelLimit }),
     // Short waits, so a start that the provider refuses tries again in a second or two.
@@ -561,6 +582,9 @@ async function runCase(name: string, check: (facts: CaseReport["facts"]) => Prom
     control.call = {};
     await writeControl();
     setMemory("ok");
+    tabsMode = "fixed";
+    tabLimit = 2;
+    setFreeMb(null);
   }
 }
 
@@ -1209,7 +1233,127 @@ try {
     await assertNoStuckLines(facts);
   });
 
-  report.passed = report.cases.length === (onlyCases?.length ?? 20) && report.cases.every((entry) => entry.passed);
+  /**
+   * Starts one held request per tab, in order, for one agent. A request waits for the start of the one
+   * before it: the fake holds a mark for the first turn whose text shows it, and the channel history
+   * of a turn shows the requests that came before it.
+   */
+  const startTabs = async (
+    channelId: string,
+    tabs: string[],
+    marks: string[],
+    agentId: string,
+    waitFor_ = marks.length,
+  ) => {
+    for (const [index, mark] of marks.entries()) {
+      await send(channelId, tabs[index] ?? "", `${mark}: tab work`, agentId);
+      if (index < waitFor_) await waitFor(`${mark} starts`, () => started(mark));
+    }
+  };
+
+  await runCase("memory budget: with 2 spare sessions, 1 + 2 tabs run and the 4th waits for memory", async (facts) => {
+    tabsMode = "memory";
+    tabLimit = 4;
+    setFreeMb(freeMbForSpare(2));
+    const channelId = await createChannel("lanes-21", [ada]);
+    const tabs = [
+      await createTab(channelId),
+      await createTab(channelId),
+      await createTab(channelId),
+      await createTab(channelId),
+    ];
+    const marks = ["bud-21a", "bud-21b", "bud-21c", "bud-21d"];
+    await hold(...marks);
+    await startTabs(channelId, tabs, marks, ada, 3);
+    const waiting = await waitFor("the 4th tab waits for memory", () => {
+      const fourth = task(channelId, tabs[3] ?? "", "bud-21d");
+      return fourth?.state === "queued" && fourth.wait?.reason === "memory" ? fourth : null;
+    });
+    facts.fourthWait = waiting.wait?.reason ?? null;
+    facts.running = tabs
+      .slice(0, 3)
+      .filter((tab, index) => task(channelId, tab, marks[index] ?? "")?.state === "running").length;
+    assert.equal(facts.running, 3, "the first tab and 2 more run");
+    assert.equal(started("bud-21d") === undefined, true, "the 4th did not start");
+    // The memory comes back: a sample with room wakes the refused tab.
+    setFreeMb(freeMbForSpare(6));
+    await waitFor("the 4th tab starts when there is room", () => started("bud-21d"));
+    facts.startedAfterRoom = true;
+    await release(...marks);
+    await waitFor("every turn ends", () => marks.every((mark) => ended(mark)));
+    await assertNoStuckLines(facts);
+  });
+
+  await runCase(
+    "memory budget: two agents in the same pass with 1 spare session start only one extra tab",
+    async (facts) => {
+      tabsMode = "memory";
+      tabLimit = 4;
+      setFreeMb(freeMbForSpare(6));
+      const channelId = await createChannel("lanes-22", [ada, bob]);
+      const tabs = [
+        await createTab(channelId),
+        await createTab(channelId),
+        await createTab(channelId),
+        await createTab(channelId),
+      ];
+      await hold("pass-22a", "pass-22b", "pass-22c", "pass-22d");
+      // The first line of each agent starts at once: it never asks the budget.
+      await send(channelId, tabs[0] ?? "", "pass-22a: first line of ada", ada);
+      await send(channelId, tabs[1] ?? "", "pass-22b: first line of bob", bob);
+      await waitFor("both first lines run", () => started("pass-22a") && started("pass-22b"));
+      // One spare session left, then each agent asks for a second tab in the same pass.
+      setFreeMb(freeMbForSpare(1));
+      await send(channelId, tabs[2] ?? "", "pass-22c: second tab of ada", ada);
+      await send(channelId, tabs[3] ?? "", "pass-22d: second tab of bob", bob);
+      await waitFor("one of the two extra tabs waits for memory", () =>
+        [task(channelId, tabs[2] ?? "", "pass-22c"), task(channelId, tabs[3] ?? "", "pass-22d")].some(
+          (item) => item?.wait?.reason === "memory",
+        ),
+      );
+      await new Promise((done) => setTimeout(done, 400));
+      const extras = ["pass-22c", "pass-22d"].filter((mark) => started(mark));
+      facts.extraStarted = extras;
+      assert.equal(extras.length, 1, "only one extra tab starts with 1 spare session");
+      await release("pass-22a", "pass-22b", "pass-22c", "pass-22d");
+      setFreeMb(freeMbForSpare(6));
+      await waitFor("every turn ends", () =>
+        ["pass-22a", "pass-22b", "pass-22c", "pass-22d"].every((mark) => ended(mark)),
+      );
+      await assertNoStuckLines(facts);
+    },
+  );
+
+  await runCase("fixed mode and a computer with no reading do not ask the budget", async (facts) => {
+    const channelId = await createChannel("lanes-23", [ada]);
+    const tabs = [await createTab(channelId), await createTab(channelId), await createTab(channelId)];
+    const marks = ["fix-23a", "fix-23b", "fix-23c"];
+    tabLimit = 3;
+    // Fixed mode, with no spare session at all: the tabs run up to the number.
+    tabsMode = "fixed";
+    setFreeMb(freeMbForSpare(0));
+    await hold(...marks);
+    await startTabs(channelId, tabs, marks, ada);
+    await waitFor("fixed mode starts 3 tabs with no spare memory", () => marks.every((mark) => started(mark)));
+    facts.fixedRunning = marks.filter((mark) => started(mark)).length;
+    await release(...marks);
+    await waitFor("the turns end", () => marks.every((mark) => ended(mark)));
+    // Memory mode on a computer that gives no reading falls back to the fixed number.
+    tabsMode = "memory";
+    setFreeMb(null);
+    const second = ["nor-23a", "nor-23b", "nor-23c"];
+    const tabsTwo = [await createTab(channelId), await createTab(channelId), await createTab(channelId)];
+    await hold(...second);
+    await startTabs(channelId, tabsTwo, second, ada);
+    await waitFor("memory mode with no reading starts 3 tabs", () => second.every((mark) => started(mark)));
+    facts.noReadingRunning = second.filter((mark) => started(mark)).length;
+    assert.equal(facts.noReadingRunning, 3);
+    await release(...second);
+    await waitFor("the turns end", () => second.every((mark) => ended(mark)));
+    await assertNoStuckLines(facts);
+  });
+
+  report.passed = report.cases.length === (onlyCases?.length ?? 23) && report.cases.every((entry) => entry.passed);
   if (!report.passed) process.exitCode = 1;
 } catch (error) {
   report.error = error instanceof Error ? (error.stack ?? error.message) : String(error);

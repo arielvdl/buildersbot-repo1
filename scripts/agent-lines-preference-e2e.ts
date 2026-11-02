@@ -9,6 +9,12 @@
 // 4. A file with an invalid `agentsPerTab` reads the default of the whole preference.
 // 5. `set` without the field keeps the saved value (a client that does not know the field).
 // 6. The main-process parser and the preload decoder agree on a table of values.
+// Phase 2 adds the tab mode and the ceiling of tabs per agent:
+// 7. `tabsMode` "fixed" and "memory" are saved and read back; any other value is refused at both ends;
+//    `tabsPerAgent` accepts 1 to 8 and refuses 0 and 9.
+// 8. A file with no `tabsMode` reads `memory` where the computer gives a memory reading, and `fixed`
+//    where it does not; `tabsPerAgent()` then reads the ceiling 4 or the fixed 2.
+// 9. `set` without `tabsMode` or `tabsPerAgent` keeps the saved ones.
 // `bun scripts/agent-lines-preference-e2e.ts`. Writes .buildersbot-build/agent-lines-preference-e2e/report.json.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -139,6 +145,81 @@ try {
     agreement.every((entry) => entry.parser === entry.decoder),
     "the parser and the decoder accept and refuse the same values",
   );
+  // 7. The tab mode and the ceiling.
+  for (const mode of ["fixed", "memory"]) {
+    const file = newFile();
+    const store = new AgentLimitPreferenceStore(file, { memoryReadable: true });
+    await Effect.runPromise(store.load());
+    await Effect.runPromise(
+      store.set(parseAgentLimitPreference({ enabled: true, max: 7, tabsMode: mode, tabsPerAgent: 6 })),
+    );
+    const again = new AgentLimitPreferenceStore(file, { memoryReadable: false });
+    await Effect.runPromise(again.load());
+    assert.equal(again.tabsMode(), mode, `${mode} is saved and read back, whatever the computer reads`);
+    assert.equal(again.tabsPerAgent(), 6);
+  }
+  const tabsRefusals = [
+    { tabsMode: "auto" },
+    { tabsMode: "" },
+    { tabsMode: 1 },
+    { tabsMode: null },
+    { tabsPerAgent: 0 },
+    { tabsPerAgent: 9 },
+    { tabsPerAgent: 2.5 },
+  ].map((extra) => {
+    const input = { enabled: true, max: 7, ...extra };
+    return {
+      extra: JSON.stringify(extra),
+      parser: accepts(parseAgentLimitPreference, input),
+      decoder: accepts(decodeAgentLimitPreference, input),
+    };
+  });
+  checks.set("tabsRefusals", tabsRefusals);
+  assert.ok(
+    tabsRefusals.every((entry) => !entry.parser && !entry.decoder),
+    "bad tab values are refused at both ends",
+  );
+  for (const tabsPerAgent of [1, 2, 3, 4, 5, 6, 7, 8]) {
+    const input = { enabled: true, max: 7, tabsPerAgent };
+    assert.ok(
+      accepts(parseAgentLimitPreference, input) && accepts(decodeAgentLimitPreference, input),
+      `${tabsPerAgent} tabs`,
+    );
+  }
+
+  // 8. A file with no `tabsMode` reads the mode of the computer.
+  {
+    const file = newFile();
+    await writeFile(file, JSON.stringify({ version: 1, enabled: true, max: 3 }));
+    const onMac = new AgentLimitPreferenceStore(file, { memoryReadable: true });
+    const elsewhere = new AgentLimitPreferenceStore(file, { memoryReadable: false });
+    await Effect.runPromise(onMac.load());
+    await Effect.runPromise(elsewhere.load());
+    checks.set("noTabsMode", {
+      withReading: { mode: onMac.tabsMode(), tabs: onMac.tabsPerAgent() },
+      withoutReading: { mode: elsewhere.tabsMode(), tabs: elsewhere.tabsPerAgent() },
+    });
+    assert.equal(onMac.tabsMode(), "memory");
+    assert.equal(onMac.tabsPerAgent(), 4, "the ceiling of the memory mode");
+    assert.equal(elsewhere.tabsMode(), "fixed");
+    assert.equal(elsewhere.tabsPerAgent(), 2, "the fixed number");
+  }
+
+  // 9. `set` without the fields keeps the saved ones, also after a restart.
+  {
+    const file = newFile();
+    const store = new AgentLimitPreferenceStore(file, { memoryReadable: true });
+    await Effect.runPromise(store.load());
+    await Effect.runPromise(store.set({ enabled: true, max: 7, tabsMode: "fixed", tabsPerAgent: 5 }));
+    await Effect.runPromise(store.set(parseAgentLimitPreference({ enabled: false, max: 9 })));
+    const again = new AgentLimitPreferenceStore(file, { memoryReadable: true });
+    await Effect.runPromise(again.load());
+    const onDisk = JSON.parse(await readFile(file, "utf8"));
+    checks.set("keepTabsOnSet", { mode: again.tabsMode(), tabs: again.tabsPerAgent(), onDisk });
+    assert.equal(again.tabsMode(), "fixed");
+    assert.equal(again.tabsPerAgent(), 5);
+    assert.equal(onDisk.tabsMode, "fixed");
+  }
   report.passed = true;
 } catch (error) {
   report.error = error instanceof Error ? (error.stack ?? error.message) : String(error);
