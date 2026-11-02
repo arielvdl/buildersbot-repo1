@@ -116,6 +116,12 @@ const SEATS: readonly (readonly [number, number])[] = [
   [0.72, -0.72],
 ];
 
+/** Up to this many agents, each has a bubble. Above it, only the first few (the ones that need attention). */
+const BUBBLE_ALL = 4;
+const BUBBLE_FOCUS = 3;
+const BUBBLE_MIN = 96;
+const BUBBLE_MAX = 210;
+const BUBBLE_EDGE = 12;
 const FIGURE_WIDTH = 100;
 const FIGURE_HEIGHT = 108;
 const TABLE_RATIO = 0.5774;
@@ -279,10 +285,11 @@ function StageBoard(props: ChannelStageProps) {
         </For>
         <ul class="channel-stage-actors">
           <For each={props.actors} keyed={(actor) => actor.id}>
-            {(actor) => (
+            {(actor, index) => (
               <StageActorView
                 actor={actor()}
                 geometry={geometry()}
+                bubble={props.actors.length <= BUBBLE_ALL || index() < BUBBLE_FOCUS}
                 delegateName={props.actors.find((candidate) => candidate.id === actor().delegatesTo)?.name ?? ""}
                 targetX={point(actor().delegatesTo ?? "")?.x ?? null}
               />
@@ -472,6 +479,8 @@ function StageActorView(props: {
   actor: ChannelStageActor;
   geometry: Geometry;
   delegateName: string;
+  /** Whether the speech bubble shows. A crowded stage gives it to the agents that need attention first. */
+  bubble?: boolean;
   /** The x of the agent that gets the work, so a delegating agent leans toward it. */
   targetX: number | null;
   leaving?: boolean;
@@ -492,6 +501,12 @@ function StageActorView(props: {
   };
   const modelName = () => family()?.name ?? props.actor.model ?? "";
   const anchor = () => ((SEATS[props.actor.seat]?.[0] ?? 0) < -0.1 ? "left" : "right");
+  /** The room between the figure and the edge of the stage on the side where the bubble opens. */
+  const bubbleMax = () => {
+    const figure = FIGURE_WIDTH * place().scale;
+    const room = anchor() === "right" ? props.geometry.width - place().x - figure / 2 : place().x - figure / 2;
+    return Math.round(Math.max(BUBBLE_MIN, Math.min(BUBBLE_MAX, room - BUBBLE_EDGE)));
+  };
   const say = () => {
     const actor = props.actor;
     if (actor.activity === "delegating")
@@ -590,6 +605,7 @@ function StageActorView(props: {
       class="channel-stage-actor"
       data-activity={props.actor.activity}
       data-anchor={anchor()}
+      data-front={(SEATS[props.actor.seat]?.[1] ?? 0) > 0.5 ? "" : undefined}
       data-lean={lean()}
       data-leaving={props.leaving ? "" : undefined}
       aria-label={`${props.actor.name}, ${t(ACTIVITY_LABEL[props.actor.activity])}`}
@@ -600,6 +616,7 @@ function StageActorView(props: {
         "--stage-width": `${Math.round(FIGURE_WIDTH * place().scale)}px`,
         "--stage-height": `${Math.round(FIGURE_HEIGHT * place().scale)}px`,
         "--stage-accent": avatarMarkAccent(props.actor.hue),
+        "--stage-bubble-max": `${bubbleMax()}px`,
       }}
     >
       <div
@@ -634,7 +651,7 @@ function StageActorView(props: {
           </div>
         </div>
       </div>
-      <Show when={!props.leaving}>
+      <Show when={!props.leaving && props.bubble !== false}>
         <div class="channel-stage-bubble" data-tone={props.actor.activity}>
           <Show
             when={

@@ -77,7 +77,7 @@ export const AtWork: Story = {
   ),
 };
 
-/** The 8 behaviours at once. */
+/** The 8 behaviours at once, in the order the stage model gives: the ones that need attention first. */
 export const Behaviors: Story = {
   render: () => (
     <StoryChannelConversation
@@ -88,13 +88,13 @@ export const Behaviors: Story = {
           request={{ ...REQUEST, done: 2 }}
           links={[]}
           actors={[
+            actor("f", "Wait", "grok", "grok-4", 5, "waiting"),
+            actor("g", "Fail", "codex", "gpt-5.5", 6, "failed"),
+            actor("e", "Hand", "claude", "claude-sonnet-5-5", 4, "delegating"),
             actor("a", "Chief", "claude", "claude-opus-5-5", 0, "thinking"),
             actor("b", "Read", "claude", "claude-sonnet-5-5", 1, "reading", "Gathering the relevant information…"),
             actor("c", "Edit", "codex", "gpt-5.5", 2, "editing", "Making the requested changes…"),
             actor("d", "Run", "claude", "claude-haiku-5-5", 3, "running", "Checking the work…"),
-            actor("e", "Hand", "claude", "claude-sonnet-5-5", 4, "delegating"),
-            actor("f", "Wait", "grok", "grok-4", 5, "waiting"),
-            actor("g", "Fail", "codex", "gpt-5.5", 6, "failed"),
             actor("h", "Done", "claude", "claude-opus-5-5", 7, "done"),
           ]}
         />

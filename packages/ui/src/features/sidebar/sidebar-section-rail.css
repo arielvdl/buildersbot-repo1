@@ -699,7 +699,7 @@
  */
 .section-rail-stage-flag {
   position: absolute;
-  bottom: var(--buildersbot-space-2);
+  bottom: var(--buildersbot-space-1-5);
   left: 50%;
   width: var(--buildersbot-control-xl);
   height: var(--buildersbot-control-xl);

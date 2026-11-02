@@ -286,8 +286,8 @@
   position: absolute;
   bottom: calc(var(--stage-height) * 0.5);
   width: max-content;
-  min-width: 120px;
-  max-width: 210px;
+  min-width: 0;
+  max-width: var(--stage-bubble-max, 210px);
   padding: var(--buildersbot-space-1-5) var(--buildersbot-space-3);
   border: 1px solid var(--buildersbot-border-strong);
   border-radius: var(--buildersbot-radius-lg);
@@ -295,6 +295,11 @@
   color: var(--buildersbot-text-primary);
   font-size: var(--buildersbot-text-md);
   line-height: var(--buildersbot-leading-md);
+}
+
+/* A bubble of the front row opens low, so it stays under the name of the agent beside and above it. */
+.channel-stage-actor[data-front] .channel-stage-bubble {
+  bottom: calc(var(--stage-height) * 0.05);
 }
 
 .channel-stage-actor[data-anchor="right"] .channel-stage-bubble {
@@ -333,7 +338,10 @@
 
 /* The text of the bubble comes in with a fade. It is not typed letter by letter. */
 .channel-stage-bubble-text {
-  display: block;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   animation: channel-stage-fade var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
 }
 
