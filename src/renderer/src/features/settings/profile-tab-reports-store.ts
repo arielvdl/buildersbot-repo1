@@ -41,7 +41,11 @@ function periodRange(
  * closes while the Profile shows appears on the next visit. The records on screen stay in memory
  * after the Profile closes, and no call runs until it shows again.
  */
-export function createProfileTabReportsStore(isActive: () => boolean): ProfileTabReportsState {
+export function createProfileTabReportsStore(
+  isActive: () => boolean,
+  /** Opens a new tab for a record. Without it, the records have no Continue button. */
+  continuation?: Pick<ProfileTabReportsState, "continueBlocked" | "onContinue"> | undefined,
+): ProfileTabReportsState {
   const [state, setState] = createStore<{
     phase: ProfileTabReportsState["phase"];
     period: ProfileTabReportsPeriod;
@@ -161,6 +165,8 @@ export function createProfileTabReportsStore(isActive: () => boolean): ProfileTa
       });
       void load(true);
     },
+    continueBlocked: continuation?.continueBlocked,
+    onContinue: continuation?.onContinue,
     onLoadMore: () => void loadMore(),
     onRetry: () => void load(true),
     onDelete: async (id) => {

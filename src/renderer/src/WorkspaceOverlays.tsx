@@ -1,5 +1,6 @@
 import {
   type CentralAuthUser,
+  type ChannelTabReport,
   LOCAL_SERVER_ID,
   LOCAL_SERVER_LIMIT,
   type RoutineFields,
@@ -26,6 +27,8 @@ import { desktopBrowserProfileCalls } from "./features/browser/browser-profiles-
 import { createBrowserProfilesStore } from "./features/browser/stores/browser-profiles-store";
 import { useChannels } from "./features/channels/channels-context";
 import { useConnectors } from "./features/connectors/connectors-context";
+import { useConversationController } from "./features/conversation/conversation-controller-context";
+import { composerDraftKey } from "./features/conversation/conversation-keys";
 import { conversationPort } from "./features/conversation/conversation-port";
 import { useCustomAgents } from "./features/custom-agents/custom-agents-context";
 import { useCustomProviders } from "./features/custom-providers/custom-providers-context";
@@ -51,6 +54,7 @@ import { type ServerSettingsSection, serverSettingsSectionShown } from "./featur
 import { useServerSwitch } from "./features/servers/server-switch";
 import { useServers } from "./features/servers/servers-context";
 import type { HostProviderSettings } from "./features/settings/ProviderSettingsSection";
+import { tabReportContinueBlock, tabReportDraftText } from "./features/settings/profile-tab-report-continue";
 import { useSettings } from "./features/settings/settings-context";
 import { settingsPort } from "./features/settings/settings-port";
 import { useUpdates } from "./features/updates/updates-context";
@@ -885,9 +889,32 @@ function AppSettings(props: AccountProps) {
   const auth = useAuth();
   const updates = useUpdates();
   const whatsNew = useWhatsNew();
-  const { servers, hostStatus, setAddServerOpen, setServerMuted, setServerNotificationLevel } = useServers();
+  const { servers, activeServerId, hostStatus, setAddServerOpen, setServerMuted, setServerNotificationLevel } =
+    useServers();
   const { publishLocalServer } = useServerSettings();
   const { approvals } = useTurns();
+  const conversation = useConversationController();
+  /**
+   * Opens a new tab in the channel of a closed tab and fills its message box with a short summary. It
+   * sends nothing. The new tab is empty, so the draft replaces no text. A failure shows on the record.
+   */
+  async function continueTabReport(report: ChannelTabReport): Promise<boolean> {
+    const channel = channels.state.channels.find((item) => item.id === report.channelId);
+    if (tabReportContinueBlock(channel)) return false;
+    const text = currentText();
+    await channels.open(report.channelId);
+    const topicId = await channels.createTopic(
+      text.t("channel.topic.defaultName", { n: (channel?.topics?.length ?? 0) + 1 }),
+    );
+    if (!topicId) return false;
+    const key = composerDraftKey({ agentId: report.channelId, serverId: activeServerId(), tabId: topicId });
+    conversation.setChannelDrafts((drafts) => ({
+      ...drafts,
+      [key]: { text: tabReportDraftText(report, text), attachments: [], replyToMessageId: null },
+    }));
+    conversation.setComposerFocusRequest((value) => value + 1);
+    return true;
+  }
   /**
    * The web app on a phone lists this computer only while its server is published. A published server
    * (`enabledOnLaunch`) that is not online, such as after a Signal failure at wake, is published again
@@ -977,6 +1004,11 @@ function AppSettings(props: AccountProps) {
         channelName={(channelId) =>
           channels.state.channels.find((channel) => channel.id === channelId)?.name ?? channelId
         }
+        tabReportContinue={{
+          continueBlocked: (report) =>
+            tabReportContinueBlock(channels.state.channels.find((channel) => channel.id === report.channelId)),
+          onContinue: continueTabReport,
+        }}
       />
     </Loading>
   );

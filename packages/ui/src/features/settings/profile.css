@@ -113,6 +113,10 @@
   -webkit-line-clamp: 2;
 }
 
+.profile-tab-report .profile-tab-report-failed {
+  color: var(--buildersbot-danger-text);
+}
+
 .profile-tab-reports-more {
   display: flex;
   justify-content: center;

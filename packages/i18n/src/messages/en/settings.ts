@@ -854,6 +854,17 @@ export const messages = defineMessages("settings", {
   "settings.profile.tabReports.delete.confirm": "Delete",
   "settings.profile.tabReports.delete.pending": "Deleting…",
   "settings.profile.tabReports.delete.failed": "Could not delete the record.",
+  // Continue opens a new tab in the same channel with a short summary in the message box. It sends nothing.
+  "settings.profile.tabReports.continue.action": "Continue in new tab",
+  "settings.profile.tabReports.continue.label": "Continue {name} in a new tab",
+  "settings.profile.tabReports.continue.failed": "Could not open a new tab.",
+  "settings.profile.tabReports.continue.unavailable.gone": "This channel no longer exists.",
+  "settings.profile.tabReports.continue.unavailable.archived": "This channel is deleted. Restore it to continue.",
+  "settings.profile.tabReports.continue.unavailable.full": "This channel already has the most tabs it can have.",
+  // The lines that fill the message box of the new tab. {outcome} is Done, Not done or Other.
+  "settings.profile.tabReports.continue.draftIntro": "Continuing the closed tab “{tab}”. It ended as: {outcome}.",
+  "settings.profile.tabReports.continue.draftNote": "Note: {note}",
+  "settings.profile.tabReports.continue.draftResult": "Last result: {result}",
   "settings.profile.account.title": "Account",
   "settings.profile.email.title": "Email",
   "settings.profile.email.description": "Used to sign in to Builders Bot.",

@@ -30,6 +30,7 @@ import { createBillingStore } from "@buildersbot/ui/features/billing/billing-sto
 import { LicenseSection } from "@buildersbot/ui/features/billing/LicenseSection";
 import { createLicenseStore } from "@buildersbot/ui/features/billing/license-store";
 import type { GeneralSettingsValue } from "@buildersbot/ui/features/settings/app-settings";
+import type { ProfileTabReportsState } from "@buildersbot/ui/features/settings/ProfileTabReports";
 import { ServerCreationAdminSection } from "@buildersbot/ui/features/settings/ServerCreationAdminSection";
 import { SettingsDialogShell, type SettingsPagePlacement } from "@buildersbot/ui/features/settings/SettingsDialogShell";
 import {
@@ -139,6 +140,11 @@ export interface SettingsModalProps {
       watch: (visible: () => boolean, options?: { fast?: boolean }) => void;
       refresh: () => Promise<void>;
     };
+  /**
+   * Continues a closed channel tab in a new tab of its channel, from the Profile. Without it, the
+   * closed tabs have no Continue button.
+   */
+  tabReportContinue?: Pick<ProfileTabReportsState, "continueBlocked" | "onContinue"> | undefined;
   /** The name of a channel, for the lane of the load page. */
   channelName?: ((channelId: string) => string) | undefined;
   /**
@@ -166,7 +172,14 @@ export function SettingsModal(props: SettingsModalProps) {
     () => props.open && activeTab() === "profile",
     (stats) => renderProfileShareImage(props.account, stats),
   );
-  const profileTabReports = createProfileTabReportsStore(() => props.open && activeTab() === "profile");
+  const profileTabReports = createProfileTabReportsStore(
+    () => props.open && activeTab() === "profile",
+    // The caller's actions read their own contexts when they run, so they are taken once here.
+    {
+      continueBlocked: (report) => untrack(() => props.tabReportContinue)?.continueBlocked?.(report) ?? null,
+      onContinue: untrack(() => props.tabReportContinue)?.onContinue,
+    },
+  );
   const mobileConnect = createSettingsMobileConnectStore(props, () => activeTab() === "mobile-connect");
   const updates = createSettingsUpdatesStore(props);
   const billing = createBillingStore(

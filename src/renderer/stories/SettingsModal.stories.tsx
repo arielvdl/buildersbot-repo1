@@ -180,6 +180,8 @@ function SettingsModalStory(props: {
   tabReports?: ChannelTabReport[];
   /** How the list of closed tabs answers: never, or with a failure. */
   tabReportsAnswer?: "pending" | "failure";
+  /** Shows Continue on the closed tabs: the channel of every fifth record is gone, and one try fails. */
+  tabReportContinue?: boolean;
 }) {
   const previousApi = window.buildersbot;
   const billingApi = createMockBilling();
@@ -288,6 +290,15 @@ function SettingsModalStory(props: {
       >
         {(page) => (
           <SettingsModal
+            tabReportContinue={
+              props.tabReportContinue
+                ? {
+                    continueBlocked: (report) =>
+                      report.id.endsWith("5") ? "settings.profile.tabReports.continue.unavailable.gone" : null,
+                    onContinue: async (report) => !report.id.endsWith("3"),
+                  }
+                : undefined
+            }
             page={page()}
             initialTab={props.initialTab}
             openTab={props.openTab}
@@ -428,7 +439,9 @@ function storyTabReports(count: number): ChannelTabReport[] {
 
 /** The Profile with 26 closed tabs: the first 20 show, and Show more brings the rest. */
 export const ProfileClosedTabs: Story = {
-  render: () => <SettingsModalStory initialOpen initialTab="profile" tabReports={storyTabReports(26)} />,
+  render: () => (
+    <SettingsModalStory initialOpen initialTab="profile" tabReports={storyTabReports(26)} tabReportContinue />
+  ),
 };
 
 export const ProfileClosedTabsEmpty: Story = {
