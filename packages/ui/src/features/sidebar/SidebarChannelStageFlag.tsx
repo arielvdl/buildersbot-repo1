@@ -5,25 +5,26 @@
  */
 
 import { Button, Flag, MotionTooltip, Popover, RadioGroup, SwitchField } from "@buildersbot/ui";
+import { createSignal } from "solid-js";
 import { useText } from "../../text";
 import type { SidebarChannelStageFlag as StageFlag } from "./sidebar-types";
 
 export function SidebarChannelStageFlag(props: { stage: StageFlag }) {
   const { t } = useText();
+  const [open, setOpen] = createSignal(false);
   return (
-    <Popover.Root placement="right-end" gutter={8}>
-      <MotionTooltip content={t("channel.stage.flag.label")}>
+    <Popover.Root open={open()} onOpenChange={setOpen} placement="right-end" gutter={8}>
+      {/* The tooltip would cover the settings while they are open. */}
+      <MotionTooltip content={t("channel.stage.flag.label")} suppressed={open()}>
         <Popover.Trigger
           as={Button}
           variant="ghost"
           type="button"
-          class="server-rail-button server-rail-action section-rail-stage-flag"
+          class="server-rail-button section-rail-stage-flag"
           aria-label={t("channel.stage.flag.label")}
           data-active={props.stage.enabled ? "" : undefined}
         >
-          <span class="server-rail-monogram" aria-hidden="true">
-            <Flag />
-          </span>
+          <Flag class="section-rail-stage-flag-icon" aria-hidden="true" />
         </Popover.Trigger>
       </MotionTooltip>
       <Popover.Portal>

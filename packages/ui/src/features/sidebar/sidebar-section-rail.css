@@ -693,17 +693,42 @@
   }
 }
 
-/* The flag of the agent stage, fixed under the list. A dot shows while the stage is on. */
+/*
+ * The flag of the agent stage, at the very foot of the rail, on the row of the settings button of the
+ * first column. It is a plain icon, as the buttons of that column are. A dot shows while the stage is on.
+ */
 .section-rail-stage-flag {
-  position: relative;
+  position: absolute;
+  bottom: var(--buildersbot-space-2);
+  left: 50%;
+  width: var(--buildersbot-control-xl);
+  height: var(--buildersbot-control-xl);
   flex: none;
-  margin-top: var(--buildersbot-space-2);
+  border-radius: var(--buildersbot-radius-lg);
+  color: var(--buildersbot-text-muted);
+  translate: -50% 0;
+}
+
+.section-rail-stage-flag[data-active] {
+  color: var(--buildersbot-success-text);
+}
+
+.section-rail-stage-flag-icon {
+  width: var(--buildersbot-icon-lg);
+  height: var(--buildersbot-icon-lg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .section-rail-stage-flag:hover {
+    background: var(--buildersbot-bg-control);
+    color: var(--buildersbot-text-primary);
+  }
 }
 
 .section-rail-stage-flag[data-active]::after {
   position: absolute;
-  top: var(--buildersbot-space-1-5);
-  right: var(--buildersbot-space-1-5);
+  top: var(--buildersbot-space-2);
+  right: var(--buildersbot-space-2);
   width: 7px;
   height: 7px;
   border-radius: var(--buildersbot-radius-pill);
