@@ -33,6 +33,7 @@ import {
   HOSTED_UPDATE_TRIGGER,
   HostedUpdateAdapter,
 } from "./hosted-update-adapter";
+import { beginInstallation } from "./installation-marker";
 import { LicenseDesktopService } from "./license-service";
 import { LocalSignInWindows } from "./local-sign-in-window";
 import { LocalSkillLibrary } from "./local-skill-library";
@@ -1090,6 +1091,20 @@ export async function createApplicationServices({
       }),
   });
   teardown.push(TEARDOWN_ORDER.dynamicIsland, "the Dynamic Island", () => dynamicIsland.destroy());
+  // The sign-in of the previous installation does not sign this one in. A copy of the app data folder
+  // arrives with its account session, and the person has to sign in to Cultura Builder with their own
+  // account; the Cultura Builder provider sign-in below goes with it. A hosted or self-hosted server
+  // keeps it: it is one account per machine, and a hosted server has no second claim to sign in with.
+  const keepsStoredSignIn = hostedServer !== null || serverModeEnvironment !== null;
+  const installation = beginInstallation({
+    appDataPath: app.getPath("appData"),
+    userDataPath: app.getPath("userData"),
+    previousInstallationFiles: keepsStoredSignIn ? [] : [join(app.getPath("userData"), CENTRAL_AUTH_FILE)],
+  });
+  if (installation.error) {
+    const name = installation.error instanceof Error ? installation.error.name : typeof installation.error;
+    logger.warn(`The installation marker could not be written (${name}).`);
+  }
   const centralAuthApiUrl = readCentralAuthApiUrl(
     process.env.BUILDERSBOT_AUTH_API_URL,
     app.isPackaged ? BUILDERSBOT_CONTROL_PLANE_ORIGIN : "http://127.0.0.1:3100",
@@ -1707,6 +1722,14 @@ export async function createApplicationServices({
   performance.mark("buildersbot:services.provider-detection");
   const credentialLoadError = await Effect.runPromise(providerCredentials.load());
   registerSecretHealthSource("provider-credentials", PROVIDER_CREDENTIAL_FILE, () => providerCredentials.unreadable());
+  // The Cultura Builder token is of the account that signed in before, not of this person. The other
+  // providers stay: their own CLI keeps them, and they cost the person nothing to keep.
+  if (installation.fresh && !keepsStoredSignIn && providerCredentials.get("cultura-builder") !== null) {
+    await Effect.runPromise(providerCredentials.clear("cultura-builder")).catch((error: unknown) => {
+      const name = error instanceof Error ? error.name : typeof error;
+      logger.warn(`The Cultura Builder sign-in of the previous installation was kept (${name}).`);
+    });
+  }
   if (credentialLoadError) {
     logger.warn(
       `Builders Bot could not read the provider key file (${credentialLoadError.name}). It was left unchanged.`,
