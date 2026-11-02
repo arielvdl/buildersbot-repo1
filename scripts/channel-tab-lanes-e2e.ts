@@ -14,12 +14,29 @@
 // 5. A wait cycle through dependencies is refused when the agent makes it.
 // 6. Low memory: a new tab of a working agent does not start, with the reason "memory", and starts
 //    when the memory is back.
-// 7. The agent's own chat behaves as before: it waits for the channel work and names the channel.
+// 7. The agent's own chat and a channel tab are lines of their own: a chat message starts and ends
+//    while a tab turn runs, and the queue of the chat shows no hold.
 // 8. Deleting a tab stops only the turn of that tab. The other tab of the same agent keeps running.
 // 9. A restart: the requests that waited in two tabs each start once, and the turn that ran at the
 //    stop does not run again.
 // 10. A start that the provider refuses (529) in one tab waits for its retry with its own marker. It
 //    takes no place among the agent's tabs, so another tab starts during the wait, and it runs once.
+// 11. A tab request starts while a chat turn runs, with no wait.
+// 12. Two chat messages run in order, with the tab running.
+// 13. A message from a colleague starts at once in the chat of the receiver, beside a running tab turn,
+//    and never steers the turn of the tab.
+// 14. A provider that runs one turn at a time keeps the old rule: the chat waits for the channel and
+//    names it.
+// 15. Forcing a chat message stops only the turn of the chat; the turn of the tab keeps running.
+// 16. `interrupt_agent` stops only the chat turn that works on the caller's message; the tab turn of
+//    the same agent keeps running.
+// 17. With a tab running and the chat idle, "new chat" and "compact" are not refused for the tab.
+// 18. "Agents per tab": 3 allow 3 of 4 members, and the 4th starts when one ends; 1 allows one at a
+//    time.
+// 19. No hook for the limit: the default (4) lets 4 members of a tab run.
+// 20. The chat turn gets a short note (at most 300 characters, names and resources only) when a tab of
+//    the same agent holds a reserved resource, and no note otherwise.
+// Every case ends with no delivery in `queued`, `starting` or `running` for any agent.
 // `bun scripts/channel-tab-lanes-e2e.ts`. Writes .buildersbot-build/channel-tab-lanes-e2e/report.json.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -27,10 +44,17 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { AGENT_PROVIDERS, type ChannelTask, DEFAULT_START_RETRY_SETTINGS } from "@buildersbot/contracts/ipc";
+import {
+  AGENT_PROVIDERS,
+  agentProviderDescriptor,
+  type ChannelTask,
+  DEFAULT_START_RETRY_SETTINGS,
+} from "@buildersbot/contracts/ipc";
+import { sourceText } from "@buildersbot/i18n/source";
 import { Effect } from "effect";
 import type { StoredStartBreaker } from "../src/backend/agent/start-retry";
 import type { AgentBrowserHost } from "../src/backend/agent/turn-lifecycle";
+import { LINES_NOTICE_START } from "../src/backend/channel-lines-notice";
 import type { HostMemory, HostMemoryLevel } from "../src/backend/host-memory";
 import { getString, isRecord } from "../src/backend/protocol";
 
@@ -111,10 +135,25 @@ const finish = (turnId, status) => {
   write({ method: "turn/completed", params: { threadId: turn.threadId, turn: { id: turnId, status } } });
 };
 const marked = (turn, marks) => (marks || []).some((mark) => turn.marks.includes(mark));
+/** The id of each tool call this fake made -> the mark of its turn. */
+const calls = new Map();
+let callCount = 0;
 setInterval(() => {
   if (running.size === 0) return;
   const current = control();
   for (const [turnId, turn] of [...running]) {
+    // A turn whose text has a call mark makes that tool call once, as a model does.
+    for (const [mark, call] of Object.entries(current.call || {})) {
+      if (turn.called || !turn.texts.some((text) => text.includes(mark))) continue;
+      turn.called = true;
+      const id = "call-" + process.pid + "-" + (++callCount);
+      calls.set(id, mark);
+      write({
+        id,
+        method: "item/tool/call",
+        params: { threadId: turn.threadId, turnId, callId: "call-" + callCount, namespace: "buildersbot", tool: call.tool, arguments: call.arguments },
+      });
+    }
     if (marked(turn, current.hold)) continue;
     if (marked(turn, current.ask) && !turn.answered) {
       if (turn.asked) continue;
@@ -207,7 +246,10 @@ process.stdin.on("data", (chunk) => {
       const message = JSON.parse(line);
       log({ method: message.method ?? null, id: message.id ?? null, params: message.params ?? null });
       if (message.method && message.id !== undefined) answer(message);
-      else if (message.id !== undefined && questions.has(message.id)) {
+      else if (message.id !== undefined && calls.has(message.id)) {
+        log({ toolResult: calls.get(message.id), ok: message.result?.success === true, text: JSON.stringify(message.result ?? message.error ?? null) });
+        calls.delete(message.id);
+      } else if (message.id !== undefined && questions.has(message.id)) {
         const turn = running.get(questions.get(message.id));
         questions.delete(message.id);
         if (turn) turn.answered = true;
@@ -222,6 +264,8 @@ interface Control {
   hold: string[];
   ask: string[];
   refuse: Record<string, number>;
+  /** Mark -> the tool call that the first turn with this mark makes. */
+  call: Record<string, { tool: string; arguments: unknown }>;
 }
 
 interface ProtocolEntry {
@@ -304,6 +348,20 @@ function ended(mark: string): ProtocolEntry | undefined {
   return turnId ? protocol().find((line) => line.turnEnded === turnId) : undefined;
 }
 
+/** The result that the fake saw for the tool call of the turn with this mark. */
+function toolResult(mark: string): { ok: boolean; text: string } | undefined {
+  try {
+    for (const line of readFileSync(logPath, "utf8").split("\n").filter(Boolean)) {
+      const entry = JSON.parse(line);
+      if (isRecord(entry) && entry.toolResult === mark)
+        return { ok: entry.ok === true, text: typeof entry.text === "string" ? entry.text : "" };
+    }
+  } catch {
+    // The log is not there yet.
+  }
+  return undefined;
+}
+
 /** Waits for a state of the service or of the fake Codex. */
 async function waitFor<T>(label: string, read: () => T | null | undefined | false, timeoutMs = 15_000): Promise<T> {
   const deadline = Date.now() + timeoutMs;
@@ -315,7 +373,7 @@ async function waitFor<T>(label: string, read: () => T | null | undefined | fals
   }
 }
 
-const control: Control = { hold: [], ask: [], refuse: {} };
+const control: Control = { hold: [], ask: [], refuse: {}, call: {} };
 const writeControl = () => writeFile(controlPath, JSON.stringify(control));
 const hold = async (...marks: string[]) => {
   control.hold.push(...marks);
@@ -354,12 +412,14 @@ await writeControl();
 await writeFile(fakeCodex, FAKE_CODEX, { mode: 0o755 });
 /** The most tabs of one agent that run a turn at the same time, as the person set it. */
 const tabLimit = 2;
+/** The most agents that run a turn at the same time in one tab, as the person set it. */
+let parallelLimit = 4;
 
 /** The breakers of the start retry, kept across a restart as the main process keeps its file. */
 let storedBreakers: readonly StoredStartBreaker[] = [];
 
 /** The services of one run of the app on the profile. A restart makes them again. */
-function openServices() {
+function openServices(withoutParallelLimit = false) {
   const database = new BuildersBotDatabase(userData);
   const store = new AgentStore(userData, home, database);
   const mailbox = new MailboxStore(userData, store.sharedRoot, store.database);
@@ -371,6 +431,8 @@ function openServices() {
     offProviders: AGENT_PROVIDERS.filter((provider) => provider !== "codex"),
     memoryPressure,
     channelTabLimit: () => tabLimit,
+    // Omitted, the service uses its default (`DEFAULT_AGENTS_PER_TAB`).
+    ...(withoutParallelLimit ? {} : { channelParallelLimit: () => parallelLimit }),
     // Short waits, so a start that the provider refuses tries again in a second or two.
     startRetry: {
       settings: () => ({ ...DEFAULT_START_RETRY_SETTINGS, firstDelaySeconds: 1, maxDelaySeconds: 2 }),
@@ -400,7 +462,28 @@ async function createAgent(name: string): Promise<string> {
     }),
   );
   await waitFor(`${name}: the first turn ends`, () => ended(first));
+  allAgentIds.push(agent.id);
   return agent.id;
+}
+
+const allAgentIds: string[] = [];
+
+/** No line is stuck: no delivery of any agent is `queued`, `starting` or `running` once the case is over. */
+async function assertNoStuckLines(facts: CaseReport["facts"]): Promise<void> {
+  const stuck = () => [
+    ...allAgentIds.flatMap((agentId) =>
+      agents
+        .listQueue(agentId)
+        .deliveries.filter((delivery) => ["queued", "starting", "running"].includes(delivery.status))
+        .map((delivery) => `${agentId.slice(0, 6)}:queue:${delivery.status}`),
+    ),
+    ...mailbox
+      .unresolvedDeliveries()
+      .map(({ delivery }) => `${delivery.recipientAgentId.slice(0, 6)}:${delivery.status}:${delivery.id.slice(0, 6)}`),
+  ];
+  await waitFor("every line is idle", () => stuck().length === 0, 15_000).catch(() => undefined);
+  facts.stuckDeliveries = stuck();
+  assert.deepEqual(facts.stuckDeliveries, [], "no delivery is left queued, starting or running");
 }
 
 async function createChannel(name: string, memberIds: string[]): Promise<string> {
@@ -475,6 +558,7 @@ async function runCase(name: string, check: (facts: CaseReport["facts"]) => Prom
     control.hold = [];
     control.ask = [];
     control.refuse = {};
+    control.call = {};
     await writeControl();
     setMemory("ok");
   }
@@ -672,7 +756,7 @@ try {
     await waitFor("the first tab ends", () => ended("mem-6a"));
   });
 
-  await runCase("the agent's own chat waits for its channel work, as before", async (facts) => {
+  await runCase("the agent's own chat runs beside its channel tab, and its queue shows no hold", async (facts) => {
     const channelId = await createChannel("lanes-7", [ada]);
     const tab = await createTab(channelId);
     await hold("chan-7a");
@@ -680,20 +764,19 @@ try {
     await waitFor("the channel turn starts", () => started("chan-7a"));
     const receipt = await runCauseEffect(agents.sendMessage({ agentId: ada, text: "own-7b: a message to ada" }));
     const deliveryId = receipt.deliveries[0]?.id ?? "";
-    const held = await waitFor("the own chat names the channel", () => {
-      const queue = agents.listQueue(ada);
-      return queue.hold?.channelId === channelId ? queue : null;
-    });
-    facts.hold = {
-      channelId: held.hold?.channelId ?? null,
-      topicName: held.hold?.topicName ?? null,
-      tabs: held.hold?.tabs ?? null,
-    };
-    facts.ownStartedEarly = started("own-7b") !== undefined;
-    assert.equal(facts.ownStartedEarly, false);
-    await release("chan-7a");
-    await waitFor("the own chat message runs after the channel turn", () => ended("own-7b"));
+    await waitFor("the chat turn ends while the tab turn runs", () => ended("own-7b"));
+    facts.tabStillRunning = ended("chan-7a") === undefined;
+    facts.queueHold = agents.listQueue(ada).hold?.channelId ?? null;
+    assert.equal(facts.tabStillRunning, true, "the tab turn still runs");
+    assert.equal(facts.queueHold, null, "the queue of the chat shows no hold");
+    await waitFor(
+      "the chat delivery completes",
+      () => mailbox.getDelivery(deliveryId)?.delivery.status === "completed",
+    );
     facts.delivery = mailbox.getDelivery(deliveryId)?.delivery.status ?? null;
+    await release("chan-7a");
+    await waitFor("the tab turn ends", () => ended("chan-7a"));
+    await assertNoStuckLines(facts);
   });
 
   await runCase("deleting a tab stops only that tab's turn", async (facts) => {
@@ -791,7 +874,342 @@ try {
     await waitFor("every turn ends", () => ended("hold-10b") && ended("free-10c"));
   });
 
-  report.passed = report.cases.length === (onlyCases?.length ?? 10) && report.cases.every((entry) => entry.passed);
+  await runCase("a tab request starts while a chat turn runs, with no wait", async (facts) => {
+    const channelId = await createChannel("lanes-11", [ada]);
+    const tab = await createTab(channelId);
+    await hold("own-11a");
+    await runCauseEffect(agents.sendMessage({ agentId: ada, text: "own-11a: chat work that keeps running" }));
+    await waitFor("the chat turn starts", () => started("own-11a"));
+    await send(channelId, tab, "chan-11b: tab request", ada);
+    await waitFor("the tab turn ends while the chat turn runs", () => ended("chan-11b"));
+    facts.chatStillRunning = ended("own-11a") === undefined;
+    facts.tabWait = task(channelId, tab, "chan-11b")?.wait?.reason ?? null;
+    assert.equal(facts.chatStillRunning, true, "the chat turn still runs");
+    assert.equal(facts.tabWait, null, "the tab request has no wait");
+    await release("own-11a");
+    await waitFor("the chat turn ends", () => ended("own-11a"));
+    await assertNoStuckLines(facts);
+  });
+
+  await runCase("two chat messages run in order while a tab runs", async (facts) => {
+    const channelId = await createChannel("lanes-12", [ada]);
+    const tab = await createTab(channelId);
+    await hold("chan-12t", "own-12a");
+    await send(channelId, tab, "chan-12t: tab work", ada);
+    await waitFor("the tab turn starts", () => started("chan-12t"));
+    await runCauseEffect(agents.sendMessage({ agentId: ada, text: "own-12a: first chat message" }));
+    await waitFor("the first chat turn starts", () => started("own-12a"));
+    const second = await runCauseEffect(agents.sendMessage({ agentId: ada, text: "own-12b: second chat message" }));
+    await waitFor("the second message waits in the queue", () =>
+      agents.listQueue(ada).deliveries.some((delivery) => delivery.id === second.deliveries[0]?.id),
+    );
+    facts.secondStartedEarly = started("own-12b") !== undefined;
+    facts.queueHold = agents.listQueue(ada).hold?.channelId ?? null;
+    assert.equal(facts.secondStartedEarly, false, "the second message waits for the first one");
+    assert.equal(facts.queueHold, null, "the wait is for the first message, not for the tab");
+    await release("own-12a");
+    const firstEnd = await waitFor("the first chat turn ends", () => ended("own-12a"));
+    const secondStart = await waitFor("the second chat turn starts", () => started("own-12b"));
+    facts.order = [firstEnd.index, secondStart.index];
+    assert.ok(firstEnd.index < secondStart.index, "the second message starts after the first one ended");
+    facts.tabStillRunning = ended("chan-12t") === undefined;
+    assert.equal(facts.tabStillRunning, true);
+    await release("chan-12t");
+    await waitFor("every turn ends", () => ended("own-12b") && ended("chan-12t"));
+    await assertNoStuckLines(facts);
+  });
+
+  await runCase("a message from a colleague starts at once in the chat and never steers a tab turn", async (facts) => {
+    const channelId = await createChannel("lanes-13", [ada]);
+    const tab = await createTab(channelId);
+    await hold("chan-13a");
+    await send(channelId, tab, "chan-13a: tab work", ada);
+    const tabStart = await waitFor("the tab turn starts", () => started("chan-13a"));
+    await runCauseEffect(
+      mailbox.enqueue({
+        sender: { kind: "agent", agentId: bob },
+        recipientAgentIds: [ada],
+        text: "mate-13b: a question from bob",
+      }),
+    );
+    // The tool that sends a message also asks the drain to run; here the same ask comes from the cap hook.
+    agents.agentLimitChanged();
+    const mateEnd = await waitFor("the message of the colleague runs and ends beside the tab turn", () =>
+      ended("mate-13b"),
+    );
+    const mateStart = started("mate-13b");
+    facts.tabStillRunning = ended("chan-13a") === undefined;
+    facts.mateThreadIsTabThread = mateStart?.threadId === tabStart.threadId;
+    facts.steers = protocol().filter((line) => line.method === "turn/steer").length;
+    facts.mateEndedAt = mateEnd.index;
+    assert.equal(facts.tabStillRunning, true, "the tab turn still runs");
+    assert.equal(facts.mateThreadIsTabThread, false, "the colleague's message does not run in the tab thread");
+    assert.equal(facts.steers, 0, "no message steers a running turn");
+    await release("chan-13a");
+    await waitFor("the tab turn ends", () => ended("chan-13a"));
+    await assertNoStuckLines(facts);
+  });
+
+  await runCase("a provider that runs one turn at a time keeps the old rule", async (facts) => {
+    // Only the custom ACP agent has this flag. The check sets it on the Codex descriptor for this case,
+    // because a fake ACP agent would test the same two clauses of the drain.
+    const descriptor = agentProviderDescriptor("codex");
+    Reflect.set(descriptor, "concurrentTurns", false);
+    try {
+      const channelId = await createChannel("lanes-14", [ada]);
+      const tab = await createTab(channelId);
+      await hold("chan-14a");
+      await send(channelId, tab, "chan-14a: channel work", ada);
+      await waitFor("the channel turn starts", () => started("chan-14a"));
+      await runCauseEffect(agents.sendMessage({ agentId: ada, text: "own-14b: a message to ada" }));
+      const held = await waitFor("the own chat names the channel", () => {
+        const queue = agents.listQueue(ada);
+        return queue.hold?.channelId === channelId ? queue : null;
+      });
+      facts.hold = { channelId: held.hold?.channelId ?? null, tabs: held.hold?.tabs ?? null };
+      facts.ownStartedEarly = started("own-14b") !== undefined;
+      assert.equal(facts.ownStartedEarly, false, "the chat waits for the channel work");
+      await release("chan-14a");
+      await waitFor("the chat message runs after the channel turn", () => ended("own-14b"));
+      await assertNoStuckLines(facts);
+    } finally {
+      Reflect.set(descriptor, "concurrentTurns", true);
+    }
+  });
+
+  await runCase("forcing a chat message stops only the chat turn", async (facts) => {
+    const channelId = await createChannel("lanes-15", [ada]);
+    const tab = await createTab(channelId);
+    await hold("chan-15t", "own-15a");
+    await send(channelId, tab, "chan-15t: tab work", ada);
+    await waitFor("the tab turn starts", () => started("chan-15t"));
+    await runCauseEffect(agents.sendMessage({ agentId: ada, text: "own-15a: chat work" }));
+    const chatStart = await waitFor("the chat turn starts", () => started("own-15a"));
+    const queued = await runCauseEffect(agents.sendMessage({ agentId: ada, text: "own-15b: force this one" }));
+    const deliveryId = queued.deliveries[0]?.id ?? "";
+    await waitFor("the second message waits", () =>
+      agents.listQueue(ada).deliveries.some((delivery) => delivery.id === deliveryId),
+    );
+    const result = await runCauseEffect(
+      agents.forceQueuedMessage({ agentId: ada, deliveryId, expectedTurnId: chatStart.turnStarted }),
+    );
+    facts.forceResult = isRecord(result) ? Object.keys(result) : typeof result;
+    const stopped = await waitFor("the chat turn stops", () => ended("own-15a"));
+    facts.chatStatus = stopped.status;
+    assert.equal(stopped.status, "interrupted", "the chat turn was stopped");
+    await waitFor("the forced message runs", () => ended("own-15b"));
+    facts.tabStillRunning = ended("chan-15t") === undefined;
+    assert.equal(facts.tabStillRunning, true, "the tab turn keeps running");
+    await release("chan-15t");
+    await waitFor("the tab turn ends", () => ended("chan-15t"));
+    await assertNoStuckLines(facts);
+  });
+
+  await runCase("interrupt_agent stops only the chat turn of the work of the caller", async (facts) => {
+    const channelId = await createChannel("lanes-16", [bob]);
+    const tab = await createTab(channelId);
+    await hold("chan-16t", "mate-16b");
+    await send(channelId, tab, "chan-16t: bob works in the tab", bob);
+    await waitFor("the tab turn starts", () => started("chan-16t"));
+    await runCauseEffect(
+      mailbox.enqueue({
+        sender: { kind: "agent", agentId: ada },
+        recipientAgentIds: [bob],
+        text: "mate-16b: ada asks bob for work in the chat",
+      }),
+    );
+    agents.agentLimitChanged();
+    await waitFor("the chat turn of bob starts", () => started("mate-16b"));
+    // Ada's own turn calls the tool, as a model does.
+    control.call["caller-16c"] = { tool: "interrupt_agent", arguments: { agentId: bob, reason: "check of the lanes" } };
+    await writeControl();
+    await runCauseEffect(agents.sendMessage({ agentId: ada, text: "caller-16c: stop bob now" }));
+    const result = await waitFor("the tool answers", () => toolResult("caller-16c"));
+    facts.toolResult = result.text.slice(0, 200);
+    assert.ok(result.ok, `the tool succeeded: ${result.text}`);
+    const stopped = await waitFor("the chat turn of bob stops", () => ended("mate-16b"));
+    facts.chatStatus = stopped.status;
+    facts.tabStillRunning = ended("chan-16t") === undefined;
+    assert.equal(stopped.status, "interrupted", "the chat turn was stopped");
+    assert.equal(facts.tabStillRunning, true, "the tab turn of bob keeps running");
+    control.call = {};
+    await release("chan-16t");
+    await waitFor("the tab turn ends", () => ended("chan-16t"));
+    await assertNoStuckLines(facts);
+  });
+
+  await runCase("new chat and compact are not refused because a tab runs", async (facts) => {
+    const channelId = await createChannel("lanes-17", [ada]);
+    const tab = await createTab(channelId);
+    await hold("chan-17a");
+    await send(channelId, tab, "chan-17a: tab work", ada);
+    await waitFor("the tab turn starts", () => started("chan-17a"));
+    // Compact first: a new chat starts a new session, and compact needs one.
+    const refusedAsBusy = (failure: unknown) =>
+      failure instanceof Error &&
+      [sourceText("error.agent.waitBeforeCompactContext"), sourceText("error.agent.waitBeforeClearContext")].includes(
+        failure.message,
+      );
+    const compacted = await runCauseEffect(agents.compactAgentContext(ada)).then(
+      () => "ok",
+      (failure: unknown) => (refusedAsBusy(failure) ? "busy" : "other"),
+    );
+    // The fake Codex has no compaction. What the check proves is that the busy refusal is gone.
+    facts.compact = compacted;
+    assert.notEqual(compacted, "busy", "compact is not refused because a tab runs");
+    const cleared = await runCauseEffect(agents.clearAgentContext(ada)).then(
+      () => "ok",
+      (failure: unknown) => (refusedAsBusy(failure) ? "busy" : "other"),
+    );
+    facts.newChat = cleared;
+    assert.equal(cleared, "ok", "new chat works with a tab running");
+    facts.tabStillRunning = ended("chan-17a") === undefined;
+    assert.equal(facts.tabStillRunning, true, "the tab turn keeps running");
+    await release("chan-17a");
+    await waitFor("the tab turn ends", () => ended("chan-17a"));
+    await assertNoStuckLines(facts);
+  });
+
+  /**
+   * The tasks of a tab by state. A mark in a request can show again in the channel history of a later
+   * turn, so a start is read from the task and not from the text of a turn.
+   */
+  const tabTasks = (channelId: string, tab: string) => agents.channels.page(channelId, tab).tasks;
+  const runningTasks = (channelId: string, tab: string) =>
+    tabTasks(channelId, tab).filter((item) => item.state === "running").length;
+  const queuedTasks = (channelId: string, tab: string) =>
+    tabTasks(channelId, tab).filter((item) => item.state === "queued").length;
+  const allCompleted = (channelId: string, tab: string) =>
+    tabTasks(channelId, tab).every((item) => item.state === "completed");
+  const pause = () => new Promise((done) => setTimeout(done, 500));
+
+  await runCase(
+    "agents per tab: 3 let 3 of 4 run, the 4th starts when one ends; 1 runs one at a time",
+    async (facts) => {
+      const carol = await createAgent("carol");
+      const dan = await createAgent("dan");
+      const members = [ada, bob, carol, dan];
+      const channelId = await createChannel("lanes-18", members);
+      const tab = await createTab(channelId);
+      parallelLimit = 3;
+      const three = ["lim-18a", "lim-18b", "lim-18c", "lim-18d"];
+      await hold(...three);
+      // One request at a time: the fake holds a mark for the first turn whose text shows it, and the
+      // channel history of a turn shows the requests that came before it.
+      for (const [index, mark] of three.entries()) {
+        await send(channelId, tab, `${mark}: work for member ${index}`, members[index] ?? ada);
+        if (index < 3) await waitFor(`task ${index + 1} runs`, () => runningTasks(channelId, tab) >= index + 1);
+      }
+      await pause();
+      facts.runningWithLimit3 = runningTasks(channelId, tab);
+      facts.queuedWithLimit3 = queuedTasks(channelId, tab);
+      assert.equal(facts.runningWithLimit3, 3, "three run");
+      assert.equal(facts.queuedWithLimit3, 1, "the fourth waits in the tab");
+      // The first request ran alone in its turn, so releasing its mark ends only that turn.
+      await release("lim-18a");
+      await waitFor("the fourth starts when one ends", () => queuedTasks(channelId, tab) === 0);
+      facts.runningAfterFree = runningTasks(channelId, tab);
+      assert.equal(facts.runningAfterFree, 3, "three run again");
+      await release(...three);
+      await waitFor("the four tasks end", () => allCompleted(channelId, tab));
+
+      parallelLimit = 1;
+      agents.agentLimitChanged();
+      const tabTwo = await createTab(channelId);
+      const one = ["lim-18e", "lim-18f", "lim-18g"];
+      await hold(...one);
+      for (const [index, mark] of one.entries())
+        await send(channelId, tabTwo, `${mark}: work for member ${index}`, members[index] ?? ada);
+      await waitFor("one task runs", () => runningTasks(channelId, tabTwo) >= 1);
+      await pause();
+      facts.runningWithLimit1 = runningTasks(channelId, tabTwo);
+      facts.queuedWithLimit1 = queuedTasks(channelId, tabTwo);
+      assert.equal(facts.runningWithLimit1, 1, "one runs at a time");
+      assert.equal(facts.queuedWithLimit1, 2, "the other two wait in the tab");
+      await release(...one);
+      await waitFor("the three tasks end", () => allCompleted(channelId, tabTwo));
+      parallelLimit = 4;
+      await assertNoStuckLines(facts);
+    },
+  );
+
+  await runCase("without the hook, the default limit lets 4 members of a tab run", async (facts) => {
+    // The agents of the case before, or new ones when this case runs alone.
+    const members =
+      allAgentIds.length >= 4
+        ? allAgentIds.slice(0, 4)
+        : [ada, bob, await createAgent("erin"), await createAgent("finn")];
+    // A restart makes the services again, now without `channelParallelLimit`.
+    await runCauseEffect(agents.stop());
+    database.close();
+    ({ database, mailbox, agents } = openServices(true));
+    await runCauseEffect(agents.initialize());
+    const marks = ["def-19a", "def-19b", "def-19c", "def-19d"];
+    const channelId = await createChannel("lanes-19", members);
+    const tab = await createTab(channelId);
+    await hold(...marks);
+    for (const [index, mark] of marks.entries()) {
+      await send(channelId, tab, `${mark}: work for member ${index}`, members[index] ?? ada);
+      await waitFor(`task ${index + 1} runs`, () => runningTasks(channelId, tab) >= index + 1);
+    }
+    await pause();
+    facts.running = runningTasks(channelId, tab);
+    assert.equal(facts.running, 4, "the default limit is 4");
+    await release(...marks);
+    await waitFor("the four tasks end", () => allCompleted(channelId, tab));
+    await assertNoStuckLines(facts);
+  });
+
+  await runCase("the chat turn gets a short note only when a tab holds a reserved resource", async (facts) => {
+    const channelId = await createChannel("lanes-20", [ada, bob]);
+    const tab = await createTab(channelId);
+    await hold("parent-20a", "child-20b");
+    await send(channelId, tab, "parent-20a: hand work to bob", ada);
+    const parentStart = await waitFor("the parent turn starts", () => started("parent-20a"));
+    const parent = await waitFor("the parent task runs", () => {
+      const current = task(channelId, tab, "parent-20a");
+      return current?.state === "running" ? current : null;
+    });
+    await runCauseEffect(
+      agents.channels.tool(channelId, ada, parentStart.turnStarted ?? "", randomUUID(), "channel_assign", {
+        recipientAgentId: bob,
+        task: "child-20b: secret task text for bob",
+        expectedResult: "A report.",
+        sourceMessageIds: [parent.requestMessageId],
+        resources: ["browser"],
+      }),
+    );
+    await release("parent-20a");
+    await waitFor("bob works on the child with the browser reserved", () => started("child-20b"));
+    await runCauseEffect(agents.sendMessage({ agentId: bob, text: "own-20c: a chat message to bob" }));
+    const withNote = await waitFor("the chat turn of bob starts beside the tab", () => started("own-20c"));
+    const textOf = (entry: { texts: string[] }) => entry.texts.join("\n");
+    const noteStart = textOf(withNote).indexOf(LINES_NOTICE_START);
+    facts.noteFound = noteStart >= 0;
+    assert.ok(noteStart >= 0, "the chat turn has the note");
+    const note = textOf(withNote).slice(noteStart).split("\n")[0] ?? "";
+    facts.noteLength = note.length;
+    facts.note = note;
+    assert.ok(note.length <= 300, "the note has at most 300 characters");
+    assert.ok(note.includes("browser"), "the note names the resource");
+    assert.ok(note.includes("lanes-20"), "the note names the channel");
+    assert.equal(note.includes("secret task text"), false, "the note has no text of the tab");
+    await waitFor("the chat turn ends", () => ended("own-20c"));
+    await release("child-20b");
+    await waitFor("the child ends", () => ended("child-20b"));
+    await waitFor(
+      "no assignment of bob is left",
+      () => agents.channels.store.agentAssignments(bob, ["starting", "running"]).length === 0,
+    );
+    await runCauseEffect(agents.sendMessage({ agentId: bob, text: "own-20d: a second chat message" }));
+    const without = await waitFor("the second chat turn starts", () => started("own-20d"));
+    facts.noNoteWithoutTab = !textOf(without).includes(LINES_NOTICE_START);
+    assert.equal(facts.noNoteWithoutTab, true, "a chat turn with no tab at work has no note");
+    await waitFor("the second chat turn ends", () => ended("own-20d"));
+    await assertNoStuckLines(facts);
+  });
+
+  report.passed = report.cases.length === (onlyCases?.length ?? 20) && report.cases.every((entry) => entry.passed);
   if (!report.passed) process.exitCode = 1;
 } catch (error) {
   report.error = error instanceof Error ? (error.stack ?? error.message) : String(error);
