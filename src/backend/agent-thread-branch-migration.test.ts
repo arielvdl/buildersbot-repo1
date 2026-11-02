@@ -99,7 +99,7 @@ function withChannelTopics(
 }
 
 function expectHealthy(db: DatabaseSync): void {
-  expect(db.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({ version: 50 });
+  expect(db.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({ version: 51 });
   expect(db.prepare("PRAGMA foreign_keys").get()).toEqual({ foreign_keys: 1 });
   expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
   expect(db.prepare("PRAGMA integrity_check").get()).toEqual({ integrity_check: "ok" });
@@ -111,7 +111,10 @@ describe("agent thread branch migration", () => {
     seed(db);
     const before = contents(db);
     migrateBuildersBotDatabase(db);
-    expect(withoutPreviews(contents(db))).toEqual(withBranchLink(withChannelTopics(before)));
+    expect(withoutPreviews(contents(db))).toEqual({
+      ...withBranchLink(withChannelTopics(before)),
+      channel_tab_reports: [],
+    });
     expect(threadColumns(db).filter((column) => column.startsWith("branch_"))).toEqual(BRANCH_COLUMNS);
     expectHealthy(db);
   });
@@ -132,7 +135,10 @@ describe("agent thread branch migration", () => {
     expect(db.prepare("PRAGMA foreign_keys").get()).toEqual({ foreign_keys: 1 });
     db.exec("DROP TRIGGER fail_marker");
     migrateBuildersBotDatabase(db);
-    expect(withoutPreviews(contents(db))).toEqual(withBranchLink(withChannelTopics(before)));
+    expect(withoutPreviews(contents(db))).toEqual({
+      ...withBranchLink(withChannelTopics(before)),
+      channel_tab_reports: [],
+    });
     expectHealthy(db);
   });
 
@@ -174,9 +180,9 @@ describe("agent thread branch migration", () => {
     seed(db);
     const before = contents(db);
     const columnsBefore = threadColumns(db);
-    db.exec("INSERT INTO schema_migrations VALUES(51,'now')");
+    db.exec("INSERT INTO schema_migrations VALUES(52,'now')");
     expect(() => migrateBuildersBotDatabase(db)).toThrow("newer than this application supports");
-    db.exec("DELETE FROM schema_migrations WHERE version=51; DELETE FROM schema_migrations WHERE version=46");
+    db.exec("DELETE FROM schema_migrations WHERE version=52; DELETE FROM schema_migrations WHERE version=46");
     expect(() => migrateBuildersBotDatabase(db)).toThrow("missing version 46");
     expect(withoutPreviews(contents(db))).toEqual(before);
     expect(threadColumns(db).filter((column) => column !== "first_message" && column !== "preview")).toEqual(
@@ -190,7 +196,7 @@ describe("agent thread branch migration", () => {
     migrateBuildersBotDatabase(db);
     const after = withoutPreviews(contents(db));
     // An application one release older knows versions up to 47: version 50 is newer than it supports.
-    db.exec("INSERT INTO schema_migrations VALUES(51,'now')");
+    db.exec("INSERT INTO schema_migrations VALUES(52,'now')");
     expect(() => migrateBuildersBotDatabase(db)).toThrow("newer than this application supports");
     expect(withoutPreviews(contents(db))).toEqual(after);
   });

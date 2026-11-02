@@ -187,8 +187,10 @@ function contents(db: DatabaseSync): Rows {
 
 /** The rows of every table, with the side threads less the two preview columns and the branch columns. */
 function withoutPreviews(rows: Rows): Rows {
+  // Migration 51 adds the close records, empty.
+  const { channel_tab_reports: _reports, ...kept } = rows;
   return {
-    ...rows,
+    ...kept,
     projection_agent_threads: (rows.projection_agent_threads ?? []).map(
       ({
         first_message: _first,
@@ -210,7 +212,7 @@ function columns(db: DatabaseSync): string[] {
 }
 
 function expectHealthy(db: DatabaseSync): void {
-  expect(db.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({ version: 50 });
+  expect(db.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({ version: 51 });
   expect(db.prepare("PRAGMA foreign_keys").get()).toEqual({ foreign_keys: 1 });
   expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
   expect(db.prepare("PRAGMA integrity_check").get()).toEqual({ integrity_check: "ok" });
@@ -346,9 +348,9 @@ describe("agent thread preview migration", () => {
     const db = databaseAt(48);
     seedThreads(db);
     const before = contents(db);
-    db.exec("INSERT INTO schema_migrations VALUES (51, 'now')");
+    db.exec("INSERT INTO schema_migrations VALUES (52, 'now')");
     expect(() => migrateBuildersBotDatabase(db)).toThrow("newer than this application supports");
-    db.exec("DELETE FROM schema_migrations WHERE version = 51; DELETE FROM schema_migrations WHERE version = 20");
+    db.exec("DELETE FROM schema_migrations WHERE version = 52; DELETE FROM schema_migrations WHERE version = 20");
     expect(() => migrateBuildersBotDatabase(db)).toThrow("missing version 20");
     expect(contents(db)).toEqual(before);
     expect(columns(db)).not.toContain("preview");

@@ -15,6 +15,7 @@ import {
 import { AGENT_WAIT_SCHEMA_SQL } from "./agent-waits/agent-wait-schema";
 import { BROWSER_PROFILE_SCHEMA_SQL } from "./browser-profiles/browser-profile-schema";
 import { CHANNEL_SCHEMA_SQL, CHANNEL_SETTINGS_SCHEMA_SQL, CHANNEL_TOPICS_MIGRATION_SQL } from "./channel-schema";
+import { CHANNEL_TAB_REPORT_SCHEMA_SQL } from "./channel-tab-report-schema";
 import { PROVIDER_HISTORY_SCHEMA_SQL } from "./database/provider-history-schema";
 import { MCP_SERVERS_SCHEMA_SQL } from "./mcp-schema";
 import {
@@ -610,7 +611,8 @@ const LATEST_SCHEMA_SQL =
   WORKFLOW_SCHEMA_SQL +
   AGENT_THREAD_SCHEMA_SQL +
   // The tabs of a channel. It also carries its data statements, which an empty database passes over.
-  CHANNEL_TOPICS_MIGRATION_SQL;
+  CHANNEL_TOPICS_MIGRATION_SQL +
+  CHANNEL_TAB_REPORT_SCHEMA_SQL;
 
 /** The end of the thread message table with the migration 40 columns before its PRIMARY KEY constraint. */
 function withThreadMessageOrderColumns(tableEnd: string): string {
@@ -900,6 +902,12 @@ const MIGRATIONS: readonly BuildersBotMigration[] = [
     // Adds three columns with no default: no rebuild, so no foreign-key pause and no vacuum. Every existing
     // thread gets null, which is a thread that is not a branch, as it was before.
     up: addAgentThreadBranch,
+  },
+  {
+    version: 51,
+    // Only creates a table, so no foreign-key pause and no vacuum. No tab has a close record yet, and
+    // channels, tabs and their messages stay as they were.
+    up: (db) => db.exec(CHANNEL_TAB_REPORT_SCHEMA_SQL),
   },
 ];
 
