@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
-import type { HostMemory, HostMemoryLevel } from "../backend/host-memory";
+import { totalmem } from "node:os";
+import { type HostMemory, type HostMemoryLevel, LANE_SESSION_MB } from "../backend/host-memory";
 
 const SAMPLE_INTERVAL_MS = 10_000;
 const COMMAND_TIMEOUT_MS = 5_000;
@@ -10,7 +11,8 @@ const DESKTOP_TURN_LIMIT = 64;
  * The thresholds, in percent of memory that macOS says is free. The used swap is a high-water mark on
  * macOS, so it counts only together with little free memory, as the browser gate counts it.
  */
-const LOW_BELOW = 14;
+/** The percent of free memory under which the level is `low`. The lane budget stops above it. */
+export const LOW_BELOW = 14;
 const CRITICAL_BELOW = 8;
 const LOW_SWAP_MB = 6_000;
 const LOW_SWAP_FREE_BELOW = 25;
@@ -126,6 +128,8 @@ export interface MacMemoryOptions {
   /** Called when the level changes, with the sample that changed it, so the log shows each hold. */
   onLevelChange?: (level: HostMemoryLevel, sample: MacMemorySample) => void;
   intervalMs?: number;
+  /** The memory of this Mac in MB. Omitted: the system value. */
+  totalMb?: number;
 }
 
 /**
@@ -143,9 +147,14 @@ export class MacMemory implements HostMemory {
   readonly #onError: MacMemoryOptions["onError"];
   readonly #onLevelChange: MacMemoryOptions["onLevelChange"];
   readonly #intervalMs: number;
+  readonly #totalMb: number;
   readonly #listeners = new Set<() => void>();
   #level: HostMemoryLevel = "ok";
   #last: MacMemorySample | null = null;
+  /** The MB that the starts since the last sample reserved. Each sample sets it back to zero. */
+  #reservedMb = 0;
+  /** Counts the samples, so a release that comes after a new sample reserves nothing back. */
+  #generation = 0;
   #sampling: Promise<void> | null = null;
   #reported = false;
   #timer: NodeJS.Timeout | null = null;
@@ -155,6 +164,7 @@ export class MacMemory implements HostMemory {
     this.#onError = options.onError;
     this.#onLevelChange = options.onLevelChange;
     this.#intervalMs = options.intervalMs ?? SAMPLE_INTERVAL_MS;
+    this.#totalMb = options.totalMb ?? Math.round(totalmem() / (1024 * 1024));
   }
 
   level(): HostMemoryLevel {
@@ -165,8 +175,29 @@ export class MacMemory implements HostMemory {
     return DESKTOP_TURN_LIMIT;
   }
 
+  /**
+   * Counts the memory of a session that starts now until the next sample (10 s), which reads the real
+   * memory. It only lowers `freeMb`: the level and the rule that a desktop does not count memory per
+   * turn do not change. The release is for a start that ends with no turn.
+   */
   reserveTurn(): () => void {
-    return () => {};
+    const generation = this.#generation;
+    this.#reservedMb += LANE_SESSION_MB;
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      if (generation === this.#generation) this.#reservedMb = Math.max(0, this.#reservedMb - LANE_SESSION_MB);
+    };
+  }
+
+  freeMb(): number | null {
+    if (!this.#last) return null;
+    return Math.max(0, Math.round((this.#last.freePercent / 100) * this.#totalMb) - this.#reservedMb);
+  }
+
+  totalMb(): number | null {
+    return this.#totalMb > 0 ? this.#totalMb : null;
   }
 
   subscribe(listener: () => void): () => void {
@@ -218,6 +249,8 @@ export class MacMemory implements HostMemory {
       return;
     }
     this.#last = sample;
+    this.#reservedMb = 0;
+    this.#generation += 1;
     const previous = this.#level;
     this.#level = classifyMacMemory(sample, previous);
     if (this.#level !== previous) {

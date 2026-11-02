@@ -6,6 +6,14 @@
  */
 export type HostMemoryLevel = "ok" | "low" | "critical";
 
+/**
+ * The memory that one more provider session is expected to take, in MB. A measurement of 1 November
+ * 2026 gave 200 to 400 MB for a Claude session (197 MB on average over 10); 300 is a careful first
+ * guess and is not calibrated yet. A start reserves it (`HostMemory.reserveTurn`) and the lane budget
+ * counts it (`LaneBudget`).
+ */
+export const LANE_SESSION_MB = 300;
+
 export interface HostMemory {
   level(): HostMemoryLevel;
   /** The most agent turns that run at the same time on this machine. */
@@ -15,6 +23,14 @@ export interface HostMemory {
    * a start that ends with no turn.
    */
   reserveTurn(): () => void;
+  /**
+   * The free memory in MB at the last sample, less what the starts since then reserved
+   * (`reserveTurn`). Null before the first sample. Absent where the system gives no reading, as on a
+   * server, and then no budget follows the memory.
+   */
+  freeMb?(): number | null;
+  /** The memory of the computer in MB, or null when it is not known. Absent as `freeMb` is. */
+  totalMb?(): number | null;
   /** Called after each sample. Returns the unsubscribe. */
   subscribe(listener: () => void): () => void;
   /** True on a hosted server: its plan sets the memory, so the low-memory notice names the plan. */
