@@ -23,6 +23,12 @@ import { markdownPreviewText } from "@buildersbot/contracts/markdown-preview-tex
 import { type DynamicRecord, isDynamicRecord, isString } from "@buildersbot/contracts/runtime-values";
 import { sourceText } from "@buildersbot/i18n/source";
 import type { BuildersBotDatabase } from "./buildersbot-database";
+import { VISIBLE_MESSAGE_FILTER } from "./channel-message-filter";
+import {
+  type ChannelTabReportSnapshot,
+  ChannelTabReportStore,
+  writeChannelTabReport,
+} from "./channel-tab-report-store";
 import { deleteAggregateHistory, deleteReceiptsOf, deleteThreadAttachments } from "./database/database-core";
 import {
   databaseRow,
@@ -127,12 +133,6 @@ const PERSON_TEXT = (column: string) =>
   `json_extract(${column}, '$.author.kind') = 'member'
      AND trim(COALESCE(json_extract(${column}, '$.message.text'), ''), char(9, 10, 13, 32)) != ''`;
 
-/** The messages a person sees in a tab: no plan, subagent step, activity marker or thinking. */
-const VISIBLE_MESSAGE_FILTER = (column: string) =>
-  `COALESCE(json_extract(${column}, '$.message.itemType'), '') NOT IN
-     ('plan', 'subagents', 'channel-change', 'commentary')
-   AND COALESCE(json_extract(${column}, '$.message.itemType'), '') NOT LIKE ?`;
-
 /**
  * Owns durable channel records. Every change and its retry receipt commit together.
  */
@@ -140,7 +140,12 @@ export class ChannelStore {
   /** By channel: how many times a message changed in place after it was complete, in this process. */
   readonly #completedMessageChanges = new Map<string, number>();
 
-  constructor(readonly database: BuildersBotDatabase) {}
+  /** The close records of the tabs that are gone. They have no foreign key to this store's rows. */
+  readonly tabReports: ChannelTabReportStore;
+
+  constructor(readonly database: BuildersBotDatabase) {
+    this.tabReports = new ChannelTabReportStore(database);
+  }
 
   /** A packet built before this count changed can show a message as it was before. */
   completedMessageChanges(channelId: string): number {
@@ -423,8 +428,11 @@ export class ChannelStore {
    * Removes a tab with everything that belongs to it, in one transaction and in the order the
    * foreign keys demand: assignments before tasks, contexts and summaries and cursors before the
    * tab itself. The threads of its sessions go after, which is why the caller reads them first.
+   *
+   * With a `report`, the record of how the tab ended is written first, in the same transaction. If
+   * it cannot be written, nothing is deleted and the tab stays.
    */
-  deleteTopic(channelId: string, topicId: string, operationId: string): void {
+  deleteTopic(channelId: string, topicId: string, operationId: string, report?: ChannelTabReportSnapshot): void {
     this.database.dispatch(
       operationId,
       [
@@ -440,6 +448,7 @@ export class ChannelStore {
         // belongs to the first tab. It goes with it, as `messages` and `tasks` read it there.
         const legacy = this.firstTopicId(channelId) === topicId ? " OR json_extract({row}, '$.topicId') IS NULL" : "";
         const ofTopic = (row: string) => `json_extract(${row}, '$.topicId') = ?${legacy.replaceAll("{row}", row)}`;
+        if (report) writeChannelTabReport(db, ofTopic, report);
         db.prepare(
           `DELETE FROM projection_channel_assignments WHERE channel_id = ? AND task_id IN (
              SELECT task_id FROM projection_channel_tasks WHERE channel_id = ? AND ${ofTopic("task_json")})`,

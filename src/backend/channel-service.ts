@@ -581,7 +581,28 @@ export class ChannelService {
       const result = yield* channelSync(() => this.store.update(channel, change, command.operationId));
       // Interrupt before the rows go: the interrupt names the session thread through the task.
       yield* this.interruptTasks(channel.id, running);
-      yield* channelSync(() => this.store.deleteTopic(channel.id, command.topicId, `${command.operationId}:topic`));
+      // `running` counts before the interrupt, so the record shows the work that the close stopped. The
+      // record is written inside `deleteTopic`: if it fails, the tab stays.
+      const report = command.report;
+      const topic = report ? this.store.topics(channel.id).find((item) => item.id === command.topicId) : undefined;
+      yield* channelSync(() =>
+        this.store.deleteTopic(
+          channel.id,
+          command.topicId,
+          `${command.operationId}:topic`,
+          report && topic
+            ? {
+                ...report,
+                channelId: channel.id,
+                channelName: channel.name,
+                topicId: topic.id,
+                topicName: topic.name,
+                openedAt: topic.createdAt,
+                tasksOpen: running.length,
+              }
+            : undefined,
+        ),
+      );
       this.publish(channel.id);
       // A turn that is still starting would keep the thread row it needs. The archive path waits the
       // same way before it deletes the rows.

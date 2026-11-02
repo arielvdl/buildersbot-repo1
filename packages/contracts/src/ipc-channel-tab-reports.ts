@@ -126,7 +126,7 @@ function count(value: unknown): value is number {
   return isNumber(value) && Number.isSafeInteger(value) && value >= 0;
 }
 
-function isReportAgent(value: unknown): value is ChannelTabReportAgent {
+export function isReportAgent(value: unknown): value is ChannelTabReportAgent {
   return isDynamicRecord(value) && isIdentifier(value.id) && isBoundedString(value.name, NAME_LIMIT);
 }
 
