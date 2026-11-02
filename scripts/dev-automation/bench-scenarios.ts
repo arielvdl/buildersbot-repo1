@@ -6,13 +6,19 @@
 // Turn scenarios use the real claude, opencode and grok CLIs, so they spend
 // the developer's model quota. They never start Codex.
 
+import { execFile } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { createServer, type Server } from "node:http";
+import { join } from "node:path";
+import { promisify } from "node:util";
 import type { DynamicIslandPreference } from "@buildersbot/contracts/ipc";
+import { isDynamicRecord } from "@buildersbot/contracts/runtime-values";
 import type { Logger } from "@buildersbot/logging";
 import type { Browser, Page } from "playwright-core";
 import { NO_SCALE, parseSeedScale, type SeedScale } from "../seed-dev-scale";
 import type { BenchApp } from "./bench-launch";
-import type { MetricValues } from "./bench-stats";
+import { type MetricValues, processMetrics } from "./bench-stats";
+import { collectDescendants, PROCESS_TABLE_PS_ARGS, parseProcessTable } from "./cpu-sampling";
 import type { InspectorClient } from "./inspector-client";
 
 export const SECOND = 1_000;
@@ -244,6 +250,104 @@ async function scrollThroughHistory(context: ScenarioContext) {
   })()`);
   await context.wait(2 * SECOND);
   return steps;
+}
+
+// --- lanes: one agent in several channels and its own chat -------------------------
+
+const runPs = promisify(execFile);
+
+/** RSS and process counts of the app tree, by kind, read with `ps` (the same reading the sampler makes). */
+async function readTreeMetrics(rootPid: number): Promise<MetricValues> {
+  const { stdout } = await runPs("ps", PROCESS_TABLE_PS_ARGS, { maxBuffer: 16 * 1_024 * 1_024 });
+  return processMetrics(collectDescendants(parseProcessTable(stdout), rootPid));
+}
+
+function percentile(sorted: number[], fraction: number): number {
+  if (sorted.length === 0) return 0;
+  return sorted[Math.min(sorted.length - 1, Math.ceil(fraction * sorted.length) - 1)] ?? 0;
+}
+
+/**
+ * The `turn-start` spans of the local trace (`logs/trace.ndjson`) written at or after `sinceIso`:
+ * the answer of `turn/start`, with the status `open`, `woke` (a session that was closed for being
+ * idle came back) or `unknown`. The trace keeps a status word and milliseconds, never a text.
+ */
+async function readTurnStarts(
+  context: ScenarioContext,
+  sinceIso: string,
+): Promise<{ status: string; durationMs: number }[]> {
+  if (!context.inspector) throw new Error("This scenario needs the main-process inspector.");
+  const userData = await context.inspector.evaluate('require("electron").app.getPath("userData")');
+  if (typeof userData !== "string") throw new Error("The app did not report its data directory.");
+  const spans: { status: string; durationMs: number }[] = [];
+  for (const name of ["trace.ndjson.1", "trace.ndjson"]) {
+    const text = await readFile(join(userData, "logs", name), "utf8").catch(() => "");
+    for (const line of text.split("\n")) {
+      if (!line.includes('"turn-start"')) continue;
+      try {
+        const span = JSON.parse(line);
+        if (!isDynamicRecord(span) || span.kind !== "start" || span.name !== "turn-start") continue;
+        if (typeof span.at !== "string" || span.at < sinceIso) continue;
+        spans.push({
+          status: typeof span.outcome === "string" ? span.outcome : "unknown",
+          durationMs: typeof span.durationMs === "number" ? span.durationMs : 0,
+        });
+      } catch {
+        // A half-written last line.
+      }
+    }
+  }
+  return spans;
+}
+
+interface LanesRound {
+  tabsMs: number;
+  chatMs: number;
+  peakProviderProcesses: number;
+}
+
+/**
+ * One request in each channel (a lane each) and one message in the agent's own chat, all sent at
+ * once. Returns when the channel tasks and the chat turn have ended, with how long each side took
+ * and the most provider processes seen. On a build where the chat waits for the channels, the
+ * chat time shows the wait.
+ */
+async function lanesRound(context: ScenarioContext, channelIds: string[], agentId: string): Promise<LanesRound> {
+  const started = Date.now();
+  for (const channelId of channelIds) {
+    const command = {
+      type: "send",
+      operationId: crypto.randomUUID(),
+      channelId,
+      text: SHORT_REPLY_PROMPT,
+      recipientAgentId: agentId,
+      replyToMessageId: null,
+      attachmentDraftIds: [],
+    };
+    await context.evaluate(`window.buildersbot.agent.channelCommand(${json(command)}).then(() => null)`);
+  }
+  const deliveryIds = await context.evaluate<string[]>(
+    `window.buildersbot.agent.sendMessage(${json({ agentId, text: SHORT_REPLY_PROMPT })}).then((receipt) => receipt.deliveries.map((one) => one.id))`,
+  );
+  const chat = deliveryIds.map((id) => ({ agentId, id }));
+  const activeTasks = (): Promise<number> =>
+    context.evaluate<number>(
+      `window.buildersbot.agent.listChannels().then((all) => all.filter((one) => ${json(channelIds)}.includes(one.id)).reduce((sum, one) => sum + one.activeTasks, 0))`,
+    );
+  let peak = 0;
+  let tabsMs = 0;
+  let chatMs = 0;
+  let sawTask = false;
+  await poll("the channel tasks and the chat turn to finish", 3 * TURN_TIMEOUT_MS, 2 * SECOND, async () => {
+    const providers = (await readTreeMetrics(context.app.pid))["procs.provider"] ?? 0;
+    peak = Math.max(peak, providers);
+    const active = await activeTasks();
+    if (active > 0) sawTask = true;
+    if (tabsMs === 0 && sawTask && active === 0) tabsMs = Date.now() - started;
+    if (chatMs === 0 && (await turnsEnded(context, chat))) chatMs = Date.now() - started;
+    return tabsMs > 0 && chatMs > 0;
+  });
+  return { tabsMs, chatMs, peakProviderProcesses: peak };
 }
 
 // --- browser tabs ----------------------------------------------------------------
@@ -509,6 +613,51 @@ export const SCENARIOS: Scenario[] = [
       );
       context.record({ "turns.ms": Date.now() - started });
       await context.wait(30 * SECOND);
+    },
+  },
+  {
+    id: "s14-lanes-claude",
+    description:
+      "One claude agent in 4 channels (a lane each) and its own chat: one turn per lane, idle 11 min, then one more turn per lane",
+    seed: scaled("channels:4,channelMessages:2"),
+    act: async (context) => {
+      interface ListedChannel {
+        id: string;
+      }
+      const agentId = "chief";
+      const channels = await context.evaluate<ListedChannel[]>("window.buildersbot.agent.listChannels()");
+      const channelIds = channels.filter((one) => one.id.startsWith("scale-channel-")).map((one) => one.id);
+      if (channelIds.length < 4) throw new Error("The seed has fewer than 4 scaled channels.");
+      await useProvider(context, [agentId], "claude");
+      const first = await lanesRound(context, channelIds, agentId);
+      context.record({
+        "lanes.round1.tabs.ms": first.tabsMs,
+        "lanes.round1.chat.ms": first.chatMs,
+        "lanes.round1.providers.peak": first.peakProviderProcesses,
+      });
+      // The idle release is 10 min: read the provider tree after it, before any turn wakes a session.
+      await context.wait(11 * MINUTE);
+      const idleTree = await readTreeMetrics(context.app.pid);
+      context.record({
+        "lanes.idle.rss.provider": idleTree["rss.provider"] ?? 0,
+        "lanes.idle.procs.provider": idleTree["procs.provider"] ?? 0,
+        "lanes.idle.rss.total": idleTree["rss.total"] ?? 0,
+      });
+      const secondStartedAt = new Date().toISOString();
+      const second = await lanesRound(context, channelIds, agentId);
+      await context.wait(3 * SECOND);
+      const starts = await readTurnStarts(context, secondStartedAt);
+      const woke = starts.filter((span) => span.status === "woke").map((span) => span.durationMs);
+      woke.sort((a, b) => a - b);
+      context.record({
+        "lanes.round2.tabs.ms": second.tabsMs,
+        "lanes.round2.chat.ms": second.chatMs,
+        "lanes.round2.providers.peak": second.peakProviderProcesses,
+        "lanes.round2.turnStarts": starts.length,
+        "lanes.woke.count": woke.length,
+        "lanes.woke.median.ms": percentile(woke, 0.5),
+        "lanes.woke.p95.ms": percentile(woke, 0.95),
+      });
     },
   },
   browserTabs(1),
