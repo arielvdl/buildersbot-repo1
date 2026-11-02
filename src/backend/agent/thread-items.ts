@@ -4,6 +4,7 @@ import {
   agentProviderName,
   COMPUTER_USE_MCP_SERVER_NAME,
   DEFAULT_PROVIDER_ACCOUNT_ID,
+  type TurnProgressKind,
 } from "@buildersbot/contracts/ipc";
 import { type DynamicRecord, isString } from "@buildersbot/contracts/runtime-values";
 import { sourceText } from "@buildersbot/i18n/source";
@@ -390,9 +391,17 @@ export function isToolItem(item: ThreadItem): boolean {
 }
 
 export function toolProgressText(item: ThreadItem, completed: boolean): string | null {
+  return toolProgress(item, completed)?.detail ?? null;
+}
+
+/**
+ * A tool step's progress line with the kind of the step. The kind is chosen by the same match that
+ * chooses the text, so the two cannot drift. The kind never carries the command or its arguments.
+ */
+export function toolProgress(item: ThreadItem, completed: boolean): { detail: string; kind: TurnProgressKind } | null {
   if (!isToolItem(item)) return null;
   if (completed && getString(item, "status") === "failed") {
-    return "A tool step failed; reviewing the result and deciding what to try next…";
+    return { detail: "A tool step failed; reviewing the result and deciding what to try next…", kind: "other" };
   }
 
   const descriptor = [
@@ -409,45 +418,69 @@ export function toolProgressText(item: ThreadItem, completed: boolean): string |
   // The completed text is what the user reads while the model decides the next action, so a long
   // wait after it is the model, not the driver.
   if (getString(item, "server") === COMPUTER_USE_MCP_SERVER_NAME || descriptor.includes(COMPUTER_USE_MCP_SERVER_NAME)) {
-    return sourceText(completed ? "status.computerUse.progressDeciding" : "status.computerUse.progressActing");
+    return {
+      detail: sourceText(completed ? "status.computerUse.progressDeciding" : "status.computerUse.progressActing"),
+      kind: "other",
+    };
   }
   // Builders Bot's own memory and skill tools, before the generic words too. A memory search reports what
   // it found itself, while it runs, so its end adds no line.
   const buildersBot = buildersBotTool(item);
   if (buildersBot === "search_memories" || buildersBot === "list_memories") {
-    return completed ? null : sourceText("status.agent.memoriesSearching");
+    return completed ? null : { detail: sourceText("status.agent.memoriesSearching"), kind: "search" };
   }
   if (buildersBot === "remember" || buildersBot === "forget_memory" || buildersBot === "set_memory_inclusion") {
-    return completed ? TOOL_RESULT_PROGRESS : sourceText("status.agent.memoriesUpdating");
+    return { detail: completed ? TOOL_RESULT_PROGRESS : sourceText("status.agent.memoriesUpdating"), kind: "other" };
   }
-  if (buildersBot === "read_local_skill")
-    return completed ? TOOL_RESULT_PROGRESS : sourceText("status.agent.skillReading");
+  if (buildersBot === "read_local_skill") {
+    return { detail: completed ? TOOL_RESULT_PROGRESS : sourceText("status.agent.skillReading"), kind: "read" };
+  }
   const skill = getString(item, "name") === "Skill" ? getString(item, "skill") : null;
-  if (skill) return completed ? TOOL_RESULT_PROGRESS : sourceText("status.agent.skillUsing", { name: skill });
+  if (skill) {
+    return {
+      detail: completed ? TOOL_RESULT_PROGRESS : sourceText("status.agent.skillUsing", { name: skill }),
+      kind: "other",
+    };
+  }
   if (descriptor.includes("capture_screen")) {
-    return sourceText(completed ? "status.agent.screenCaptureReviewing" : "status.agent.screenCaptureProgress");
+    return {
+      detail: sourceText(completed ? "status.agent.screenCaptureReviewing" : "status.agent.screenCaptureProgress"),
+      kind: "other",
+    };
   }
   // Before the generic words too: each browser tool name contains `browser`, which is a web search word.
   const browser = browserTool(item);
   if (browser !== null) {
-    return completed ? sourceText("status.agent.browserReviewing") : browserProgressText(browser);
+    return {
+      detail: completed ? sourceText("status.agent.browserReviewing") : browserProgressText(browser),
+      kind: "other",
+    };
   }
   if (/(search|browser|fetch|navigate|open_url|web)/u.test(descriptor)) {
-    return completed ? "Reviewing the sources and information I found…" : "Searching for current information…";
+    return {
+      detail: completed ? "Reviewing the sources and information I found…" : "Searching for current information…",
+      kind: "search",
+    };
   }
   if (/(read|find|list|get|inspect|snapshot)/u.test(descriptor)) {
-    return completed ? "Reviewing the information I gathered…" : "Gathering the relevant information…";
+    return {
+      detail: completed ? "Reviewing the information I gathered…" : "Gathering the relevant information…",
+      kind: "read",
+    };
   }
   if (/(test|check|lint|build|verify)/u.test(descriptor)) {
-    return completed ? "Reviewing the verification results…" : "Checking the work…";
+    return { detail: completed ? "Reviewing the verification results…" : "Checking the work…", kind: "check" };
   }
   if (/(write|edit|patch|create|update|delete|move|filechange)/u.test(descriptor)) {
-    return completed ? "Reviewing the changes I made…" : "Making the requested changes…";
+    return { detail: completed ? "Reviewing the changes I made…" : "Making the requested changes…", kind: "write" };
   }
   if (/(agent|delegate|message|send)/u.test(descriptor)) {
-    return completed ? "Reviewing the other agent’s response…" : "Coordinating with another agent…";
+    return {
+      detail: completed ? "Reviewing the other agent’s response…" : "Coordinating with another agent…",
+      kind: "coordinate",
+    };
   }
-  return completed ? TOOL_RESULT_PROGRESS : "Working through the next tool-assisted step…";
+  return { detail: completed ? TOOL_RESULT_PROGRESS : "Working through the next tool-assisted step…", kind: "other" };
 }
 
 /** The provider account after the first that an agent runs on, or null for the provider's own sign-in. */

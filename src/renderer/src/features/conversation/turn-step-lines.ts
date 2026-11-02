@@ -1,3 +1,5 @@
+import type { TurnProgressKind } from "@buildersbot/contracts/ipc";
+
 /**
  * The host's progress lines of a turn, such as "Gathering the relevant information…", in the order
  * they came. The host sends each line once and stores none, so a window keeps them in memory for its
@@ -9,6 +11,11 @@ interface TurnStepLine {
   text: string;
   /** When this window received the line, to place it between the turn's thoughts. */
   at: number;
+  /**
+   * The kind of step, kept on the turn's last line only, which is the one the channel stage reads.
+   * A host that predates the kind sends none.
+   */
+  kind?: TurnProgressKind;
 }
 
 export type TurnStepLines = Readonly<Record<string, readonly TurnStepLine[]>>;
@@ -17,7 +24,13 @@ const TURN_LIMIT = 50;
 const LINE_LIMIT = 200;
 
 /** `lines` with `text` added to the turn. A line the same as the turn's last one is not added again. */
-export function appendTurnStepLine(lines: TurnStepLines, turnId: string, text: string, at = Date.now()): TurnStepLines {
+export function appendTurnStepLine(
+  lines: TurnStepLines,
+  turnId: string,
+  text: string,
+  at = Date.now(),
+  kind?: TurnProgressKind,
+): TurnStepLines {
   const turn = lines[turnId] ?? [];
   const last = turn.at(-1);
   if (!text.trim() || last?.text === text) return lines;
@@ -26,8 +39,14 @@ export function appendTurnStepLine(lines: TurnStepLines, turnId: string, text: s
   // and not a long turn that started first.
   const next: Record<string, readonly TurnStepLine[]> = { ...lines };
   delete next[turnId];
-  next[turnId] = [...turn, { id: `${turnId}:${sequence}`, text, at }].slice(-LINE_LIMIT);
+  const earlier = last?.kind ? [...turn.slice(0, -1), withoutKind(last)] : turn;
+  next[turnId] = [...earlier, { id: `${turnId}:${sequence}`, text, at, ...(kind ? { kind } : {}) }].slice(-LINE_LIMIT);
   const turns = Object.keys(next);
   for (const old of turns.slice(0, Math.max(0, turns.length - TURN_LIMIT))) delete next[old];
   return next;
+}
+
+function withoutKind(line: TurnStepLine): TurnStepLine {
+  const { kind: _kind, ...rest } = line;
+  return rest;
 }

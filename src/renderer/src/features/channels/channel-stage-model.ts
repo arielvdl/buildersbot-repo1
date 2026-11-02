@@ -6,7 +6,7 @@
  */
 
 import type { AgentProviderRef } from "@buildersbot/contracts/agent-providers";
-import type { AvatarHue, ChannelPage, ChannelTask } from "@buildersbot/contracts/ipc";
+import type { AvatarHue, ChannelPage, ChannelTask, TurnProgressKind } from "@buildersbot/contracts/ipc";
 import type { AgentProfile } from "@buildersbot/ui/data";
 import type { TurnStepLines } from "../conversation/turn-step-lines";
 
@@ -100,12 +100,24 @@ const ACTIVITY_RANK: Readonly<Record<StageActivity, number>> = {
   done: 4,
 };
 
+type LiveStageActivity = Exclude<StageActivity, "waiting" | "failed" | "done">;
+
+const ACTIVITY_OF_KIND: Readonly<Record<Exclude<TurnProgressKind, "other">, LiveStageActivity>> = {
+  read: "reading",
+  search: "reading",
+  check: "running",
+  write: "editing",
+  coordinate: "delegating",
+};
+
 /**
- * The activity that a host progress line stands for. The host sends English text for each kind of
- * tool step (`thread-items.ts`), so the words are matched here; text that no word matches reads as
- * thinking. A host that names the kind of the step makes this match unnecessary.
+ * The activity that a host progress line stands for. A host that names the kind of the step decides
+ * it. The kind `other`, and a host that predates the kind, fall back to the English text that the
+ * host sends for each kind of tool step (`thread-items.ts`): its words are matched here, and text
+ * that no word matches reads as thinking.
  */
-export function stageActivityOfLine(line: string): Exclude<StageActivity, "waiting" | "failed" | "done"> {
+export function stageActivityOfLine(line: string, kind?: TurnProgressKind): LiveStageActivity {
+  if (kind && kind !== "other") return ACTIVITY_OF_KIND[kind];
   const text = line.toLowerCase();
   if (/coordinating|other agent/u.test(text)) return "delegating";
   if (/making the requested changes|reviewing the changes|editing|writing/u.test(text)) return "editing";
@@ -248,7 +260,7 @@ export function channelStageModel(input: StageInput): StageModel {
     else if (last) {
       const age = now - last.at;
       if (age < STAGE_THINK_AFTER_MS) {
-        activity = stageActivityOfLine(last.text);
+        activity = stageActivityOfLine(last.text, last.kind);
         earlier(last.at + STAGE_THINK_AFTER_MS);
       }
     }

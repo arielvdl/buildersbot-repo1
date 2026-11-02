@@ -17,6 +17,7 @@ import {
   isAgentContextCategories,
   latestTurnAnswer,
   PLAN_CONTINUATION_ITEM_TYPE,
+  type TurnProgressKind,
 } from "@buildersbot/contracts/ipc";
 import { type DynamicRecord, isString } from "@buildersbot/contracts/runtime-values";
 import { sourceText } from "@buildersbot/i18n/source";
@@ -77,7 +78,7 @@ import {
   refusedSessionFailure,
   type ToolUsageSignal,
   toolFailed,
-  toolProgressText,
+  toolProgress,
   toolTraceDetail,
   toolUsage,
   toThreadItem,
@@ -1793,10 +1794,16 @@ export class TurnLifecycle {
     const usage = completed ? toolUsage(item) : null;
     if (usage) this.#hooks.emitToolUsage({ ...usage, agentId, turnId });
     if (yield* this.#images.handleItem(agentId, threadId, turnId, item, completed)) return;
-    const toolProgress = toolProgressText(item, completed);
-    this.#observeTraceStep(turnId, item, completed, toolProgress);
-    if (toolProgress) {
-      this.#emitTurnProgress(agentId, this.#conversation.publicThreadId(agentId, threadId), turnId, toolProgress);
+    const progress = toolProgress(item, completed);
+    this.#observeTraceStep(turnId, item, completed, progress?.detail ?? null);
+    if (progress) {
+      this.#emitTurnProgress(
+        agentId,
+        this.#conversation.publicThreadId(agentId, threadId),
+        turnId,
+        progress.detail,
+        progress.kind,
+      );
       return;
     }
     if (item.type !== "agentMessage" || !isString(item.id)) return;
@@ -1926,13 +1933,14 @@ export class TurnLifecycle {
     return message;
   }
 
-  #emitTurnProgress(agentId: string, threadId: string, turnId: string, text: string): void {
+  #emitTurnProgress(agentId: string, threadId: string, turnId: string, text: string, kind: TurnProgressKind): void {
     this.#hooks.emit({
       type: "turn-progress",
       agentId,
       threadId,
       turnId,
       detail: text,
+      kind,
     });
   }
 }

@@ -33,6 +33,21 @@ import { isBoolean, isDynamicRecord, isNumber, isString } from "./runtime-values
 
 export type AgentTurnOrigin = "user" | "routine" | "agent" | "unknown";
 
+/**
+ * The kind of tool step that a `turn-progress` line stands for. It names the step only: it never
+ * carries the command, the arguments or any path. A host that predates it sends no kind.
+ */
+export type TurnProgressKind = "read" | "search" | "check" | "write" | "coordinate" | "other";
+
+const TURN_PROGRESS_KINDS: ReadonlySet<string> = new Set<TurnProgressKind>([
+  "read",
+  "search",
+  "check",
+  "write",
+  "coordinate",
+  "other",
+]);
+
 function isAgentTurnOrigin(value: unknown): value is AgentTurnOrigin {
   return value === "user" || value === "routine" || value === "agent" || value === "unknown";
 }
@@ -102,7 +117,14 @@ export type AgentEvent =
       createdAt: string;
       revision: number;
     }
-  | { type: "turn-progress"; agentId: string; threadId: string; turnId: string; detail: string }
+  | {
+      type: "turn-progress";
+      agentId: string;
+      threadId: string;
+      turnId: string;
+      detail: string;
+      kind?: TurnProgressKind;
+    }
   | { type: "turn-started"; agentId: string; threadId: string; turnId: string; origin?: AgentTurnOrigin }
   | {
       type: "turn-completed";
@@ -276,7 +298,8 @@ export function isAgentEvent(value: unknown): value is AgentEvent {
         isIdentifier(value.turnId) &&
         isString(value.detail) &&
         value.detail.length > 0 &&
-        value.detail.length <= INPUT_LIMITS.promptQuestion
+        value.detail.length <= INPUT_LIMITS.promptQuestion &&
+        (value.kind === undefined || (isString(value.kind) && TURN_PROGRESS_KINDS.has(value.kind)))
       );
     case "turn-started":
     case "turn-completed":

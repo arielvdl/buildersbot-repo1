@@ -495,7 +495,9 @@ export function createWebWorkspace(
           setState((draft) => {
             draft.progress[event.agentId] = { turnId: event.turnId, detail: cleanAgentMessageText(event.detail) };
           });
-          setStepLines((current) => appendTurnStepLine(current, event.turnId, cleanAgentMessageText(event.detail)));
+          setStepLines((current) =>
+            appendTurnStepLine(current, event.turnId, cleanAgentMessageText(event.detail), Date.now(), event.kind),
+          );
         } else if (event.type === "turn-started") {
           setState((draft) => {
             delete draft.progress[event.agentId];

@@ -2898,6 +2898,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
           threadId: getSnapshot(input.agentId).threadId ?? `thread-${input.agentId}`,
           turnId,
           detail: "Reviewing your request…",
+          kind: "other",
         });
         emitAgentEvent({
           type: "turn-progress",
@@ -2905,6 +2906,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
           threadId: getSnapshot(input.agentId).threadId ?? `thread-${input.agentId}`,
           turnId,
           detail: "Searched its memories: 1 found",
+          kind: "search",
         });
 
         schedule(() => {
