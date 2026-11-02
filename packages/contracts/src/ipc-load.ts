@@ -302,6 +302,12 @@ export interface AgentLimitPreference {
    * main process.
    */
   tabsPerAgent?: number;
+  /**
+   * The most agents that run a turn at the same time in one channel tab, from 1 to 8. A request over
+   * the limit waits in the tab, in order, and starts when an agent of the tab ends its turn. Absent:
+   * `DEFAULT_AGENTS_PER_TAB`, also from an older main process.
+   */
+  agentsPerTab?: number;
 }
 
 export const AGENT_LIMIT_MIN = 1;
@@ -312,8 +318,17 @@ export const AGENT_TABS_MAX = 4;
 /** Two tabs: the user sees a second tab answer, and the memory of one more provider session is small. */
 export const DEFAULT_AGENT_TABS = 2;
 
+export const AGENTS_PER_TAB_MIN = 1;
+export const AGENTS_PER_TAB_MAX = 8;
+/** Four agents: a team channel spreads work over its members without one tab holding every session. */
+export const DEFAULT_AGENTS_PER_TAB = 4;
+
 export function isAgentTabsLimit(value: unknown): value is number {
   return isNumber(value) && Number.isInteger(value) && value >= AGENT_TABS_MIN && value <= AGENT_TABS_MAX;
+}
+
+export function isAgentsPerTabLimit(value: unknown): value is number {
+  return isNumber(value) && Number.isInteger(value) && value >= AGENTS_PER_TAB_MIN && value <= AGENTS_PER_TAB_MAX;
 }
 
 export function isAgentLimitPreference(value: unknown): value is AgentLimitPreference {
@@ -324,7 +339,8 @@ export function isAgentLimitPreference(value: unknown): value is AgentLimitPrefe
     Number.isInteger(value.max) &&
     value.max >= AGENT_LIMIT_MIN &&
     value.max <= AGENT_LIMIT_MAX &&
-    (value.tabsPerAgent === undefined || isAgentTabsLimit(value.tabsPerAgent))
+    (value.tabsPerAgent === undefined || isAgentTabsLimit(value.tabsPerAgent)) &&
+    (value.agentsPerTab === undefined || isAgentsPerTabLimit(value.agentsPerTab))
   );
 }
 

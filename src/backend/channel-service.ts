@@ -10,7 +10,6 @@ import {
   CHANNEL_ASSIGNMENT_LIMIT,
   CHANNEL_CHANGE_ITEM_TYPE,
   CHANNEL_DEFAULT_TOPIC_NAME,
-  CHANNEL_PARALLEL_LIMIT,
   CHANNEL_TOPIC_LIMIT,
   type Channel,
   type ChannelCommand,
@@ -24,6 +23,7 @@ import {
   type ConversationSnapshot,
   type CreateChannelMemoryInput,
   channelRoutingConversationEventItemType,
+  DEFAULT_AGENTS_PER_TAB,
   type DeleteChannelMemoryInput,
   type OptimizationId,
   type QueueHold,
@@ -180,7 +180,7 @@ export interface ChannelLaneSnapshot {
  * `starting`: the task has an active assignment of its own, so its start is under way. `owner-busy`:
  * its owner runs a turn or has messages in its queue. `waits`: anything else that holds it back: a
  * root that stopped, a lead or owner that is hidden or held by a spent plan, a dependency that is not
- * complete, a full tab (`CHANNEL_PARALLEL_LIMIT`), an assignment of its owner in another place, a
+ * complete, a full tab (`agentsPerTab`), an assignment of its owner in another place, a
  * resource that another run holds, or an older request that waits for the same resource.
  */
 export type ChannelQueueHold = "retrying" | "starting" | "owner-busy" | "waits";
@@ -1073,7 +1073,7 @@ export class ChannelService {
       assignments.filter((assignment) => {
         const ofAssignment = tasks.get(assignment.taskId);
         return ofAssignment?.channelId === task.channelId && ofAssignment.topicId === task.topicId;
-      }).length >= CHANNEL_PARALLEL_LIMIT ||
+      }).length >= DEFAULT_AGENTS_PER_TAB ||
       task.dependencies.some((id) => tasks.get(id)?.state !== "completed")
     );
   }

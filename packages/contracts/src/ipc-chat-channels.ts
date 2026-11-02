@@ -13,7 +13,6 @@ export const CHANNEL_DELETE_CAPABILITY = "channel-delete-v1";
  * their own messages stay their own in the transcript.
  */
 export const SIGNED_OUT_CHANNEL_MEMBER_ID = "local";
-export const CHANNEL_PARALLEL_LIMIT = 2;
 /**
  * The parallel conversations of one channel, as tabs beside each other. A tab has its own messages,
  * its own work and its own agent sessions; the channel's memory, members and lead are the same in

@@ -6,10 +6,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   type AgentSummary,
-  CHANNEL_PARALLEL_LIMIT,
   type ChannelMessage,
   type ChannelTask,
   DEFAULT_AGENT_DEFAULTS,
+  DEFAULT_AGENTS_PER_TAB,
 } from "@buildersbot/contracts/ipc";
 import { Effect } from "effect";
 import { afterEach, describe, expect, it } from "vitest";
@@ -271,7 +271,7 @@ describe("channel tab summary", () => {
     const { service, channelId, first, mailbox, cleanup } = await harness();
     await addTopic(service, channelId, "topic-second");
     // The first tab is already at the limit, with owners of its own.
-    const busy = Array.from({ length: CHANNEL_PARALLEL_LIMIT }, (_, index) =>
+    const busy = Array.from({ length: DEFAULT_AGENTS_PER_TAB }, (_, index) =>
       task(channelId, first, `task-busy-${index}`, "running"),
     );
     service.store.update(service.store.get(channelId), {
