@@ -422,6 +422,16 @@ const valid: [string, (value: unknown) => unknown, unknown][] = [
     decodeAgentLimitPreference,
     { enabled: false, max: 10, agentsPerTab: 8 },
   ],
+  [
+    "an agent limit with eight tabs and the memory mode",
+    decodeAgentLimitPreference,
+    { enabled: false, max: 10, tabsPerAgent: 8, tabsMode: "memory" },
+  ],
+  [
+    "an agent limit with one tab and the fixed mode",
+    decodeAgentLimitPreference,
+    { enabled: false, max: 10, tabsPerAgent: 1, tabsMode: "fixed" },
+  ],
 ];
 
 const malformed: [string, (value: unknown) => unknown, unknown][] = [
@@ -450,6 +460,8 @@ const malformed: [string, (value: unknown) => unknown, unknown][] = [
   ["an agent limit of zero", decodeAgentLimitPreference, { enabled: true, max: 0 }],
   ["an agent limit above 64", decodeAgentLimitPreference, { enabled: true, max: 65 }],
   ["an agent limit that is not whole", decodeAgentLimitPreference, { enabled: true, max: 2.5 }],
+  ["tabs of one agent above 8", decodeAgentLimitPreference, { enabled: true, max: 10, tabsPerAgent: 9 }],
+  ["a tab mode that is not known", decodeAgentLimitPreference, { enabled: true, max: 10, tabsMode: "auto" }],
   ["agents of one tab of zero", decodeAgentLimitPreference, { enabled: true, max: 10, agentsPerTab: 0 }],
   ["agents of one tab above 8", decodeAgentLimitPreference, { enabled: true, max: 10, agentsPerTab: 9 }],
   ["agents of one tab that are not whole", decodeAgentLimitPreference, { enabled: true, max: 10, agentsPerTab: 2.5 }],

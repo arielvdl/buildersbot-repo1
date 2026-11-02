@@ -120,6 +120,7 @@ import {
   webContents,
 } from "electron";
 import { pasteCodeLoginSupported } from "../backend/agent/cli-code-login";
+import { LaneBudget } from "../backend/agent/lane-budget";
 import { toMcpGatewayFailed } from "../backend/agent/mcp-gateway";
 import { playwrightUpstream } from "../backend/agent/playwright-browser-access";
 import { ProviderAccountStore } from "../backend/agent/provider-account-store";
@@ -250,7 +251,7 @@ import { LocalServers } from "./local-servers/local-servers";
 import { createLoginItem } from "./login-item";
 import { LogoColorService } from "./logo-color-service";
 import type { MacHapticFeedback } from "./mac-haptic-feedback";
-import { MacMemory } from "./mac-memory";
+import { LOW_BELOW, MacMemory } from "./mac-memory";
 import { MACHINE_ALERTS_PREFERENCE_FILE, MachineAlertMonitor, MachineAlertPreferenceStore } from "./machine-alerts";
 import { MachineMetricsSampler } from "./machine-metrics";
 import {
@@ -1451,7 +1452,9 @@ export async function createApplicationServices({
   const taskWatchHistory = createTaskWatchHistoryStore(join(app.getPath("userData"), TASK_WATCH_HISTORY_FILE));
   const startRetry = createStartRetryPreferenceStore(join(app.getPath("userData"), START_RETRY_PREFERENCE_FILE));
   const startBreakers = createStartBreakerStore(join(app.getPath("userData"), START_BREAKERS_FILE));
-  const agentLimit = new AgentLimitPreferenceStore(join(app.getPath("userData"), AGENT_LIMIT_PREFERENCE_FILE));
+  const agentLimit = new AgentLimitPreferenceStore(join(app.getPath("userData"), AGENT_LIMIT_PREFERENCE_FILE), {
+    memoryReadable: macMemory !== null,
+  });
   // One Playwright server for every agent, and no browser started by Builders Bot. It starts the server
   // only when an agent first asks for the browser. `service` is read at that time, not now. Without its
   // guard file the server would answer any program on this computer, so then there is no broker at all.
@@ -2104,6 +2107,8 @@ export async function createApplicationServices({
     agentLimit: () => agentLimit.limit(),
     channelTabLimit: () => agentLimit.tabsPerAgent(),
     channelParallelLimit: () => agentLimit.agentsPerTab(),
+    channelTabsMode: () => agentLimit.tabsMode(),
+    laneBudget: macMemory ? new LaneBudget({ memory: macMemory, lowBelowPercent: LOW_BELOW }) : null,
     requestTimeoutMs: 30_000,
     offProviders: providerUse.off(),
     modelPolicy,

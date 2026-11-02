@@ -1,8 +1,10 @@
 import {
   type AgentLimitPreference,
+  type AgentTabsMode,
   DEFAULT_AGENT_LIMIT_PREFERENCE,
-  DEFAULT_AGENT_TABS,
+  DEFAULT_AGENT_TABS_MODE,
   DEFAULT_AGENTS_PER_TAB,
+  defaultAgentTabs,
   isAgentLimitPreference,
 } from "@buildersbot/contracts/ipc";
 import { isDynamicRecord } from "@buildersbot/contracts/runtime-values";
@@ -13,8 +15,8 @@ import { type PreferenceFileFailure, readPreferenceFile, writePreferenceFile } f
 /**
  * The cap on the agents that run at the same time: on or off, and the most agents. It is off until
  * the person turns it on. The same file keeps the most channel tabs of one agent that run at the same
- * time (`tabsPerAgent`) and the most agents that run at the same time in one tab (`agentsPerTab`);
- * both apply whether the cap is on or off. A file that is missing, damaged,
+ * time (`tabsPerAgent`, a ceiling when `tabsMode` is `memory`) and the most agents that run at the same
+ * time in one tab (`agentsPerTab`); both apply whether the cap is on or off. A file that is missing, damaged,
  * of another shape, or with a value out of range reads as the default. Writes are chained, as the
  * other preference stores chain theirs.
  */
@@ -23,8 +25,15 @@ export class AgentLimitPreferenceStore {
   #preference: AgentLimitPreference = { ...DEFAULT_AGENT_LIMIT_PREFERENCE };
   #writes = Semaphore.makeUnsafe(1);
 
-  constructor(path: string) {
+  readonly #memoryReadable: boolean;
+
+  /**
+   * `memoryReadable`: this computer gives a memory reading (a Mac). A file with no `tabsMode` then
+   * reads `memory`, and else `fixed`, as `tabsMode()` says.
+   */
+  constructor(path: string, options: { memoryReadable?: boolean } = {}) {
     this.#path = path;
+    this.#memoryReadable = options.memoryReadable ?? false;
   }
 
   load(): Effect.Effect<void, PreferenceFileFailure> {
@@ -36,6 +45,7 @@ export class AgentLimitPreferenceStore {
                 enabled: parsed.enabled,
                 max: parsed.max,
                 ...(parsed.tabsPerAgent === undefined ? {} : { tabsPerAgent: parsed.tabsPerAgent }),
+                ...(parsed.tabsMode === undefined ? {} : { tabsMode: parsed.tabsMode }),
                 ...(parsed.agentsPerTab === undefined ? {} : { agentsPerTab: parsed.agentsPerTab }),
               }
             : null,
@@ -57,9 +67,17 @@ export class AgentLimitPreferenceStore {
     return this.#preference.enabled ? this.#preference.max : null;
   }
 
-  /** The most channel tabs of one agent that run a turn at the same time. */
+  /**
+   * How the tabs of one agent are limited. The saved mode, else `memory` where this computer gives a
+   * memory reading, else `fixed`. The backend still acts as `fixed` when no reading arrives.
+   */
+  tabsMode(): AgentTabsMode {
+    return this.#preference.tabsMode ?? (this.#memoryReadable ? DEFAULT_AGENT_TABS_MODE : "fixed");
+  }
+
+  /** The most channel tabs of one agent that run a turn at the same time: the ceiling in `memory` mode. */
   tabsPerAgent(): number {
-    return this.#preference.tabsPerAgent ?? DEFAULT_AGENT_TABS;
+    return this.#preference.tabsPerAgent ?? defaultAgentTabs(this.tabsMode());
   }
 
   /** The most agents that run a turn at the same time in one channel tab. */
@@ -75,11 +93,13 @@ export class AgentLimitPreferenceStore {
     if (!isAgentLimitPreference(preference)) return yield* Effect.die(new Error("Invalid agent limit preference."));
     // A client that does not know a tab limit sends none, and the saved one stays.
     const tabsPerAgent = preference.tabsPerAgent ?? this.#preference.tabsPerAgent;
+    const tabsMode = preference.tabsMode ?? this.#preference.tabsMode;
     const agentsPerTab = preference.agentsPerTab ?? this.#preference.agentsPerTab;
     const next: AgentLimitPreference = {
       enabled: preference.enabled,
       max: preference.max,
       ...(tabsPerAgent === undefined ? {} : { tabsPerAgent }),
+      ...(tabsMode === undefined ? {} : { tabsMode }),
       ...(agentsPerTab === undefined ? {} : { agentsPerTab }),
     };
     yield* this.#writes.withPermit(

@@ -73,6 +73,37 @@ describe("the agent limit preference", () => {
     expect(store.agentsPerTab()).toBe(4);
   });
 
+  it("reads the tab mode as memory with a memory reading and as fixed without one, and keeps the saved one", async () => {
+    const file = await path();
+    const withReading = new AgentLimitPreferenceStore(file, { memoryReadable: true });
+    await Effect.runPromise(withReading.load());
+    expect(withReading.tabsMode()).toBe("memory");
+    expect(withReading.tabsPerAgent()).toBe(4);
+    const without = new AgentLimitPreferenceStore(file);
+    await Effect.runPromise(without.load());
+    expect(without.tabsMode()).toBe("fixed");
+    expect(without.tabsPerAgent()).toBe(2);
+    await Effect.runPromise(withReading.set({ enabled: false, max: 10, tabsMode: "fixed", tabsPerAgent: 8 }));
+    await Effect.runPromise(withReading.set({ enabled: true, max: 5 }));
+    const again = new AgentLimitPreferenceStore(file, { memoryReadable: true });
+    await Effect.runPromise(again.load());
+    expect(again.get()).toEqual({ enabled: true, max: 5, tabsPerAgent: 8, tabsMode: "fixed" });
+    expect(again.tabsMode()).toBe("fixed");
+  });
+
+  it("reads the default for a file with a tab mode that is not known or tabs above 8", async () => {
+    const file = await path();
+    for (const content of [
+      { version: 1, enabled: true, max: 3, tabsMode: "fast" },
+      { version: 1, enabled: true, max: 3, tabsPerAgent: 9 },
+    ]) {
+      await writeFile(file, JSON.stringify(content));
+      const store = new AgentLimitPreferenceStore(file);
+      await Effect.runPromise(store.load());
+      expect(store.get()).toEqual({ enabled: false, max: 10 });
+    }
+  });
+
   it("refuses a value out of range instead of storing it", async () => {
     const store = new AgentLimitPreferenceStore(await path());
     await expect(Effect.runPromise(store.set({ enabled: true, max: 0 }))).rejects.toBeDefined();
@@ -86,6 +117,12 @@ describe("the IPC input of the agent limit", () => {
     expect(parseAgentLimitPreference({ enabled: false, max: 64, extra: "dropped" })).toEqual({
       enabled: false,
       max: 64,
+    });
+    expect(parseAgentLimitPreference({ enabled: true, max: 3, tabsPerAgent: 8, tabsMode: "memory" })).toEqual({
+      enabled: true,
+      max: 3,
+      tabsPerAgent: 8,
+      tabsMode: "memory",
     });
     expect(parseAgentLimitPreference({ enabled: true, max: 3, agentsPerTab: 8 })).toEqual({
       enabled: true,
@@ -103,6 +140,8 @@ describe("the IPC input of the agent limit", () => {
       { enabled: true, max: 65 },
       { enabled: true, max: 2.5 },
       { enabled: true, max: "10" },
+      { enabled: true, max: 10, tabsPerAgent: 9 },
+      { enabled: true, max: 10, tabsMode: "auto" },
       { enabled: true, max: 10, agentsPerTab: 0 },
       { enabled: true, max: 10, agentsPerTab: 9 },
       { enabled: true, max: 10, agentsPerTab: 2.5 },

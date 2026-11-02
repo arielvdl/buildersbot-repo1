@@ -112,6 +112,13 @@ export interface ChannelHooks {
   /** Whether the computer is low on memory: no new turn starts, and no agent opens a second tab. */
   memoryLow?(): boolean;
   /**
+   * Whether the memory budget has no room for one more tab of an agent that already works
+   * (`tabsMode` `memory`, `LaneBudget`). The tab then waits with the reason `memory`. Omitted: room.
+   */
+  laneBudgetLow?(): boolean;
+  /** An extra tab of an agent that already works starts now: its session counts in the budget. */
+  laneStarted?(): void;
+  /**
    * Whether this turn of the agent waits for the person: a question, an approval or a browser
    * takeover. Such a tab takes no place among the agent's parallel tabs while its limit is above 1.
    */
@@ -1123,6 +1130,7 @@ export class ChannelService {
         : own;
     if (working.length >= limit) return { reason: "agent-tabs", busy: working.length, limit };
     if (this.hooks.memoryLow?.()) return { reason: "memory" };
+    if (this.hooks.laneBudgetLow?.()) return { reason: "memory" };
     return null;
   }
 
@@ -2131,6 +2139,8 @@ export class ChannelService {
         pendingOutcome: null,
       };
       yield* channelSync(() => this.store.update(channel, { assignments: [assignment] }));
+      // A tab beside another of the same agent is one more session: the budget counts it at once.
+      if (allAssignments.some((item) => item.agentId === assignment.agentId)) this.hooks.laneStarted?.();
       // The request message belongs to the task that the request created, not to a child task that
       // only inherits the id. A send commits its uploads before it is accepted, so `committing`
       // now only serves a task an earlier version queued with its drafts still open: it turns

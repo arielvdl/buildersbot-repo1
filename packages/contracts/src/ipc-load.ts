@@ -295,13 +295,23 @@ export interface AgentLimitPreference {
   /** The most agents that run at the same time, from 1 to 64. */
   max: number;
   /**
-   * The most channel tabs of one agent that run a turn at the same time, from 1 to 4, whether the cap
+   * The most channel tabs of one agent that run a turn at the same time, from 1 to 8, whether the cap
    * on agents is on or off. Each tab is its own line of work: its requests start in order, and a tab
    * does not wait for another tab while the agent has a free place. With 1, the agent works in one
-   * tab at a time, as before tabs ran in parallel. Absent: `DEFAULT_AGENT_TABS`, also from an older
-   * main process.
+   * tab at a time, as before tabs ran in parallel. With `tabsMode` `memory` this is the ceiling, and
+   * the free memory of the computer can make the real number smaller. Absent: `defaultAgentTabs`, also
+   * from an older main process.
    */
   tabsPerAgent?: number;
+  /**
+   * How the tabs of one agent are limited. `fixed`: always `tabsPerAgent` tabs, as before. `memory`:
+   * up to `tabsPerAgent`, and an extra tab starts only while the computer has free memory for another
+   * session. A computer that gives no memory reading (not a Mac) always acts as `fixed`. Absent:
+   * `DEFAULT_AGENT_TABS_MODE` where memory is read, `fixed` where it is not. A main process before this
+   * field ignores it. An older build that reads `tabsPerAgent` above 4 reads the whole preference as the
+   * default.
+   */
+  tabsMode?: AgentTabsMode;
   /**
    * The most agents that run a turn at the same time in one channel tab, from 1 to 8. A request over
    * the limit waits in the tab, in order, and starts when an agent of the tab ends its turn. Absent:
@@ -314,9 +324,24 @@ export const AGENT_LIMIT_MIN = 1;
 export const AGENT_LIMIT_MAX = 64;
 export const DEFAULT_AGENT_LIMIT_PREFERENCE: AgentLimitPreference = { enabled: false, max: 10 };
 export const AGENT_TABS_MIN = 1;
-export const AGENT_TABS_MAX = 4;
+export const AGENT_TABS_MAX = 8;
 /** Two tabs: the user sees a second tab answer, and the memory of one more provider session is small. */
 export const DEFAULT_AGENT_TABS = 2;
+/** The ceiling with `tabsMode` `memory`: the memory sets the real number, and this guards the plan quota. */
+export const DEFAULT_AGENT_TABS_CEILING = 4;
+
+export const AGENT_TABS_MODES = ["fixed", "memory"] as const;
+export type AgentTabsMode = (typeof AGENT_TABS_MODES)[number];
+export const DEFAULT_AGENT_TABS_MODE: AgentTabsMode = "memory";
+
+export function isAgentTabsMode(value: unknown): value is AgentTabsMode {
+  return value === "fixed" || value === "memory";
+}
+
+/** The number of tabs that applies when the person set none: the ceiling in `memory` mode, else two. */
+export function defaultAgentTabs(mode: AgentTabsMode) {
+  return mode === "memory" ? DEFAULT_AGENT_TABS_CEILING : DEFAULT_AGENT_TABS;
+}
 
 export const AGENTS_PER_TAB_MIN = 1;
 export const AGENTS_PER_TAB_MAX = 8;
@@ -340,6 +365,7 @@ export function isAgentLimitPreference(value: unknown): value is AgentLimitPrefe
     value.max >= AGENT_LIMIT_MIN &&
     value.max <= AGENT_LIMIT_MAX &&
     (value.tabsPerAgent === undefined || isAgentTabsLimit(value.tabsPerAgent)) &&
+    (value.tabsMode === undefined || isAgentTabsMode(value.tabsMode)) &&
     (value.agentsPerTab === undefined || isAgentsPerTabLimit(value.agentsPerTab))
   );
 }

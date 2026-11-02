@@ -119,6 +119,7 @@ import {
   AGENT_REASONING_EFFORTS,
   type AgentDefaults,
   type AgentModelChoice,
+  type AgentTabsMode,
   agentAutomationAllowed,
   agentBrowserProfile,
   agentNewChatAllowed,
@@ -187,6 +188,7 @@ import type { FailureContext, FailureSignal } from "./agent/failure-signal";
 import { type AgentHostedSites, HostedSiteCoordinator } from "./agent/hosted-site-coordinator";
 import { ImageGenRuntime } from "./agent/image-gen-runtime";
 import { InstructionsChanges } from "./agent/instructions-changes";
+import type { LaneBudget } from "./agent/lane-budget";
 import { MailboxSync } from "./agent/mailbox-sync";
 import { type GitHubConnectorSource, McpGateway, type TestMcpServerOptions } from "./agent/mcp-gateway";
 import { mcpServersFromGateway } from "./agent/mcp-tools";
@@ -544,6 +546,13 @@ export interface AgentServiceOptions {
    */
   channelTabLimit?: () => number;
   /**
+   * How the tabs of one agent are limited: `fixed`, or `memory`, where `channelTabLimit` is only a
+   * ceiling and `laneBudget` decides. Omitted: `fixed`.
+   */
+  channelTabsMode?: () => AgentTabsMode;
+  /** The memory budget of the extra tabs, or null where memory is not read. Omitted: null. */
+  laneBudget?: LaneBudget | null;
+  /**
    * The most agents that run a turn at the same time in one channel tab, as the person set it.
    * Omitted: `DEFAULT_AGENTS_PER_TAB`.
    */
@@ -606,6 +615,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   readonly #images: ImageGenRuntime;
   readonly #threads: ThreadLifecycle;
   readonly #memoryHold: MemoryHold;
+  readonly #laneBudget: LaneBudget | null;
   readonly #usageLimits: UsageLimitGate;
   readonly #drain: DrainScheduler;
   readonly #sessionSettings: SessionSettings;
@@ -676,7 +686,9 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       busyMessageMode = () => DEFAULT_BUSY_MESSAGE_MODE,
       securityGuard = () => DEFAULT_SECURITY_GUARD_PREFERENCE,
       channelLane,
+      laneBudget = null,
     } = options;
+    this.#laneBudget = laneBudget;
     this.#developmentDefaults = developmentDefaults;
     this.#busyMessageMode = busyMessageMode;
     this.optimizations = options.optimizations ?? OPTIMIZATIONS_OFF;
@@ -1321,6 +1333,12 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       tabLimit: (agentId) =>
         this.#tasks.oneTurnAtATime(agentId) ? 1 : (options.channelTabLimit?.() ?? DEFAULT_AGENT_TABS),
       parallelLimit: () => options.channelParallelLimit?.() ?? DEFAULT_AGENTS_PER_TAB,
+      // In `memory` mode an extra tab of an agent that works needs room in the memory budget. In
+      // `fixed` mode, and where memory is not read, the budget is not asked.
+      laneBudgetLow: () => options.channelTabsMode?.() === "memory" && !(options.laneBudget?.hasRoom() ?? true),
+      laneStarted: () => {
+        if (options.channelTabsMode?.() === "memory") options.laneBudget?.claim();
+      },
       memoryLow: () => !this.#memoryHold.mayDrain(""),
       waitsOnPerson: (agentId, turnId) => this.#attention.waitsOnPerson(agentId, turnId),
       usageLimited: (agentId) => !this.#usageLimits.mayDrain(agentId),
@@ -4168,6 +4186,18 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       this.#channelRoutines.skipMissed(new Date(), options.heldRoutines);
       this.#initialized = true;
       this.#memoryHold.start();
+      // A sample that brings room wakes the tabs that waited for memory: no turn ends to do it.
+      this.#laneBudget?.start(() => {
+        Effect.runFork(
+          this.channels
+            .wake()
+            .pipe(
+              Effect.catch((failure) =>
+                Effect.sync(() => this.#emitError("channel_coordination_failed", failure.cause)),
+              ),
+            ),
+        );
+      });
     });
     yield* this.#providers
       .start()
@@ -4710,6 +4740,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     this.#initialized = false;
     this.#routineTimer.dispose();
     yield* this.#memoryHold.dispose();
+    this.#laneBudget?.dispose();
     phase.ended("memory hold");
     this.#hostedSites.dispose();
     this.#compaction.dispose();
