@@ -21,6 +21,7 @@ import { useText } from "../../text";
 import { ProfileActivity, type ProfileActivityPhase } from "./ProfileActivity";
 import { ProfileEditDialog } from "./ProfileEditDialog";
 import { ProfileShareDialog } from "./ProfileShareDialog";
+import { ProfileTabReports, type ProfileTabReportsState } from "./ProfileTabReports";
 import { type ProfileStats, profileStats } from "./profile-stats";
 import type { SettingsProfileStore } from "./stores/profile-store";
 
@@ -44,6 +45,8 @@ interface SettingsProfileTabProps {
   onSignOut?: (() => Promise<void>) | undefined;
   /** The activity of this computer. Nothing shows without it. */
   activity?: ProfileActivityState | undefined;
+  /** The tabs of channels that this computer closed. Nothing shows without it, as on the web. */
+  tabReports?: ProfileTabReportsState | undefined;
 }
 
 /** `Date.prototype.toLocaleString()` with no options: the date and the time, each field numeric. */
@@ -133,6 +136,7 @@ export function SettingsProfileTab(props: SettingsProfileTabProps) {
           />
         )}
       </Show>
+      <Show when={props.tabReports}>{(tabReports) => <ProfileTabReports state={tabReports()} />}</Show>
 
       <SettingsSection title={t("settings.profile.account.title")}>
         <ItemGroup class="settings-modal-card">

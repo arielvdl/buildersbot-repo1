@@ -271,6 +271,7 @@
     "./features/settings/OpenCodeKeyDialog": "./src/features/settings/OpenCodeKeyDialog.tsx",
     "./features/settings/PluginUninstallDialog": "./src/features/settings/PluginUninstallDialog.tsx",
     "./features/settings/ProfileActivity": "./src/features/settings/ProfileActivity.tsx",
+    "./features/settings/ProfileTabReports": "./src/features/settings/ProfileTabReports.tsx",
     "./features/settings/ProfileEditDialog": "./src/features/settings/ProfileEditDialog.tsx",
     "./features/settings/ProfileShareDialog": "./src/features/settings/ProfileShareDialog.tsx",
     "./features/settings/ProviderSettingsPage": "./src/features/settings/ProviderSettingsPage.tsx",

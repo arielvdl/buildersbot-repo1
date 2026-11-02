@@ -1,6 +1,7 @@
 import type {
   AvatarImageInput,
   CentralAuthUser,
+  ChannelTabReport,
   ClientAgentModelOption,
   ClientAgentSummary,
   LoadSnapshot,
@@ -175,10 +176,23 @@ function SettingsModalStory(props: {
   guardLoading?: boolean;
   /** The agents of each server, in place of the preview agents. */
   agents?: ClientAgentSummary[];
+  /** The close records of channel tabs that the Profile lists. */
+  tabReports?: ChannelTabReport[];
+  /** How the list of closed tabs answers: never, or with a failure. */
+  tabReportsAnswer?: "pending" | "failure";
 }) {
   const previousApi = window.buildersbot;
   const billingApi = createMockBilling();
-  const mock = createMockBuildersBot({ ...props.voice, ...(props.agents ? { agents: props.agents } : {}) });
+  const mock = createMockBuildersBot({
+    ...props.voice,
+    ...(props.agents ? { agents: props.agents } : {}),
+    ...(props.tabReports ? { channelTabReports: props.tabReports } : {}),
+  });
+  if (props.tabReportsAnswer === "pending") mock.api.agent.listChannelTabReports = () => new Promise(() => undefined);
+  if (props.tabReportsAnswer === "failure")
+    mock.api.agent.listChannelTabReports = async () => {
+      throw new Error("The host did not answer.");
+    };
   const models = props.models;
   if (models) mock.api.agent.listModels = async () => structuredClone(models);
   if (props.guardLoading) mock.api.guard.getState = () => new Promise(() => undefined);
@@ -375,6 +389,58 @@ export const Narrow: Story = {
 
 export const Profile: Story = {
   render: () => <SettingsModalStory initialOpen initialTab="profile" />,
+};
+
+/** Close records of channel tabs, newest first, as the host stores them. */
+function storyTabReports(count: number): ChannelTabReport[] {
+  const outcomes = ["done", "not-done", "other"] as const;
+  const now = Date.now();
+  return Array.from({ length: count }, (_, index) => {
+    const outcome = outcomes[index % outcomes.length] ?? "done";
+    const closed = now - (index + 1) * 5 * 3_600_000;
+    return {
+      id: `report-${index + 1}`,
+      channelId: "channel-1",
+      channelName: index % 2 === 0 ? "Launch plan" : "Support inbox",
+      topicId: `topic-${index + 1}`,
+      topicName: `Tab ${index + 1}`,
+      outcome,
+      note:
+        outcome === "done"
+          ? null
+          : outcome === "other"
+            ? "Moved to the billing channel, the owner took it from there."
+            : "The export still fails on large files.",
+      openedAt: new Date(closed - (index % 4 === 0 ? 26 : 2) * 3_600_000).toISOString(),
+      closedAt: new Date(closed).toISOString(),
+      agents:
+        index % 3 === 0
+          ? [
+              { id: "agent-1", name: "Nova" },
+              { id: "agent-2", name: "Iris" },
+            ]
+          : [{ id: "agent-1", name: "Nova" }],
+      tasks: { completed: 3 - (index % 3), failed: index % 3 === 1 ? 1 : 0, open: index % 3 === 2 ? 1 : 0 },
+      lastResult: outcome === "done" ? "The plan is written and the dates are set for the first week." : null,
+    };
+  });
+}
+
+/** The Profile with 26 closed tabs: the first 20 show, and Show more brings the rest. */
+export const ProfileClosedTabs: Story = {
+  render: () => <SettingsModalStory initialOpen initialTab="profile" tabReports={storyTabReports(26)} />,
+};
+
+export const ProfileClosedTabsEmpty: Story = {
+  render: () => <SettingsModalStory initialOpen initialTab="profile" />,
+};
+
+export const ProfileClosedTabsLoading: Story = {
+  render: () => <SettingsModalStory initialOpen initialTab="profile" tabReportsAnswer="pending" />,
+};
+
+export const ProfileClosedTabsError: Story = {
+  render: () => <SettingsModalStory initialOpen initialTab="profile" tabReportsAnswer="failure" />,
 };
 
 export const Notifications: Story = {

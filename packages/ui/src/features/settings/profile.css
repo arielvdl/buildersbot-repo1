@@ -92,6 +92,32 @@
   align-items: flex-start;
 }
 
+/* Closed tabs: a badge and the name on one line, the note on at most two, the details and the last result on one. */
+.profile-tab-report-title {
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+}
+
+.profile-tab-report-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-tab-report .profile-tab-report-note {
+  display: -webkit-box;
+  color: var(--buildersbot-text-secondary);
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.profile-tab-reports-more {
+  display: flex;
+  justify-content: center;
+}
+
 .profile-columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

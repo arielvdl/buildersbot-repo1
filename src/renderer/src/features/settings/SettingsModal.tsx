@@ -52,6 +52,7 @@ import { licenseContactUs, trackLicenseEvent } from "./license-analytics";
 import { createNotificationLevelsStore } from "./notification-levels-store";
 import { createProfileActivityStore } from "./profile-activity-store";
 import { renderProfileShareImage } from "./profile-share-image";
+import { createProfileTabReportsStore } from "./profile-tab-reports-store";
 import { createSettingsAgentsSection } from "./SettingsAgentsSection";
 import { SettingsDynamicIslandTab } from "./SettingsDynamicIslandTab";
 import { SettingsGeneralTab } from "./SettingsGeneralTab";
@@ -165,6 +166,7 @@ export function SettingsModal(props: SettingsModalProps) {
     () => props.open && activeTab() === "profile",
     (stats) => renderProfileShareImage(props.account, stats),
   );
+  const profileTabReports = createProfileTabReportsStore(() => props.open && activeTab() === "profile");
   const mobileConnect = createSettingsMobileConnectStore(props, () => activeTab() === "mobile-connect");
   const updates = createSettingsUpdatesStore(props);
   const billing = createBillingStore(
@@ -449,6 +451,7 @@ export function SettingsModal(props: SettingsModalProps) {
             store={profile}
             account={props.account}
             activity={profileActivity}
+            tabReports={profileTabReports}
             canListSessions={Boolean(props.onListAccountSessions)}
             canRevokeSession={Boolean(props.onRevokeAccountSession)}
             onSignOut={props.onSignOut}
