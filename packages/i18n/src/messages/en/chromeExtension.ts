@@ -14,6 +14,7 @@ export const messages = defineMessages("chromeExtension", {
   "chromeExtension.badge.controlledBy": "Controlled by {agent} · {project}",
 
   "chromeExtension.popup.connected": "Connected to Builders Bot",
+  "chromeExtension.popup.connectedShort": "Connected",
   "chromeExtension.popup.appOffline": "Builders Bot is closed",
   "chromeExtension.popup.notPaired": "Not connected yet",
   "chromeExtension.popup.noHost": "Builders Bot is not set up on this Mac",

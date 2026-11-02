@@ -5,7 +5,7 @@
  * check on the Chrome side; nothing is copied or typed.
  */
 
-import { ask, button, el, setLanguage } from "../shared/dom";
+import { ask, button, el, type IconName, icon, setLanguage } from "../shared/dom";
 import type { StatusView } from "../shared/messages";
 import { type TextKey, t } from "../shared/text";
 
@@ -14,21 +14,39 @@ const DEEP_LINK = "buildersbot://browser/connect";
 let result: TextKey | null = null;
 let busy = false;
 
-function section(title: TextKey, body: TextKey): HTMLElement {
-  return el("section", {}, el("h2", { text: t(title) }), el("p", { text: t(body) }));
+function brand(): HTMLElement {
+  const logo = el("img", { className: "logo" });
+  logo.src = "icons/48.png";
+  logo.alt = "";
+  return el("div", { className: "brand" }, logo, el("span", { text: t("chromeExtension.extName") }));
+}
+
+function section(glyph: IconName, title: TextKey, body: TextKey): HTMLElement {
+  return el(
+    "section",
+    { className: "tile" },
+    el("span", { className: "badge" }, icon(glyph)),
+    el("h2", { text: t(title) }),
+    el("p", { text: t(body) }),
+  );
 }
 
 function renderDisclosure(): void {
   const host = document.getElementById("disclosure");
   if (!host) return;
   host.replaceChildren(
+    brand(),
     el("h1", { text: t("chromeExtension.welcome.title") }),
     el("p", { className: "lead", text: t("chromeExtension.welcome.intro") }),
-    section("chromeExtension.welcome.readsTitle", "chromeExtension.welcome.reads"),
-    section("chromeExtension.welcome.whereTitle", "chromeExtension.welcome.where"),
-    section("chromeExtension.welcome.neverTitle", "chromeExtension.welcome.never"),
-    section("chromeExtension.welcome.stopTitle", "chromeExtension.welcome.stop"),
-    el("p", { className: "muted", text: t("chromeExtension.welcome.pin") }),
+    el(
+      "div",
+      { className: "tiles" },
+      section("eye", "chromeExtension.welcome.readsTitle", "chromeExtension.welcome.reads"),
+      section("send", "chromeExtension.welcome.whereTitle", "chromeExtension.welcome.where"),
+      section("ban", "chromeExtension.welcome.neverTitle", "chromeExtension.welcome.never"),
+      section("stop", "chromeExtension.welcome.stopTitle", "chromeExtension.welcome.stop"),
+    ),
+    el("p", { className: "muted pin", text: t("chromeExtension.welcome.pin") }),
   );
 }
 
@@ -48,6 +66,16 @@ async function choose(index: number | null): Promise<void> {
   await refresh();
 }
 
+/** The words of Chrome as chips. The separators keep the text the same as the words joined by " · ". */
+function words(list: readonly string[]): HTMLElement {
+  const parts: HTMLElement[] = [];
+  list.forEach((word, index) => {
+    if (index > 0) parts.push(el("span", { className: "sep", text: " · " }));
+    parts.push(el("span", { className: "word", text: word }));
+  });
+  return el("p", { className: "words" }, ...parts);
+}
+
 let shown = "";
 
 function render(status: StatusView): void {
@@ -56,7 +84,7 @@ function render(status: StatusView): void {
   const key = JSON.stringify([status.link, status.pairing, status.platform, result]);
   if (key === shown) return;
   shown = key;
-  const title = el("h2", { text: t("chromeExtension.welcome.pairTitle") });
+  const title = el("h2", { className: "pair-title", text: t("chromeExtension.welcome.pairTitle") });
   if (status.platform !== "" && status.platform !== "mac") {
     root.replaceChildren(title, el("p", { text: t("chromeExtension.welcome.unsupported") }));
     return;
@@ -68,7 +96,7 @@ function render(status: StatusView): void {
     root.replaceChildren(
       title,
       el("p", { text: t("chromeExtension.welcome.showWords") }),
-      el("p", { className: "words", text: status.pairing.chrome.join(" · ") }),
+      words(status.pairing.chrome),
       el("p", { text: t("chromeExtension.welcome.chooseWords") }),
       el("div", { className: "choices" }, ...options),
       el("p", { className: "muted", text: t("chromeExtension.welcome.notExpected") }),
@@ -77,13 +105,20 @@ function render(status: StatusView): void {
     return;
   }
   if (status.link === "connected") {
-    root.replaceChildren(title, el("p", { className: "ok", text: t("chromeExtension.welcome.paired") }));
+    root.replaceChildren(
+      title,
+      el("p", { className: "ok" }, icon("check"), el("span", { text: t("chromeExtension.welcome.paired") })),
+    );
     return;
   }
-  const retry = button(t("chromeExtension.welcome.tryAgain"), () => {
-    result = null;
-    void ask({ kind: "connect" }).then(refresh);
-  });
+  const retry = button(
+    t("chromeExtension.welcome.tryAgain"),
+    () => {
+      result = null;
+      void ask({ kind: "connect" }).then(refresh);
+    },
+    "button primary",
+  );
   if (result !== null) {
     root.replaceChildren(title, el("p", { text: t(result) }), retry);
     return;
@@ -95,7 +130,7 @@ function render(status: StatusView): void {
         // The app treats this link as untrusted: it only brings up its own "Connect Chrome" card.
         window.location.href = DEEP_LINK;
       },
-      "button primary",
+      "button primary big",
     );
     root.replaceChildren(
       title,
@@ -105,7 +140,12 @@ function render(status: StatusView): void {
     );
     return;
   }
-  root.replaceChildren(title, el("p", { className: "muted", text: t("chromeExtension.welcome.waiting") }));
+  const dot = el("span", { className: "dot" });
+  dot.setAttribute("aria-hidden", "true");
+  root.replaceChildren(
+    title,
+    el("p", { className: "waiting muted" }, dot, el("span", { text: t("chromeExtension.welcome.waiting") })),
+  );
 }
 
 async function refresh(): Promise<void> {
