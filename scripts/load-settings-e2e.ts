@@ -327,7 +327,8 @@ try {
   // the other limits, whole and clamped from 1 to 8, in the language of the app.
   const linesInput = page.getByRole("spinbutton", { name: new RegExp(`^${escaped(t("settings.load.lines.label"))}`) });
   await linesInput.scrollIntoViewIfNeeded();
-  await page.getByText(t("settings.load.lines.unit"), { exact: true }).waitFor();
+  // The two numbers can show the same range text ("1 to 8, 4 is suggested"), so the first one is read.
+  await page.getByText(t("settings.load.lines.unit"), { exact: true }).first().waitFor();
   await page.getByText(t("settings.load.lines.hint"), { exact: true }).waitFor();
   const savedLimit = await page.evaluate(() => window.buildersbot.getAgentLimit());
   const savedLines = savedLimit.agentsPerTab ?? 4;
@@ -373,6 +374,85 @@ try {
   }
   assert.equal(await savedLinesNow(), savedLines, "the saved value is back");
   pass("The number of agents of one tab shows its texts, saves 6, clamps 9 to 8, and keeps the other limits.");
+
+  // The tab mode: tabs by the free memory (the default) or a fixed number. The number is the ceiling in
+  // the first mode and the fixed number in the second, with its own title.
+  const before = await page.evaluate(() => window.buildersbot.getAgentLimit());
+  const modeSwitch = page.getByRole("switch", { name: t("settings.load.lines.modeLabel"), exact: true });
+  const tabsNow = () => page.evaluate(() => window.buildersbot.getAgentLimit());
+  try {
+    await modeSwitch.scrollIntoViewIfNeeded();
+    await page.getByText(t("settings.load.lines.modeHint"), { exact: true }).waitFor();
+    assert.equal(
+      await modeSwitch.isChecked(),
+      (before.tabsMode ?? "memory") === "memory",
+      "the switch shows the saved mode",
+    );
+    // The mode memory first, so the ceiling title shows.
+    if (!(await modeSwitch.isChecked())) {
+      await modeSwitch.focus();
+      await page.keyboard.press("Space");
+    }
+    await page.waitForFunction(
+      async () => (await window.buildersbot.getAgentLimit()).tabsMode === "memory",
+      undefined,
+      {
+        timeout: 15_000,
+        polling: 250,
+      },
+    );
+    await page.getByText(t("settings.load.lines.tabsCeilingLabel"), { exact: true }).waitFor();
+    await page.getByText(t("settings.load.lines.tabsCeilingHint"), { exact: true }).waitFor();
+    await page
+      .getByText(t("settings.load.lines.tabsUnit", { suggested: 4 }), { exact: true })
+      .first()
+      .waitFor();
+    const ceiling = page.getByRole("spinbutton", { name: t("settings.load.lines.tabsCeilingLabel"), exact: true });
+    await ceiling.fill("6");
+    await ceiling.blur();
+    await page.waitForFunction(async () => (await window.buildersbot.getAgentLimit()).tabsPerAgent === 6, undefined, {
+      timeout: 15_000,
+      polling: 250,
+    });
+    await ceiling.fill("9");
+    await ceiling.blur();
+    await page.waitForFunction(async () => (await window.buildersbot.getAgentLimit()).tabsPerAgent === 8, undefined, {
+      timeout: 15_000,
+      polling: 250,
+    });
+    assert.equal(await ceiling.inputValue(), "8", "9 shows as 8");
+    await page.screenshot({ path: resolve(OUT, `load-page-lines-memory-${locale}.png`) });
+    if (EXTRA_SHOTS) await page.screenshot({ path: resolve(EXTRA_SHOTS, `load-page-lines-memory-${locale}.png`) });
+    // The fixed mode: its own title and hint, the same number, and the mode saved.
+    await modeSwitch.focus();
+    await page.keyboard.press("Space");
+    await page.waitForFunction(async () => (await window.buildersbot.getAgentLimit()).tabsMode === "fixed", undefined, {
+      timeout: 15_000,
+      polling: 250,
+    });
+    await page.getByText(t("settings.load.lines.tabsFixedLabel"), { exact: true }).waitFor();
+    await page.getByText(t("settings.load.lines.tabsFixedHint"), { exact: true }).waitFor();
+    await page.getByText(t("settings.load.lines.tabsUnit", { suggested: 2 }), { exact: true }).waitFor();
+    assert.equal((await tabsNow()).tabsPerAgent, 8, "changing the mode keeps the number");
+    assert.equal((await tabsNow()).max, before.max, "the other limits keep their values");
+    await page.screenshot({ path: resolve(OUT, `load-page-lines-fixed-${locale}.png`) });
+    if (EXTRA_SHOTS) await page.screenshot({ path: resolve(EXTRA_SHOTS, `load-page-lines-fixed-${locale}.png`) });
+  } finally {
+    await page.evaluate(
+      (saved) =>
+        window.buildersbot.getAgentLimit().then((current) =>
+          window.buildersbot.setAgentLimit({
+            ...current,
+            tabsMode: saved.tabsMode ?? "memory",
+            tabsPerAgent: saved.tabsPerAgent ?? (saved.tabsMode === "fixed" ? 2 : 4),
+          }),
+        ),
+      before,
+    );
+  }
+  pass(
+    "The tab mode switch saves memory and fixed, shows the title of each, and the ceiling saves 6 and clamps 9 to 8.",
+  );
 
   await closeSettings(page, t);
 } finally {
