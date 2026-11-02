@@ -221,8 +221,9 @@ checks the real reading on macOS and the samples of 1 November through `MemoryHo
   processes itself when memory is critical.
 - `AgentService` gets this reading as `memoryPressure`, not as `hostMemory`. `hostMemory` makes the
   app a server and changes the agent instructions (`serverHost`). `MacMemory` has
-  `kind: "desktop"`, counts no memory for a new turn (`reserveTurn` does nothing), and gives a turn
-  limit of 64 (`DESKTOP_TURN_LIMIT`), so only the level holds a turn.
+  `kind: "desktop"`, gives a turn limit of 64 (`DESKTOP_TURN_LIMIT`), and holds no turn for the
+  memory that a turn takes: only the level holds a turn. `reserveTurn` does only count `freeMb()`
+  down (see [the memory budget](#the-memory-budget-for-tabs-and-idle-sessions)).
 - The browser broker reads the same level (`memoryLevel`): no new tab while the level is `low`, and
   no new session while it is `critical`. See [browser.md](browser.md#one-playwright-server-for-all-agents).
 - The Builders Bot browser reads it too, through `browserMemory(hostMemory, macMemory)` in
@@ -267,6 +268,49 @@ stays; only the first message is slower. The stop cannot choose a folder: an age
 leave a gap keeps all the folders until one comes, or until the low level holds new turns and the
 low-memory stop takes the process. `scripts/opencode-folder-release-e2e.ts` checks these rules with
 a fake OpenCode that keeps a process for each folder.
+
+### The memory budget for tabs and idle sessions
+
+With the tab mode `memory` (Settings > Load, `AgentLimitPreference.tabsMode`; the default on a Mac),
+the free memory decides how many tabs of one agent run together and how long idle provider sessions
+stay open. `tabsPerAgent` (1 to 8, 4 by default) is then only a ceiling that guards the plan quota.
+With `fixed`, or where no memory is read (a server, Windows, Linux), none of this applies and the
+numbers are the fixed ones. `LaneBudget` (`src/backend/agent/lane-budget.ts`) has no I/O: it reads
+`HostMemory.freeMb()` and `totalMb()`.
+
+- **Room for a tab.** `spare = max(0, floor((free - floor) / session))`. `session` is 300 MB
+  (`LANE_SESSION_MB`; measured on 1 November 2026: 200 to 400 MB, 197 MB on average; a first guess,
+  not calibrated). `floor` is the `low` threshold (`LOW_BELOW`, 14% of the memory) plus two
+  sessions, so the budget ends before the level is `low` and room is left for the message of the
+  person. An extra tab of an agent that already works starts only when `spare` is 1 or more;
+  otherwise it waits with the reason `memory`, and a sample that brings room wakes the channels. The
+  first line of an agent never asks the budget.
+- **Reservation.** `MacMemory.reserveTurn()` takes 300 MB off `freeMb()` for each start, until the
+  next sample (10 s), so several agents that start in one pass cannot overspend. The channel service
+  also claims one session when it starts an extra tab (`LaneBudget.claim`), so the first seconds count
+  that tab twice, on the careful side. The level, and the rule that a desktop holds no turn for the
+  memory of a turn, do not change.
+- **Idle sessions.** The pools of Claude and ACP (`IdleThreadPool`) read the policy at each moment a
+  session goes idle (`AgentClient.useIdlePolicy`, `ProviderHooks.idlePolicy`). A session in a turn,
+  or one whose turn is starting, never closes. Values by memory:
+
+| Memory | Warm sessions (idle, open before the timeout) | Idle time before it closes |
+| --- | --- | --- |
+| `ok`, spare 16 or more | `min(8, floor(spare / 2))` | 10 min |
+| `ok`, spare 1 to 15 | `max(2, floor(spare / 2))` | 5 min |
+| spare 0, or `low` | 2 | 2 min |
+| `critical` | 0 | 2 min, and the memory hold closes them at once |
+| `fixed` mode or no reading | 2 | 10 min (as before) |
+
+- **Entering `low`.** With the tab mode `memory` and a memory reading, the sessions that were idle
+  for 2 minutes or more also close when the level goes from `ok` to `low` (`MemoryHold` option
+  `releaseOnLow`), whatever the switch `idle-release-low` says. The switch stays as it was and works
+  by itself.
+- A timer that already runs keeps the time it had when it was armed; the release at `low` and the
+  limit of warm sessions catch up with it. Claude keeps a process that runs a background task, and a
+  session that is not saved to disk, until three times the idle time (`forceReleaseAfterMs`).
+- The values are a first guess. `dev:bench` scenarios `s7-release-claude` and `s14-lanes-claude`
+  measure them (see [analytics.md](analytics.md#resource-sampling)); no measurement has been taken yet.
 
 ## Model catalog
 

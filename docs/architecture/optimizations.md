@@ -13,7 +13,7 @@ list is the order of the Settings page.
 | Id | What it changes when it is on |
 | --- | --- |
 | `queue-priority-user` | A delivery from the person can use one more place than the cap on agents, and at `low` memory one turn of the person can start on an agent whose provider session is open. See [providers.md](providers.md#memory-of-the-computer). |
-| `idle-release-low` | When the memory of the computer goes to `low`, the provider threads with no turn for more than 2 minutes close. See [providers.md](providers.md#memory-of-the-computer). |
+| `idle-release-low` | When the memory of the computer goes to `low`, the provider threads with no turn for more than 2 minutes close. The tab mode `memory` (Settings > Load) does the same with this switch off. See [providers.md](providers.md#memory-of-the-computer). |
 | `fiscal-resume-grace` | After the computer sleeps, the task reviewer holds every task for two looks. See [task-reviewer.md](task-reviewer.md#sleep-of-the-computer). |
 | `turn-start-unify` | The two security reviews before a turn become one. See [guard.md](guard.md). |
 | `channel-context-spill` | Long old channel messages go to an agent cut, with a pointer to read the rest. See [channels-and-messaging.md](channels-and-messaging.md#lean-channel-context-channel-context-spill). |

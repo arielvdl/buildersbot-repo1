@@ -122,6 +122,14 @@ milliseconds and a status word, never a text, an id or a path. The diagnostics e
 by step with the other spans (`TraceFile.summarize`). They are always on: they change nothing that the
 app does. `scripts/turn-start-timings-e2e.ts` measures them with a fake provider.
 
+The `dev:bench` scenario `s14-lanes-claude` (`scripts/dev-automation/bench-scenarios.ts`) measures the
+idle sessions of one agent with several lines: one claude agent in 4 channels plus its own chat, one
+turn per line, idle for 11 minutes, the memory of the provider tree read, then one more turn per line
+with the `woke` times of `turn-start` read from the trace. It uses real CLIs and spends plan quota.
+`s7-release-claude` measures the single-session release. Both check the idle policy of
+[the memory budget](providers.md#the-memory-budget-for-tabs-and-idle-sessions). No result has been
+recorded yet.
+
 `index.ts` writes one `exit` span and one line in `logs/main/main.log` when Builders Bot starts to quit.
 The name is the first reason: `main_window_closed` (Windows and Linux, where closing the main
 window quits), `signal`, `session_end` or `quit` (the menu, the tray, an update or a restart). The

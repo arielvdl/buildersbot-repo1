@@ -119,6 +119,7 @@ the earlier messages of its own tab, never for work of another tab, while the ag
 | A tab whose task waits for other members has no assignment, so it takes no place | `ChannelService.complete` |
 | While memory is low, an agent that works opens no second tab (`memory`); its first one waits in the drain as before | hook `memoryLow`, `MemoryHold.memoryReturned` |
 | A free place goes to the tab of the agent that waited longest, in any channel | `#olderTabWaiter`, `#queuePlaces` |
+| With the tab mode `memory`, `tabsPerAgent` is a ceiling and an extra tab of an agent that already works starts only while `LaneBudget` has room for one more session (`memory`); the first line of an agent is not limited. Without a memory reading the mode acts as `fixed` | hook `laneBudgetLow`, `laneStarted`, `LaneBudget` (see [providers.md](providers.md#the-memory-budget-for-tabs-and-idle-sessions)) |
 | The agent's own chat is a line of its own, as a tab is: it does not hold a tab, and a tab does not hold it. Only a provider with `concurrentTurns: false` makes them wait for each other (`one-turn`), and then a message of the chat that came before a request holds new tabs | hook `busy(agentId, since)`, `queueHold` |
 | Each tab lane is a drain lane, keyed by `channelTabLane(channelId, topicId)` | `channel-tab-lane.ts`, `MailboxStore.#tabOf`, `DrainScheduler` |
 | The main lane (chat and messaging) waits for channel work (`channel`) only for a provider with `concurrentTurns: false`; no lane waits for the main lane any more (the `agent-chat` clause is gone) | `DrainScheduler.#heldBy`, `ChannelService.mayDrain` |
@@ -128,8 +129,13 @@ the earlier messages of its own tab, never for work of another tab, while the ag
 | A started turn takes only the starting delivery of its own tab | `TurnLifecycle.#tabForThread`, `MailboxStore.startingDeliveriesForAgent` |
 | The rows of a turn go to the assignment of the thread's tab, and the read cursor is the tab's | `ChannelService.capture`, `#tabAssignment`, `ChannelStore.acceptContext` |
 
-`tabsPerAgent` and `agentsPerTab` are part of the agent limit preference (`AgentLimitPreference`,
-Settings > Load): `tabsPerAgent` is 1 to 4, 2 by default; `agentsPerTab` is 1 to 8, 4 by default.
+`tabsPerAgent`, `tabsMode` and `agentsPerTab` are part of the agent limit preference
+(`AgentLimitPreference`, Settings > Load): `tabsPerAgent` is 1 to 8; `tabsMode` is `fixed` or
+`memory` (absent: `memory` where memory is read, else `fixed`); `agentsPerTab` is 1 to 8, 4 by
+default. The number of tabs that applies when none is set is 4 in `memory` mode and 2 in `fixed`
+mode (`defaultAgentTabs`). A build from before `tabsMode` that reads `tabsPerAgent` above 4 reads the
+whole preference as the default, so after a downgrade the cap on agents is the default again; no
+other data is lost.
 Both apply whether the cap on agents is on or off. With `tabsPerAgent` 1 an agent works in one tab at
 a time, as before tab lanes. The chat of an agent does not count as a tab, so an agent can run
 `tabsPerAgent` tabs and its chat together. A changed limit wakes every channel.
