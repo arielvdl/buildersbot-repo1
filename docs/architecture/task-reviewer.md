@@ -98,7 +98,7 @@ A task is never touched when:
   turn or has a queue (`agent-busy`). When that other turn is stalled, the reviewer acts on the
   turn, not on the request;
 - for a request, any other reason of the drain (`waits-for-work`): a dependency that is not
-  complete (`channel_assign` with dependencies), a tab with `CHANNEL_PARALLEL_LIMIT` (2) runs, a
+  complete (`channel_assign` with dependencies), a tab with `agentsPerTab` runs (4 by default), a
   browser or workspace that another run holds, an older request that waits for the same resource,
   an assignment of its owner in another place, a root task that stopped, or a lead or owner that is
   hidden;

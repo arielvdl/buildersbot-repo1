@@ -236,8 +236,8 @@ rule with the switch off (as before) and on.
 Channel tools retrieve history, assign a child task, transfer ownership, and report results. The
 runtime supplies channel and caller identity. A child keeps its parent owner; a transfer changes it.
 Only assignments and awaited results start turns. Completed child results are combined before the
-owner returns. The limit is eight automatic assignments per root request and two active assignments
-per channel (`CHANNEL_PARALLEL_LIMIT`).
+owner returns. The limit is eight automatic assignments per root request and `agentsPerTab` active
+assignments per channel tab (4 by default, 1 to 8, Settings > Load).
 
 A member can also change its channel when a person asks: `channel_add_member`,
 `channel_remove_member`, `channel_set_instructions`, and `channel_list_routines`,
@@ -260,9 +260,12 @@ unread and not in the model packet.
 Channel work holds only the agent that does it. Each tab of a channel is its own line of work for
 each agent (a tab lane, see [channel tabs](channel-tabs.md#tab-lanes)): the requests of one tab start
 one after the other, and the tabs of one agent run beside each other up to its tab limit. The agent's
-own chat and its messaging work share one main-lane turn. While the agent has an active assignment,
-`ChannelService.mayDrain` holds its main-lane requests, and a tab lane waits while the main lane runs a
-turn. The work of other agents does not hold it. The tasks of the agent run beside the channel turns
+own chat and its messaging work share one main-lane turn. The main lane and the tab lanes do not wait
+for each other: a message to the agent's chat starts at once while its tabs run, and a tab request
+starts at once while the chat runs. Only a provider with `concurrentTurns: false` keeps the old rule:
+`ChannelService.mayDrain` holds its main-lane requests while it has an active assignment, and the
+queue shows the hold (`QueueHold`). A `send_message` from a teammate lands in the main lane of the
+recipient and never joins a tab turn. The work of other agents does not hold it. The tasks of the agent run beside the channel turns
 within the agent task limit, and a channel turn takes no task slot. When the provider of the agent
 runs one turn at a time (`concurrentTurns: false`), every lane of the agent waits for any running turn
 of the agent, and its tab limit is 1. Only declared `browser` and `workspace:<path>` resources are

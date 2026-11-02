@@ -76,9 +76,11 @@ older event replay and a client without tabs send.
   (`voiceTabId`), so its live text, its transcript and a send while recording go to that tab, also
   when the reader opens another tab before it ends.
 - Deleting a tab interrupts its running turns before its sessions and threads go.
-- The parallel limit (`CHANNEL_PARALLEL_LIMIT`) is counted per tab, through the task of each
-  assignment. An agent has at most one active assignment per tab; its tabs run beside each other up
-  to its tab limit (see [Tab lanes](#tab-lanes)).
+- The parallel limit of agents in one tab (`agentsPerTab`, 1 to 8, 4 by default, Settings > Load) is
+  counted per tab, through the task of each assignment, and it reaches `ChannelService` through the
+  hook `parallelLimit`. A request over it waits in the tab, in order. An agent has at most one active
+  assignment per tab; its tabs run beside each other up to its tab limit (see
+  [Tab lanes](#tab-lanes)).
 - A tab that was never renamed and has no message takes a placeholder name from the first message
   a person writes in it, in the same commit: first line, spaces collapsed, 32 code points and an
   ellipsis. Beside the turn that starts, the channel model then writes the real name over it: two
@@ -117,16 +119,20 @@ the earlier messages of its own tab, never for work of another tab, while the ag
 | A tab whose task waits for other members has no assignment, so it takes no place | `ChannelService.complete` |
 | While memory is low, an agent that works opens no second tab (`memory`); its first one waits in the drain as before | hook `memoryLow`, `MemoryHold.memoryReturned` |
 | A free place goes to the tab of the agent that waited longest, in any channel | `#olderTabWaiter`, `#queuePlaces` |
-| A message of the agent's own chat that came before a request holds new tabs (`agent-chat`); a later one does not | hook `busy(agentId, since)` |
+| The agent's own chat is a line of its own, as a tab is: it does not hold a tab, and a tab does not hold it. Only a provider with `concurrentTurns: false` makes them wait for each other (`one-turn`), and then a message of the chat that came before a request holds new tabs | hook `busy(agentId, since)`, `queueHold` |
 | Each tab lane is a drain lane, keyed by `channelTabLane(channelId, topicId)` | `channel-tab-lane.ts`, `MailboxStore.#tabOf`, `DrainScheduler` |
-| A tab lane waits while the agent's own chat or messaging work runs a turn (`agent-chat`); the main lane waits for channel work (`channel`) | `DrainScheduler.#heldBy` |
+| The main lane (chat and messaging) waits for channel work (`channel`) only for a provider with `concurrentTurns: false`; no lane waits for the main lane any more (the `agent-chat` clause is gone) | `DrainScheduler.#heldBy`, `ChannelService.mayDrain` |
+| Stop, force a message, new chat, compact and `interrupt_agent` of the chat read only the main lane, never a turn of a tab | `ConversationRuntime.mainLaneSnapshot`, `MailboxStore.hasUnfinishedMainLaneDelivery` |
+| The turn of the chat gets one note (300 characters at most, names and resources only) when a tab of the same agent holds `browser` or `workspace:` | `ChannelService.linesNotice`, `channel-lines-notice.ts`, `DrainScheduler` |
 | A tab compacts only its own thread, and a compaction holds only its lane | `DrainScheduler.#compactionHolds` |
 | A started turn takes only the starting delivery of its own tab | `TurnLifecycle.#tabForThread`, `MailboxStore.startingDeliveriesForAgent` |
 | The rows of a turn go to the assignment of the thread's tab, and the read cursor is the tab's | `ChannelService.capture`, `#tabAssignment`, `ChannelStore.acceptContext` |
 
-`tabsPerAgent` is part of the agent limit preference (`AgentLimitPreference`, Settings > Load and the
-load panel): 1 to 4, 2 by default, and it applies whether the cap on agents is on or off. With 1 an
-agent works in one tab at a time, as before tab lanes. A changed limit wakes every channel.
+`tabsPerAgent` and `agentsPerTab` are part of the agent limit preference (`AgentLimitPreference`,
+Settings > Load): `tabsPerAgent` is 1 to 4, 2 by default; `agentsPerTab` is 1 to 8, 4 by default.
+Both apply whether the cap on agents is on or off. With `tabsPerAgent` 1 an agent works in one tab at
+a time, as before tab lanes. The chat of an agent does not count as a tab, so an agent can run
+`tabsPerAgent` tabs and its chat together. A changed limit wakes every channel.
 
 `ChannelService.page` gives each queued task the reason it waits (`ChannelTask.wait`), and the
 channel shows it as a quiet line (`ChannelTaskWaitNotice`). The IPC and the Team API read pages
@@ -137,9 +143,12 @@ The task reviewer reads a request that waits for its tab or for a place as `owne
 `agent-busy`), so it does not stop or move the work of one tab because of another. Its clock of a
 running turn is per tab, and the running list names the task of each turn.
 
-Two tabs of one agent can change the same files of its workspace at the same time. Builders Bot does
-not lock files, as for the agent's side threads. Declared `workspace:<path>` resources still run one
-after the other. Wait cycles through dependencies are refused when the agent makes them
+Two tabs of one agent, or a tab and the agent's own chat, can change the same files of its workspace
+at the same time. Builders Bot does not lock files, as for the agent's side threads. Declared
+`workspace:<path>` resources still run one after the other between channel assignments. The chat
+declares no resource and never waits for them. Instead, when a tab of the agent holds `browser` or a
+`workspace:`, the turn of the chat starts with a note that names the channel, the tab and the
+resources. The browser tab belongs to the thread, so the chat and a tab do not use the same page. Wait cycles through dependencies are refused when the agent makes them
 (`channel_assign`), and the waits above wait only for work that runs or for the person, so they make
 no cycle. `scripts/channel-tab-lanes-e2e.ts` checks the rules with the real services and a fake Codex.
 

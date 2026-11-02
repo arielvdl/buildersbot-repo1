@@ -736,6 +736,9 @@ Shared writes: each task thread owns its own browser tabs and tab queue. Compute
 server that the provider starts, so Builders Bot cannot queue its calls; `ThreadLifecycle` starts a task
 session without it, and the instructions send desktop work to the agent's own chat. Tasks share the
 workspace, and Builders Bot does not lock files; the `start_task` guidance warns the agent about this.
+The agent's own chat and its channel tabs share the workspace in the same way: the chat does not wait
+for a tab, and it gets a short note when a tab holds `browser` or a `workspace:` (see
+[channel tabs](channel-tabs.md#tab-lanes)).
 
 A provider, account or custom-agent change that a user or an agent asks for while a turn, a task or
 a queued message waits is stored on the agent as `pendingRuntime`. The running work keeps its
@@ -765,25 +768,28 @@ message in a new one. `AgentService.forceQueuedMessage` calls `QueueControls.for
    agent before. Every client of the host gets the new queue (`queue-changed`).
 3. `DrainScheduler.startAlone` marks the message, so its turn starts without the person's later queued
    messages. They stay queued and start after it, in queue order.
-4. It finds the turn that holds the agent's own chat: of the chat itself, or of a channel or messaging
-   thread of the same agent. It never stops a turn of another agent. A delivery of the chat that starts
+4. It finds the turn of the agent's own chat line: of the chat itself, or of a messaging thread of the
+   same agent (`ConversationRuntime.mainLaneSnapshot`). It never stops a turn of a channel tab or of
+   another agent: a tab is its own line of work. A delivery of the chat that starts
    and has no turn id yet makes it wait first for that start, as `interrupt_agent` does
    (`DrainScheduler.taskFor`). The turn that start makes can then be stopped: the person saw the agent
    at work. With no turn, the drain starts the message now (`started`). It stops the turn as the Stop
    button does, so the partial work stays in the conversation, and the drain that the end of that turn
    schedules starts the message (`interrupted`).
 5. It sends no Stop when the message cannot start after it, and answers `next`
-   (`DrainScheduler.holdAfterStop`): channel or messaging work waits at the head of the chat, other
-   channel work reserves the agent (`ChannelService.reservesBeside`, which reads every channel tab
-   where the agent runs a turn), the chat still starts a turn with
+   (`DrainScheduler.holdAfterStop`): messaging work waits at the head of the chat, channel work reserves
+   the agent only for a provider that runs one turn of the agent at a time
+   (`ChannelService.reservesBeside`, which reads every channel tab where the agent runs a turn), the
+   chat still starts a turn with
    no id, or a clause of the drain other than that turn holds the chat, such as a compaction, a session
    settings change, or a task turn on a provider that runs one turn of the agent at a time.
 
 The request names the chat turn that the person saw (`expectedTurnId`), or null. A chat turn that the
 person did not see, such as the turn of the next queued message that started in between, is not
-stopped: the message waits at the head (`next`). A channel or messaging turn shows in the chat only as
-a hold, with no turn id, so a request with null stops it; the channel task then pauses with
-`error.backend.channelTaskStopped`, and the load page can resume it. When the turn ends between the
+stopped: the message waits at the head (`next`). A messaging turn shows in the chat only as
+a hold, with no turn id, so a request with null stops it. A channel tab turn is not stopped from the
+chat: it runs beside the chat, and the tab has its own Stop (`error.backend.channelTaskStopped`, and
+the load page can resume it). For a provider that runs one turn at a time, the old behavior stays. When the turn ends between the
 click and the Stop, no stop is sent and the drain starts the message once. A provider that refuses
 the Stop because the turn has just ended gives the same result. When the Stop fails and the turn
 still runs, the queue gets its order back and the person sees `error.backend.forceStopFailed`; the
