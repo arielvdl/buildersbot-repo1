@@ -1,0 +1,117 @@
+/*
+ * The color that a user gives a custom section (`data-section-color`): a light tint of it over the
+ * sidebar, behind the header and the chats. `--sidebar-section-color` is a stored #rrggbb. A section
+ * without a color has neither the attribute nor the property, so no rule here applies to it. The box
+ * keeps the radius of `.sidebar-section` in `app-shell.css`.
+ *
+ * The tint lowers the contrast of the muted and the readable text. Inside the box, both move toward
+ * the primary text color, which keeps them at or above 4.5:1 on each preset in both themes.
+ */
+.sidebar-section[data-section-color] {
+  --sidebar-section-tint: 18%;
+  --sidebar-section-muted: var(--buildersbot-text-muted);
+  --sidebar-section-readable: var(--buildersbot-text-readable);
+  /* The hue of the open chat and of the row under the pointer (below). */
+  --sidebar-row-color: var(--sidebar-section-color);
+}
+
+:root[data-buildersbot-color-scheme="light"] .sidebar-section[data-section-color] {
+  --sidebar-section-tint: 16%;
+}
+
+/* A chat dragged over the section shows the drop target fill, not the color. */
+.sidebar-section[data-section-color]:not(.sidebar-section-agent-drop-target) {
+  /* The ring of a face takes the color under it: the tint over the sidebar, made opaque. */
+  --agent-avatar-outline: color-mix(
+    in srgb,
+    var(--sidebar-section-color) var(--sidebar-section-tint),
+    var(--buildersbot-bg-sidebar)
+  );
+
+  background: color-mix(in srgb, var(--sidebar-section-color) var(--sidebar-section-tint), transparent);
+}
+
+.sidebar-section[data-section-color] > * {
+  --buildersbot-text-muted: color-mix(in srgb, var(--sidebar-section-muted) 70%, var(--buildersbot-text-primary));
+  --buildersbot-text-readable: color-mix(in srgb, var(--sidebar-section-readable) 70%, var(--buildersbot-text-primary));
+}
+
+/* The glass sidebar is clear, so no opaque ring matches what shows through the tint. */
+:root[data-buildersbot-window-glass] .sidebar-section[data-section-color] {
+  --agent-avatar-outline: transparent;
+}
+
+/*
+ * A chat row in a color: in a box with a color, or below a marker with the tint style, which sets
+ * `--sidebar-row-color` to the marker color (`sidebar-markers.css`). The open chat and the row under the
+ * pointer keep that hue in a stronger tint than the rows at rest, so the open chat shows both that it is
+ * open and where it is. Each fill is opaque, as the theme fills of `.agent-row-active` and of the hover
+ * are, and the ring of a face takes it. The open chat keeps `aria-pressed`, and the keyboard focus keeps its
+ * ring. On each preset in both themes, the open chat differs from the rows at rest more than an open chat
+ * with no color does, and the text keeps 4.5:1 (`scripts/sidebar-section-color-e2e.ts`). A chat with no color
+ * matches none of these rules, so it keeps the neutral fills of the theme.
+ */
+.agent-list {
+  --sidebar-row-hover-tint: 18%;
+  --sidebar-row-open-tint: 22%;
+}
+
+/* On the light sidebar the same share reads weaker, and the open chat would be lighter than the rows. */
+:root[data-buildersbot-color-scheme="light"] .agent-list {
+  --sidebar-row-hover-tint: 22%;
+  --sidebar-row-open-tint: 32%;
+}
+
+/* A drag shows no pointer state (`app-shell.css`), so the hover tint waits for the drag to end. */
+.agent-list:not([data-sidebar-dragging])
+  :is(.sidebar-section[data-section-color], .sidebar-marked-row[data-marker-style="tint"])
+  .agent-row:not(.agent-row-active):hover {
+  --sidebar-row-fill: color-mix(
+    in srgb,
+    var(--sidebar-row-color) var(--sidebar-row-hover-tint),
+    var(--buildersbot-bg-control-hover)
+  );
+  --agent-avatar-outline: var(--sidebar-row-fill);
+
+  background: var(--sidebar-row-fill);
+}
+
+/* With the pointer too, as an open chat with no color keeps its fill during a drag (`app-shell.css`). */
+:is(.sidebar-section[data-section-color], .sidebar-marked-row[data-marker-style="tint"]) .agent-row.agent-row-active,
+:is(.sidebar-section[data-section-color], .sidebar-marked-row[data-marker-style="tint"])
+  .agent-row.agent-row-active:hover {
+  --sidebar-row-fill: color-mix(
+    in srgb,
+    var(--sidebar-row-color) var(--sidebar-row-open-tint),
+    var(--buildersbot-bg-surface)
+  );
+  --agent-avatar-outline: var(--sidebar-row-fill);
+
+  background: var(--sidebar-row-fill);
+}
+
+/* A swatch in the section color menu. "No color" is an empty ring with a slash. */
+.sidebar-section-color-swatch {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin: 1px;
+  border-radius: var(--buildersbot-radius-pill);
+  box-shadow: inset 0 0 0 1px var(--buildersbot-border-strong);
+}
+
+.sidebar-section-color-swatch-none {
+  box-shadow: inset 0 0 0 1px var(--buildersbot-text-dim);
+  background: linear-gradient(
+    135deg,
+    transparent calc(50% - 0.75px),
+    var(--buildersbot-text-muted) calc(50% - 0.75px),
+    var(--buildersbot-text-muted) calc(50% + 0.75px),
+    transparent calc(50% + 0.75px)
+  );
+}
+
+.sidebar-section-color-check {
+  margin-inline-start: auto;
+  flex: none;
+}

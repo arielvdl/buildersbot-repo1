@@ -1,0 +1,182 @@
+// The Cultura Builder sign-in is the Hub device grant, and it lives in the bridge service that the
+// Builders Bot app talks to. This Worker owns the rest of the account surface, so it proxies the two
+// device steps to the bridge and mints a local session from the account the bridge confirms: the
+// session token the app keeps is this Worker's, and every other route finds the account here.
+
+import { type DynamicRecord, isDynamicRecord } from "@buildersbot/contracts/runtime-values";
+
+const BRIDGE_TIMEOUT_MS = 15_000;
+/** The sign-out of the bridge session is clean-up. The approval does not wait longer for it. */
+const BRIDGE_LOGOUT_TIMEOUT_MS = 5_000;
+const RESPONSE_LIMIT_BYTES = 16 * 1024;
+
+export interface DeviceAuthorizationStart {
+  flowId: string;
+  userCode: string;
+  verificationUri: string;
+  verificationUriComplete: string | null;
+  expiresIn: number;
+  interval: number;
+}
+
+export type DevicePollResult =
+  | { status: "pending"; interval: number }
+  | { status: "denied" }
+  | { status: "expired" }
+  /** An earlier poll of this flow took the approval. The bridge gives an approval to one poll only. */
+  | { status: "consumed" }
+  | { status: "rate_limited"; retryAfterSeconds: number }
+  | { status: "authorized"; user: DeviceAccount };
+
+export interface DeviceAccount {
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+}
+
+/** The two device steps against one bridge. The web app's routes take it as a dependency. */
+export interface DeviceSignInBridge {
+  /** The bridge origin. A Hub address on it is a development bridge's own page. */
+  url: string;
+  start: () => Promise<DeviceAuthorizationStart>;
+  poll: (flowId: string) => Promise<DevicePollResult>;
+}
+
+export function createDeviceSignInBridge(bridgeUrl: string): DeviceSignInBridge {
+  return {
+    url: bridgeUrl,
+    start: () => startDeviceAuthorization(bridgeUrl),
+    poll: (flowId) => pollDeviceAuthorization(bridgeUrl, flowId),
+  };
+}
+
+/** The bridge answered something this Worker cannot use; the route turns it into a 502. */
+export class DeviceBridgeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DeviceBridgeError";
+  }
+}
+
+async function readBoundedJson(response: Response): Promise<DynamicRecord | null> {
+  const declared = Number(response.headers.get("content-length") ?? "0");
+  if (Number.isFinite(declared) && declared > RESPONSE_LIMIT_BYTES) {
+    await response.body?.cancel().catch(() => undefined);
+    return null;
+  }
+  const text = await response.text().catch(() => "");
+  if (text === "" || text.length > RESPONSE_LIMIT_BYTES) return null;
+  try {
+    const value = JSON.parse(text);
+    return isDynamicRecord(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function positiveInteger(value: unknown, fallback: number, max: number): number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 && value <= max ? value : fallback;
+}
+
+function boundedString(value: unknown, max = 4096): string | null {
+  return typeof value === "string" && value.length > 0 && value.length <= max ? value : null;
+}
+
+function nullableString(value: unknown, max = 4096): string | null {
+  return typeof value === "string" && value.length > 0 && value.length <= max ? value : null;
+}
+
+async function post(bridgeUrl: string, path: string, body: unknown): Promise<Response> {
+  try {
+    return await fetch(new URL(path, bridgeUrl), {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify(body),
+      redirect: "manual",
+      signal: AbortSignal.timeout(BRIDGE_TIMEOUT_MS),
+    });
+  } catch (error) {
+    throw new DeviceBridgeError(
+      `The Cultura Builder sign-in service did not answer: ${error instanceof Error ? `${error.name} ${error.message} ${String(error.cause ?? "")}` : String(error)}`,
+    );
+  }
+}
+
+export async function startDeviceAuthorization(bridgeUrl: string): Promise<DeviceAuthorizationStart> {
+  const response = await post(bridgeUrl, "/v1/auth/device/start", { clientName: "Builders Bot" });
+  const body = await readBoundedJson(response);
+  const flowId = boundedString(body?.flowId, 128);
+  const userCode = boundedString(body?.userCode, 64);
+  const verificationUri = boundedString(body?.verificationUri, 2048);
+  if (!response.ok || body === null || !flowId || !userCode || !verificationUri) {
+    throw new DeviceBridgeError(`The sign-in service refused to start (${response.status}).`);
+  }
+  return {
+    flowId,
+    userCode,
+    verificationUri,
+    verificationUriComplete: boundedString(body?.verificationUriComplete, 2048),
+    expiresIn: positiveInteger(body?.expiresIn, 900, 60 * 60),
+    interval: positiveInteger(body?.interval, 5, 60),
+  };
+}
+
+export async function pollDeviceAuthorization(bridgeUrl: string, flowId: string): Promise<DevicePollResult> {
+  const response = await post(bridgeUrl, "/v1/auth/device/poll", { flowId });
+  if (response.status === 202) {
+    const body = await readBoundedJson(response);
+    return { status: "pending", interval: positiveInteger(body?.interval, 5, 60) };
+  }
+  if (response.status === 403) return { status: "denied" };
+  // 404: the bridge does not know the flow any more, so it ended.
+  if (response.status === 410 || response.status === 404) return { status: "expired" };
+  if (response.status === 409) return { status: "consumed" };
+  if (response.status === 429) {
+    const retryAfter = Number(response.headers.get("retry-after") ?? "");
+    return {
+      status: "rate_limited",
+      retryAfterSeconds: Number.isFinite(retryAfter) && retryAfter > 0 ? Math.ceil(retryAfter) : 5,
+    };
+  }
+  const body = await readBoundedJson(response);
+  if (!response.ok || body === null) {
+    throw new DeviceBridgeError(`The sign-in service answered ${response.status}.`);
+  }
+  // The bridge also opens its own session, which holds a Hub token. This Worker keeps only its own
+  // session, so it ends the bridge session now: then the bridge revokes that Hub token at once,
+  // instead of keeping an unused one for each sign-in.
+  const bridgeSession = boundedString(body.sessionToken, 512);
+  if (bridgeSession) await endBridgeSession(bridgeUrl, bridgeSession);
+  const record = isDynamicRecord(body.user) ? body.user : null;
+  const email = boundedString(record?.email, 320);
+  if (!email) throw new DeviceBridgeError("The sign-in service returned no account.");
+  return {
+    status: "authorized",
+    user: {
+      email,
+      name: nullableString(record?.name, 200),
+      avatarUrl: nullableString(record?.avatarUrl, 2048),
+    },
+  };
+}
+
+/**
+ * Signs the bridge session out (`POST /v1/auth/logout`), which also revokes its Hub token. A failure
+ * only leaves that session to the bridge's own expiry and checks, so it does not stop the sign-in.
+ */
+async function endBridgeSession(bridgeUrl: string, sessionToken: string): Promise<void> {
+  try {
+    const response = await fetch(new URL("/v1/auth/logout", bridgeUrl), {
+      method: "POST",
+      headers: { authorization: `Bearer ${sessionToken}`, accept: "application/json" },
+      redirect: "manual",
+      signal: AbortSignal.timeout(BRIDGE_LOGOUT_TIMEOUT_MS),
+    });
+    await response.body?.cancel().catch(() => undefined);
+    if (!response.ok) console.warn(`device-bridge: the bridge session sign-out answered ${response.status}`);
+  } catch (error) {
+    console.warn(
+      `device-bridge: the bridge session sign-out failed (${error instanceof Error ? error.name : "unknown"})`,
+    );
+  }
+}

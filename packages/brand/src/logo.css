@@ -1,0 +1,986 @@
+.app-logo {
+  --app-logo-background: var(--buildersbot-logo-production);
+  --app-logo-eye: var(--buildersbot-logo-production-eye);
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  border-radius: var(--buildersbot-radius-logo);
+  isolation: isolate;
+}
+
+.app-logo[data-interactive="true"]:focus {
+  outline: none;
+}
+
+.app-logo[data-interactive="true"]:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--buildersbot-text-primary);
+}
+
+.app-logo[data-variant="dev"] {
+  --app-logo-background: var(--buildersbot-logo-dev);
+  --app-logo-eye: var(--buildersbot-logo-eye);
+}
+
+.app-logo[data-variant="preview"] {
+  --app-logo-background: var(--buildersbot-logo-preview);
+  --app-logo-eye: var(--buildersbot-logo-eye);
+}
+
+.app-logo-background {
+  fill: var(--app-logo-background);
+}
+
+/* The cube of the icon. Its faces are the eye color, veiled by the body color so the three faces
+   keep the isometric step at any pair of colors; the eyes and the dot are the body color. */
+.app-logo-cube {
+  pointer-events: none;
+}
+
+.app-logo-face {
+  fill: var(--app-logo-eye);
+  stroke: var(--app-logo-background);
+  stroke-width: 1.1px;
+  stroke-linejoin: round;
+}
+
+.app-logo-face-top {
+  fill-opacity: 1;
+}
+
+.app-logo-face-left {
+  fill-opacity: 0.88;
+}
+
+.app-logo-face-right {
+  fill-opacity: 0.72;
+}
+
+.app-logo-eye {
+  fill: none;
+  stroke: var(--app-logo-background);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4px;
+  pointer-events: none;
+  transform-box: view-box;
+}
+
+.app-logo-dot {
+  fill: var(--app-logo-background);
+  pointer-events: none;
+}
+
+.app-logo-eye-motion {
+  pointer-events: none;
+  /* `--app-logo-eye-squint` half closes both eyes for a moment. The blink animates the eyes inside. */
+  transform: translate(var(--app-logo-eye-x, 0%), var(--app-logo-eye-y, 0%)) scaleY(var(--app-logo-eye-squint, 1));
+  transform-origin: center;
+  transition: transform var(--buildersbot-duration-normal) cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.app-logo-eye-left {
+  transform-origin: 35.7% 46.4%;
+}
+
+.app-logo-eye-right {
+  transform-origin: 46.3% 46.4%;
+}
+
+.app-logo[data-animation="blink"] .app-logo-eye {
+  animation: app-logo-blink 4.8s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+
+/* The blink of `app-logo-blink` alone: its 44% to 48% of 4.8 s is these 192 ms, with the same curve. */
+.app-logo[data-animation="blink-once"] .app-logo-eye {
+  animation: app-logo-blink-once 192ms cubic-bezier(0.77, 0, 0.175, 1) both;
+}
+
+.app-logo[data-animation="look-around"] .app-logo-eye {
+  animation: app-logo-look-around 6s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+
+.app-logo[data-animation="surprised"] .app-logo-eye {
+  animation: app-logo-surprised 5.4s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+
+.app-logo[data-click-reaction="wink"] .app-logo-eye-left {
+  animation: app-logo-wink-left 360ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.app-logo[data-click-reaction="wink"] .app-logo-eye-right {
+  animation: app-logo-wink-right 360ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.app-logo[data-easter-egg="party"] .app-logo-background {
+  animation: app-logo-party-colors 1.2s cubic-bezier(0.77, 0, 0.175, 1) both;
+}
+
+.app-logo[data-easter-egg="party"] .app-logo-eye-left {
+  animation: app-logo-party-left 1.2s cubic-bezier(0.77, 0, 0.175, 1) both;
+}
+
+.app-logo[data-easter-egg="party"] .app-logo-eye-right {
+  animation: app-logo-party-right 1.2s cubic-bezier(0.77, 0, 0.175, 1) both;
+}
+
+@keyframes app-logo-blink {
+  0%,
+  44%,
+  48%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  46% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes app-logo-blink-once {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  50% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes app-logo-look-around {
+  0%,
+  30%,
+  47%,
+  64%,
+  100% {
+    transform: translateX(0);
+  }
+
+  35%,
+  42% {
+    transform: translateX(-3.5%);
+  }
+
+  52%,
+  59% {
+    transform: translateX(3.5%);
+  }
+}
+
+@keyframes app-logo-surprised {
+  0%,
+  40%,
+  56%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  44%,
+  51% {
+    transform: translateY(-1.5%) scaleX(0.94) scaleY(1.12);
+  }
+}
+
+@keyframes app-logo-wink-left {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  38%,
+  58% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes app-logo-wink-right {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  48% {
+    transform: translateY(-1%) scaleX(0.96) scaleY(1.08);
+  }
+}
+
+@keyframes app-logo-party-colors {
+  0%,
+  100% {
+    fill: var(--app-logo-background);
+  }
+
+  22% {
+    fill: var(--buildersbot-logo-dev);
+  }
+
+  48% {
+    fill: var(--buildersbot-logo-preview);
+  }
+
+  74% {
+    fill: var(--buildersbot-logo-production);
+  }
+}
+
+@keyframes app-logo-party-left {
+  0%,
+  100% {
+    transform: translate(0) rotate(0);
+  }
+
+  25% {
+    transform: translateY(-6%) rotate(-8deg);
+  }
+
+  50% {
+    transform: translate(4%, 2%) rotate(8deg);
+  }
+
+  75% {
+    transform: translate(-4%, -2%) rotate(-4deg);
+  }
+}
+
+@keyframes app-logo-party-right {
+  0%,
+  100% {
+    transform: translate(0) rotate(0);
+  }
+
+  25% {
+    transform: translateY(6%) rotate(8deg);
+  }
+
+  50% {
+    transform: translate(-4%, -2%) rotate(-8deg);
+  }
+
+  75% {
+    transform: translate(4%, 2%) rotate(4deg);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .app-logo[data-interactive="true"] {
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-logo[data-animation] .app-logo-eye,
+  .app-logo[data-click-reaction] .app-logo-eye,
+  .app-logo[data-easter-egg] .app-logo-eye,
+  .app-logo[data-easter-egg] .app-logo-background {
+    animation: none;
+    transform: none;
+  }
+
+  .app-logo-eye-motion {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* The agent avatar is the mark itself: the box seen from its corner, tinted in the agent's colour.
+   `agent-mark.tsx` gives the faces, the edges and the symbols their colours in their `style`, so a
+   copy of the SVG with no stylesheet still shows the box at rest, and an accent can be a CSS
+   variable. These rules add the light and the motion.
+
+   No part of the mark uses `filter`. A glow is a second, wider stroke or shape in the tone at a low
+   opacity. A filter on an animated part makes the compositor give it a layer of its own, and in the
+   transparent desktop window with vibrancy such a layer can paint a rectangle without the glass. The
+   motion only changes `opacity`, `transform` and `stroke-dashoffset` of SVG parts.
+   Nothing is drawn behind the box: no frame and no background.
+
+   Each rule that moves something is in the `prefers-reduced-motion: no-preference` block at the end,
+   and only for `data-animated="true"`. The rules before it are the still picture: a working lid stays
+   lit, its orbit stays in place, a waiting lid stays pale, and the eyes look ahead with the eyelids
+   where the mood puts them (`--agent-mark-eyelid`, set by `agent-mark.tsx`). */
+.agent-mark {
+  --agent-mark-tone: var(--agent-mark-accent, var(--buildersbot-logo-production));
+  /* Each duration is a multiple of this. A smaller value is a faster agent. */
+  --agent-mark-pace: 1;
+  /* The eyes: the time of one look around, how far the pupils go, and the time between blinks. */
+  --agent-mark-look: 7s;
+  --agent-mark-look-reach: 1;
+  --agent-mark-blink: 5.6s;
+
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.agent-mark[data-mood="working"] {
+  --agent-mark-pace: 0.8;
+  --agent-mark-look: 2.8s;
+  --agent-mark-look-reach: 1.2;
+  --agent-mark-blink: 3.2s;
+}
+
+.agent-mark[data-mood="live"] {
+  --agent-mark-pace: 0.36;
+  --agent-mark-look: 0.62s;
+  --agent-mark-look-reach: 1.35;
+  --agent-mark-blink: 1.1s;
+}
+
+.agent-mark:is([data-mood="waiting"], [data-mood="connecting"]) {
+  --agent-mark-look: 5s;
+}
+
+/* The eyelid comes down from above the eye. At 1 it covers the eye, which is 20 units tall. */
+.agent-mark-eyelid {
+  transform: translateY(calc(var(--agent-mark-eyelid, 0.4) * 20px));
+  transition: transform var(--buildersbot-duration-overlay) var(--buildersbot-ease-out);
+}
+
+.agent-mark-top,
+.agent-mark-right,
+.agent-mark-left {
+  transition: fill var(--buildersbot-duration-overlay) var(--buildersbot-ease-out);
+}
+
+/* The box breathes, bounces and shakes from its middle. The orbit keeps the default origin of an
+   SVG part, the origin of its group, which is the middle of the box. `fill-box` would move that pivot
+   to a corner of the ring, so only the parts below that grow in place use it. */
+.agent-mark-shell,
+.agent-mark-body,
+.agent-mark-halo {
+  transform-origin: 50% 50%;
+}
+
+.agent-mark-spark,
+.agent-mark-throb,
+.agent-mark-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* The bars of the equalizer stand at different heights, so they read as an equalizer when they
+   do not move. */
+.agent-mark-bar {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transform: scaleY(0.85);
+}
+
+.agent-mark-bar:nth-child(2) {
+  transform: scaleY(0.5);
+}
+
+.agent-mark-bar:nth-child(3) {
+  transform: scaleY(1);
+}
+
+.agent-mark-bar:nth-child(4) {
+  transform: scaleY(0.4);
+}
+
+.agent-mark-bar:nth-child(5) {
+  transform: scaleY(0.7);
+}
+
+.agent-mark-halo {
+  fill: none;
+  stroke: var(--agent-mark-tone);
+  stroke-width: 5;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
+.agent-mark-orbit-trail {
+  fill: none;
+  stroke: var(--agent-mark-tone);
+  stroke-width: 3;
+  stroke-dasharray: 4 9;
+  opacity: 0.8;
+}
+
+.agent-mark-orbit-dot {
+  fill: var(--agent-mark-tone);
+  stroke: #fff;
+  stroke-width: 2.4;
+}
+
+/* The glow of a point in orbit: a wider disc of the tone under it. */
+.agent-mark-orbit-glow {
+  fill: var(--agent-mark-tone);
+  opacity: 0.3;
+}
+
+/* The light on the lid. At rest a working lid stays lit, and a waiting lid stays pale. Its glow is
+   a wide stroke of the tone under the fill, so only the half outside the lid shows. */
+.agent-mark-flash {
+  opacity: 0;
+  stroke: var(--agent-mark-tone);
+  stroke-width: 10;
+  stroke-opacity: 0.5;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+
+.agent-mark:is([data-mood="working"], [data-mood="live"]) .agent-mark-flash {
+  opacity: 0.34;
+}
+
+.agent-mark[data-mood="waiting"] .agent-mark-flash {
+  opacity: 0.45;
+  stroke: none;
+}
+
+/* The laser: a bright dot that runs the silhouette. The group holds the dash and its motion, and
+   its two paths take them: a faint, wide glow of the tone, and a white-hot core over the coloured
+   edge, so the spark is brighter than what it runs along. `pathLength="100"` keeps the dash
+   arithmetic in percentages of the outline. */
+.agent-mark-laser,
+.agent-mark-counter-laser {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 8 92;
+  stroke-dashoffset: 100;
+  opacity: 0;
+}
+
+.agent-mark-counter-laser {
+  stroke-width: 3;
+  stroke-dasharray: 5 45;
+}
+
+.agent-mark-laser-core {
+  stroke: color-mix(in srgb, var(--agent-mark-tone) 22%, #fff);
+}
+
+.agent-mark-laser-glow {
+  stroke: var(--agent-mark-tone);
+  stroke-width: 12;
+  stroke-opacity: 0.35;
+}
+
+.agent-mark-counter-laser .agent-mark-laser-glow {
+  stroke-width: 9;
+}
+
+/* A white star with a glow of the tone: a wide stroke under the fill. */
+.agent-mark-spark {
+  fill: #fff;
+  stroke: var(--agent-mark-tone);
+  stroke-width: 6;
+  stroke-opacity: 0.5;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  opacity: 0;
+}
+
+/* `working` flashes at four points, `live` at eight. */
+.agent-mark-sparks > :nth-child(n + 5) {
+  display: none;
+}
+
+.agent-mark[data-mood="live"] .agent-mark-sparks > :nth-child(n + 5) {
+  display: inline;
+}
+
+.agent-mark[data-mood="asleep"] .agent-mark-emblem {
+  opacity: 0.45;
+}
+
+.agent-mark[data-mood="asleep"] .agent-mark-laser {
+  opacity: 0.14;
+}
+
+/* A small avatar, such as a face of a channel cluster, cannot show the orbit, the sparks or the
+   emblem: at that size they are noise. The laser and the halo get wider, so the work still shows.
+   `agent-avatar` is the box of `AgentAvatar`; a mark outside one always draws all of it. */
+@container agent-avatar (max-width: 28px) {
+  .agent-mark-orbit,
+  .agent-mark-sparks,
+  .agent-mark-counter-laser,
+  .agent-mark-emblem {
+    display: none;
+  }
+
+  .agent-mark-laser {
+    stroke-width: 12;
+  }
+
+  .agent-mark-laser-glow {
+    stroke-width: 22;
+  }
+
+  .agent-mark-halo {
+    stroke-width: 10;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* At rest, a pointer or the focus on the avatar runs a slow laser. The selector has the weight of
+     one class, so a surface with its own clock, such as the loading screen, can set the timing. */
+  :where(.agent-mark[data-animated="true"]) .agent-mark-laser {
+    opacity: 0.75;
+    animation: agent-mark-laser 5.2s linear infinite;
+  }
+
+  /* A waiting or failed lid already shows the state, and a sleeper does not move. */
+  .agent-mark[data-animated="true"]:is([data-mood="waiting"], [data-mood="failed"]) .agent-mark-laser {
+    opacity: 0;
+    animation: none;
+  }
+
+  .agent-mark[data-animated="true"][data-mood="asleep"] .agent-mark-laser {
+    opacity: 0.14;
+    animation: none;
+  }
+
+  .agent-mark[data-animated="true"][data-mood="connecting"] .agent-mark-laser {
+    opacity: 1;
+    animation-duration: 1.8s;
+  }
+
+  .agent-mark[data-animated="true"]:is([data-mood="working"], [data-mood="live"]) .agent-mark-laser {
+    opacity: 1;
+    animation-duration: calc(1.1s * var(--agent-mark-pace));
+    animation-delay: var(--agent-mark-phase, 0s);
+  }
+
+  /* `live` runs a second, thinner laser the other way. */
+  .agent-mark[data-animated="true"] .agent-mark-counter-laser {
+    opacity: 1;
+    animation: agent-mark-laser calc(1.7s * var(--agent-mark-pace)) linear infinite reverse;
+  }
+
+  .agent-mark[data-animated="true"]:is([data-mood="working"], [data-mood="live"]) .agent-mark-flash {
+    animation: agent-mark-flash calc(1.6s * var(--agent-mark-pace)) linear var(--agent-mark-phase, 0s) infinite;
+  }
+
+  .agent-mark[data-animated="true"][data-mood="waiting"] .agent-mark-flash {
+    animation: agent-mark-pale 3s ease-in-out infinite;
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-halo {
+    animation: agent-mark-halo calc(2.2s * var(--agent-mark-pace)) ease-out infinite;
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-halo-echo {
+    animation-delay: calc(1.1s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"][data-mood="working"] .agent-mark-body {
+    animation: agent-mark-breathe calc(3.2s * var(--agent-mark-pace)) ease-in-out var(--agent-mark-phase, 0s) infinite;
+  }
+
+  .agent-mark[data-animated="true"][data-mood="live"] .agent-mark-body {
+    animation: agent-mark-bounce 0.52s ease-in-out infinite;
+  }
+
+  .agent-mark[data-animated="true"][data-mood="failed"] .agent-mark-shell {
+    animation: agent-mark-shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) 0.25s 1 both;
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-orbit {
+    animation: agent-mark-orbit 3.2s linear var(--agent-mark-phase, 0s) infinite;
+  }
+
+  .agent-mark[data-animated="true"][data-mood="live"] .agent-mark-orbit {
+    animation-duration: 0.95s;
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-spark {
+    animation: agent-mark-spark calc(1.6s * var(--agent-mark-pace)) ease-out infinite;
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-sparks > :nth-child(1) .agent-mark-spark {
+    animation-delay: calc(var(--agent-mark-phase, 0s) + 0.02s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-sparks > :nth-child(2) .agent-mark-spark {
+    animation-delay: calc(var(--agent-mark-phase, 0s) + 0.18s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-sparks > :nth-child(3) .agent-mark-spark {
+    animation-delay: calc(var(--agent-mark-phase, 0s) + 0.74s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-sparks > :nth-child(4) .agent-mark-spark {
+    animation-delay: calc(var(--agent-mark-phase, 0s) + 1.12s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-sparks > :nth-child(5) .agent-mark-spark {
+    animation-delay: calc(var(--agent-mark-phase, 0s) + 0.4s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-sparks > :nth-child(6) .agent-mark-spark {
+    animation-delay: calc(var(--agent-mark-phase, 0s) + 0.9s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-sparks > :nth-child(7) .agent-mark-spark {
+    animation-delay: calc(var(--agent-mark-phase, 0s) + 1.3s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-sparks > :nth-child(8) .agent-mark-spark {
+    animation-delay: calc(var(--agent-mark-phase, 0s) + 0.58s * var(--agent-mark-pace));
+  }
+
+  /* The lid symbols: the chevrons run in turn, the bars of the equalizer jump, the dot throbs. */
+  .agent-mark[data-animated="true"] .agent-mark-chevron {
+    animation: agent-mark-chevron calc(1.2s * var(--agent-mark-pace)) linear infinite;
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-chevron:nth-child(2) {
+    animation-delay: calc(0.15s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-chevron:nth-child(3) {
+    animation-delay: calc(0.3s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-bar {
+    animation: agent-mark-equalizer calc(1.6s * var(--agent-mark-pace)) ease-in-out infinite;
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-bar:nth-child(2) {
+    animation-delay: calc(0.2s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-bar:nth-child(3) {
+    animation-delay: calc(0.55s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-bar:nth-child(4) {
+    animation-delay: calc(0.1s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-bar:nth-child(5) {
+    animation-delay: calc(0.4s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-throb {
+    animation: agent-mark-throb 1.6s ease-in-out infinite;
+  }
+
+  /* The pupils look around and the eyelids blink. A failed or sleeping agent keeps its eyes shut. */
+  .agent-mark[data-animated="true"] .agent-mark-pupil {
+    animation: agent-mark-look var(--agent-mark-look) ease-in-out var(--agent-mark-phase, 0s) infinite;
+  }
+
+  .agent-mark[data-animated="true"] .agent-mark-eyelid {
+    animation: agent-mark-blink var(--agent-mark-blink) ease-in-out var(--agent-mark-phase, 0s) infinite;
+  }
+
+  .agent-mark[data-animated="true"]:is([data-mood="failed"], [data-mood="asleep"])
+    :is(.agent-mark-pupil, .agent-mark-eyelid) {
+    animation: none;
+  }
+
+  /* An avatar that follows the pointer (`followPointer` of `AgentAvatar`) turns its pupils toward it
+     while the pointer is in the window. The look around stops then, and comes back after. */
+  [data-agent-mark-gaze] .agent-mark[data-animated="true"] .agent-mark-pupil {
+    animation: none;
+    translate: calc(var(--agent-mark-gaze-x, 0) * 1px) calc(var(--agent-mark-gaze-y, 0) * 1px);
+    transition: translate var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
+  }
+
+  /* An agent that watches the pointer is awake: the eyelids go up, so a look up stays visible. */
+  [data-agent-mark-gaze]
+    .agent-mark[data-animated="true"]:not([data-mood="failed"], [data-mood="asleep"])
+    .agent-mark-eyelid {
+    --agent-mark-eyelid: 0.1;
+  }
+
+  /* The emblem of the role moves while the agent works. */
+  .agent-mark[data-animated="true"]:is([data-mood="working"], [data-mood="live"]) .agent-mark-sweep {
+    animation: agent-mark-sweep calc(2.4s * var(--agent-mark-pace)) ease-in-out infinite alternate;
+  }
+
+  .agent-mark[data-animated="true"]:is([data-mood="working"], [data-mood="live"]) .agent-mark-bob {
+    animation: agent-mark-bob calc(1.6s * var(--agent-mark-pace)) ease-in-out infinite alternate;
+  }
+
+  .agent-mark[data-animated="true"]:is([data-mood="working"], [data-mood="live"]) .agent-mark-flicker {
+    animation: agent-mark-flicker calc(1.2s * var(--agent-mark-pace)) steps(1, end) infinite;
+  }
+
+  .agent-mark[data-animated="true"]:is([data-mood="working"], [data-mood="live"]) .agent-mark-flicker-2 {
+    animation-delay: calc(0.2s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"]:is([data-mood="working"], [data-mood="live"]) .agent-mark-flicker-3 {
+    animation-delay: calc(0.4s * var(--agent-mark-pace));
+  }
+
+  .agent-mark[data-animated="true"]:is([data-mood="working"], [data-mood="live"]) .agent-mark-pulse {
+    animation: agent-mark-pulse calc(1.2s * var(--agent-mark-pace)) ease-in-out infinite;
+  }
+
+  .agent-mark[data-animated="true"]:is([data-mood="working"], [data-mood="live"]) .agent-mark-dash {
+    stroke-dasharray: 14 6;
+    animation: agent-mark-dash calc(1.2s * var(--agent-mark-pace)) linear infinite;
+  }
+}
+
+@keyframes agent-mark-laser {
+  from {
+    stroke-dashoffset: 100;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes agent-mark-look {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  14% {
+    transform: translate(calc(var(--agent-mark-look-reach) * -4px), calc(var(--agent-mark-look-reach) * 1px));
+  }
+
+  30% {
+    transform: translate(calc(var(--agent-mark-look-reach) * 3.5px), calc(var(--agent-mark-look-reach) * -2.5px));
+  }
+
+  46% {
+    transform: translate(calc(var(--agent-mark-look-reach) * 4px), calc(var(--agent-mark-look-reach) * 3px));
+  }
+
+  62% {
+    transform: translate(calc(var(--agent-mark-look-reach) * -2px), calc(var(--agent-mark-look-reach) * -3.5px));
+  }
+
+  80% {
+    transform: translate(calc(var(--agent-mark-look-reach) * -4px), calc(var(--agent-mark-look-reach) * 3px));
+  }
+}
+
+/* The eyelid stays where the mood puts it, and closes for a moment near the end of each cycle. */
+@keyframes agent-mark-blink {
+  0%,
+  91%,
+  100% {
+    transform: translateY(calc(var(--agent-mark-eyelid, 0.4) * 20px));
+  }
+
+  95% {
+    transform: translateY(20px);
+  }
+}
+
+@keyframes agent-mark-flash {
+  0% {
+    opacity: 0;
+  }
+
+  3% {
+    opacity: 0.82;
+  }
+
+  9% {
+    opacity: 0.06;
+  }
+
+  13% {
+    opacity: 0.82;
+  }
+
+  22%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes agent-mark-pale {
+  0%,
+  100% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 0.58;
+  }
+}
+
+@keyframes agent-mark-halo {
+  0% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.34);
+  }
+}
+
+@keyframes agent-mark-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+@keyframes agent-mark-bounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1.02, 0.97);
+  }
+
+  50% {
+    transform: translateY(-6px) scale(0.98, 1.03);
+  }
+}
+
+@keyframes agent-mark-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+
+  15% {
+    transform: translateX(-14px) rotate(-4deg);
+  }
+
+  30% {
+    transform: translateX(12px) rotate(3deg);
+  }
+
+  45% {
+    transform: translateX(-8px) rotate(-2deg);
+  }
+
+  60% {
+    transform: translateX(5px) rotate(1deg);
+  }
+
+  78% {
+    transform: translateX(-2px);
+  }
+}
+
+@keyframes agent-mark-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes agent-mark-spark {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(0);
+  }
+
+  4% {
+    opacity: 1;
+    transform: scale(1.2) rotate(25deg);
+  }
+
+  13% {
+    opacity: 0;
+    transform: scale(0.35) rotate(70deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+}
+
+@keyframes agent-mark-chevron {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes agent-mark-equalizer {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+
+  30% {
+    transform: scaleY(1);
+  }
+
+  55% {
+    transform: scaleY(0.45);
+  }
+
+  80% {
+    transform: scaleY(0.85);
+  }
+}
+
+@keyframes agent-mark-throb {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.35);
+  }
+}
+
+@keyframes agent-mark-sweep {
+  0% {
+    transform: translateX(-5px);
+  }
+
+  100% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes agent-mark-bob {
+  0% {
+    transform: translateY(3px);
+  }
+
+  100% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes agent-mark-flicker {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes agent-mark-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+@keyframes agent-mark-dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}

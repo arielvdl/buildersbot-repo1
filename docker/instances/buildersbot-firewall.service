@@ -1,0 +1,14 @@
+# Applies the firewall of the Builders Bot instances before Docker starts their containers.
+# `buildersbot-instance setup` installs it. See docs/docker.md#several-instances-on-one-host.
+[Unit]
+Description=Firewall of the Builders Bot Docker instances
+After=ufw.service
+Before=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/buildersbot-docker/instances/buildersbot-firewall
+
+[Install]
+WantedBy=multi-user.target docker.service

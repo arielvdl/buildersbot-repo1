@@ -1,0 +1,469 @@
+import type { AppAppearance } from "@buildersbot/contracts/app-appearance";
+import type { AppLanguage } from "@buildersbot/contracts/app-language";
+import type { CentralAuthUser } from "@buildersbot/contracts/ipc";
+import type { AppTextKey } from "@buildersbot/i18n";
+import {
+  Button,
+  CreditCard,
+  Download,
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+  RefreshCw,
+  SettingsSection,
+  ShieldCheck,
+  SlidersHorizontal,
+  SwitchField,
+  Tabs,
+  toast,
+  UserRound,
+} from "@buildersbot/ui";
+import { AppearanceSelect } from "@buildersbot/ui/features/settings/AppearanceSelect";
+import { ACTION_SOUND_CHOICES, TASK_SOUND_CHOICES } from "@buildersbot/ui/features/settings/app-settings";
+import { LanguageSelect } from "@buildersbot/ui/features/settings/LanguageSelect";
+import { NotificationMatrix, NotificationScopeTitle } from "@buildersbot/ui/features/settings/NotificationMatrix";
+import { SendShortcutSelect } from "@buildersbot/ui/features/settings/SendShortcutSelect";
+import { ServerCreationAdminSection } from "@buildersbot/ui/features/settings/ServerCreationAdminSection";
+import { SettingsDialogShell, type SettingsPagePlacement } from "@buildersbot/ui/features/settings/SettingsDialogShell";
+import { SettingsProfileTab } from "@buildersbot/ui/features/settings/SettingsProfileTab";
+import { SoundChoiceSelect } from "@buildersbot/ui/features/settings/SoundChoiceSelect";
+import { createSettingsProfileStore } from "@buildersbot/ui/features/settings/stores/profile-store";
+import {
+  createServerCreationAdminStore,
+  type ServerCreationAdminCalls,
+} from "@buildersbot/ui/features/settings/stores/server-creation-admin-store";
+import { useText } from "@buildersbot/ui/text";
+import { createEffect, createSignal, onCleanup, onSettled, Show } from "solid-js";
+import { readActionSoundChoice, setActionSoundChoice } from "../../action-sounds";
+import { setShowAgentSteps, useShowAgentSteps } from "../../agent-steps-preference";
+import { playSoundChoice, readTaskSound, setTaskSound } from "../../completion-sound";
+import { setAskBeforeForce, useAskBeforeForce } from "../../force-send-preference";
+import { currentDevicePlatform, setSendShortcutMode, useSendShortcutMode } from "../../send-shortcut-preference";
+import type { WebAccountCalls } from "./web-account";
+import { appLockSupported, webAppLock } from "./web-app-lock";
+import { isInstalledWebApp, webInstallIdentity } from "./web-install-identity";
+import type { WebNotificationSettings } from "./web-notification-settings";
+import { disablePush, enablePush, pushSubscribed, pushSupported } from "./web-push";
+import { useWebAppInstall } from "./web-pwa";
+
+const TABS = ["profile", "preferences"] as const;
+export type WebAccountSettingsTab = (typeof TABS)[number];
+
+const TAB_ITEMS = {
+  profile: {
+    titleKey: "settings.tab.profile.title",
+    descriptionKey: "settings.tab.profile.description",
+    icon: UserRound,
+  },
+  preferences: {
+    titleKey: "webClient.settings.preferences.title",
+    descriptionKey: "webClient.settings.preferences.description",
+    icon: SlidersHorizontal,
+  },
+} as const satisfies Record<
+  WebAccountSettingsTab,
+  { titleKey: AppTextKey; descriptionKey: AppTextKey; icon: typeof UserRound }
+>;
+
+export interface WebAccountSettingsProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Where the settings page shows, or nothing while the page is not on screen. */
+  page: SettingsPagePlacement | undefined;
+  account: CentralAuthUser;
+  calls: WebAccountCalls;
+  language: AppLanguage;
+  onChangeLanguage: (language: AppLanguage) => void;
+  appearance: AppAppearance;
+  onChangeAppearance: (appearance: AppAppearance) => void;
+  /** Closes these settings and opens the plans and servers of the account. */
+  onOpenBilling: () => void;
+  onSignOut: () => Promise<void>;
+  /** The levels of each host and its agents, which apply on all devices of the user. */
+  notifications: WebNotificationSettings;
+  /** Opens Preferences at the notification row of one host. Each nonce opens once. */
+  notificationFocusRequest?: { serverId: string; nonce: number } | null | undefined;
+  /** Opens a tab, for a result of the command palette. Each nonce opens once. */
+  tabRequest?: { tab: WebAccountSettingsTab; nonce: number } | null | undefined;
+  /** The permission to create a remote server. Profile shows its administrator section to an administrator. */
+  serverCreationApi?: ServerCreationAdminCalls | undefined;
+}
+
+/**
+ * The account's own settings in the web client, where Settings opens the settings of a host. Profile
+ * is the desktop tab and store; Preferences holds what this browser keeps. Sites are in the settings
+ * of their server.
+ */
+export default function WebAccountSettings(props: WebAccountSettingsProps) {
+  const { t } = useText();
+  const install = useWebAppInstall();
+  const [installed] = createSignal(isInstalledWebApp());
+  const lock = webAppLock();
+  const [lockEnabled, setLockEnabled] = createSignal(lock?.enabled() ?? false);
+  const [lockBusy, setLockBusy] = createSignal(false);
+  const [pushOn, setPushOn] = createSignal(false);
+  const [activeTab, setActiveTab] = createSignal<WebAccountSettingsTab>("profile");
+  const [taskSound, setTaskSoundChoice] = createSignal(readTaskSound());
+  const sendShortcutMode = useSendShortcutMode();
+  const showAgentSteps = useShowAgentSteps();
+  const askBeforeForce = useAskBeforeForce();
+  // Playback reads the stored value on each event, so the menus follow a change from another tab.
+  const [soundChoice, setSoundChoice] = createSignal(readActionSoundChoice());
+  const readSoundSettings = () => {
+    setTaskSoundChoice(readTaskSound());
+    setSoundChoice(readActionSoundChoice());
+  };
+  window.addEventListener("storage", readSoundSettings);
+  onCleanup(() => window.removeEventListener("storage", readSoundSettings));
+  let modalElement: HTMLElement | undefined;
+
+  // The stored subscription is the truth, not the last click: another tab may have turned it off.
+  onSettled(() => {
+    if (!pushSupported()) return;
+    void pushSubscribed().then(setPushOn);
+  });
+
+  /** Notifications ask the browser from this click, which is the only moment iOS accepts. */
+  async function changePush(checked: boolean) {
+    if (!checked) {
+      await disablePush();
+      setPushOn(false);
+      return;
+    }
+    const outcome = await enablePush();
+    if (outcome === "on") {
+      setPushOn(true);
+      return;
+    }
+    toast(outcome === "denied" ? t("webClient.app.pushDenied") : t("webClient.app.pushUnavailable"), {});
+  }
+
+  const profile = createSettingsProfileStore(
+    {
+      get open() {
+        return props.open;
+      },
+      get account() {
+        return props.account;
+      },
+      onUpdateAccountName: (name) => props.calls.updateName(name),
+      onUpdateAccountAvatar: (image) => props.calls.updateAvatar(image),
+      onListAccountSessions: () => props.calls.listSessions(),
+      onRevokeAccountSession: (sessionId) => props.calls.revokeSession(sessionId),
+    },
+    () => activeTab() === "profile",
+  );
+  const serverCreationAdmin = createServerCreationAdminStore(
+    () => props.serverCreationApi,
+    () => props.open && activeTab() === "profile",
+  );
+  const navItem = () => TAB_ITEMS[activeTab()];
+  // A server menu or a settings link opens the notification levels, which are in Preferences.
+  createEffect(
+    () => (props.open ? props.notificationFocusRequest : null),
+    (request) => {
+      if (request) setActiveTab("preferences");
+    },
+  );
+  createEffect(
+    () => (props.open ? props.tabRequest : null),
+    (request) => {
+      if (request) setActiveTab(request.tab);
+    },
+  );
+
+  /**
+   * The lock is a passkey of the device, so it is made only after the device says it has one. A
+   * refusal leaves the switch where it was instead of pretending to be on.
+   */
+  async function changeLock(checked: boolean) {
+    const current = webAppLock();
+    if (!current || lockBusy()) return;
+    if (!checked) {
+      current.disable();
+      setLockEnabled(false);
+      return;
+    }
+    if (!(await appLockSupported())) {
+      toast(t("webClient.app.lockUnsupported"), {});
+      return;
+    }
+    setLockBusy(true);
+    try {
+      await current.enable(webInstallIdentity().label);
+      setLockEnabled(true);
+    } catch {
+      toast.error(t("webClient.app.lockFailed"));
+    } finally {
+      setLockBusy(false);
+    }
+  }
+
+  return (
+    <Tabs.Root
+      value={activeTab()}
+      onChange={(value: string) => {
+        const tab = TABS.find((candidate) => candidate === value);
+        if (tab) setActiveTab(tab);
+      }}
+      orientation="vertical"
+      activationMode="automatic"
+      class="settings-modal-tabs-root"
+    >
+      <SettingsDialogShell
+        class="app-settings-modal-shell"
+        open={props.open}
+        page={props.page}
+        title={t(navItem().titleKey)}
+        description={t(navItem().descriptionKey)}
+        contentKey={activeTab()}
+        onContentElement={(element) => (modalElement = element)}
+        sidebar={
+          <>
+            <Tabs.List class="settings-modal-nav" aria-label={t("settings.sections.label")}>
+              {TABS.map((tab) => {
+                const item = TAB_ITEMS[tab];
+                const NavIcon = item.icon;
+                return (
+                  <Tabs.Trigger
+                    class="settings-modal-nav-item"
+                    value={tab}
+                    aria-current={activeTab() === tab ? "page" : undefined}
+                  >
+                    <NavIcon aria-hidden="true" />
+                    <span>{t(item.titleKey)}</span>
+                  </Tabs.Trigger>
+                );
+              })}
+            </Tabs.List>
+            <div class="settings-modal-nav">
+              <Button
+                variant="ghost"
+                type="button"
+                class="settings-modal-nav-item"
+                onClick={() => {
+                  props.onOpenChange(false);
+                  props.onOpenBilling();
+                }}
+              >
+                <CreditCard aria-hidden="true" />
+                <span>{t("account.menu.billing")}</span>
+              </Button>
+            </div>
+          </>
+        }
+      >
+        <Tabs.Content value="profile" class="settings-modal-tab-panel profile-panel" data-tab="profile">
+          <SettingsProfileTab
+            store={profile}
+            account={props.account}
+            canListSessions
+            canRevokeSession
+            onSignOut={props.onSignOut}
+          />
+          <ServerCreationAdminSection store={serverCreationAdmin} />
+        </Tabs.Content>
+
+        <Tabs.Content value="preferences" class="settings-modal-tab-panel" data-tab="preferences">
+          <SettingsSection title={t("webClient.app.title")}>
+            <ItemGroup class="settings-modal-card">
+              <Show
+                when={installed()}
+                fallback={
+                  <Item class="settings-modal-row">
+                    <ItemContent>
+                      <ItemTitle>{t("webClient.app.installTitle")}</ItemTitle>
+                      <ItemDescription>
+                        {install.canInstall() ? t("webClient.app.installDescription") : t("webClient.app.installHint")}
+                      </ItemDescription>
+                    </ItemContent>
+                    <ItemActions>
+                      <Show when={install.canInstall()}>
+                        <Button variant="secondary" onClick={() => void install.install()}>
+                          <Download aria-hidden="true" />
+                          {t("webClient.app.install")}
+                        </Button>
+                      </Show>
+                    </ItemActions>
+                  </Item>
+                }
+              >
+                <Item class="settings-modal-row">
+                  <ItemContent>
+                    <ItemTitle>{t("webClient.app.installedTitle")}</ItemTitle>
+                    <ItemDescription>
+                      {t("webClient.app.installedDescription", { device: webInstallIdentity().label })}
+                    </ItemDescription>
+                  </ItemContent>
+                  <ItemActions>
+                    <ShieldCheck aria-hidden="true" />
+                  </ItemActions>
+                </Item>
+                <SwitchField
+                  checked={lockEnabled()}
+                  onChange={(checked) => void changeLock(checked)}
+                  label={t("webClient.app.lockTitle")}
+                  description={lockBusy() ? t("webClient.app.lockBusy") : t("webClient.app.lockDescription")}
+                />
+                <Show when={pushSupported()}>
+                  <SwitchField
+                    checked={pushOn()}
+                    onChange={(checked) => void changePush(checked)}
+                    label={t("webClient.app.pushTitle")}
+                    description={t("webClient.app.pushDescription")}
+                  />
+                </Show>
+              </Show>
+              <Show when={install.updateReady()}>
+                <Item class="settings-modal-row">
+                  <ItemContent>
+                    <ItemTitle>{t("webClient.update.ready")}</ItemTitle>
+                    <ItemDescription>{t("webClient.update.description")}</ItemDescription>
+                  </ItemContent>
+                  <ItemActions>
+                    <Button variant="secondary" onClick={() => install.applyUpdate()}>
+                      <RefreshCw aria-hidden="true" />
+                      {t("webClient.update.apply")}
+                    </Button>
+                  </ItemActions>
+                </Item>
+              </Show>
+            </ItemGroup>
+          </SettingsSection>
+          <SettingsSection title={t("settings.appBehavior.title")}>
+            <ItemGroup class="settings-modal-card">
+              <Item class="settings-modal-row">
+                <ItemContent>
+                  <ItemTitle>{t("settings.sendShortcut.title")}</ItemTitle>
+                  <ItemDescription>{t("settings.sendShortcut.description")}</ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <SendShortcutSelect
+                    value={sendShortcutMode()}
+                    onChange={(mode) => setSendShortcutMode(mode)}
+                    devicePlatform={currentDevicePlatform()}
+                    {...(modalElement ? { mount: modalElement } : {})}
+                  />
+                </ItemActions>
+              </Item>
+              <SwitchField
+                checked={showAgentSteps()}
+                onChange={(checked) => setShowAgentSteps(checked)}
+                label={t("settings.showAgentSteps.title")}
+                description={t("settings.showAgentSteps.description")}
+              />
+              <SwitchField
+                checked={askBeforeForce()}
+                onChange={(checked) => setAskBeforeForce(checked)}
+                label={t("settings.askBeforeForce.title")}
+                description={t("settings.askBeforeForce.description")}
+              />
+              <Item class="settings-modal-row">
+                <ItemContent>
+                  <ItemTitle>{t("settings.language.title")}</ItemTitle>
+                  <ItemDescription>{t("settings.language.description")}</ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <LanguageSelect
+                    value={props.language}
+                    onChange={props.onChangeLanguage}
+                    {...(modalElement ? { mount: modalElement } : {})}
+                  />
+                </ItemActions>
+              </Item>
+              <Item class="settings-modal-row">
+                <ItemContent>
+                  <ItemTitle>{t("settings.appearance.theme.title")}</ItemTitle>
+                  <ItemDescription>{t("settings.appearance.theme.description")}</ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <AppearanceSelect
+                    value={props.appearance}
+                    onChange={props.onChangeAppearance}
+                    {...(modalElement ? { mount: modalElement } : {})}
+                  />
+                </ItemActions>
+              </Item>
+            </ItemGroup>
+          </SettingsSection>
+          <SettingsSection title={t("settings.analytics.title")}>
+            <ItemGroup class="settings-modal-card">
+              {/* A note, not a switch: the web app sends no analytics, so there is nothing to turn on. */}
+              <Item class="settings-modal-row">
+                <ItemContent>
+                  <ItemDescription>{t("settings.analytics.description")}</ItemDescription>
+                </ItemContent>
+              </Item>
+            </ItemGroup>
+          </SettingsSection>
+          <SettingsSection
+            title={
+              <NotificationScopeTitle
+                title={t("settings.notifications.whatYouHear")}
+                scope="settings.notifications.allDevices"
+              />
+            }
+          >
+            <NotificationMatrix
+              servers={props.notifications.matrixServers()}
+              device="browser"
+              onSetServerLevel={props.notifications.setServerLevel}
+              onSetAgentLevel={props.notifications.setAgentLevel}
+              onMute={props.notifications.mute}
+              onUnmute={props.notifications.unmute}
+              onRetry={props.notifications.retry}
+              focusRequest={props.open ? props.notificationFocusRequest : null}
+              menuMount={modalElement}
+            />
+          </SettingsSection>
+          <SettingsSection title={t("settings.notifications.thisBrowser")}>
+            <ItemGroup class="settings-modal-card">
+              <Item class="settings-modal-row">
+                <ItemContent>
+                  <ItemTitle>{t("settings.taskSound.title")}</ItemTitle>
+                  <ItemDescription>{t("settings.taskSound.description")}</ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <SoundChoiceSelect
+                    label={t("settings.taskSound.title")}
+                    choices={TASK_SOUND_CHOICES}
+                    value={taskSound()}
+                    onChange={(value) => {
+                      setTaskSoundChoice(value);
+                      setTaskSound(value);
+                      playSoundChoice(value);
+                    }}
+                    onPreview={playSoundChoice}
+                    mount={modalElement}
+                  />
+                </ItemActions>
+              </Item>
+              <Item class="settings-modal-row">
+                <ItemContent>
+                  <ItemTitle>{t("settings.soundFeedback.title")}</ItemTitle>
+                  <ItemDescription>{t("settings.soundFeedback.description")}</ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <SoundChoiceSelect
+                    label={t("settings.soundFeedback.title")}
+                    choices={ACTION_SOUND_CHOICES}
+                    value={soundChoice()}
+                    onChange={(value) => {
+                      setSoundChoice(value);
+                      setActionSoundChoice(value);
+                    }}
+                    onPreview={playSoundChoice}
+                    mount={modalElement}
+                  />
+                </ItemActions>
+              </Item>
+            </ItemGroup>
+          </SettingsSection>
+        </Tabs.Content>
+      </SettingsDialogShell>
+    </Tabs.Root>
+  );
+}

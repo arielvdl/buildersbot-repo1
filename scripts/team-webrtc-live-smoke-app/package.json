@@ -1,0 +1,5 @@
+{
+  "name": "buildersbot-team-webrtc-live-smoke",
+  "private": true,
+  "main": "index.cjs"
+}

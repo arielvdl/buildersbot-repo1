@@ -1,0 +1,190 @@
+// The speech recognition models (Parakeet and Whisper turbo on this computer, ElevenLabs Scribe in
+// the cloud), their settings, and dictation. Also the speech model that reads replies aloud, and the
+// user's own OpenAI-compatible voice server, which can take either route.
+
+import {
+  type DictationPreference,
+  type DictationState,
+  type DraftAttachment,
+  type MicrophoneAccess,
+  parseDictationPreferenceChange,
+  type SpeechAudio,
+  type SpeechModelStatus,
+  type SpeechSettings,
+  type VoiceModelStatus,
+  type VoiceServerProbe,
+  type VoiceServerSettings,
+  type VoiceSettings,
+  type VoiceStream,
+  type VoiceTranscriptionInput,
+  type VoiceTranscriptionResult,
+} from "@buildersbot/contracts/ipc";
+import { sourceText } from "@buildersbot/i18n/source";
+import type { AgentService } from "../../backend/agent-service";
+import { runCauseEffect } from "../../backend/effect-boundary";
+import type { DictationService } from "../dictation-service";
+import { type MicrophoneSystem, readMicrophoneAccess, requestMicrophoneAccess } from "../microphone-access";
+import { dictationFailureKey, type OsDictationService } from "../os-dictation-service";
+import type { VoiceServerService } from "../voice-server-service";
+import type { VoiceSpeechService } from "../voice-speech-service";
+import type { VoiceTranscriptionService } from "../voice-transcription-service";
+import { handler, type IpcGroupHandlers, payloadHandler } from "./define-ipc-group";
+import {
+  parseDictationResult,
+  parseSpeechInput,
+  parseSpeechSettings,
+  parseVoiceApiKey,
+  parseVoiceModelRequest,
+  parseVoiceRecording,
+  parseVoiceServerConnection,
+  parseVoiceServerSave,
+  parseVoiceSettings,
+  parseVoiceStream,
+  parseVoiceStreamAudio,
+  parseVoiceTranscription,
+} from "./voice-inputs";
+
+/** What one transcription needs. Narrow, so a test needs no whole service. */
+interface TranscriptionEngines {
+  os: Pick<OsDictationService, "status" | "transcribe">;
+  voice: Pick<VoiceTranscriptionService, "transcribe" | "getSettings">;
+  server: Pick<VoiceServerService, "dictates" | "transcribe">;
+}
+
+/**
+ * Reads one recording with the engine it names. The composer names none and keeps the model. The
+ * global dictation names its own: `system` reports why it could not, and `auto` falls back to the
+ * model, so a Mac without Dictation still dictates.
+ */
+export async function transcribeWithEngine(
+  { audio, engine }: VoiceTranscriptionInput,
+  { os, voice, server }: TranscriptionEngines,
+): Promise<VoiceTranscriptionResult> {
+  if (engine === "system" || (engine === "auto" && (await os.status()).available)) {
+    try {
+      return { text: await os.transcribe(audio) };
+    } catch (error) {
+      if (engine === "system") throw new Error(dictationFailureKey(error));
+    }
+  }
+  return runCauseEffect(
+    server.dictates() ? server.transcribe(audio, voice.getSettings().language) : voice.transcribe(audio),
+  );
+}
+
+export interface VoiceIpcDependencies {
+  voice: VoiceTranscriptionService;
+  speech: VoiceSpeechService;
+  /** The user's own server. While one of its routes is on, it replaces the model on this computer. */
+  server: VoiceServerService;
+  /** Keeps a voice turn's recording as an attachment draft. Voice turns go to this computer's host only. */
+  service: Pick<AgentService, "prepareVoiceRecording">;
+  /** The global dictation combination. Its recording runs in the window, not here. */
+  dictation: DictationService;
+  /** The speech recognition of the operating system, for the global dictation. */
+  os: OsDictationService;
+  /** The grant of the operating system for the microphone. */
+  microphone: MicrophoneSystem;
+}
+
+export function voiceIpcHandlers({
+  voice,
+  speech,
+  service,
+  dictation,
+  server,
+  os,
+  microphone,
+}: VoiceIpcDependencies): Pick<IpcGroupHandlers, "voice"> {
+  return {
+    voice: {
+      getModelStatus: handler((): Promise<VoiceModelStatus> => runCauseEffect(voice.getModelStatus())),
+      getModelStatuses: handler((): Promise<VoiceModelStatus[]> => runCauseEffect(voice.getModelStatuses())),
+      // The server's model is ready on the server: nothing on this computer is downloaded for it.
+      prepareModel: handler(
+        (): Promise<VoiceModelStatus> =>
+          server.dictates()
+            ? Promise.resolve({ modelId: voice.getSettings().modelId, phase: "ready", progress: 100, message: null })
+            : runCauseEffect(voice.prepareModel()),
+      ),
+      downloadModel: payloadHandler(
+        parseVoiceModelRequest,
+        ({ modelId }): Promise<VoiceModelStatus> => runCauseEffect(voice.downloadModel(modelId)),
+      ),
+      cancelModelDownload: payloadHandler(
+        parseVoiceModelRequest,
+        ({ modelId }): Promise<VoiceModelStatus> => runCauseEffect(voice.cancelModelDownload(modelId)),
+      ),
+      removeModel: payloadHandler(
+        parseVoiceModelRequest,
+        ({ modelId }): Promise<VoiceModelStatus> => runCauseEffect(voice.removeModel(modelId)),
+      ),
+      getSettings: handler((): VoiceSettings => voice.getSettings()),
+      setSettings: payloadHandler(
+        parseVoiceSettings,
+        (settings): Promise<VoiceSettings> => runCauseEffect(voice.setSettings(settings)),
+      ),
+      transcribe: payloadHandler(parseVoiceTranscription, (input) =>
+        transcribeWithEngine(input, { os, voice, server }),
+      ),
+      setApiKey: payloadHandler(
+        parseVoiceApiKey,
+        ({ key }): Promise<VoiceModelStatus> => runCauseEffect(voice.setApiKey(key)),
+      ),
+      startStream: handler((): Promise<VoiceStream> => runCauseEffect(voice.startStream())),
+      appendStream: payloadHandler(
+        parseVoiceStreamAudio,
+        (audio): Promise<void> => runCauseEffect(voice.appendStream(audio)),
+      ),
+      finishStream: payloadHandler(
+        parseVoiceStream,
+        (stream): Promise<VoiceTranscriptionResult> => runCauseEffect(voice.finishStream(stream)),
+      ),
+      cancelStream: payloadHandler(parseVoiceStream, (stream): void => voice.cancelStream(stream)),
+      getSpeechSettings: handler((): SpeechSettings => speech.getSettings()),
+      setSpeechSettings: payloadHandler(
+        parseSpeechSettings,
+        (settings): Promise<SpeechSettings> => runCauseEffect(speech.setSettings(settings)),
+      ),
+      getSpeechModelStatus: handler((): Promise<SpeechModelStatus> => runCauseEffect(speech.getModelStatus())),
+      downloadSpeechModel: handler((): Promise<SpeechModelStatus> => runCauseEffect(speech.downloadModel())),
+      cancelSpeechModelDownload: handler(
+        (): Promise<SpeechModelStatus> => runCauseEffect(speech.cancelModelDownload()),
+      ),
+      removeSpeechModel: handler((): Promise<SpeechModelStatus> => runCauseEffect(speech.removeModel())),
+      speak: payloadHandler(
+        parseSpeechInput,
+        (input): Promise<SpeechAudio> =>
+          runCauseEffect(server.speaks() ? server.speak(input.text) : speech.speak(input)),
+      ),
+      // A server has nothing to load on this computer.
+      warmSpeech: handler((): Promise<void> => (server.speaks() ? Promise.resolve() : runCauseEffect(speech.warm()))),
+      keepRecording: payloadHandler(parseVoiceRecording, async ({ audio }): Promise<DraftAttachment> => {
+        const [draft] = await runCauseEffect(service.prepareVoiceRecording(audio));
+        if (!draft) throw new Error(sourceText("error.voice.recordingNotKept"));
+        return draft;
+      }),
+      getDictationPreference: handler((): DictationPreference => dictation.preference),
+      setDictationPreference: payloadHandler(parseDictationPreferenceChange, (change) =>
+        dictation.setPreference(change),
+      ),
+      dictationEngineStatus: handler(() => os.engineStatus(dictation.preference.engine)),
+      finishDictation: payloadHandler(
+        parseDictationResult,
+        (result): Promise<DictationState> => dictation.finish(result),
+      ),
+      cancelDictation: handler((): DictationState => dictation.cancel()),
+      getServer: handler((): VoiceServerSettings | null => server.get()),
+      probeServer: payloadHandler(
+        parseVoiceServerConnection,
+        (connection): Promise<VoiceServerProbe> => runCauseEffect(server.probe(connection)),
+      ),
+      setServer: payloadHandler(
+        parseVoiceServerSave,
+        (save): Promise<VoiceServerSettings | null> => runCauseEffect(server.set(save.server)),
+      ),
+      getMicrophoneAccess: handler((): MicrophoneAccess => readMicrophoneAccess(microphone)),
+      requestMicrophoneAccess: handler((): Promise<MicrophoneAccess> => requestMicrophoneAccess(microphone)),
+    },
+  };
+}

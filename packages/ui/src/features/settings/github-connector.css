@@ -1,0 +1,136 @@
+/* UserAvatar has no style of its own: the initials, or GitHub's picture when the account has one. */
+.github-connector-avatar {
+  display: inline-grid;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--buildersbot-radius-pill);
+  background: linear-gradient(135deg, var(--buildersbot-accent-strong), var(--buildersbot-onboarding-desktop-indigo));
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.github-connector-avatar > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.github-connector-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.github-connector-search > svg {
+  position: absolute;
+  left: var(--buildersbot-space-3);
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  color: var(--buildersbot-text-muted);
+  pointer-events: none;
+}
+
+.github-connector-search input {
+  width: 100%;
+  padding-left: calc(var(--buildersbot-space-3) * 2 + var(--buildersbot-icon-sm));
+}
+
+/* A long list scrolls inside the card, so Disconnect stays near the top of the tab. The rows' hover fill goes past
+   the text, so the names line up with the search field. */
+.github-connector-repository-list {
+  display: grid;
+  max-height: 260px;
+  margin: 0 calc(var(--buildersbot-space-2) * -1);
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.github-connector-repository {
+  display: flex;
+  gap: var(--buildersbot-space-2);
+  align-items: center;
+  justify-content: space-between;
+  /* The same height with and without the Private badge. */
+  min-height: 36px;
+  padding: 0 var(--buildersbot-space-2);
+  border-radius: var(--buildersbot-radius-md);
+  transition: background-color var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
+}
+
+.github-connector-repository:hover {
+  background: var(--buildersbot-hover);
+}
+
+.github-connector-repository-name {
+  min-width: 0;
+}
+
+.github-connector-repository-owner {
+  color: var(--buildersbot-text-muted);
+}
+
+.github-connector-private {
+  flex: none;
+  gap: var(--buildersbot-space-1);
+}
+
+/* ------------------------------------------------ connect dialog */
+
+.github-connector-center {
+  display: grid;
+  min-height: 96px;
+  place-items: center;
+}
+
+/* The code is about to be typed on another screen, so each character has its own tile. */
+.github-connector-code {
+  display: flex;
+  gap: var(--buildersbot-space-1-5);
+  justify-content: center;
+}
+
+.github-connector-code-char {
+  display: inline-grid;
+  width: 36px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-md);
+  background: var(--buildersbot-bg-surface);
+  font-family: var(--buildersbot-font-mono);
+  font-size: var(--buildersbot-text-xl);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.github-connector-code-char[data-separator="true"] {
+  width: 12px;
+  border-color: var(--buildersbot-transparent);
+  background: var(--buildersbot-transparent);
+  color: var(--buildersbot-text-muted);
+}
+
+.github-connector-waiting {
+  display: flex;
+  gap: var(--buildersbot-space-2);
+  align-items: center;
+  justify-content: center;
+}
+
+.github-connector-done {
+  display: flex;
+  gap: var(--buildersbot-space-3);
+  align-items: center;
+  padding: var(--buildersbot-space-3) var(--buildersbot-space-4);
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-success-wash);
+}
+
+.github-connector-done > div {
+  display: grid;
+  flex: 1;
+}

@@ -1,0 +1,11 @@
+# The app of instance %i asks for an update with an empty file in update-requests.
+# `buildersbot-instance start` enables this unit for each instance.
+[Unit]
+Description=Update requests of Builders Bot instance %i
+
+[Path]
+PathExists=/srv/buildersbot/%i/update-requests/update-stage
+PathExists=/srv/buildersbot/%i/update-requests/update-install
+
+[Install]
+WantedBy=paths.target

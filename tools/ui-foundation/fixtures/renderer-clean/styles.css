@@ -1,0 +1,7 @@
+/* A stylesheet in the widened scan's reach that spends none of the budget. */
+.panel {
+  color: var(--buildersbot-text);
+  font-size: var(--buildersbot-text-sm);
+  border-radius: 0;
+  transition: none;
+}

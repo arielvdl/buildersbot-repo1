@@ -1,0 +1,10 @@
+# Pulls the image of instance %i, and for an install makes the container again. `setup` replaces
+# /opt/buildersbot-docker/instances/ with the folder of buildersbot-instance.
+[Unit]
+Description=Update Builders Bot instance %i
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/buildersbot-docker/instances/buildersbot-instance update-request %i
+TimeoutStartSec=45min

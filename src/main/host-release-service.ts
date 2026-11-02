@@ -1,0 +1,223 @@
+import { readFile } from "node:fs/promises";
+import type { HostReleaseStatus, UpdateStatus } from "@buildersbot/contracts/ipc";
+import { Deferred, Effect, Exit, Schema } from "effect";
+import { parse } from "yaml";
+import { decideReleaseFeed, type ReleaseFeedDecision } from "./update-feed-policy";
+import { isValidSemver } from "./update-service";
+
+class ReleaseCheckFailed extends Schema.TaggedError<ReleaseCheckFailed>()("ReleaseCheckFailed", {}) {}
+
+const ReleaseManifest = Schema.Struct({
+  version: Schema.String.check(Schema.isMaxLength(64), Schema.isPattern(/^\d+\.\d+\.\d+$/u)),
+  files: Schema.Array(Schema.Struct({ url: Schema.String })),
+});
+
+type ReleaseTarget = { feed: string; asset: (version: string) => string };
+
+/** The part of `fetch` that a release check uses. The global `fetch` is one. */
+export type ReleaseRequest = (url: string, init: { signal: AbortSignal }) => Promise<Response>;
+
+/** Only published desktop targets have a compatible release feed. */
+function releaseTarget(platform: NodeJS.Platform, arch: string): ReleaseTarget | null {
+  if (arch !== "x64" && arch !== "arm64") return null;
+  if (platform === "linux")
+    return {
+      feed: arch === "arm64" ? "latest-linux-arm64.yml" : "latest-linux.yml",
+      asset: (version) => `Builders Bot-${version}-${arch === "x64" ? "x86_64" : "arm64"}.AppImage`,
+    };
+  if (platform === "darwin")
+    return {
+      feed: "latest-mac.yml",
+      asset: (version) => `Builders Bot-${version}-${arch}.zip`,
+    };
+  if (platform === "win32" && arch === "x64")
+    return {
+      feed: "latest.yml",
+      asset: (version) => `Builders Bot-${version}-x64.exe`,
+    };
+  return null;
+}
+
+interface HostReleaseOptions {
+  currentVersion: string;
+  packaged: boolean;
+  platform: NodeJS.Platform;
+  arch: string;
+  environment: NodeJS.ProcessEnv;
+  updateStatus: () => Pick<UpdateStatus, "phase" | "managedByHost">;
+  installationMode: string | null;
+  fetch?: ReleaseRequest;
+  /** The release feed that the feed policy allows. Default: `decideReleaseFeed()`, which allows none yet. */
+  releaseFeed?: ReleaseFeedDecision;
+}
+
+/**
+ * Reads only the install marker. No command or application file is executed. The folder is the one
+ * that docker/Dockerfile and scripts/hosting install into; a server that an earlier release made
+ * answers on the same path, because its `/opt/OpenBot` is a symlink to `/opt/BuildersBot`.
+ */
+export const readInstallationMode = Effect.fn("HostRelease.readInstallationMode")(function* () {
+  return yield* Effect.tryPromise({
+    try: (signal) => readFile("/opt/BuildersBot/hosted/mode", { encoding: "utf8", signal }),
+    catch: () => new ReleaseCheckFailed(),
+  }).pipe(
+    Effect.map((value) => value.trim()),
+    Effect.catch(() => Effect.succeed(null)),
+  );
+});
+
+/** Read-only release discovery. Installation stays with the existing updater or administrator. */
+export class HostReleaseService {
+  readonly #options: HostReleaseOptions;
+  readonly #feedBaseUrl: string | null;
+  readonly #target: ReleaseTarget | null;
+  #phase: HostReleaseStatus["phase"] = "idle";
+  #latestVersion: string | null = null;
+  #pending: Deferred.Deferred<HostReleaseStatus> | null = null;
+
+  constructor(options: HostReleaseOptions) {
+    this.#options = options;
+    const feed = options.releaseFeed ?? decideReleaseFeed();
+    this.#feedBaseUrl = feed.allowed ? feed.baseUrl : null;
+    // With no allowed feed there is no target: the panel shows that release checks are not available,
+    // and `check` sends no request.
+    this.#target =
+      this.#feedBaseUrl !== null && options.packaged && isValidSemver(options.currentVersion)
+        ? releaseTarget(options.platform, options.arch)
+        : null;
+  }
+
+  snapshot(): HostReleaseStatus {
+    return {
+      currentVersion: this.#options.currentVersion,
+      latestVersion: this.#latestVersion,
+      phase: this.#target ? this.#phase : "unavailable",
+      method: this.#method(),
+    };
+  }
+
+  #method(): HostReleaseStatus["method"] {
+    if (!this.#options.packaged) return "unavailable";
+    // With no allowed release feed, nothing on the host can install a release: the hosted service,
+    // `sudo buildersbot update`, a new container image and the Host Manager all need one. Their texts
+    // say that they install updates, so the panel shows the manual path.
+    if (this.#feedBaseUrl === null) return "manual";
+    if (this.#options.updateStatus().managedByHost) return "host-manager";
+    if (this.#options.platform === "linux") {
+      // A hosted or self-installed server, or a container of buildersbot-instance, whose host installs
+      // updates on request.
+      if (this.#options.updateStatus().phase !== "unsupported") return "self-update";
+      if (this.#options.installationMode === "container") return "container";
+      if (this.#options.environment.BUILDERSBOT_HOSTED_SERVER === "1") return "hosted";
+      if (this.#options.installationMode === "self") return "system";
+    }
+    return this.#options.updateStatus().phase === "unsupported" ? "manual" : "self-update";
+  }
+
+  readonly check = Effect.fn("HostRelease.check")(function* (this: HostReleaseService) {
+    const baseUrl = this.#feedBaseUrl;
+    if (!this.#target || baseUrl === null) return this.snapshot();
+    if (this.#pending) return yield* Deferred.await(this.#pending);
+    const pending = Deferred.makeUnsafe<HostReleaseStatus>();
+    this.#pending = pending;
+    this.#phase = "checking";
+    this.#latestVersion = null;
+    const target = this.#target;
+    return yield* Effect.gen({ self: this }, function* () {
+      const version = yield* Effect.tryPromise({
+        try: (signal) => fetchLatestRelease(baseUrl, target, this.#options.fetch ?? fetch, signal),
+        catch: () => new ReleaseCheckFailed(),
+      });
+      this.#latestVersion = version;
+      this.#phase = newerRelease(version, this.#options.currentVersion) ? "available" : "up-to-date";
+    }).pipe(
+      Effect.catch(() =>
+        Effect.sync(() => {
+          this.#phase = "error";
+        }),
+      ),
+      Effect.onExit(() =>
+        Effect.gen({ self: this }, function* () {
+          if (this.#phase === "checking") this.#phase = "error";
+          yield* Deferred.done(pending, Exit.succeed(this.snapshot()));
+          this.#pending = null;
+        }),
+      ),
+      Effect.map(() => this.snapshot()),
+    );
+  }).bind(this);
+}
+
+/** The version of the latest published release for `target`. Rejects on any fault of the feed. */
+async function fetchLatestRelease(
+  baseUrl: string,
+  target: ReleaseTarget,
+  request: ReleaseRequest,
+  signal: AbortSignal,
+): Promise<string> {
+  const response = await request(`${baseUrl}/${target.feed}`, {
+    signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
+  });
+  if (!response.ok || !response.body) {
+    await response.body?.cancel();
+    throw new Error("Release feed unavailable");
+  }
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    for (;;) {
+      const next = await reader.read();
+      if (next.done) break;
+      size += next.value.byteLength;
+      if (size > 65_536) throw new Error("Release feed too large");
+      chunks.push(next.value);
+    }
+  } finally {
+    await reader.cancel();
+    reader.releaseLock();
+  }
+  const manifest = Schema.decodeUnknownSync(ReleaseManifest)(parse(Buffer.concat(chunks).toString("utf8")));
+  if (
+    !isValidSemver(manifest.version) ||
+    !manifest.files.some((file) => acceptsAsset(target, file.url, manifest.version))
+  )
+    throw new Error("No compatible release");
+  return manifest.version;
+}
+
+/**
+ * The feed names its files after the product, `Builders Bot-<version>-…`. A feed that a release
+ * before the rename published still names them `OpenBot-<version>-…`, so both prefixes are read. The
+ * suffix that carries the platform and the architecture must match.
+ */
+function acceptsAsset(target: ReleaseTarget, url: string, version: string): boolean {
+  const asset = target.asset(version);
+  return url === asset || url === asset.replace(/^Builders Bot-/u, "OpenBot-");
+}
+
+/**
+ * The latest Linux release for `arch`, for the hosted installer. With no allowed feed it rejects and
+ * sends no request.
+ */
+export function fetchLatestLinuxRelease(
+  arch: string,
+  request: ReleaseRequest,
+  signal: AbortSignal,
+  feed: ReleaseFeedDecision = decideReleaseFeed(),
+): Promise<string> {
+  if (!feed.allowed) return Promise.reject(new Error("No release feed is available in this version"));
+  const target = releaseTarget("linux", arch);
+  if (!target) return Promise.reject(new Error("No release for this machine"));
+  return fetchLatestRelease(feed.baseUrl, target, request, signal);
+}
+
+export function newerRelease(candidate: string, current: string): boolean {
+  const left = candidate.split(".").map(Number);
+  const right = current.split(/[.+-]/u).slice(0, 3).map(Number);
+  for (let index = 0; index < 3; index += 1) {
+    const difference = (left[index] ?? 0) - (right[index] ?? 0);
+    if (difference !== 0) return difference > 0;
+  }
+  return current.split("+", 1)[0]?.includes("-") ?? false;
+}

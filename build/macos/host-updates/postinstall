@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin LC_ALL=C
+ROOT='/Library/Application Support/Builders Bot/HostManager'
+"$ROOT/buildersbot-host" --verify-installation
+# Payload files have explicit root:wheel modes. Never recurse through tenant status or homes.
+if [ -f "$ROOT/config.json" ] && [ ! -L "$ROOT/config.json" ]; then
+  launchctl bootstrap system /Library/LaunchDaemons/app.buildersbot.host-manager.plist
+  # The upgrade booted out the agent of the person installing, which now has the new file and label.
+  # A logged-out user loads it at the next login, as before.
+  console_user=$(stat -f %Su /dev/console)
+  if [ -n "$console_user" ] && [ "$console_user" != root ]; then
+    console_uid=$(id -u "$console_user" 2>/dev/null) || console_uid=
+    if [ -n "$console_uid" ]; then
+      launchctl bootstrap "gui/$console_uid" /Library/LaunchAgents/app.buildersbot.desktop.relaunch.plist \
+        >/dev/null 2>&1 || true
+    fi
+  fi
+fi
+echo 'Builders Bot Host installed. Run sudo buildersbot-host setup, then sudo buildersbot-host verify.'

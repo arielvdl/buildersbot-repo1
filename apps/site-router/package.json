@@ -1,0 +1,32 @@
+{
+  "name": "@buildersbot/site-router",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nextlevelcommunity/buildersbot-repo1.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nextlevelcommunity/buildersbot-repo1/issues"
+  },
+  "homepage": "https://buildersbot.culturabuilder.com",
+  "dependencies": {
+    "@buildersbot/contracts": "workspace:*",
+    "effect": "catalog:"
+  },
+  "scripts": {
+    "cf:typegen": "wrangler types",
+    "deploy": "wrangler deploy --keep-vars",
+    "dev": "wrangler dev",
+    "typecheck": "bun ../../scripts/type-checker.ts --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

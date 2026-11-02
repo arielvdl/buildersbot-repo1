@@ -1,0 +1,10 @@
+# Backs up instance %i and verifies the backup. buildersbot-instance-backup@%i.timer starts it. `setup`
+# replaces /opt/buildersbot-docker/instances/ with the folder of buildersbot-instance.
+[Unit]
+Description=Back up Builders Bot instance %i
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/buildersbot-docker/instances/buildersbot-instance backup %i --verify
+TimeoutStartSec=6h

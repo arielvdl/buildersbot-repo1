@@ -1,0 +1,181 @@
+import type { RoutineRunFields } from "@buildersbot/contracts/ipc";
+import type { EventRoutineOwner, EventRoutineRun } from "@buildersbot/contracts/ipc-events";
+import { ROUTINE_RECOVERY_RUN_ERROR_LIMIT } from "@buildersbot/contracts/team-protocol/routine-recovery-v1";
+import { Effect, Schema } from "effect";
+import type { RoutineScheduler } from "./agent/routine-scheduler";
+import type { BuildersBotDatabase } from "./buildersbot-database";
+import type { ChannelRoutineScheduler } from "./channel-routine-scheduler";
+import type { HubTurnOrigin } from "./hub-connections/turn-origin";
+import type {
+  OwnedRoutineRecord,
+  ReceivedWebhookEvent,
+  RoutineRecordInput,
+  WebhookReceiveResult,
+} from "./routine-store";
+import { WebhookRouteStore } from "./webhook-route-store";
+
+export class RoutineRecordFailed extends Schema.TaggedError<RoutineRecordFailed>()("RoutineRecordFailed", {
+  operation: Schema.String,
+  cause: Schema.Defect(),
+}) {}
+
+export interface RoutineRecordsOptions {
+  database: BuildersBotDatabase;
+  agentRoutines: RoutineScheduler;
+  channelRoutines: ChannelRoutineScheduler;
+  agentExists(agentId: string): boolean;
+  channelExists(channelId: string): boolean;
+  channelRoutinesChanged(channelId: string): void;
+  /** True while a restart waits for the agents. Webhook runs then wait like scheduled runs. */
+  routinesHeld(): boolean;
+}
+
+function failed(operation: string) {
+  return (failure: { readonly cause: unknown }) => new RoutineRecordFailed({ operation, cause: failure.cause });
+}
+
+/**
+ * Owns the owner-neutral routine surface of the events API: agent and channel routines of every
+ * trigger kind and the public webhook routes. Each method picks the agent or the channel scheduler
+ * by owner. It never imports `AgentService`.
+ */
+export class RoutineRecords {
+  /** The public routes of webhook triggers, their secrets, revocations and receipts. */
+  readonly routes: WebhookRouteStore;
+  readonly #options: RoutineRecordsOptions;
+
+  constructor(options: RoutineRecordsOptions) {
+    this.#options = options;
+    this.routes = new WebhookRouteStore(options.database);
+  }
+
+  ownerExists(owner: EventRoutineOwner): boolean {
+    return owner.kind === "agent" ? this.#options.agentExists(owner.id) : this.#options.channelExists(owner.id);
+  }
+
+  list(owner: EventRoutineOwner): OwnedRoutineRecord[] {
+    return owner.kind === "agent"
+      ? this.#options.agentRoutines.listRecords(owner.id)
+      : this.#options.channelRoutines.listRecords(owner.id);
+  }
+
+  get(owner: EventRoutineOwner, routineId: string): OwnedRoutineRecord | null {
+    return owner.kind === "agent"
+      ? this.#options.agentRoutines.getRecord(owner.id, routineId)
+      : this.#options.channelRoutines.getRecord(owner.id, routineId);
+  }
+
+  /**
+   * `by` is the Hub connection origin of who saved it or started the run (the person, or a team
+   * member through the Team API). A channel's routine runs in the channel, which is closed anyway.
+   */
+  save(
+    owner: EventRoutineOwner,
+    routineId: string | undefined,
+    input: RoutineRecordInput,
+    by?: HubTurnOrigin,
+  ): OwnedRoutineRecord {
+    return owner.kind === "agent"
+      ? this.#options.agentRoutines.saveRecord(owner.id, routineId, input, by)
+      : this.#options.channelRoutines.saveRecord(owner.id, routineId, input);
+  }
+
+  /** The newest runs of one routine, with the records of the occurrences it missed. */
+  listRuns(owner: EventRoutineOwner, routineId: string, limit: number): EventRoutineRun[] {
+    if (owner.kind === "agent") {
+      return this.#options.agentRoutines
+        .listRuns({ agentId: owner.id, routineId, limit }, true)
+        .map((run) => ({ ...eventRoutineRun(run), deliveryId: run.deliveryId }));
+    }
+    return this.#options.channelRoutines
+      .listRuns({ channelId: owner.id, routineId, limit }, true)
+      .map((run) => ({ ...eventRoutineRun(run), requestMessageId: run.requestMessageId }));
+  }
+
+  /** Tells open editors to reload, for example after a background route sync stored a webhook URL. */
+  changed(owner: EventRoutineOwner): void {
+    if (owner.kind === "agent") this.#options.agentRoutines.stateChanged(owner.id);
+    else this.#options.channelRoutinesChanged(owner.id);
+  }
+
+  delete(owner: EventRoutineOwner, routineId: string): Effect.Effect<void, RoutineRecordFailed> {
+    return owner.kind === "agent"
+      ? this.#options.agentRoutines
+          .delete({ agentId: owner.id, routineId }, { webhook: true })
+          .pipe(Effect.mapError(failed("delete")))
+      : Effect.try({
+          try: () => this.#options.channelRoutines.delete({ channelId: owner.id, routineId }, { webhook: true }),
+          catch: (cause) => new RoutineRecordFailed({ operation: "delete", cause }),
+        });
+  }
+
+  test(owner: EventRoutineOwner, routineId: string, by?: HubTurnOrigin): Effect.Effect<void, RoutineRecordFailed> {
+    const run: Effect.Effect<unknown, { readonly cause: unknown }> =
+      owner.kind === "agent"
+        ? this.#options.agentRoutines.test({ agentId: owner.id, routineId }, { webhook: true }, by)
+        : this.#options.channelRoutines.test({ channelId: owner.id, routineId }, { webhook: true });
+    return Effect.mapError(Effect.asVoid(run), failed("test"));
+  }
+
+  /**
+   * A new signing secret of a routine went to someone of this origin, or to nobody (null). A channel's
+   * routine runs in the channel, which is closed anyway.
+   */
+  recordSecretHolder(owner: EventRoutineOwner, routineId: string, by: HubTurnOrigin | null): void {
+    if (owner.kind === "agent") this.#options.agentRoutines.recordSecretHolder(routineId, by);
+  }
+
+  /**
+   * Starts a run for one verified webhook request. `unavailable` means the owner cannot take a run
+   * now, so the sender should retry; nothing was written. `testedBy` is the origin of who sent a test
+   * event that the host made; absent for a relayed request.
+   */
+  receiveWebhook(
+    owner: EventRoutineOwner,
+    routineId: string,
+    event: ReceivedWebhookEvent,
+    testedBy?: HubTurnOrigin,
+  ): Effect.Effect<WebhookReceiveResult<unknown> | { kind: "unavailable" }, RoutineRecordFailed> {
+    if (this.#options.routinesHeld()) return Effect.succeed({ kind: "unavailable" });
+    return owner.kind === "agent"
+      ? this.#options.agentRoutines
+          .receiveWebhook(owner.id, routineId, event, testedBy)
+          .pipe(Effect.mapError(failed("receive")))
+      : this.#options.channelRoutines
+          .receiveWebhook(owner.id, routineId, event)
+          .pipe(Effect.mapError(failed("receive")));
+  }
+}
+
+/** The fields of a run that `routine-recovery-v1` carries, without its owner. */
+function eventRoutineRun({
+  id,
+  routineId,
+  triggerId,
+  kind,
+  source,
+  scheduledFor,
+  routineName,
+  instruction,
+  status,
+  error,
+  missed,
+  createdAt,
+  updatedAt,
+}: RoutineRunFields): EventRoutineRun {
+  return {
+    id,
+    routineId,
+    triggerId,
+    kind,
+    ...(source === undefined ? {} : { source }),
+    scheduledFor,
+    routineName,
+    instruction,
+    status,
+    error: error?.slice(0, ROUTINE_RECOVERY_RUN_ERROR_LIMIT) ?? null,
+    ...(missed === undefined ? {} : { missed }),
+    createdAt,
+    updatedAt,
+  };
+}

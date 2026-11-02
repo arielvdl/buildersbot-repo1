@@ -1,0 +1,85 @@
+name: Windows installer E2E
+
+# PR CI does not build the NSIS installer. This job builds the installer of this branch from the app
+# of a released installer, then updates the real installers on a Windows runner with
+# `scripts/windows-home-install-update-e2e.ts`.
+#
+# The installer and the test use the product name of electron-builder.yml. The released installers of
+# the upstream Builders Bot app install `Builders Bot.exe`, so they cannot be used here. Builders Bot has no
+# release yet, so the job runs only by hand, with the versions of two Builders Bot releases. Until
+# then, the data folder protection of build/installer.nsh has no automatic test.
+on:
+  workflow_dispatch:
+    inputs:
+      earlier_version:
+        description: The Builders Bot release to update from, for example 1.0.0
+        required: true
+      app_version:
+        description: The Builders Bot release whose app goes into the installer of this branch
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-installer-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  home-install-update:
+    name: Windows home install update
+    runs-on: windows-2025
+    timeout-minutes: 40
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      # The installer of the earlier version installs first. The app of the second version goes into
+      # the installer of this branch.
+      EARLIER_VERSION: ${{ inputs.earlier_version }}
+      APP_VERSION: ${{ inputs.app_version }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # electron-builder packs a prepackaged app; it needs no native build.
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+        with:
+          install: ignore-scripts
+
+      - name: Download released installers
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for version in "$EARLIER_VERSION" "$APP_VERSION"; do
+            [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "$version is not a release version." >&2; exit 1; }
+          done
+          mkdir -p .buildersbot-build/installers/earlier .buildersbot-build/installers/app
+          gh release download "v$EARLIER_VERSION" -R "$GITHUB_REPOSITORY" -p "*-$EARLIER_VERSION-x64.exe" -D .buildersbot-build/installers/earlier
+          gh release download "v$APP_VERSION" -R "$GITHUB_REPOSITORY" -p "*-$APP_VERSION-x64.exe" -D .buildersbot-build/installers/app
+
+      - name: Build the installer of this branch
+        shell: bash
+        run: |
+          released=$(ls .buildersbot-build/installers/app/*-x64.exe)
+          7z x -y -o.buildersbot-build/released "$released" '$PLUGINSDIR/app-64.7z'
+          7z x -y -o.buildersbot-build/app '.buildersbot-build/released/$PLUGINSDIR/app-64.7z'
+          bunx electron-builder --win nsis --x64 --publish never --prepackaged .buildersbot-build/app \
+            -c.directories.output=.buildersbot-build/installer
+
+      - name: Update the installers
+        shell: bash
+        run: |
+          earlier=$(ls .buildersbot-build/installers/earlier/*-x64.exe)
+          installer=$(ls .buildersbot-build/installer/*-x64.exe)
+          bun scripts/windows-home-install-update-e2e.ts "$earlier" "$installer"
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-home-install-update-e2e
+          path: .buildersbot-build/windows-home-install-update-e2e.json
+          if-no-files-found: warn

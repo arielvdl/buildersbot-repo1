@@ -1,0 +1,1084 @@
+.channel-dialog-header,
+.channel-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-2);
+}
+.channel-dialog-header h2 {
+  margin: 0;
+  font-size: var(--buildersbot-text-xl);
+  line-height: var(--buildersbot-leading-xl);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+.channel-empty {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--buildersbot-space-2);
+  color: var(--buildersbot-text-muted);
+}
+.channel-empty h2 {
+  font-size: var(--buildersbot-text-2xl);
+  color: var(--buildersbot-text-primary);
+  margin: var(--buildersbot-space-2) 0 0;
+}
+.channel-empty p {
+  margin: 0;
+}
+/* The title is the one line that names what the channel is; the instructions read as body text. */
+.channel-empty .channel-empty-title {
+  color: var(--buildersbot-text-primary);
+}
+
+/* The summary of an empty channel is the instructions, read in full: it scrolls inside the dialog and
+   keeps the line breaks the author wrote. */
+.channel-summary-text {
+  margin: 0;
+  padding: 0 var(--channel-dialog-inset) var(--channel-dialog-inset);
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-md);
+  line-height: var(--buildersbot-leading-md);
+}
+
+/* The editor stacks the same fields the agent panel stacks, so it adds no spacing of its own: the
+   shared field carries its own bottom margin, and a gap here would add to it and set the whole
+   channel form further apart than the agent form. */
+.channel-editor {
+  display: block;
+}
+.channel-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--buildersbot-space-3);
+}
+.channel-members {
+  display: flex;
+  margin-top: var(--settings-panel-section-gap);
+  flex-direction: column;
+  gap: var(--buildersbot-space-1);
+  min-width: 0;
+}
+.channel-members-title,
+.channel-members-note {
+  margin: 0;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  line-height: var(--buildersbot-leading-sm);
+}
+.channel-members-title {
+  font-weight: var(--buildersbot-weight-regular);
+}
+/* Members read as a list, not as a card: the shared group gives up its frame and its dividers, so
+   the hover highlight is the only box drawn and each member stays one plain line. */
+.channel-member-list:is(.ui-item-group) {
+  border: 0;
+  overflow: visible;
+  background: transparent;
+}
+.channel-member-list > :not(:first-child) {
+  border-top: 0;
+}
+.channel-member:is(.ui-item),
+.channel-member-add {
+  min-height: var(--buildersbot-control-lg);
+  gap: var(--buildersbot-space-2);
+  border-radius: var(--buildersbot-radius-md);
+  padding-block: var(--buildersbot-space-1);
+  padding-inline: var(--buildersbot-space-2);
+}
+/* The trigger is a shared ghost button, whose own hover is written with two `:not()`s and so
+   outweighs a plain class. It is matched here, or the last row of the list lights up differently
+   from every row above it. */
+.channel-member:hover,
+.channel-member-add:hover:not(:disabled) {
+  background: var(--buildersbot-hover);
+}
+/* The avatar sets the floor of a one-line row, the same size the create dialog uses. A menu row
+   is the same row before it is a member, so it takes the same avatar: at its own 32px the bloub
+   fills the whole menu item and paints past it, because it is drawn at 128% of its box.
+   That same 128% is why the lift is needed: the drawn shape lands 14% of the avatar below the
+   middle of its box, so without it the bloub reads low beside the name. Every 24px avatar in the
+   channel surfaces takes this one value, and the New channel dialog reads it from here. */
+.channel-member .agent-avatar,
+.channel-member-menu .agent-avatar {
+  --agent-avatar-optical-offset: -3.25px;
+
+  width: var(--buildersbot-space-6);
+  height: var(--buildersbot-space-6);
+}
+.channel-member .ui-item-title {
+  font-weight: var(--buildersbot-weight-regular);
+}
+/* Adding a member belongs in the list, under the last member, where the eye already is. The ghost
+   button already gives it the transparent frame and the muted text; what it does not give is a row,
+   so the width, the leading edge and the line height are set here. */
+.channel-member-add {
+  width: 100%;
+  justify-content: flex-start;
+  height: auto;
+  line-height: var(--buildersbot-leading-md);
+  text-align: left;
+  cursor: pointer;
+}
+.channel-member-add > svg {
+  width: var(--buildersbot-icon-md);
+  height: var(--buildersbot-icon-md);
+  flex: 0 0 auto;
+  /* The plus stands where an avatar stands, so both rows share one text edge. */
+  margin-inline: calc((var(--buildersbot-space-6) - var(--buildersbot-icon-md)) / 2);
+}
+.channel-member-add:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+/* The menu of the rest of the agents is the list continued, so it keeps the list's measurements:
+   its own padding is taken back off the leading edge, and every avatar in it stands in the same
+   column as the avatars and the plus above it. It is also given room to the right of the longest
+   name, which `min-width: 160px` on the shared menu does not leave. */
+.channel-member-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--buildersbot-space-1);
+  min-width: 220px;
+  /* A team can have more agents than the window has rows: the menu stops at the room the window
+     leaves on its side of the trigger, and the list inside it scrolls. */
+  max-height: min(
+    calc(var(--buildersbot-space-8) * 11),
+    calc(100dvh - var(--buildersbot-space-4)),
+    var(--kb-popper-content-available-height, 100dvh)
+  );
+  margin-inline-start: calc(var(--buildersbot-space-1) * -1);
+}
+.channel-member-menu .channel-member-search {
+  flex: none;
+}
+.channel-member-menu .channel-member-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.channel-member-options {
+  min-height: 0;
+  overflow-y: auto;
+  outline: 0;
+  scrollbar-width: thin;
+}
+/* The rows of the shared action menu, for options rather than menu items. Only the pointer and the
+   keyboard paint a row: nothing is highlighted the moment the menu opens. */
+.channel-member-option {
+  display: flex;
+  min-height: var(--buildersbot-control-md);
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  border-radius: var(--ui-menu-item-radius);
+  outline: 0;
+  padding: var(--buildersbot-space-1-5) var(--ui-menu-inset);
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-lg);
+  line-height: var(--buildersbot-leading-lg);
+  white-space: nowrap;
+  cursor: default;
+  transition: background-color var(--buildersbot-duration-hover) var(--buildersbot-ease-out);
+}
+.channel-member-option:is(:hover, :focus-visible) {
+  background: var(--ui-menu-item-hover);
+}
+/* The pointer does not move the keyboard focus here, so while a row has it, that row is the only
+   one painted: Enter picks it, not the row under a resting pointer. */
+.channel-member-options:has(:focus-visible) .channel-member-option:hover:not(:focus-visible) {
+  background: transparent;
+}
+.channel-member-menu-empty {
+  margin: 0;
+  padding: var(--buildersbot-space-3) var(--ui-menu-inset);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  line-height: var(--buildersbot-leading-sm);
+}
+/* The name and the description are one button, so the whole line opens the member and the row
+   actions stay separate controls beside it. */
+.channel-member-open:is(.ui-button) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.channel-member-open:is(.ui-button):focus-visible {
+  outline: none;
+}
+.channel-member-open:is(.ui-button):focus-visible .ui-item-title {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* The provider mark of the member's model stands right after the name, so the list shows at a
+   glance which models the channel has. A long name ends with an ellipsis before the mark. */
+.channel-member-name-line {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--buildersbot-space-1-5);
+}
+.channel-member-name-line > .channel-member-open:is(.ui-button) {
+  flex: 0 1 auto;
+}
+.channel-member-model {
+  display: inline-flex;
+  width: var(--buildersbot-icon-md);
+  height: var(--buildersbot-icon-md);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+.channel-member-model-mark {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  overflow: visible;
+  fill: var(--buildersbot-provider-current);
+}
+/* The row actions are icons with a hit area of 28px. They keep their place while hidden. */
+.channel-member-list :is(.channel-member-edit, .channel-lead-toggle, .channel-member-remove):is(.ui-button) {
+  width: var(--buildersbot-control-sm);
+  height: var(--buildersbot-control-sm);
+}
+/* Creating an agent belongs under the list of the ones that already exist: the picker offers both,
+   and this row closes it. */
+.channel-member-new:is(.ui-button) {
+  width: 100%;
+  height: auto;
+  min-height: var(--buildersbot-control-md);
+  justify-content: flex-start;
+  gap: var(--buildersbot-space-2);
+  margin-top: var(--buildersbot-space-1);
+  padding: var(--buildersbot-space-1-5) var(--ui-menu-inset);
+  border-top: 1px solid var(--buildersbot-border);
+  border-radius: 0 0 var(--ui-menu-item-radius) var(--ui-menu-item-radius);
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-md);
+  text-align: left;
+}
+.channel-member-new:is(.ui-button):hover:not(:disabled) {
+  background: var(--ui-menu-item-hover);
+}
+.channel-member-new:is(.ui-button) > svg {
+  width: var(--buildersbot-icon-md);
+  height: var(--buildersbot-icon-md);
+  flex: 0 0 auto;
+}
+/* The member form: the same dialog frame as a new channel, with the face and the model at the top
+   of the identity it edits. */
+.channel-member-dialog .channel-dialog-header {
+  border-bottom: 1px solid var(--buildersbot-border);
+}
+/* A select menu, such as the effort list of a model with many levels, opens in a portal, on the
+   popover layer, which is under the dialog that holds its trigger. While this dialog is open it takes
+   the step above it, as the skill menu of the agent panel does. */
+body:has(.channel-member-dialog) .ui-select-content {
+  z-index: calc(var(--buildersbot-layer-dialog) + var(--buildersbot-layer-popover) + 1);
+}
+.channel-member-form {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  /* What the form scrolls into view stops above the sticky footer, not under it. */
+  scroll-padding-block-end: calc(var(--buildersbot-control-lg) + 2 * var(--channel-dialog-inset));
+}
+/* The form scrolls as one. A part that could shrink to fit the window, such as the model section,
+   was cut to a strip instead. */
+.channel-member-form > * {
+  flex-shrink: 0;
+}
+/* The instructions scroll inside a box of their own height, so they do not push the form down. */
+.channel-member-form .settings-instructions-input {
+  height: 120px;
+  max-height: min(240px, 32dvh);
+  overflow-y: auto;
+}
+.channel-member-form-note {
+  margin: var(--channel-dialog-inset) var(--channel-dialog-inset) 0;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  line-height: var(--buildersbot-leading-sm);
+}
+.channel-member-form > .ui-alert {
+  margin-inline: var(--channel-dialog-inset);
+}
+.channel-member-face {
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  margin-inline: var(--channel-dialog-inset);
+}
+.channel-member-face-preview {
+  width: var(--buildersbot-space-8);
+  height: var(--buildersbot-space-8);
+  flex: 0 0 auto;
+}
+.channel-member-faces {
+  display: flex;
+  min-width: 0;
+  gap: var(--buildersbot-space-1);
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.channel-member-face-choice {
+  width: var(--buildersbot-space-6);
+  height: var(--buildersbot-space-6);
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: var(--buildersbot-radius-md);
+}
+.channel-member-face-choice .agent-avatar {
+  width: 100%;
+  height: 100%;
+}
+.channel-member-face-selected {
+  border-color: var(--buildersbot-accent);
+  background: var(--buildersbot-accent-soft);
+}
+.channel-member-hues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--buildersbot-space-1);
+  border: 0;
+  margin: 0 var(--channel-dialog-inset);
+  padding: 0;
+}
+.channel-member-hue {
+  width: var(--buildersbot-space-6);
+  height: var(--buildersbot-space-6);
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: var(--buildersbot-radius-pill);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+.channel-member-hue-swatch {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--buildersbot-radius-pill);
+}
+/* The model section: its row, and the choices that open under it. The box does not clip: the
+   choices are in the flow, and the box grows with them. */
+.channel-member-runtime {
+  display: flex;
+  flex-direction: column;
+  margin-inline: var(--channel-dialog-inset);
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-md);
+  padding-block: var(--buildersbot-space-1);
+}
+.channel-member-form > .channel-editor-footer {
+  position: sticky;
+  bottom: 0;
+  gap: var(--buildersbot-space-2);
+  justify-content: flex-end;
+  margin-top: auto;
+  padding: var(--channel-dialog-inset);
+  background: var(--buildersbot-bg-surface);
+}
+/* A row action reads as state until it is asked for: the crown stays on the lead, and Remove waits
+   for the pointer or the keyboard. Hover is the condition, so a touch screen keeps both visible.
+   Opacity, not display, hides them, so the row does not move when they show. */
+@media (hover: hover) and (pointer: fine) {
+  .channel-member-remove,
+  .channel-member-edit,
+  .channel-lead-toggle[aria-pressed="false"] {
+    opacity: 0;
+    transition: opacity var(--buildersbot-duration-hover) var(--buildersbot-ease-out);
+  }
+  .channel-member:hover :is(.channel-member-remove, .channel-member-edit, .channel-lead-toggle),
+  :is(.channel-member-remove, .channel-member-edit, .channel-lead-toggle):focus-visible {
+    opacity: 1;
+  }
+}
+.channel-picker {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.channel-picker legend {
+  margin-bottom: var(--buildersbot-space-2);
+}
+/* The fade at the edges says there is more to read, so the scrollbar has nothing left to add. */
+.channel-picker-list {
+  margin-top: var(--buildersbot-space-2);
+  max-height: calc(var(--buildersbot-space-8) * 7);
+  overflow: auto;
+  scrollbar-width: none;
+}
+.channel-picker-list::-webkit-scrollbar {
+  display: none;
+}
+.channel-picker-entry {
+  padding: var(--buildersbot-space-2) 0;
+  cursor: pointer;
+}
+.channel-editor-footer {
+  padding-top: var(--buildersbot-space-3);
+  border-top: 1px solid var(--buildersbot-border);
+}
+.channel-search-icon {
+  width: var(--buildersbot-space-4);
+  height: var(--buildersbot-space-4);
+  color: var(--buildersbot-text-muted);
+  flex-shrink: 0;
+}
+.channel-picker-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  padding: var(--buildersbot-space-6) var(--buildersbot-space-3);
+  text-align: center;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  line-height: var(--buildersbot-leading-sm);
+}
+.channel-picker-empty > svg {
+  width: var(--buildersbot-space-6);
+  height: var(--buildersbot-space-6);
+  margin-bottom: var(--buildersbot-space-1);
+}
+.channel-picker-empty p {
+  margin: 0;
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-md);
+}
+
+.channel-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--buildersbot-layer-dialog);
+  display: grid;
+  place-items: center;
+  padding: var(--buildersbot-space-6);
+}
+/* The agent dialog grows when its model section opens. It starts at the top, so it grows down and
+   the model row stays under the pointer. */
+.channel-dialog-backdrop:has(> .channel-member-dialog) {
+  place-items: start center;
+}
+.channel-create-dialog {
+  /* One inset for the header, the fields, every row and the footer. */
+  --channel-dialog-inset: var(--buildersbot-space-4);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(440px, 100%);
+  max-height: calc(100dvh - 48px);
+  overflow: hidden;
+  outline: 0;
+  background: var(--buildersbot-bg-surface);
+}
+.channel-create-dialog .channel-dialog-header {
+  padding: var(--channel-dialog-inset);
+}
+.channel-create-dialog .channel-dialog-header .ui-button svg {
+  width: var(--buildersbot-space-4);
+  height: var(--buildersbot-space-4);
+}
+.channel-create-form {
+  min-height: 0;
+  gap: var(--buildersbot-space-4);
+}
+.channel-create-form > .ui-field,
+.channel-create-form > .ui-alert {
+  margin-inline: var(--channel-dialog-inset);
+}
+.channel-create-form .channel-picker {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* No gap: the chips row collapses to zero height, and a gap would leave a strip behind it. */
+  gap: 0;
+}
+.channel-create-form .channel-picker legend {
+  margin-inline: var(--channel-dialog-inset);
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-medium);
+  line-height: var(--buildersbot-leading-sm);
+}
+/*
+ * The shared `.search-field` row from `app-shell.css`: it carries the borderless input and the calm
+ * focus treatment (a dim border, and the focus ring only for keyboard focus). Only the size is local,
+ * to match the name field above it.
+ */
+.channel-create-form .channel-member-search {
+  height: var(--buildersbot-control-lg);
+  margin-inline: var(--channel-dialog-inset);
+  padding-inline: var(--buildersbot-space-3);
+  gap: var(--buildersbot-space-2);
+  border-radius: var(--buildersbot-radius-md);
+}
+.channel-create-form .channel-member-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.channel-create-form .channel-picker-list {
+  min-height: 0;
+  /* Taller than the settings picker: picking several agents is the whole job of this dialog. */
+  max-height: calc(var(--buildersbot-space-8) * 11);
+  margin-top: var(--buildersbot-space-2);
+  padding: 0;
+}
+.channel-create-form .channel-picker-body {
+  display: flex;
+  flex-direction: column;
+}
+/* Rows run edge to edge: the selected and hover surfaces read as one list, not as cards. The row
+   inside is the shared member row, so the label around it only paints the surface. */
+.channel-create-form .channel-picker-entry {
+  display: block;
+  padding: var(--buildersbot-space-2) var(--channel-dialog-inset);
+  border-radius: 0;
+  transition: background-color var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
+}
+/* Here the label is the row and paints the hover, so the shared member row must not paint a second,
+   inset one inside it. In Channel settings the member row is the row, and keeps its own hover. */
+.channel-create-form .channel-picker-entry .channel-member:is(.ui-item) {
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .channel-create-form .channel-picker-entry {
+    transition: none;
+  }
+}
+.channel-create-form .channel-picker-entry:hover {
+  background: var(--buildersbot-bg-control-hover);
+}
+.channel-create-form .channel-picker-entry:has(.ui-checkbox-input:checked) {
+  background: var(--buildersbot-accent-soft);
+}
+/*
+ * One line per agent - name, then the description beside it - so a row costs the height of a
+ * single line and more of the list is on screen while several agents are being selected.
+ */
+.channel-create-form .channel-picker-entry .ui-item-content {
+  display: flex;
+  align-items: baseline;
+  gap: var(--buildersbot-space-2);
+  overflow: hidden;
+}
+.channel-create-form .channel-picker-entry .ui-item-title {
+  flex: 0 0 auto;
+  font-weight: var(--buildersbot-weight-regular);
+}
+.channel-create-form .channel-picker-entry .ui-item-description {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.channel-create-form .channel-editor-footer {
+  justify-content: flex-end;
+  padding: var(--channel-dialog-inset);
+}
+
+/* The header title is the agent chat's `.conversation-title`, so the member stack has to be the
+   avatar that title draws: 18px, and lifted by the same optical offset, because the bloub is drawn
+   at 128% of its box and sits low in it without one. */
+.channel-title .channel-avatar {
+  min-width: 18px;
+  height: 18px;
+}
+.channel-title .agent-avatar {
+  --agent-avatar-optical-offset: -2px;
+
+  width: 18px;
+  height: 18px;
+}
+.channel-title .channel-avatar .agent-avatar + .agent-avatar {
+  margin-left: -8px;
+}
+/* The faces overlap, and each outline cuts the face below it in the colour of the page. The framed
+   window puts the title on the top row instead (window.css). */
+.channel-title,
+.channel-empty {
+  --agent-avatar-outline: var(--buildersbot-bg-canvas);
+}
+@media (hover: hover) and (pointer: fine) and (min-width: 601px) {
+  /* The title is a ghost button, so its hover fill is under the faces. */
+  .conversation-header .channel-title:hover:not(:disabled) {
+    --agent-avatar-outline: var(--buildersbot-bg-control-hover);
+  }
+}
+.channel-header-copy {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: var(--buildersbot-space-2);
+}
+.channel-header-copy h1 {
+  min-width: 0;
+  overflow: hidden;
+  flex: 0 1 auto;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The subtitle gives way before a tab does, and never pushes the tabs under the title. */
+.channel-header-title {
+  min-width: 0;
+  max-width: 14rem;
+  overflow: hidden;
+  flex: 0 1 auto;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  line-height: var(--buildersbot-leading-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-preview-notice {
+  flex-shrink: 0;
+  margin: 0;
+  padding: var(--buildersbot-space-4);
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+  line-height: var(--buildersbot-leading-sm);
+  text-align: center;
+}
+
+/*
+ * The tabs of a channel. They sit under the title, in the header, because they belong to the
+ * channel that is open and not to the sidebar. A tab is the width of its name and never wraps. The
+ * strip is a `fieldset`, so it sets back the border, the padding and the minimum width of one.
+ */
+.channel-tabs {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 0 2px;
+  padding: 0;
+  border: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.channel-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.channel-tab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--buildersbot-radius-sm);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.channel-tab:hover {
+  background: var(--buildersbot-hover);
+}
+
+.channel-tab[data-active] {
+  border-color: var(--buildersbot-border);
+  background: var(--buildersbot-bg-surface);
+  color: var(--buildersbot-text-primary);
+}
+
+/* A dragged tab stays in its place, faded, until it is dropped. */
+.channel-tab[data-dragging] {
+  opacity: 0.5;
+}
+
+/*
+ * The gap the dragged tab would land in: a bar on the edge of the tab beside it. The bar is inside
+ * the tab, because the strip scrolls and cuts whatever is outside it.
+ */
+.channel-tab[data-drop="before"] {
+  box-shadow: inset 2px 0 0 var(--buildersbot-accent);
+}
+
+.channel-tab[data-drop="after"] {
+  box-shadow: inset -2px 0 0 var(--buildersbot-accent);
+}
+
+.channel-tab-name {
+  display: inline-flex;
+  max-width: 12rem;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* The details button of the open tab, before its name, with the round fill of a thread tab's button. */
+.channel-tab-details.ui-button {
+  width: var(--buildersbot-icon-md);
+  min-width: 0;
+  height: var(--buildersbot-icon-md);
+  flex: none;
+  margin-left: 3px;
+  padding: 0;
+  border-radius: var(--buildersbot-radius-pill);
+  color: var(--buildersbot-text-secondary);
+}
+
+.channel-tab-details.ui-button > svg {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+}
+
+.channel-tab-details.ui-button:hover {
+  background: var(--buildersbot-bg-control-hover);
+  color: var(--buildersbot-text-primary);
+}
+
+.channel-tab-details + .channel-tab-name {
+  padding-left: 3px;
+}
+
+/* The name gives way to the unread mark. A tab with work shimmers it (app-shell.css). */
+.channel-tab-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Unread messages in a tab that is not open, in the colour of the sidebar's unread count. */
+.channel-tab-unread {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-text-primary);
+}
+
+/* An `Input`: it sets back the size, the corners and no transition of a plain field. */
+.channel-tab-input {
+  width: 7rem;
+  min-width: auto;
+  height: auto;
+  padding: 1px 6px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--buildersbot-text-primary);
+  font: inherit;
+  outline: none;
+  transition: none;
+}
+
+/* The ring of a plain field in `auth.css` skips an `Input`. This rule sets it back with the same
+   specificity, so it is above `outline: none` on the field. */
+input.channel-tab-input:focus-visible {
+  outline: 2px solid var(--buildersbot-border-focus);
+  outline-offset: 2px;
+}
+
+.channel-tab-close {
+  padding: 0 5px 0 2px;
+  border: 0;
+  background: none;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-md);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.channel-tab-close:hover {
+  color: var(--buildersbot-danger);
+}
+
+.channel-tab-add {
+  flex: 0 0 auto;
+  padding: 0 6px;
+  color: var(--buildersbot-text-muted);
+}
+
+/* The title and its tabs share the header cell. */
+/*
+ * The channel title and its tabs share the header row: the name gives way first, so the tabs never
+ * drop under it. The same arrangement as an agent's thread tabs.
+ */
+.channel-header-block {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 8px;
+  margin-right: 6px;
+  /* The list of tabs hangs under the title, so the header row is its anchor. */
+  position: relative;
+}
+
+/* The face stack is wider than 32px with three members, so the button takes the width of the stack
+   and keeps a margin after it: the name never touches the last face. */
+.channel-header-avatar {
+  width: auto;
+  min-width: 32px;
+  flex: 0 0 auto;
+  justify-content: center;
+  margin-right: var(--buildersbot-space-4);
+  padding: 0 var(--buildersbot-space-1);
+}
+
+/* The name is set as a tab is (`.channel-tab` and `.channel-tab-name`: 12px, the same padding), and
+   differs from it only in weight. */
+.channel-header-name {
+  min-width: 0;
+  max-width: 12rem;
+  overflow: hidden;
+  flex: 0 1 auto;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: var(--buildersbot-radius-sm);
+  background: none;
+  color: var(--buildersbot-text-primary);
+  font: inherit;
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-semibold);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.channel-header-name:hover {
+  background: var(--buildersbot-hover);
+}
+
+/* Clicked, the name takes the room it needs and the tabs scroll instead. */
+.channel-header-name[data-expanded] {
+  max-width: none;
+  flex: 0 1 auto;
+}
+
+.channel-header-name h1 {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The list of tabs, hung under the title. The block is the anchor, so it stays in the header. It is a
+   `fieldset`, so it sets back the border, the margin and the minimum width of one. */
+.channel-tab-overview {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: var(--buildersbot-layer-popover);
+  width: min(32rem, calc(100vw - 4rem));
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  max-height: min(24rem, 60vh);
+  overflow-y: auto;
+  padding: var(--buildersbot-space-2);
+  border-radius: var(--buildersbot-radius-md);
+  background: var(--buildersbot-bg-control);
+  box-shadow:
+    0 0 0 1px var(--buildersbot-border),
+    0 4px 6px -1px var(--buildersbot-shadow-popover-ambient),
+    0 2px 4px -2px var(--buildersbot-shadow-popover-ambient);
+}
+
+.channel-tab-overview-bar {
+  position: sticky;
+  top: calc(var(--buildersbot-space-2) * -1);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  padding: var(--buildersbot-space-1) var(--buildersbot-space-1) var(--buildersbot-space-2);
+  background: var(--buildersbot-bg-control);
+}
+
+/* An `Input`: it sets back the size, the placeholder color and no transition of a plain field. */
+.channel-tab-overview-search {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 4px 8px;
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-sm);
+  background: var(--buildersbot-bg-surface);
+  color: var(--buildersbot-text-primary);
+  font: inherit;
+  font-size: var(--buildersbot-text-sm);
+  transition: none;
+}
+
+.channel-tab-overview-search::placeholder {
+  color: revert-layer;
+}
+
+.channel-tab-overview-search:focus {
+  border-color: var(--buildersbot-accent);
+  outline: none;
+}
+
+/* The ring of a plain field in `auth.css` skips an `Input`. This rule sets it back with the same
+   specificity, so it is above `outline: none` of the focus rule. */
+input.channel-tab-overview-search:focus-visible {
+  outline: 2px solid var(--buildersbot-border-focus);
+  outline-offset: 2px;
+}
+
+.channel-tab-overview-sort {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.channel-tab-overview-sort [data-active] {
+  background: var(--buildersbot-bg-surface);
+  color: var(--buildersbot-text-primary);
+}
+
+.channel-tab-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.channel-tab-overview-item {
+  display: flex;
+  min-width: 0;
+  align-items: stretch;
+  gap: 2px;
+}
+
+/* A pinned tab is the short, marked way back: first, in the accent, and never as wide as the rest. */
+.channel-tab-overview-item[data-pinned] {
+  max-width: 8rem;
+}
+
+.channel-tab-card {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--buildersbot-radius-sm);
+  background: var(--buildersbot-bg-surface);
+  color: var(--buildersbot-text-primary);
+  font: inherit;
+  font-size: var(--buildersbot-text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.channel-tab-card:hover {
+  border-color: var(--buildersbot-border);
+}
+
+.channel-tab-card[data-active] {
+  border-color: var(--buildersbot-accent);
+}
+
+.channel-tab-card[data-pinned] {
+  padding: 4px 8px;
+  border-color: var(--buildersbot-accent);
+  background: color-mix(in oklab, var(--buildersbot-accent) 14%, var(--buildersbot-bg-surface));
+}
+
+.channel-tab-card-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-tab-card-meta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.channel-tab-card-working {
+  flex: none;
+  color: var(--buildersbot-accent);
+}
+
+.channel-tab-card-unread {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-text-primary);
+}
+
+.channel-tab-card-age {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-tab-card-pin {
+  display: flex;
+  flex: none;
+  align-items: center;
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--buildersbot-radius-sm);
+  background: none;
+  color: var(--buildersbot-text-muted);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.channel-tab-overview-item:hover .channel-tab-card-pin,
+.channel-tab-card-pin:focus-visible,
+.channel-tab-card-pin[data-pinned] {
+  opacity: 1;
+}
+
+.channel-tab-card-pin[data-pinned] {
+  color: var(--buildersbot-accent);
+}
+
+.channel-tab-card-pin:hover {
+  background: var(--buildersbot-hover);
+  color: var(--buildersbot-text-primary);
+}
+
+.channel-tab-overview-empty {
+  margin: 0;
+  padding: var(--buildersbot-space-3);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  text-align: center;
+}
