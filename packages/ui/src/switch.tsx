@@ -254,12 +254,12 @@ export function Switch<T extends ValidComponent = "div">(props: SwitchProps<T>):
       {...rootProps}
     >
       <SwitchPrimitive.Input
-        id={props.id}
+        {...(props.id === undefined ? {} : { id: props.id })}
         data-slot="switch-input"
         class="ui-switch-input"
-        aria-label={props["aria-label"]}
-        aria-labelledby={props["aria-labelledby"]}
-        aria-describedby={props["aria-describedby"]}
+        {...(props["aria-label"] === undefined ? {} : { "aria-label": props["aria-label"] })}
+        {...(props["aria-labelledby"] === undefined ? {} : { "aria-labelledby": props["aria-labelledby"] })}
+        {...(props["aria-describedby"] === undefined ? {} : { "aria-describedby": props["aria-describedby"] })}
         onKeyDown={() => setPointerFocus(false)}
         onBlur={() => setPointerFocus(false)}
       />

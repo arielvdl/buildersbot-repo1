@@ -232,7 +232,7 @@ export function LidAwakeSettings(props: { selectMount: HTMLElement | undefined }
             <Select<LidAwakeBatteryFloor>
               class="settings-modal-select"
               options={FLOOR_OPTIONS}
-              value={state.status?.preference.batteryFloor}
+              value={state.status?.preference.batteryFloor ?? 20}
               disabled={state.busy}
               onChange={(value) =>
                 value &&
@@ -266,7 +266,7 @@ export function LidAwakeSettings(props: { selectMount: HTMLElement | undefined }
             <Select<LidAwakeTimeLimit>
               class="settings-modal-select"
               options={TIME_LIMIT_OPTIONS}
-              value={state.status?.preference.timeLimitHours}
+              value={state.status?.preference.timeLimitHours ?? 0}
               disabled={state.busy}
               onChange={(value) =>
                 value !== null &&

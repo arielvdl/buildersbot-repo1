@@ -998,7 +998,7 @@ export class ChannelService {
   /** The topic list a create, rename or delete leaves behind, plus the messages that announce it. */
   #topicChange(
     channel: Channel,
-    command: { type: "topic-create" | "topic-rename" | "topic-delete"; topicId: string; name?: string },
+    command: { type: "topic-create" | "topic-rename" | "topic-delete"; topicId: string; name?: string | undefined },
   ): Partial<Omit<ChannelChange, "channel">> {
     const topics = this.store.topics(channel.id);
     if (command.type === "topic-create") {

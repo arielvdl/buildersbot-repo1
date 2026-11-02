@@ -308,7 +308,7 @@ export interface WizardProps {
   children?: JSX.Element;
   footer: JSX.Element;
   /** Makes the body and the footer one form, so Enter in a field submits it. */
-  onSubmit?: () => void;
+  onSubmit?: (() => void) | undefined;
 }
 
 /** The body of a connect dialog. `heading` is the title element, so a dialog can give its own. */

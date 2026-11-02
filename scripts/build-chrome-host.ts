@@ -89,11 +89,11 @@ function packageVersion(): string {
 
 export function buildChromeHost(options: {
   channel: ChromeBridgeChannel;
-  arch?: "arm64" | "x64";
-  out?: string;
-  appRequirement?: string | null;
-  signIdentity?: string;
-  keychain?: string;
+  arch?: "arm64" | "x64" | undefined;
+  out?: string | undefined;
+  appRequirement?: string | null | undefined;
+  signIdentity?: string | undefined;
+  keychain?: string | undefined;
 }): ChromeHostBuild {
   if (process.platform !== "darwin") throw new Error("The Chrome host is built on macOS only (DESIGN §16 item 4).");
   const { channel } = options;

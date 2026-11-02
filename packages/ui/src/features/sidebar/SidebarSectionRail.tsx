@@ -390,17 +390,20 @@ function SectionRailButton(props: {
           class={buttonVariants({ variant: "ghost", class: "server-rail-button section-rail-button" })}
           aria-label={[props.label, ...status()].join(", ")}
           aria-pressed={props.selected ? "true" : "false"}
-          aria-keyshortcuts={
-            [props.menuItems ? "Shift+F10" : "", props.reorder ? "Alt+ArrowUp Alt+ArrowDown" : ""]
+          {...(() => {
+            const shortcuts = [props.menuItems ? "Shift+F10" : "", props.reorder ? "Alt+ArrowUp Alt+ArrowDown" : ""]
               .filter(Boolean)
-              .join(" ") || undefined
-          }
+              .join(" ");
+            const style = `${props.colorStyle ?? ""}${
+              props.reorder ? `--section-rail-drag-step: ${props.reorder.step};` : ""
+            }`;
+            return {
+              ...(shortcuts ? { "aria-keyshortcuts": shortcuts } : {}),
+              ...(style ? { style } : {}),
+              ...(props.reorder ? { draggable: "true" as const } : {}),
+            };
+          })()}
           tabindex={props.selected ? 0 : -1}
-          style={
-            `${props.colorStyle ?? ""}${props.reorder ? `--section-rail-drag-step: ${props.reorder.step};` : ""}` ||
-            undefined
-          }
-          draggable={props.reorder ? "true" : undefined}
           data-section-rail-id={props.reorder?.id}
           data-dragging={props.reorder?.dragging ? "" : undefined}
           onDragStart={(event: DragEvent & { currentTarget: HTMLElement }) => props.reorder?.onDragStart(event)}

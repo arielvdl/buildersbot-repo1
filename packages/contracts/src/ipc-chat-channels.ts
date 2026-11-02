@@ -79,7 +79,7 @@ export interface ChannelTask {
   id: string;
   channelId: string;
   /** The tab the task belongs to. Like a message, it is written by the store and optional here. */
-  topicId?: string;
+  topicId?: string | undefined;
   parentTaskId: string | null;
   rootTaskId: string;
   ownerAgentId: string | null;
@@ -144,7 +144,7 @@ export interface ChannelMessage {
    * The tab the message belongs to. The store always writes one; it is optional here because a
    * fixture, and a message stored before tabs, can arrive without it.
    */
-  topicId?: string;
+  topicId?: string | undefined;
   sequence: number;
   author: { kind: "member" | "agent" | "coordinator"; id: string; name: string };
   taskId: string | null;
@@ -180,7 +180,7 @@ export interface ChannelSummary extends Channel {
   /** One for each member agent that has worked here. Absent from a host without channel-attention-v1. */
   threads?: ChannelThread[];
   /** The tabs of the channel, in the order they were made. Absent from a host without channel-topics-v1. */
-  topics?: ChannelTopic[];
+  topics?: ChannelTopic[] | undefined;
 }
 
 export interface ChannelPage {

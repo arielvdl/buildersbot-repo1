@@ -16,7 +16,9 @@ import { join, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
 
-export function buildChromePeer(options: { arch?: "arm64" | "x64"; out?: string; signIdentity?: string } = {}) {
+export function buildChromePeer(
+  options: { arch?: "arm64" | "x64" | undefined; out?: string | undefined; signIdentity?: string | undefined } = {},
+) {
   if (process.platform !== "darwin") throw new Error("The chrome-peer addon is built on macOS only.");
   const arch = options.arch ?? (hostArch() === "arm64" ? "arm64" : "x64");
   const folder = resolve(options.out ?? join(ROOT, ".buildersbot-build/chrome-peer", arch));

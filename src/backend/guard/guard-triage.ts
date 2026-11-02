@@ -81,7 +81,7 @@ export interface GuardTriageOptions {
    * The tool whose result the content is. A result of a paid data connection (`isConnectionTool`)
    * also gets the vendor rules: such a result never has a reason to ask the agent for a step.
    */
-  readonly tool?: string;
+  readonly tool?: string | undefined;
 }
 
 const CONNECTION_NAMESPACE = "buildersbot_connections";

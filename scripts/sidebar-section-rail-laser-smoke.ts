@@ -61,8 +61,8 @@ type BadgeKind = "waiting" | "unread" | "working";
 interface Tile {
   name: string;
   kind: "all" | "unassigned" | "letter" | "emoji" | "image";
-  text?: string;
-  color?: string;
+  text?: string | undefined;
+  color?: string | undefined;
   selected?: boolean;
   running?: boolean;
   badge?: BadgeKind;
@@ -243,7 +243,7 @@ async function freeze(page: Page, phase: number): Promise<void> {
 
 async function screenshot(page: Page, name: string, clip?: { x: number; y: number; width: number; height: number }) {
   const path = resolve(OUT, `${name}.png`);
-  await page.screenshot({ path, clip });
+  await page.screenshot({ path, ...(clip ? { clip } : {}) });
   report.screenshots.push(path);
   return path;
 }

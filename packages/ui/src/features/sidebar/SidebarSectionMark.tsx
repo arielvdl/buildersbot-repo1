@@ -116,8 +116,8 @@ export function SectionGlyphIcon(props: { glyph: SidebarSectionGlyph; class?: st
     },
   );
   return (
-    <Show when={icon()} fallback={<span class={props.class} />}>
-      {(component) => <Dynamic component={component()} class={props.class} />}
+    <Show when={icon()} fallback={<span class={props.class ?? ""} />}>
+      {(component) => <Dynamic component={component()} class={props.class ?? ""} />}
     </Show>
   );
 }

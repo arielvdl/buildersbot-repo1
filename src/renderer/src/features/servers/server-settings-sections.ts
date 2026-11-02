@@ -224,7 +224,7 @@ export interface ServerSettingsSearchEntry extends SettingsSearchKeys {
   section: ServerSettingsSection;
   anchor?: AppTextKey;
   /** False when the dialog does not show the entry for this server, as `ServerSettingsModal` decides. */
-  shown?: (server: ServerSummary, context: ServerSettingsSearchContext) => boolean;
+  shown?: ((server: ServerSummary, context: ServerSettingsSearchContext) => boolean) | undefined;
 }
 
 /** The dialog shows Roles for this computer only after its host was set up (`configured`). */

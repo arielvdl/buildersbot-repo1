@@ -321,9 +321,9 @@ export interface AgentSummary {
    * The provider account the agent's turns run on. Local-only, like `access`. Absent means the
    * provider's own sign-in, `DEFAULT_PROVIDER_ACCOUNT_ID`.
    */
-  providerAccountId?: string;
+  providerAccountId?: string | undefined;
   /** Local-only, like `access`. Absent means the agent asks before it leaves a usage limit. */
-  backupModels?: AgentBackupModels;
+  backupModels?: AgentBackupModels | undefined;
   /**
    * The agent's own model while a usage limit has moved it to a backup. Local-only. The agent goes
    * back to it when the limit ends.

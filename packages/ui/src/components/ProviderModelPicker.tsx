@@ -1073,7 +1073,10 @@ export function ProviderModelPicker(props: ProviderModelPickerProps) {
                   options={effortOptions()}
                   optionValue="id"
                   optionTextValue="name"
-                  value={effortOptions().find((option) => option.id === effortValue())}
+                  value={
+                    effortOptions().find((option) => option.id === effortValue()) ??
+                    effortOptions()[0] ?? { id: "", name: "" }
+                  }
                   onChange={(option) => option && chooseEffort(option.id)}
                   itemComponent={(item) => <SelectItem item={item.item}>{item.item.rawValue.name}</SelectItem>}
                 >

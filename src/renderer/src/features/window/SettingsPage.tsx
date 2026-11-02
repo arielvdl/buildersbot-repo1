@@ -30,7 +30,7 @@ type PersonalEntry = SettingsSearchKeys & {
   kind: "personal";
   tab: SettingsTab;
   anchor?: AppTextKey;
-  shown?: (state: SettingsRowState) => boolean;
+  shown?: ((state: SettingsRowState) => boolean) | undefined;
 };
 
 /** A section of the server settings, or a row of its General section. */

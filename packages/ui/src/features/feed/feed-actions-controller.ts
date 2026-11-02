@@ -46,7 +46,9 @@ function confirmKey(item: FeedItem, step: FeedConfirmable): string | null {
  */
 export function createFeedActionsController(options: FeedActionsControllerOptions) {
   const { t } = useText();
-  const [controls, setControls] = createStore<Record<string, FeedCardControl & { confirmKey?: string }>>({});
+  const [controls, setControls] = createStore<Record<string, FeedCardControl & { confirmKey?: string | undefined }>>(
+    {},
+  );
   const [chosen, setChosen] = createSignal<ReadonlySet<string>>(new Set());
   const [bulk, setBulk] = createStore({ recipient: "", busy: false });
   const timers = new Map<string, ReturnType<typeof setTimeout>>();

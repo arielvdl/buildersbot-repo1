@@ -182,7 +182,7 @@ export async function importChannelKeyPkcs8(pkcs8: Uint8Array): Promise<ChannelK
   const jwk = await crypto.subtle.exportKey("jwk", extractable);
   const publicKey = await crypto.subtle.importKey(
     "jwk",
-    { kty: "EC", crv: "P-256", x: jwk.x, y: jwk.y, ext: true },
+    { kty: "EC", crv: "P-256", x: jwk.x ?? "", y: jwk.y ?? "", ext: true },
     ECDH,
     true,
     [],

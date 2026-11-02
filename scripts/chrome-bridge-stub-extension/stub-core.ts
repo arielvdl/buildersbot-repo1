@@ -38,14 +38,14 @@ export interface StubOptions {
   readonly disconnect: (reason: string) => void;
   readonly staticKey: ChannelKeyPair;
   readonly installId: string;
-  readonly extVersion?: string;
+  readonly extVersion?: string | undefined;
   readonly browser: { brand: "google-chrome" | "chrome-for-testing" | "chromium" | "other"; version: string };
-  readonly features?: readonly string[];
+  readonly features?: readonly string[] | undefined;
   /** The app key pinned before (a second connection), or null. */
   readonly pinnedAppKey?: string | null;
-  readonly onChange?: () => void;
+  readonly onChange?: (() => void) | undefined;
   /** How long `cdp.send` with `Runtime.evaluate` waits before it answers, to measure concurrency. */
-  readonly evaluateDelayMs?: number;
+  readonly evaluateDelayMs?: number | undefined;
 }
 
 export interface StubView {

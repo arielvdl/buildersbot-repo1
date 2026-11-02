@@ -203,7 +203,10 @@ export function RemoteDesktopWorkspace(props: RemoteDesktopWorkspaceProps) {
                   options={displays()}
                   optionValue="id"
                   optionTextValue="label"
-                  value={selectedDisplay()}
+                  value={
+                    selectedDisplay() ??
+                    displays()[0] ?? { id: "display", label: "", width: 0, height: 0, primary: false }
+                  }
                   disabled={actionBusy() !== null}
                   onChange={(display) => display && void selectDisplay(display.id)}
                   itemComponent={(item) => <SelectItem item={item.item}>{item.item.rawValue.label}</SelectItem>}

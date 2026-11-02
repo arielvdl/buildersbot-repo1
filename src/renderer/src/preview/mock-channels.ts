@@ -90,7 +90,13 @@ export function createMockChannels(
             : null,
         };
       }),
-    readChannel: async ({ channelId, topicId }: { channelId: string; topicId?: string }): Promise<ChannelPage> => ({
+    readChannel: async ({
+      channelId,
+      topicId,
+    }: {
+      channelId: string;
+      topicId?: string | undefined;
+    }): Promise<ChannelPage> => ({
       channel: structuredClone(requireChannel(channelId)),
       topicId:
         addedTopics.get(channelId)?.some((topic) => topic.id === topicId) && topicId ? topicId : MOCK_CHANNEL_TOPIC_ID,

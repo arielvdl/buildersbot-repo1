@@ -243,7 +243,7 @@ export interface AgentMarkProps {
   /** Moves the start of the motion, so agents side by side do not blink or flash together. */
   seed?: string | undefined;
   animated?: boolean;
-  class?: string;
+  class?: string | undefined;
   style?: JSX.CSSProperties | string;
 }
 
