@@ -4,7 +4,7 @@
  * data, so each part reads the open channel from `useChannels()`.
  */
 
-import { Button, Dialog, ErrorReference, IconButton, X } from "@buildersbot/ui";
+import { Button, Dialog, ErrorReference, IconButton, Settings, X } from "@buildersbot/ui";
 import { SettingsPanel, SettingsPanelContent, SettingsPanelHeader } from "@buildersbot/ui/components/SettingsPanel";
 import { ChannelAvatar } from "@buildersbot/ui/features/channels/ChannelAvatar";
 import { ChannelStartRetryNotice } from "@buildersbot/ui/features/channels/ChannelStartRetryNotice";
@@ -64,13 +64,7 @@ export function ChannelErrorNotice() {
   );
 }
 
-/** `working` names the members that work now. The channel is open, so their faces work `live`. */
-export function ChannelHeaderTitle(props: {
-  channelId: string;
-  onOpenSettings: () => void;
-  working: ReadonlySet<string>;
-}) {
-  const channels = useChannels();
+export function ChannelHeaderTitle(props: { channelId: string; onOpenSettings: () => void }) {
   const { t } = useText();
   const page = useOpenChannel(props.channelId);
   const [expanded, setExpanded] = createSignal(false);
@@ -94,22 +88,17 @@ export function ChannelHeaderTitle(props: {
     <Show when={page()}>
       {(current) => (
         <div ref={block} class="channel-header-block">
-          {/* The avatar is the way into the settings; the name opens the list of tabs. */}
-          <Button
+          {/* The gear is the way into the settings; the name opens the list of tabs. */}
+          <IconButton
+            class="channel-header-settings no-drag"
             variant="ghost"
-            size="sm"
-            class="channel-header-avatar no-drag"
-            aria-label={t("channel.settings.title")}
+            size="icon-sm"
+            label={t("channel.settings.title")}
             onClick={props.onOpenSettings}
             disabled={current().channel.archived}
           >
-            <ChannelAvatar
-              members={current().channel.members}
-              agents={channels.agents()}
-              working={props.working}
-              open
-            />
-          </Button>
+            <Settings aria-hidden="true" />
+          </IconButton>
           {/* It shows and hides the list of tabs under it, which is a group and not a dialog. */}
           <Button
             ref={nameButton}

@@ -255,9 +255,7 @@ export function createChannelConversation(env: ChannelConversationEnvironment) {
         name: (id) => (id ? agentName(id) : t("sidebar.section.unassigned")),
       });
     },
-    HeaderTitle: (props) => (
-      <ChannelHeaderTitle channelId={channelId} onOpenSettings={props.onOpenSettings} working={workingMembers()} />
-    ),
+    HeaderTitle: (props) => <ChannelHeaderTitle channelId={channelId} onOpenSettings={props.onOpenSettings} />,
     SettingsPane: (props) => (
       <ChannelSettingsPane
         channelId={channelId}
@@ -270,9 +268,6 @@ export function createChannelConversation(env: ChannelConversationEnvironment) {
     AboveComposer: () => <ChannelAboveComposer channelId={channelId} />,
     EmptyState: () => <ChannelEmptyState channelId={channelId} />,
   };
-
-  // The faces in the header work as the activity line says. It names who works, so only they move.
-  const workingMembers = createMemo(() => new Set(source.workers().map((worker) => worker.id)));
 
   return {
     source,
