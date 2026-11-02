@@ -162,6 +162,12 @@ export const messages = {
   "settings.tab.hostedServers.title": "ホスト型サーバー",
   "settings.tab.hostedServers.description":
     "このコンピューターの電源が切れているときも動作する Builders Bot サーバーを作成します。",
+  "settings.load.lines.title": "1つのタブ内のエージェント",
+  "settings.load.lines.description": "チャンネルのタブで同時に動かすエージェントの数です。",
+  "settings.load.lines.label": "1つのタブで同時に動くエージェント数",
+  "settings.load.lines.unit": "(1〜8、おすすめは4)",
+  "settings.load.lines.hint":
+    "チームのチャンネルでは、この数を超えるエージェントを求める依頼はタブ内で順番に待ち、いずれかのエージェントがターンを終えると始まります。作業中の各エージェントはメモリを使います。",
   "settings.sections.label": "設定のセクション",
   "settings.panel.resize": "右パネルのサイズを変更",
   "settings.preferences.loadFailed": "設定を読み込めませんでした。",

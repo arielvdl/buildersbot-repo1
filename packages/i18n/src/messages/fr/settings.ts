@@ -178,6 +178,12 @@ export const messages = {
   "settings.tab.hostedServers.title": "Serveurs hébergés",
   "settings.tab.hostedServers.description":
     "Créer des serveurs Builders Bot qui fonctionnent quand cet ordinateur est éteint.",
+  "settings.load.lines.title": "Agents dans un onglet",
+  "settings.load.lines.description": "Combien d'agents d'un onglet de canal travaillent en même temps.",
+  "settings.load.lines.label": "Agents d'un onglet en même temps",
+  "settings.load.lines.unit": "(de 1 à 8, 4 est conseillé)",
+  "settings.load.lines.hint":
+    "Dans un canal d'équipe, une demande d'un nombre d'agents supérieur à ce chiffre attend dans l'onglet, dans l'ordre, et démarre quand l'un d'eux termine son tour. Chaque agent au travail utilise de la mémoire.",
   "settings.sections.label": "Sections des réglages",
   "settings.panel.resize": "Redimensionner le panneau de droite",
   "settings.preferences.loadFailed": "Impossible de charger vos réglages.",

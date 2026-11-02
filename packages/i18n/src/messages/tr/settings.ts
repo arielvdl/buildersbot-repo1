@@ -163,6 +163,12 @@ export const messages = {
   "settings.tab.billing.description": "Lisans, sunucu planları, ödeme yöntemi ve faturalar.",
   "settings.tab.hostedServers.title": "Barındırılan sunucular",
   "settings.tab.hostedServers.description": "Bu bilgisayar kapalıyken çalışan Builders Bot sunucuları oluşturun.",
+  "settings.load.lines.title": "Bir sekmedeki ajanlar",
+  "settings.load.lines.description": "Bir kanal sekmesindeki kaç ajanın aynı anda çalışacağı.",
+  "settings.load.lines.label": "Bir sekmedeki ajanlar aynı anda",
+  "settings.load.lines.unit": "(1 ile 8 arası, önerilen 4)",
+  "settings.load.lines.hint":
+    "Bir ekip kanalında, bu sayıdan fazla ajan isteyen bir istek sekmede sırayla bekler ve ajanlardan biri turunu bitirince başlar. Çalışan her ajan bellek kullanır.",
   "settings.sections.label": "Ayar bölümleri",
   "settings.panel.resize": "Sağ paneli yeniden boyutlandır",
   "settings.preferences.loadFailed": "Ayarlarınız yüklenemedi.",

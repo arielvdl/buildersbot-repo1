@@ -170,6 +170,12 @@ export const messages = {
   "settings.tab.hostedServers.title": "Hostowane serwery",
   "settings.tab.hostedServers.description":
     "Twórz serwery Builders Bot, które działają, gdy ten komputer jest wyłączony.",
+  "settings.load.lines.title": "Agenci w jednej karcie",
+  "settings.load.lines.description": "Ilu agentów z karty kanału pracuje jednocześnie.",
+  "settings.load.lines.label": "Agenci jednej karty jednocześnie",
+  "settings.load.lines.unit": "(od 1 do 8, zalecane 4)",
+  "settings.load.lines.hint":
+    "W kanale zespołu prośba o więcej agentów niż ta liczba czeka w karcie, po kolei, i startuje, gdy jeden z nich skończy swoją turę. Każdy pracujący agent zużywa pamięć.",
   "settings.sections.label": "Sekcje ustawień",
   "settings.panel.resize": "Zmień rozmiar prawego panelu",
   "settings.preferences.loadFailed": "Nie udało się wczytać ustawień.",

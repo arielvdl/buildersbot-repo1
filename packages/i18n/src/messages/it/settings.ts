@@ -168,6 +168,12 @@ export const messages = {
   "settings.tab.hostedServers.title": "Server ospitati",
   "settings.tab.hostedServers.description":
     "Crea server Builders Bot che funzionano anche quando questo computer è spento.",
+  "settings.load.lines.title": "Agenti in una scheda",
+  "settings.load.lines.description": "Quanti agenti di una scheda del canale lavorano nello stesso momento.",
+  "settings.load.lines.label": "Agenti di una scheda contemporaneamente",
+  "settings.load.lines.unit": "(da 1 a 8, consigliato 4)",
+  "settings.load.lines.hint":
+    "In un canale di team, una richiesta di più agenti di questo numero attende nella scheda, in ordine, e parte quando uno di loro termina il turno. Ogni agente al lavoro usa memoria.",
   "settings.sections.label": "Sezioni delle impostazioni",
   "settings.panel.resize": "Ridimensiona il pannello destro",
   "settings.preferences.loadFailed": "Impossibile caricare le tue impostazioni.",

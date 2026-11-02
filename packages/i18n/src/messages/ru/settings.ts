@@ -171,6 +171,12 @@ export const messages = {
   "settings.tab.hostedServers.title": "Облачные серверы",
   "settings.tab.hostedServers.description":
     "Серверы Builders Bot, которые работают, даже когда этот компьютер выключен.",
+  "settings.load.lines.title": "Агенты в одной вкладке",
+  "settings.load.lines.description": "Сколько агентов одной вкладки канала работают одновременно.",
+  "settings.load.lines.label": "Агенты одной вкладки одновременно",
+  "settings.load.lines.unit": "(от 1 до 8, рекомендуем 4)",
+  "settings.load.lines.hint":
+    "В командном канале запрос на большее число агентов, чем это значение, ждёт во вкладке по порядку и начинается, когда один из агентов заканчивает свой ход. Каждый работающий агент использует память.",
   "settings.sections.label": "Разделы настроек",
   "settings.panel.resize": "Изменить размер правой панели",
   "settings.preferences.loadFailed": "Не удалось загрузить настройки.",

@@ -168,6 +168,12 @@ export const messages = {
   "settings.tab.billing.description": "Licencia, planes de servidor, método de pago y facturas.",
   "settings.tab.hostedServers.title": "Servidores alojados",
   "settings.tab.hostedServers.description": "Crea servidores de Builders Bot que funcionen con este equipo apagado.",
+  "settings.load.lines.title": "Agentes en una pestaña",
+  "settings.load.lines.description": "Cuántos agentes de una pestaña de canal trabajan al mismo tiempo.",
+  "settings.load.lines.label": "Agentes de una pestaña al mismo tiempo",
+  "settings.load.lines.unit": "(de 1 a 8, se sugiere 4)",
+  "settings.load.lines.hint":
+    "En un canal de equipo, una solicitud de más agentes que este número espera en la pestaña, en orden, y empieza cuando uno de ellos termina su turno. Cada agente que trabaja usa memoria.",
   "settings.sections.label": "Secciones de ajustes",
   "settings.panel.resize": "Cambiar el tamaño del panel derecho",
   "settings.preferences.loadFailed": "No se pudieron cargar tus ajustes.",

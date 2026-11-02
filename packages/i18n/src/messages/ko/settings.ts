@@ -180,6 +180,12 @@ export const messages = {
   "settings.tab.billing.description": "라이선스, 서버 요금제, 결제 수단, 청구서예요.",
   "settings.tab.hostedServers.title": "호스팅 서버",
   "settings.tab.hostedServers.description": "이 컴퓨터가 꺼져 있어도 실행되는 Builders Bot 서버를 만들어요.",
+  "settings.load.lines.title": "탭 하나의 에이전트",
+  "settings.load.lines.description": "채널 탭 하나에서 동시에 작업하는 에이전트 수입니다.",
+  "settings.load.lines.label": "탭 하나에서 동시에 작업할 에이전트 수",
+  "settings.load.lines.unit": "(1~8, 권장 4)",
+  "settings.load.lines.hint":
+    "팀 채널에서 이 수보다 많은 에이전트를 요청하면 탭에서 순서대로 기다렸다가, 에이전트 중 한 명이 턴을 마치면 시작합니다. 작업 중인 에이전트마다 메모리를 사용합니다.",
   "settings.sections.label": "설정 섹션",
   "settings.panel.resize": "오른쪽 패널 크기 조절",
   "settings.preferences.loadFailed": "설정을 불러올 수 없어요.",

@@ -169,6 +169,12 @@ export const messages = {
   "settings.tab.hostedServers.title": "Gehostete Server",
   "settings.tab.hostedServers.description":
     "Erstelle Builders Bot-Server, die auch bei ausgeschaltetem Computer laufen.",
+  "settings.load.lines.title": "Agenten in einem Tab",
+  "settings.load.lines.description": "Wie viele Agenten eines Kanal-Tabs gleichzeitig arbeiten.",
+  "settings.load.lines.label": "Agenten eines Tabs gleichzeitig",
+  "settings.load.lines.unit": "(1 bis 8, 4 empfohlen)",
+  "settings.load.lines.hint":
+    "In einem Team-Kanal wartet eine Anfrage nach mehr Agenten als dieser Zahl im Tab, der Reihe nach, und startet, sobald einer seinen Zug beendet. Jeder arbeitende Agent braucht Speicher.",
   "settings.sections.label": "Einstellungsbereiche",
   "settings.panel.resize": "Größe des rechten Bereichs ändern",
   "settings.preferences.loadFailed": "Deine Einstellungen konnten nicht geladen werden.",

@@ -185,6 +185,12 @@ export const messages = {
   "settings.tab.billing.description": "Licentie, serverabonnementen, betaalmethode en facturen.",
   "settings.tab.hostedServers.title": "Gehoste servers",
   "settings.tab.hostedServers.description": "Maak Builders Bot-servers die draaien wanneer deze computer uit staat.",
+  "settings.load.lines.title": "Agenten in één tabblad",
+  "settings.load.lines.description": "Hoeveel agenten van één kanaaltabblad tegelijk werken.",
+  "settings.load.lines.label": "Agenten van één tabblad tegelijk",
+  "settings.load.lines.unit": "(1 tot 8, 4 wordt aanbevolen)",
+  "settings.load.lines.hint":
+    "In een teamkanaal wacht een verzoek om meer agenten dan dit aantal in het tabblad, op volgorde, en start zodra een van hen zijn beurt afrondt. Elke agent die werkt, gebruikt geheugen.",
   "settings.sections.label": "Onderdelen van instellingen",
   "settings.panel.resize": "Grootte rechterpaneel wijzigen",
   "settings.preferences.loadFailed": "Kan je instellingen niet laden.",

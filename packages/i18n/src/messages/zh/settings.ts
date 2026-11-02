@@ -180,6 +180,12 @@ export const messages = {
   "settings.tab.billing.description": "许可证、服务器套餐、支付方式和发票。",
   "settings.tab.hostedServers.title": "托管服务器",
   "settings.tab.hostedServers.description": "创建即使这台电脑关机也能运行的 Builders Bot 服务器。",
+  "settings.load.lines.title": "一个标签页中的智能体",
+  "settings.load.lines.description": "频道标签页中同时工作的智能体数量。",
+  "settings.load.lines.label": "一个标签页同时工作的智能体数",
+  "settings.load.lines.unit": "（1 到 8，建议 4）",
+  "settings.load.lines.hint":
+    "在团队频道中，超过此数量的智能体请求会在标签页里按顺序等待，待其中一个智能体结束本轮后开始。每个工作中的智能体都会占用内存。",
   "settings.sections.label": "设置分区",
   "settings.panel.resize": "调整右侧面板宽度",
   // A failed read or save of the app preferences on the General, Notifications, Dynamic Island and Updates tabs.
