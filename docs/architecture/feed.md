@@ -2,15 +2,10 @@
 
 The feed shows what each run of each agent does, on every server that the app is joined to, as it
 happens. The **Feed** button of the page rail opens it (`app.rail.feed`, the Lucide `Activity` mark).
-It is a page, not a dialog. It has two parts:
-
-- **The Team**, a list on the left side of the page. It shows each agent, what it does now, and how
-  many runs it has in the feed. A click on an agent shows only the runs of that agent; a second click
-  shows all runs again. The Team panel (`team-orbits.md`) stays as it is.
-- **One timeline**, the newest run at the bottom, as in a conversation. Each run is one card that
-  changes in place. A card shows the agent, its project (the sidebar section), the title of the task
-  or the channel, the state, the step that it does now, and what it waits for. "Open conversation"
-  (or "Open channel") opens the place of the run.
+It is a page, not a dialog. It is one timeline, the newest run at the bottom, as in a conversation.
+Each run is one card that changes in place. A card shows the agent, its project (the sidebar section),
+the title of the task or the channel, the state, the step that it does now, and what it waits for.
+"Open conversation" (or "Open channel") opens the place of the run.
 
 Step 1 of the feed is the read-only timeline. Step 2 adds the actions on the card: approve, deny,
 answer, stop, resume and reassign, also on many stopped tasks at once (see [Actions](#actions)). The
@@ -104,8 +99,7 @@ Schedule and Workflows pages do (`windowPageKind` is `titled`). The shared compo
 
 | File | Part |
 | --- | --- |
-| `FeedPage.tsx` | The page: the Team, the filters, the jump bar and the timeline. |
-| `FeedTeamList.tsx` | The Team as a list. |
+| `FeedPage.tsx` | The page: the filters, the jump bar and the timeline. |
 | `FeedFilters.tsx` | Search (`/` goes to it), project, agent, state, and the grouping: timeline, by project, by agent. |
 | `FeedJumpBar.tsx` | Live or paused, and the counters "Needs you", "Stopped", "Working": each click goes to the next such card. |
 | `FeedTimeline.tsx` | The timeline, on `createChatVirtualizer`: only the cards on screen are in the DOM. |
@@ -114,13 +108,13 @@ Schedule and Workflows pages do (`windowPageKind` is `titled`). The shared compo
 | `FeedBulkBar.tsx` | The selection of stopped tasks: resume them, or give them to one agent. |
 | `feed-actions-controller.ts` | The state of the actions: the change at once, the way back, the selection, the keys. |
 | `feed-actions-view.ts` | The DOM-free part of the actions: the card as it shows while its action runs, the labels. |
-| `feed-view.ts` | The DOM-free projection: filters, rows, counters, Team. |
+| `feed-view.ts` | The DOM-free projection: filters, rows, counters. |
 
 The adapter is `src/renderer/src/features/feed/`: `stores/feed-store.ts` keeps one record of cards
 by id and the ids in timeline order, applies the deltas in cursor order, and reads the snapshot again
-after a gap. It stops watching while the window is hidden. `WorkspaceFeed.tsx` builds the Team from
-the same signals as the Team panel (`orbits/orbits-view-source.ts`) and adds every other agent that
-has a card, such as an agent of another server. `feed-open.ts` opens a card: its channel, or the chat
+after a gap. It stops watching while the window is hidden. `WorkspaceFeed.tsx` gives each card the face of
+its agent, from the agents of the active server; an agent of another server has no entry and its card
+uses the agent id as the seed. `feed-open.ts` opens a card: its channel, or the chat
 of its agent on the tab of its side thread. A card of another server switches to that server first.
 
 Scrolling up pauses the timeline: new cards are counted ("3 new") and do not move the reader. The
@@ -210,8 +204,6 @@ offers no action: its conversation answers it, and the host decides who may.
 - The title of a chat is "Chat with <agent>": `turn-started` has no title, and the feed does not read
   the conversation. Side threads take the title of their task.
 - There is no cost for each run: no event carries it.
-- The Team list shows the live state of the agents of the active server; an agent of another server
-  shows the state of its newest card.
 - A delta sends the whole card, with its last 20 steps. In the E2E burst, a card was about 1.8 KB.
 - A chat turn that was stopped, a plan limit and a failed chat turn have no resume on the card: only
   stopped channel tasks have one, as in the load panel. The conversation sends a new message.

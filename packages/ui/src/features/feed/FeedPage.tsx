@@ -5,27 +5,25 @@ import { FeedBulkBar } from "./FeedBulkBar";
 import { FeedFilters } from "./FeedFilters";
 import type { FeedAvatar } from "./FeedItemCard";
 import { FeedJumpBar } from "./FeedJumpBar";
-import { FeedTeamList } from "./FeedTeamList";
 import { FeedTimeline, type FeedTimelineControl } from "./FeedTimeline";
 import { createFeedActionsController } from "./feed-actions-controller";
 import {
   EMPTY_FEED_FILTERS,
+  type FeedAgentAvatar,
   type FeedFilterState,
-  type FeedTeamMember,
   feedAgentKey,
   feedAgentOptions,
   feedCounts,
   feedProjectOptions,
   feedRows,
-  feedTeam,
   nextFeedRowIndex,
 } from "./feed-view";
 
 export interface FeedPageProps {
   /** The cards in timeline order, the newest last. */
   items: readonly FeedItem[];
-  /** The agents that the window knows, with what they do now. Agents of other servers come from `items`. */
-  team: readonly FeedTeamMember[];
+  /** The faces of the agents that the window knows. An agent of another server has no entry. */
+  agents: readonly FeedAgentAvatar[];
   loading: boolean;
   error: string | null;
   /** Opens the conversation or the channel of a card. */
@@ -40,8 +38,7 @@ export interface FeedPageProps {
 }
 
 /**
- * The feed page: the Team on the side, and one timeline of every run of every project, the newest at
- * the bottom. A card changes in place as its run goes on. With `onAct`, the person approves, denies,
+ * The feed page: one timeline of every run of every project, the newest at the bottom. A card changes in place as its run goes on. With `onAct`, the person approves, denies,
  * answers, stops, resumes and reassigns on the card, also many stopped tasks at once; J and K move
  * between the cards, and A, N and R act on the focused card.
  */
@@ -62,8 +59,7 @@ export function FeedPage(props: FeedPageProps) {
   const counts = createMemo(() => feedCounts(shownItems()));
   const projects = createMemo(() => feedProjectOptions(props.items));
   const agents = createMemo(() => feedAgentOptions(props.items));
-  const team = createMemo(() => feedTeam(props.team, props.items));
-  const avatars = createMemo(() => new Map(props.team.map((member) => [member.key, member])));
+  const avatars = createMemo(() => new Map(props.agents.map((member) => [member.key, member])));
   const cardTitle = (item: FeedItem) =>
     item.title || t("app.feed.chatWith", { name: item.agentName || t("app.feed.unnamedAgent") });
   const actions = createFeedActionsController({
@@ -120,15 +116,6 @@ export function FeedPage(props: FeedPageProps) {
         <p class="feed-page-subtitle">{t("app.feed.subtitle")}</p>
       </header>
       <div class="feed-page-body">
-        <FeedTeamList
-          members={team()}
-          selected={filters.agent}
-          onSelect={(agent) =>
-            setFilters((draft) => {
-              draft.agent = agent;
-            })
-          }
-        />
         <section class="feed-page-main" aria-labelledby="feed-page-title">
           <FeedFilters
             filters={filters}

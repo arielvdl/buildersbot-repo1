@@ -4,7 +4,7 @@ import { useAgentTasks } from "../agent-tasks/agent-tasks-context";
 import { useAgents } from "./agents-context";
 
 /**
- * The running turn of each agent, as the sidebar and the Team panel read it. The turn events of a
+ * The running turn of each agent, as the sidebar reads it. The turn events of a
  * side thread reach only its thread list, so an agent that works in a side thread is found there.
  */
 export function createAgentWorkingTurns() {

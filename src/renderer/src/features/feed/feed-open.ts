@@ -3,7 +3,8 @@ import { createEffect } from "solid-js";
 import { useNavigation } from "../../navigation";
 import { useAgentTasks } from "../agent-tasks/agent-tasks-context";
 import { useAgentThreads } from "../agent-threads/agent-threads-context";
-import { createOpenChannel } from "../orbits/orbits-view-source";
+import { readChannelLastTopics } from "../channels/channel-tabs-model";
+import { useChannels } from "../channels/channels-context";
 import { useServerScope } from "../servers/server-scope";
 import { useServerSelection } from "../servers/server-selection";
 import { useServers } from "../servers/servers-context";
@@ -17,6 +18,17 @@ type FeedOpenTarget = Pick<FeedItem, "serverId" | "agentId" | "threadId" | "chan
  * the workspace has loaded.
  */
 let pendingOpen: FeedOpenTarget | null = null;
+
+/** Opens a channel on the tab of the work, else on the tab that the sidebar would open. Call it in a component. */
+export function createOpenChannel() {
+  const channels = useChannels();
+  return (channelId: string, topicId: string | null) => {
+    const topics = channels.state.channels.find((entry) => entry.id === channelId)?.topics ?? [];
+    const last = readChannelLastTopics()[channelId];
+    const topic = topicId ?? topics.find((entry) => entry.id === last)?.id ?? null;
+    void channels.open(channelId, topic);
+  };
+}
 
 /**
  * Opens the place of a card: its channel, or the chat of its agent on the tab of its thread. A card of

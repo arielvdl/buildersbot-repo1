@@ -61,7 +61,7 @@
 .feed-page-body {
   display: grid;
   flex: 1;
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   min-height: 0;
 }
 
@@ -70,105 +70,6 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-}
-
-/* The Team. */
-.feed-team {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow-y: auto;
-  border-right: 1px solid var(--feed-edge);
-  background: var(--buildersbot-bg-sidebar);
-}
-
-.feed-team-head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--buildersbot-space-2);
-  padding: var(--buildersbot-space-4) var(--buildersbot-space-4) 0;
-}
-
-.feed-team-head h2 {
-  margin: 0;
-  font-size: var(--buildersbot-text-md);
-  font-weight: var(--buildersbot-weight-semibold);
-}
-
-.feed-team-active,
-.feed-team-hint {
-  color: var(--buildersbot-text-muted);
-  font-size: var(--buildersbot-text-sm);
-}
-
-.feed-team-hint {
-  margin: var(--buildersbot-space-1) var(--buildersbot-space-4) var(--buildersbot-space-2);
-}
-
-.feed-team-list {
-  display: grid;
-  gap: var(--buildersbot-space-0-5);
-  margin: 0;
-  padding: 0 var(--buildersbot-space-2) var(--buildersbot-space-4);
-  list-style: none;
-}
-
-.feed-team-member {
-  font-size: var(--buildersbot-text-sm);
-  display: flex;
-  align-items: flex-start;
-  gap: var(--buildersbot-space-2);
-  width: 100%;
-  padding: var(--buildersbot-space-2);
-  border-radius: var(--buildersbot-radius-md);
-  color: var(--buildersbot-text-primary);
-  text-align: left;
-  transition: background-color var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
-}
-
-.feed-team-member:hover {
-  background: var(--buildersbot-bg-control-hover);
-}
-
-.feed-team-member[aria-pressed="true"] {
-  background: var(--buildersbot-bg-control-active);
-  box-shadow: inset 0 0 0 1px var(--buildersbot-border-strong);
-}
-
-.feed-team-member:focus-visible {
-  outline: 2px solid var(--buildersbot-focus-ring);
-  outline-offset: -2px;
-}
-
-.feed-team-text {
-  display: grid;
-  flex: 1;
-  gap: var(--buildersbot-space-0-5);
-  min-width: 0;
-}
-
-.feed-team-name {
-  overflow: hidden;
-  font-weight: var(--buildersbot-weight-semibold);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.feed-team-state {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--buildersbot-space-1-5);
-  color: var(--buildersbot-text-secondary);
-  font-size: var(--buildersbot-text-sm);
-}
-
-.feed-team-detail {
-  overflow: hidden;
-  color: var(--buildersbot-text-muted);
-  font-size: var(--buildersbot-text-sm);
-  font-style: italic;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .feed-avatar {
@@ -713,19 +614,7 @@ fieldset.feed-bulk {
   box-shadow: var(--buildersbot-shadow-raised);
 }
 
-/* A narrow window puts the Team above the timeline. */
 @container (max-width: 760px) {
-  .feed-page-body {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
-  }
-
-  .feed-team {
-    max-height: 168px;
-    border-right: 0;
-    border-bottom: 1px solid var(--feed-edge);
-  }
-
   .feed-page-header {
     padding: var(--buildersbot-space-3) var(--buildersbot-space-4);
   }

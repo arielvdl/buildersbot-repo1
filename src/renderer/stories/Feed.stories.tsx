@@ -1,24 +1,16 @@
 import { AVATAR_HUES, type FeedItem } from "@buildersbot/contracts/ipc";
 import { FeedPage } from "@buildersbot/ui/features/feed/FeedPage";
-import { type FeedTeamMember, feedAgentKey } from "@buildersbot/ui/features/feed/feed-view";
-import { createMemo } from "solid-js";
+import { type FeedAgentAvatar, feedAgentKey } from "@buildersbot/ui/features/feed/feed-view";
 import { fn } from "storybook/test";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { createFeedStore } from "../src/features/feed/stores/feed-store";
 import { createMockFeed, MOCK_FEED_AGENTS, mockFeedActionItems } from "../src/preview/mock-feed";
 import "./feed-story.css";
 
-/**
- * The Team of the stories: every agent of the fixtures, with the state of its newest card, and the
- * agents with no card as free.
- */
-function storyTeam(items: readonly FeedItem[]): FeedTeamMember[] {
-  const latest = new Map(items.map((item) => [item.agentId, item]));
+/** The faces of the agents of the fixtures. */
+function storyAgents(): FeedAgentAvatar[] {
   return MOCK_FEED_AGENTS.map((agent, index) => ({
     key: feedAgentKey({ serverId: "local", agentId: agent.id }),
-    name: agent.name,
-    state: latest.get(agent.id)?.state ?? "idle",
-    detail: null,
     avatarSeed: agent.id,
     avatarHue: AVATAR_HUES[index % AVATAR_HUES.length] ?? null,
     avatarUrl: null,
@@ -45,12 +37,12 @@ function FeedStory(props: {
     () => api,
     (cause) => String(cause),
   );
-  const team = createMemo(() => storyTeam(feed.items()));
+  const agents = storyAgents();
   return (
     <div class="feed-story">
       <FeedPage
         items={feed.items()}
-        team={team()}
+        agents={agents}
         loading={feed.state.loading}
         error={feed.state.error}
         onOpen={props.onOpen}

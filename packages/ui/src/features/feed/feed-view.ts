@@ -1,6 +1,6 @@
 /**
  * The DOM-free projection of the feed page: which cards show for the filters, in which rows, the
- * counters of the jump bar, the choices of the filters, and the Team list beside the timeline. The
+ * counters of the jump bar, and the choices of the filters. The
  * cards arrive in timeline order, the newest last, and every function here keeps that order.
  */
 
@@ -158,69 +158,13 @@ export function feedAgentOptions(items: readonly FeedItem[]): FeedOption[] {
   return options(items, feedAgentKey, (item) => item.agentName || null);
 }
 
-/** What an agent of the Team list does now. `idle`: nothing. */
-export type FeedTeamState = FeedItemState | "idle";
-
-export interface FeedTeamMember {
+/** The face of an agent on a card. Agents of other servers have none here: their cards use the id as the seed. */
+export interface FeedAgentAvatar {
   /** A key of `feedAgentKey`. */
   key: string;
-  name: string;
-  state: FeedTeamState;
-  /** What the agent does now, as a step summary. */
-  detail: string | null;
   avatarSeed: string;
   avatarHue: AvatarHue | null;
   avatarUrl: string | null;
-}
-
-const TEAM_RANK: Record<FeedTeamState, number> = {
-  "needs-you": 0,
-  stopped: 1,
-  failed: 2,
-  working: 3,
-  waiting: 4,
-  done: 5,
-  idle: 6,
-};
-
-/**
- * The Team list: the agents that the window knows, then every other agent that has a card, such as
- * an agent of another server. Each one with its count of cards; the agents that need the person first.
- */
-export function feedTeam(
-  roster: readonly FeedTeamMember[],
-  items: readonly FeedItem[],
-): Array<FeedTeamMember & { count: number }> {
-  const counts = new Map<string, number>();
-  const latest = new Map<string, FeedItem>();
-  for (const item of items) {
-    const key = feedAgentKey(item);
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-    latest.set(key, item);
-  }
-  const members = new Map<string, FeedTeamMember & { count: number }>();
-  for (const member of roster)
-    members.set(member.key, {
-      ...member,
-      detail: member.detail ?? latest.get(member.key)?.lastStep?.text ?? null,
-      count: counts.get(member.key) ?? 0,
-    });
-  for (const [key, item] of latest) {
-    if (members.has(key)) continue;
-    members.set(key, {
-      key,
-      name: item.agentName,
-      state: item.state,
-      detail: item.lastStep?.text ?? null,
-      avatarSeed: item.agentId,
-      avatarHue: null,
-      avatarUrl: null,
-      count: counts.get(key) ?? 0,
-    });
-  }
-  return [...members.values()].sort(
-    (left, right) => TEAM_RANK[left.state] - TEAM_RANK[right.state] || left.name.localeCompare(right.name),
-  );
 }
 
 /** The next card in `state` after the card `afterKey`, going around to the first. */

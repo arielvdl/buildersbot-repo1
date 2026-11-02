@@ -3,14 +3,12 @@ import { AGENT_TASKS_CAPABILITY } from "@buildersbot/contracts/team-protocol/age
 import type { SidebarView } from "@buildersbot/ui/features/sidebar/sidebar-types";
 import { PageRail, type PageRailPage } from "@buildersbot/ui/features/window/PageRail";
 import { useText } from "@buildersbot/ui/text";
-import { createSignal, Show } from "solid-js";
 import { appPort } from "../../app-port";
 import { useLayout } from "../../layout";
 import { usePlatform } from "../../platform";
 import { useChannels } from "../channels/channels-context";
 import { useCustomAgents } from "../custom-agents/custom-agents-context";
 import { useLoad } from "../load/load-context";
-import { WorkspaceOrbits } from "../orbits/WorkspaceOrbits";
 import { serverSupportsCapability } from "../servers/server-capabilities";
 import { useServers } from "../servers/servers-context";
 import { useSettings } from "../settings/settings-context";
@@ -53,20 +51,6 @@ export function WorkspacePageRail(props: { hidden: boolean }) {
   /** The load is that of this computer, so a joined server does not show it either. */
   const load = useLoad();
   const localLoad = load.railShown;
-  /** The Team panel, and the rail button that opened it, which takes the focus back on a plain close. */
-  const [teamOpen, setTeamOpen] = createSignal(false);
-  let teamButton: HTMLElement | undefined;
-  const openTeam = (button: HTMLElement) => {
-    teamButton = button;
-    setTeamOpen(true);
-    // The panel shows the running work of this computer, so the load reads faster while it is open.
-    if (localLoad()) load.setOpen(true);
-  };
-  const closeTeam = (jumped: boolean) => {
-    setTeamOpen(false);
-    load.setOpen(false);
-    if (!jumped) queueMicrotask(() => (teamButton?.isConnected ? teamButton.focus() : undefined));
-  };
   /** The compact sidebar has no footer, so the update island does not show. The Settings button then marks the update. */
   const updateNotice = () => {
     const phase = updates.status().phase;
@@ -84,51 +68,44 @@ export function WorkspacePageRail(props: { hidden: boolean }) {
     return page === "server-settings" ? null : page;
   };
   return (
-    <>
-      <Show when={teamOpen()}>
-        <WorkspaceOrbits load={localLoad() ? load.snapshot() : null} onClose={closeTeam} />
-      </Show>
-      <PageRail
-        hidden={props.hidden}
-        current={current()}
-        pinned={layout.railPinned()}
-        onPinChange={layout.setRailPinned}
-        usageRows={usageRows()}
-        customAgentUsage={localAgentUsage()}
-        load={
-          localLoad()
-            ? {
-                snapshot: load.snapshot(),
-                // The work is acted on in its page of Settings, with room for many rows at once. The ring
-                // takes the focus back when Settings closes.
-                onOpen: (ring) => openAppSettings(ring, "load"),
-              }
-            : undefined
-        }
-        // Only this computer has a Quick chat: a joined server shows no button.
-        onQuick={activeServer()?.kind === "local" ? windowPage.openQuick : undefined}
-        onAgents={() => showSidebarView("agents")}
-        onTeam={openTeam}
-        teamOpen={teamOpen()}
-        onFeed={windowPage.openFeed}
-        onRoutines={() => showSidebarView("routines")}
-        // A joined server without workflows shows its notice on the page.
-        onWorkflows={() => windowPage.openWorkflows(null)}
-        onSchedule={windowPage.openSchedule}
-        onTasks={tasksAvailable() ? windowPage.openTasks : undefined}
-        onUsage={windowPage.openUsage}
-        onMarketplace={() => setSkillsMarketplaceOpen(true)}
-        onSettings={(button) => (updateNotice() ? openAppSettings(button, "updates") : windowPage.openSettings(button))}
-        settingsNotice={updateNotice()}
-        logo={logo()}
-        help={
-          <RailHelpMenu
-            version={whatsNew.state.version}
-            onOpenWhatsNew={whatsNew.reopen}
-            onOpenLink={(destination) => void appPort().openExternal(destination)}
-          />
-        }
-      />
-    </>
+    <PageRail
+      hidden={props.hidden}
+      current={current()}
+      pinned={layout.railPinned()}
+      onPinChange={layout.setRailPinned}
+      usageRows={usageRows()}
+      customAgentUsage={localAgentUsage()}
+      load={
+        localLoad()
+          ? {
+              snapshot: load.snapshot(),
+              // The work is acted on in its page of Settings, with room for many rows at once. The ring
+              // takes the focus back when Settings closes.
+              onOpen: (ring) => openAppSettings(ring, "load"),
+            }
+          : undefined
+      }
+      // Only this computer has a Quick chat: a joined server shows no button.
+      onQuick={activeServer()?.kind === "local" ? windowPage.openQuick : undefined}
+      onAgents={() => showSidebarView("agents")}
+      onFeed={windowPage.openFeed}
+      onRoutines={() => showSidebarView("routines")}
+      // A joined server without workflows shows its notice on the page.
+      onWorkflows={() => windowPage.openWorkflows(null)}
+      onSchedule={windowPage.openSchedule}
+      onTasks={tasksAvailable() ? windowPage.openTasks : undefined}
+      onUsage={windowPage.openUsage}
+      onMarketplace={() => setSkillsMarketplaceOpen(true)}
+      onSettings={(button) => (updateNotice() ? openAppSettings(button, "updates") : windowPage.openSettings(button))}
+      settingsNotice={updateNotice()}
+      logo={logo()}
+      help={
+        <RailHelpMenu
+          version={whatsNew.state.version}
+          onOpenWhatsNew={whatsNew.reopen}
+          onOpenLink={(destination) => void appPort().openExternal(destination)}
+        />
+      }
+    />
   );
 }

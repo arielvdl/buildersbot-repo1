@@ -21,8 +21,8 @@ import { createEffect, createMemo, createSignal, For, onSettled, Show, untrack }
 import { springLinearEasing } from "../../spring-motion";
 import { useText } from "../../text";
 import { observeOnScreen } from "../agents/AgentAvatar";
+import { orbitFamily } from "../agents/agent-model-family";
 import { createTaskListPlayState } from "../conversation/TaskList";
-import { orbitFamily } from "../orbits/orbits-view";
 import "./channel-stage.css";
 
 export type ChannelStageActivity =

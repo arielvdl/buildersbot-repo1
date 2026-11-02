@@ -9,7 +9,6 @@ import {
   Ellipsis,
   ListChecks,
   MotionTooltip,
-  Orbit,
   Pin,
   Settings,
   Store,
@@ -221,10 +220,6 @@ export interface PageRailProps {
    */
   onQuick?: ((button: HTMLElement) => void) | undefined;
   onAgents: () => void;
-  /** Opens the Team panel over the window. Absent where the window has no Team panel. */
-  onTeam?: ((button: HTMLElement) => void) | undefined;
-  /** The Team panel is open. */
-  teamOpen?: boolean | undefined;
   /** Opens the feed page: every run of every server. Absent where the window has no feed. */
   onFeed?: ((button: HTMLElement) => void) | undefined;
   /** Absent when the server has no routines. */
@@ -423,17 +418,6 @@ export function PageRail(props: PageRailProps) {
         <RailButton label={t("app.rail.agents")} current={props.current === "agents"} onClick={props.onAgents}>
           <Bot aria-hidden="true" />
         </RailButton>
-        <Show when={props.onTeam}>
-          {(onTeam) => (
-            <RailButton
-              label={t("app.rail.team")}
-              dialogOpen={props.teamOpen ?? false}
-              onClick={(button) => onTeam()(button)}
-            >
-              <Orbit aria-hidden="true" />
-            </RailButton>
-          )}
-        </Show>
         <For each={pages().filter((page) => props.pinned.includes(page.id))} keyed={(page) => page.id}>
           {(page) => (
             <RailButton label={page().label} current={props.current === page().id} onClick={page().open}>
