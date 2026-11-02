@@ -7,8 +7,10 @@
 // 2. The turn that the person saw ends before the Stop, while a cap of 0 running agents holds the
 //    queue. The force sends no `turn/interrupt`, and the message starts once, alone.
 // 3. The provider refuses the Stop. The force fails, the queue keeps its order and the message waits.
-// 4. A channel request waits at the head of the agent's queue. The force sends no `turn/interrupt`
-//    and answers `next`: the channel turn starts first, then the message.
+// 4. A channel request and a chat message wait together. The force sends no `turn/interrupt` and
+//    answers `next`. The chat and the channel tab are lines of their own, so when the wait ends both turns
+//    run, in no fixed order, and nothing is left queued. For a provider that runs one turn at a time the
+//    old rule holds: the channel turn starts first, then the message.
 // 5. A message starts and has no turn id yet. The force waits for that start, stops the turn that it
 //    starts, and the forced message starts next, alone.
 // `bun scripts/queue-force-e2e.ts`. Writes .buildersbot-build/queue-force-e2e/report.json.
@@ -18,7 +20,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { AGENT_PROVIDERS, type ForceQueuedMessageResult } from "@buildersbot/contracts/ipc";
+import { AGENT_PROVIDERS, agentProviderDescriptor, type ForceQueuedMessageResult } from "@buildersbot/contracts/ipc";
 import { sourceText } from "@buildersbot/i18n/source";
 import { Effect } from "effect";
 import type { AgentBrowserHost } from "../src/backend/agent/turn-lifecycle";
@@ -355,6 +357,89 @@ function turnsAfter(afterTurnId: string, marks: readonly string[]): string[][] {
     .filter((found) => found.length > 0);
 }
 
+/**
+ * A channel request and a chat message of the same agent both wait, because the cap on agents is 0.
+ * The force sends no Stop and answers `next` (the cap holds the turn). When the cap lifts, both turns
+ * run and end, and nothing stays queued. With `channelFirst` (one turn at a time) the channel turn
+ * starts first, as before; otherwise the two lines start with no order between them.
+ */
+async function channelBesideChat(result: CaseReport, name: string, channelFirst: boolean) {
+  const { agentId, threadId, turnId } = await startAgent(name, false);
+  // The cap keeps both turns from starting, so the channel work and the chat message wait together.
+  agentCap = 0;
+  const actor = { id: "local", name: "Alex" };
+  const channelId = randomUUID();
+  await runCauseEffect(
+    agents.channels.command(
+      {
+        type: "save",
+        operationId: randomUUID(),
+        channelId,
+        draft: {
+          name: "force",
+          title: "",
+          instructions: "Answer each request.",
+          members: [{ agentId }],
+          leadAgentId: agentId,
+        },
+      },
+      actor,
+    ),
+  );
+  const request = `channel-request-${name}-6f2d`;
+  await runCauseEffect(
+    agents.channels.command(
+      {
+        type: "send",
+        operationId: randomUUID(),
+        channelId,
+        text: request,
+        recipientAgentId: agentId,
+        replyToMessageId: null,
+        attachmentDraftIds: [],
+      },
+      actor,
+    ),
+  );
+  await waitFor("the channel work to wait in the agent's queue", () =>
+    mailbox.queuedExecutionDeliveryIds(agentId).some((id) => mailbox.taskIdForDelivery(id) === null),
+  );
+  const mark = `channel-chat-${name}-0d4b`;
+  const [message] = await queueMessages(agentId, [mark]);
+  assert.ok(message);
+  // The chat shows no turn of its own.
+  const outcome = await force(agentId, message, null);
+  result.outcome = outcome.outcome;
+  result.queueOrderAfterForce = queuedOrder(agentId).map((id) => (id === message ? mark : id));
+  assert.equal(outcome.outcome, "next", "the turn cannot start after a Stop, so no Stop is sent");
+  agentCap = null;
+  agents.agentLimitChanged();
+  await waitFor("the message to end", () => ended(message));
+  // The two lines start on their own, so the channel turn can still be starting here.
+  const channelTurn = await waitFor("the channel turn to start", () =>
+    protocol().find((line) => line.turnStarted && line.texts.some((text) => text.includes(request))),
+  );
+  const channelThreads = [channelTurn.threadId ?? ""];
+  await waitFor("the channel turn to end", () => protocol().some((line) => line.turnEnded === channelTurn.turnStarted));
+  result.interrupts = interruptsOn([threadId, ...channelThreads]);
+  result.turnsAfterForce = turnsAfter(turnId, [request, mark]);
+  assert.deepEqual(result.interrupts, [], "no turn/interrupt");
+  if (channelFirst) {
+    assert.deepEqual(result.turnsAfterForce.slice(0, 2), [[request], [mark]], "the channel turn starts first");
+  } else {
+    // Two lines, two turns, no order between them: each message runs in a turn of its own.
+    assert.deepEqual(
+      result.turnsAfterForce.flat().sort(),
+      [mark, request].sort(),
+      "both the chat and the channel turn run",
+    );
+    assert.equal(result.turnsAfterForce.length, 2, "each runs in its own turn");
+  }
+  // Nothing stays in a queue, starting or running: no line is stuck.
+  await waitFor("no delivery of the agent to be left", () => !mailbox.hasUnfinishedDelivery(agentId));
+  assert.deepEqual(queuedOrder(agentId), [], "the queue of the agent is empty");
+}
+
 async function runCase(name: string, check: (result: CaseReport) => Promise<void>) {
   const result: CaseReport = {
     name,
@@ -442,66 +527,22 @@ try {
     assert.deepEqual(result.turnsAfterForce, [marks]);
   });
 
-  await runCase("channel work waits at the head", async (result) => {
-    const { agentId, threadId, turnId } = await startAgent("channel-first", false);
-    // A channel reserves only an agent with no turn and an empty queue. The cap keeps its turn from
-    // starting, so the channel work waits at the head of the agent's queue.
-    agentCap = 0;
-    const actor = { id: "local", name: "Alex" };
-    const channelId = randomUUID();
-    await runCauseEffect(
-      agents.channels.command(
-        {
-          type: "save",
-          operationId: randomUUID(),
-          channelId,
-          draft: {
-            name: "force",
-            title: "",
-            instructions: "Answer each request.",
-            members: [{ agentId }],
-            leadAgentId: agentId,
-          },
-        },
-        actor,
-      ),
-    );
-    const request = "channel-request-6f2d";
-    await runCauseEffect(
-      agents.channels.command(
-        {
-          type: "send",
-          operationId: randomUUID(),
-          channelId,
-          text: request,
-          recipientAgentId: agentId,
-          replyToMessageId: null,
-          attachmentDraftIds: [],
-        },
-        actor,
-      ),
-    );
-    await waitFor("the channel work to wait in the agent's queue", () =>
-      mailbox.queuedExecutionDeliveryIds(agentId).some((id) => mailbox.taskIdForDelivery(id) === null),
-    );
-    const mark = "channel-chat-0d4b";
-    const [message] = await queueMessages(agentId, [mark]);
-    assert.ok(message);
-    // The chat shows no turn of its own.
-    const outcome = await force(agentId, message, null);
-    result.outcome = outcome.outcome;
-    result.queueOrderAfterForce = queuedOrder(agentId).map((id) => (id === message ? mark : id));
-    assert.equal(outcome.outcome, "next", "the channel work starts first");
-    agentCap = null;
-    agents.agentLimitChanged();
-    await waitFor("the message to end", () => ended(message));
-    const channelThreads = protocol()
-      .filter((line) => line.turnStarted && line.texts.some((text) => text.includes(request)))
-      .map((line) => line.threadId ?? "");
-    result.interrupts = interruptsOn([threadId, ...channelThreads]);
-    result.turnsAfterForce = turnsAfter(turnId, [request, mark]);
-    assert.deepEqual(result.interrupts, [], "no turn/interrupt");
-    assert.deepEqual(result.turnsAfterForce.slice(0, 2), [[request], [mark]], "the channel turn starts first");
+  // The chat and the channel tabs of an agent are lines of their own (`parallel-channel-lines`), so a
+  // channel request does not hold the chat of a provider that runs turns together.
+  await runCase("the chat and channel work do not wait for each other", async (result) => {
+    await channelBesideChat(result, "channel-beside", false);
+  });
+
+  // A provider that runs one turn at a time (only the custom ACP agent has this flag; the check sets
+  // it on the Codex descriptor, as `channel-tab-lanes-e2e.ts` does) keeps the old rule.
+  await runCase("channel work waits at the head for a provider with one turn at a time", async (result) => {
+    const descriptor = agentProviderDescriptor("codex");
+    Reflect.set(descriptor, "concurrentTurns", false);
+    try {
+      await channelBesideChat(result, "channel-first", true);
+    } finally {
+      Reflect.set(descriptor, "concurrentTurns", true);
+    }
   });
 
   await runCase("a start with no turn id yet", async (result) => {
