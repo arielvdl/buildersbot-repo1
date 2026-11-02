@@ -2397,17 +2397,29 @@ export class ChannelService {
    * use. It has names and resources only (`linesNotice`), never text of a tab.
    */
   linesNotice(agentId: string): string | null {
-    const assignments = this.store.agentAssignments(agentId, ["starting", "running"]);
-    if (!assignments.length) return null;
+    // The assignment holds the live reservation (`ChannelAssignment.resources`), so the common case,
+    // with no browser or workspace held, reads no task at all.
+    const reserved = this.store
+      .agentAssignments(agentId, ["starting", "running"])
+      .map((assignment) => ({
+        assignment,
+        resources: assignment.resources.filter(
+          (resource) => resource === "browser" || resource.startsWith("workspace:"),
+        ),
+      }))
+      .filter((item) => item.resources.length > 0);
+    if (!reserved.length) return null;
+    const tasksByChannel = new Map<string, Map<string, ChannelTask>>();
     const entries: LineNoticeEntry[] = [];
-    for (const assignment of assignments) {
-      const task = this.store.tasks(assignment.channelId).find((item) => item.id === assignment.taskId);
-      const resources = (task?.resources ?? []).filter(
-        (resource) => resource === "browser" || resource.startsWith("workspace:"),
-      );
-      if (!task || !resources.length) continue;
+    for (const { assignment, resources } of reserved) {
+      let tasks = tasksByChannel.get(assignment.channelId);
+      if (!tasks) {
+        tasks = new Map(this.store.tasks(assignment.channelId).map((item) => [item.id, item]));
+        tasksByChannel.set(assignment.channelId, tasks);
+      }
+      const task = tasks.get(assignment.taskId);
       const channel = this.store.get(assignment.channelId);
-      const topic = task.topicId ? this.store.topic(assignment.channelId, task.topicId) : null;
+      const topic = task?.topicId ? this.store.topic(assignment.channelId, task.topicId) : null;
       entries.push({
         channelName: channel.title.trim() || channel.name,
         topicName: topic?.name ?? null,

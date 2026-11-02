@@ -14,9 +14,24 @@ export interface LineNoticeEntry {
   resources: readonly string[];
 }
 
+/**
+ * A name or a path as one short line of plain text: no line break, no control or format character
+ * (a tab name comes from the conversation, so it is untrusted), no double quote, at most `limit`
+ * characters.
+ */
 function oneLine(text: string, limit: number): string {
-  const flat = text.replace(/\s+/gu, " ").trim();
-  return flat.length > limit ? `${flat.slice(0, limit - 1)}…` : flat;
+  const flat = text
+    .replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]+/gu, " ")
+    .replace(/"/gu, "'")
+    .replace(/\s+/gu, " ")
+    .trim();
+  const characters = [...flat];
+  return characters.length > limit ? `${characters.slice(0, limit - 1).join("")}…` : flat;
+}
+
+/** A name between double quotes, so it reads as a name and never as an instruction. */
+function quoted(text: string): string {
+  return `"${oneLine(text, NAME_LIMIT)}"`;
 }
 
 /**
@@ -28,8 +43,8 @@ export function linesNotice(entries: readonly LineNoticeEntry[]): string | null 
   const shown = entries.filter((entry) => entry.resources.length > 0);
   if (!shown.length) return null;
   const items = shown.map((entry) => {
-    const place = [entry.channelName, entry.topicName].filter(Boolean).map((name) => oneLine(name ?? "", NAME_LIMIT));
-    return `#${place.join(" / ")} (${entry.resources.map((resource) => oneLine(resource, RESOURCE_LIMIT)).join(", ")})`;
+    const place = [entry.channelName, entry.topicName].filter(Boolean).map((name) => quoted(name ?? ""));
+    return `${place.join(" / ")} (${entry.resources.map((resource) => oneLine(resource, RESOURCE_LIMIT)).join(", ")})`;
   });
   const fixed = `${LINES_NOTICE_START}  ${LINES_NOTICE_END}`.length;
   let body = "";

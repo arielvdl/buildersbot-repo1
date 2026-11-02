@@ -1262,6 +1262,9 @@ export class BuildersBotToolRouter {
           const deliveries = this.#mailbox.listQueue(agent.id).deliveries;
           const queuedMessages = deliveries.filter((delivery) => delivery.status === "queued").length;
           const working = this.#hooks.runsTurn(agent.id) || unresolved.has(agent.id);
+          // "Working" means any line of the agent runs a turn, so this reads any turn that is not a task's
+          // (the chat or a tab), not the chat line only. It only dates the clock below; the status above
+          // already counts every line.
           const activeTurnId = this.#conversation.workingSnapshot(agent.id)?.activeTurnId ?? null;
           const { startedAt, lastEventAt } = this.#hooks.turnActivity(agent.id, activeTurnId);
           // A restart loses the provider clock, so the newest message for the agent stands in for it.

@@ -9,9 +9,9 @@ type Failure = { readonly cause: unknown };
 /** The running turn that holds the agent's own chat lane. */
 export interface LaneTurn {
   turnId: string;
-  /** The thread of the turn: the agent's own chat, or a channel or messaging thread of the same agent. */
+  /** The thread of the turn: the agent's own chat, or a messaging thread of the same agent. Never a channel tab. */
   threadId: string | null;
-  /** True for a turn of the agent's own chat. A channel or messaging turn shows there only as a hold. */
+  /** True for a turn of the agent's own chat. A messaging turn shows there only as a hold. */
   ownChat: boolean;
   /** The deliveries that the turn runs. */
   deliveryIds: readonly string[];
@@ -73,9 +73,9 @@ export class QueueForceFailed extends Schema.TaggedError<QueueForceFailed>()("Qu
  * fails puts the queue back as it was. A second force of the same message waits for the first one and
  * gets its answer, so one click sends one Stop.
  *
- * No Stop is sent when the message cannot start after it: channel or messaging work waits first in the
- * agent's chat, or the chat is held, for example by a compaction or by a task turn on a provider that
- * runs one turn at a time. The message then waits at the head of the queue, and the answer is `next`.
+ * No Stop is sent when the message cannot start after it: messaging work, or channel work of a provider
+ * that runs one turn at a time, waits first in the agent's chat, or the chat is held, for example by a
+ * compaction or by a task turn on such a provider. A channel tab is its own line and never holds the chat. The message then waits at the head of the queue, and the answer is `next`.
  */
 export class QueueForce {
   readonly #port: QueueForcePort;
@@ -150,8 +150,8 @@ export class QueueForce {
 
 /**
  * Whether a force may stop this turn. The person saw it run in the agent's chat, or saw its deliveries
- * start before the turn had an id. A channel or messaging turn of the agent shows in the chat only as a
- * hold, with no turn id, so it may stop that one when the chat showed no turn. A chat turn that the
+ * start before the turn had an id. A messaging turn of the agent shows in the chat only as a hold, with
+ * no turn id, so it may stop that one when the chat showed no turn. A channel tab turn is never read here. A chat turn that the
  * person did not see is never stopped: it can be the turn of the next queued message, which started in
  * between.
  */
