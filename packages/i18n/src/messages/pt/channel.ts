@@ -106,7 +106,6 @@ export const messages = {
   },
   "channel.stage.request": "Pedido",
   "channel.stage.requestParts": "{done} de {total} partes prontas",
-  "channel.stage.lead": "Líder",
   "channel.stage.activity.reading": "lendo",
   "channel.stage.activity.thinking": "pensando",
   "channel.stage.activity.editing": "editando",

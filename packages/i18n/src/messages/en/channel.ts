@@ -106,7 +106,6 @@ export const messages = defineMessages("channel", {
   "channel.stage.moreLabel": { one: "{count} more agent is working", other: "{count} more agents are working" },
   "channel.stage.request": "Request",
   "channel.stage.requestParts": "{done} of {total} parts done",
-  "channel.stage.lead": "Lead",
   "channel.stage.activity.reading": "reading",
   "channel.stage.activity.thinking": "thinking",
   "channel.stage.activity.editing": "editing",
