@@ -33,6 +33,12 @@ export type DeviceSignInView =
 
 /** How long the sign-in success animation holds the account out of the view. */
 const AUTH_SUCCESS_HOLD_MS = 600;
+/**
+ * Waits between the first account reads when main has no handler yet. The window loads before the
+ * services, so these reads fail at each start; the screen stays on "connecting" for this long (7.5 s
+ * in all) and shows the error only if main still does not answer.
+ */
+const BOOTSTRAP_READ_RETRY_DELAYS_MS = [500, 1_000, 2_000, 4_000] as const;
 
 /**
  * Consecutive device-poll failures tolerated before giving up on the flow. A device code lives for
@@ -186,22 +192,43 @@ const Auth = createSimpleContext({
       // code challenge against, so a restart into a signed-in account must not
       // play the success hold.
       const bootstrapRevision = centralAuthRevision;
-      void accountPort()
-        .auth.getState()
-        .then(setCentralAuth)
-        .catch(() => {
-          // An event that came first has the state already.
-          if (centralAuthRevision !== bootstrapRevision) return;
-          failedBootstrapRevision = centralAuthRevision;
-          setCentralAuth({
-            status: "error",
-            issue: {
-              code: "auth_unavailable",
-              message: currentText().t("account.login.loadFailed"),
-            },
+      let bootstrapTimer: ReturnType<typeof setTimeout> | undefined;
+      let bootstrapDisposed = false;
+      // A read that fails keeps the state on "loading" and reads again after a short wait: main
+      // registers its handlers a moment after the window loads, so the first read fails at each
+      // start although the account is fine. An event or a user action (a new revision) ends the reads.
+      const bootstrapRead = (attempt: number): void => {
+        void accountPort()
+          .auth.getState()
+          .then((state) => {
+            if (bootstrapDisposed || centralAuthRevision !== bootstrapRevision) return;
+            setCentralAuth(state);
+          })
+          .catch(() => {
+            // An event that came first has the state already.
+            if (bootstrapDisposed || centralAuthRevision !== bootstrapRevision) return;
+            const delay = BOOTSTRAP_READ_RETRY_DELAYS_MS[attempt];
+            if (delay !== undefined) {
+              bootstrapTimer = setTimeout(() => {
+                bootstrapTimer = undefined;
+                if (!bootstrapDisposed && centralAuthRevision === bootstrapRevision) bootstrapRead(attempt + 1);
+              }, delay);
+              return;
+            }
+            failedBootstrapRevision = centralAuthRevision;
+            setCentralAuth({
+              status: "error",
+              issue: {
+                code: "auth_unavailable",
+                message: currentText().t("account.login.loadFailed"),
+              },
+            });
           });
-        });
+      };
+      bootstrapRead(0);
       return () => {
+        bootstrapDisposed = true;
+        if (bootstrapTimer !== undefined) clearTimeout(bootstrapTimer);
         unsubscribe();
         window.removeEventListener("focus", readAgain);
         document.removeEventListener("visibilitychange", readAgainWhenVisible);
