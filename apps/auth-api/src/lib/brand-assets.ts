@@ -4,22 +4,23 @@
 // The shapes come from `@buildersbot/brand`, and the layout of the logo with its name from the Figma
 // "Logo" board. No JSX and no DOM here: the Worker imports this module.
 
-import { APP_LOGO_CORNER, APP_LOGO_EYE_POINTS, APP_LOGO_SIZE } from "@buildersbot/brand/app-logo-shape";
+import { APP_LOGO_CORNER, APP_LOGO_CUBE, APP_LOGO_SIZE } from "@buildersbot/brand/app-logo-shape";
 import { WORDMARK_PATHS, WORDMARK_WIDTH } from "@buildersbot/brand/wordmark-shape";
 import { BRAND_ROUTE } from "./brand-page";
 
 export const BRAND_ZIP_FILE = "buildersbot-brand.zip";
 
-type IconColor = "lilac" | "white" | "black";
+type IconColor = "lime" | "white" | "dark";
 type IconShape = "rounded" | "square";
 type Ink = "dark" | "light";
 export type BrandSpace = "tight" | "safe";
 
-// The colors of the brand tokens in `@buildersbot/brand/tokens.css`. A file must not depend on a page's CSS.
-const FILL: Record<IconColor, string> = { lilac: "#d6adf2", white: "#ffffff", black: "#040007" };
-const EYE: Record<IconColor, string> = { lilac: "#040007", white: "#040007", black: "#ffffff" };
-const INK: Record<Ink, string> = { dark: "#040007", light: "#ffffff" };
-const COLOR_NAME: Record<IconColor, string> = { lilac: "Lilac", white: "White", black: "Black" };
+// The colors of the app logo (`APP_LOGO_COLOR_HEX.noite` and `--buildersbot-logo-eye`). A file must
+// not depend on a page's CSS. `FILL` is the square, `FACE` the cube on it.
+const FILL: Record<IconColor, string> = { lime: "#98f94f", white: "#ffffff", dark: "#0b0d0a" };
+const FACE: Record<IconColor, string> = { lime: "#0b0d0a", white: "#0b0d0a", dark: "#98f94f" };
+const INK: Record<Ink, string> = { dark: "#0b0d0a", light: "#ffffff" };
+const COLOR_NAME: Record<IconColor, string> = { lime: "Lime", white: "White", dark: "Dark" };
 
 export interface BrandAsset {
   /** The file name without its extension. */
@@ -38,13 +39,23 @@ const LOCKUP_GAP = 84;
 const LOCKUP_BASELINE = 195;
 const CLEAR_SPACE = APP_LOGO_SIZE / 2;
 
+/** The square and the cube, as `AppLogo` draws them: the faces lighten from top to right. */
 function mark(color: IconColor, shape: IconShape, x: number, y: number): string {
   const corner = shape === "rounded" ? APP_LOGO_CORNER : 0;
+  const fill = FILL[color];
+  const face = (d: string, opacity: number) =>
+    `<path d="${d}" fill="${FACE[color]}" fill-opacity="${opacity}" stroke="${fill}" stroke-width="1.1" stroke-linejoin="round"/>`;
   return [
     `<g transform="translate(${x} ${y})">`,
-    `<rect width="${APP_LOGO_SIZE}" height="${APP_LOGO_SIZE}" rx="${corner}" fill="${FILL[color]}"/>`,
-    `<g fill="none" stroke="${EYE[color]}" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round">`,
-    `<polyline points="${APP_LOGO_EYE_POINTS.left}"/><polyline points="${APP_LOGO_EYE_POINTS.right}"/>`,
+    `<rect width="${APP_LOGO_SIZE}" height="${APP_LOGO_SIZE}" rx="${corner}" fill="${fill}"/>`,
+    `<g transform="${APP_LOGO_CUBE.fit}">`,
+    face(APP_LOGO_CUBE.top, 1),
+    face(APP_LOGO_CUBE.left, 0.88),
+    face(APP_LOGO_CUBE.right, 0.72),
+    `<g fill="none" stroke="${fill}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">`,
+    `<polyline points="${APP_LOGO_CUBE.eyes.left}"/><polyline points="${APP_LOGO_CUBE.eyes.right}"/>`,
+    "</g>",
+    `<circle cx="${APP_LOGO_CUBE.dot.cx}" cy="${APP_LOGO_CUBE.dot.cy}" r="${APP_LOGO_CUBE.dot.r}" fill="${fill}"/>`,
     "</g></g>",
   ].join("");
 }
@@ -68,7 +79,7 @@ function iconAsset(color: IconColor, shape: IconShape): BrandAsset {
     svg: svgDocument(APP_LOGO_SIZE, APP_LOGO_SIZE, mark(color, shape, 0, 0)),
     width: APP_LOGO_SIZE,
     height: APP_LOGO_SIZE,
-    surface: color === "black" ? "light" : "dark",
+    surface: color === "dark" ? "light" : "dark",
   };
 }
 
@@ -91,26 +102,26 @@ function lockupAsset(color: IconColor, ink: Ink, space: BrandSpace): BrandAsset 
 }
 
 /** The app icon: the header logo menu copies it. */
-export const BRAND_ICON = iconAsset("lilac", "rounded");
+export const BRAND_ICON = iconAsset("lime", "rounded");
 
 export const BRAND_ICONS: readonly BrandAsset[] = [
   BRAND_ICON,
   iconAsset("white", "rounded"),
-  iconAsset("black", "rounded"),
+  iconAsset("dark", "rounded"),
 ];
 
 export const BRAND_SQUARES: readonly BrandAsset[] = [
-  iconAsset("lilac", "square"),
+  iconAsset("lime", "square"),
   iconAsset("white", "square"),
-  iconAsset("black", "square"),
+  iconAsset("dark", "square"),
 ];
 
 /** The four logos with the name on the Figma board, in its order. */
 const LOCKUP_STYLES: readonly (readonly [IconColor, Ink])[] = [
-  ["lilac", "dark"],
-  ["lilac", "light"],
+  ["lime", "dark"],
+  ["lime", "light"],
   ["white", "light"],
-  ["black", "dark"],
+  ["dark", "dark"],
 ];
 
 export const BRAND_LOCKUPS: Record<BrandSpace, readonly BrandAsset[]> = {
@@ -119,7 +130,7 @@ export const BRAND_LOCKUPS: Record<BrandSpace, readonly BrandAsset[]> = {
 };
 
 /** The logo with its name, for a light page: the header logo menu copies it. */
-export const BRAND_LOCKUP = lockupAsset("lilac", "dark", "tight");
+export const BRAND_LOCKUP = lockupAsset("lime", "dark", "tight");
 
 export const BRAND_ASSETS: readonly BrandAsset[] = [
   ...BRAND_ICONS,
