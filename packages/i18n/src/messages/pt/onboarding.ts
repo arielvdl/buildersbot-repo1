@@ -54,7 +54,7 @@ export const messages = {
     "A Cultura Builder ainda não conecta por um servidor remoto. Use o Builders ou outro provedor.",
   "onboarding.provider.outdated": "A versão {version} é antiga demais.",
   "onboarding.provider.outdatedUnknown": "Esta versão é antiga demais.",
-  "onboarding.provider.more": "Mais provedores",
+  "onboarding.provider.more": "Ver mais opções",
   "onboarding.provider.moreTitle": "Não está na lista?",
   "onboarding.provider.moreDetail": "Mais planos aqui",
   "onboarding.provider.moreSearch": "Buscar provedores",

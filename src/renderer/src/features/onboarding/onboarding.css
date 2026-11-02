@@ -840,6 +840,17 @@ html:active-view-transition-type(open)::view-transition-new(*) {
   fill: var(--buildersbot-provider-current);
 }
 
+.first-run-choice-row-title {
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+}
+
+.first-run-choice-more {
+  margin-top: var(--buildersbot-space-3);
+  color: var(--buildersbot-text-secondary);
+}
+
 .first-run-choice-row-chevron {
   width: 16px;
   height: 16px;

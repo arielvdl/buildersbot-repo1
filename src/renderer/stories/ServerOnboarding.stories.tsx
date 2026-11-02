@@ -22,6 +22,15 @@ const newHostStatus: AgentStatus = {
   capabilities: { ...STORY_AGENT_STATUS.capabilities, chat: "unavailable" },
 };
 
+/** A new server that signs in to Cultura Builder through the Hub: the host lists it, signed out. */
+const culturaHostStatus: AgentStatus = {
+  ...newHostStatus,
+  providers: [
+    { id: "cultura-builder", state: "sign-in-required", version: "1.18.27", message: null },
+    ...(newHostStatus.providers ?? []),
+  ],
+};
+
 const connectedHostStatus: AgentStatus = {
   ...newHostStatus,
   phase: "ready",
@@ -88,7 +97,11 @@ function host(
     onDownloadProvider: fn(),
     onUpdateProvider: fn(),
     customProviders: [],
-    connection: createFakeConnection({ connect: ["codex", "claude", "grok"], alternative: [], finishAfterMs: 0 }),
+    connection: createFakeConnection({
+      connect: ["cultura-builder", "codex", "claude", "grok"],
+      alternative: [],
+      finishAfterMs: 0,
+    }),
   };
 }
 
@@ -127,6 +140,14 @@ type StoryEntry = StoryObj<typeof meta>;
 /** Nothing is signed in on the host. Connect on the Claude row opens the paste sign-in. */
 export const NothingConnected: StoryEntry = {};
 
+/**
+ * A server that signs in to Cultura Builder. It is the only row, first of all and recommended; every
+ * other provider, Builders included, is behind "More options".
+ */
+export const CulturaFirst: StoryEntry = {
+  args: { agentStatus: culturaHostStatus },
+};
+
 /** The host is signed in to Claude, so Continue opens the agent form. */
 export const Connected: StoryEntry = {
   args: { agentStatus: connectedHostStatus },
@@ -134,7 +155,8 @@ export const Connected: StoryEntry = {
 
 /**
  * The screen of the owner's report. Builders is first and recommended, then the connected accounts.
- * Cultura Builder, Grok, Pi and the key providers that wait for Pi are in "More providers".
+ * The host has no Cultura Builder sign-in, so the rows are those of before. Cultura Builder, Grok, Pi and the
+ * key providers that wait for Pi are in "More options".
  */
 export const ReportedHost: StoryEntry = {
   args: {

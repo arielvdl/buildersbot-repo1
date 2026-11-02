@@ -104,6 +104,13 @@ export interface SetupProviderOptions {
    * for it separately, so its plan step shows plan rows only. Without it, it is a row.
    */
   includeFree?: () => boolean;
+  /**
+   * Whether Cultura Builder is the only row, first of all, and the choice, with each other provider
+   * behind "More options". Default true. A step that has no usable Cultura Builder, such as a host
+   * with no Hub sign-in, lists its other rows as before. First run turns it off where the user said
+   * that they have a plan of their own.
+   */
+  featuredOnly?: () => boolean;
 }
 
 /** The choice a screen opens with. A review opens with the saved one; the first run with none. */
@@ -180,6 +187,7 @@ export function createSetupProviders(
 ) {
   const { t } = useText();
   const includeFree = () => settings.includeFree?.() ?? true;
+  const featuredOnly = () => settings.featuredOnly?.() ?? true;
   const [selectedProvider, setSelectedProvider] = createSignal<AgentProviderId | null>(initial?.provider ?? null);
   /**
    * Whether the user chose their own endpoints rather than a built-in provider. `selectedProvider`
@@ -274,8 +282,9 @@ export function createSetupProviders(
       : t("onboarding.provider.outdatedUnknown");
   }
 
-  const providerOptions = createMemo<ProviderPickerOption[]>(() =>
-    SETUP_PROVIDERS.filter(
+  const providerOptions = createMemo<ProviderPickerOption[]>(() => {
+    const highlighted = featuredOnly() && !unreachable().has(FEATURED_PROVIDER) ? FEATURED_PROVIDER : FREE_PROVIDER;
+    return SETUP_PROVIDERS.filter(
       (provider) =>
         !props.hostProviders ||
         !isLocalOnlyProvider(provider.id) ||
@@ -303,7 +312,8 @@ export function createSetupProviders(
         checkError: elsewhere || outdated ? null : status?.checkError,
         availableVersion,
         freeModels: provider.id === "opencode",
-        recommended: provider.id === FREE_PROVIDER,
+        // The highlighted row is the first of all: Cultura Builder where this window can use it.
+        recommended: provider.id === highlighted,
         // For a user with no account anywhere, this row is the way forward, and among four rows it
         // reads like any other; the note points it out.
         callout:
@@ -315,8 +325,8 @@ export function createSetupProviders(
             ? { ...runtime, phase: "ready", version: status.version }
             : runtime,
       };
-    }),
-  );
+    });
+  });
   /**
    * The plan rows that stay in the list, in their order, or `null` until the user first acts on the
    * list. Until then the row rule can change the list when the provider status arrives. After that,
@@ -326,11 +336,16 @@ export function createSetupProviders(
   /** The user chose the custom provider in "More providers", so it is a row from now on. */
   const [customRevealed, setCustomRevealed] = createSignal(false);
   /** The free row shows when the step includes it, or when the user chose it in "More providers". */
-  const freeRow = () =>
-    includeFree() || (selectedProvider() === FREE_PROVIDER && providerSelectedByUser() && !customSelected());
+  const freeChosen = () => selectedProvider() === FREE_PROVIDER && providerSelectedByUser() && !customSelected();
+  const freeRow = () => includeFree() || freeChosen();
   const providerRows = createMemo(() => {
     const kept = keptProviders();
-    const rule: OnboardingRowRule = { includeFree: freeRow(), unreachable: unreachable() };
+    const rule: OnboardingRowRule = {
+      includeFree: freeRow(),
+      unreachable: unreachable(),
+      featuredOnly: featuredOnly(),
+      freeChosen: freeChosen(),
+    };
     const rows = onboardingProviderRows(providerOptions(), { ...rule, kept: kept ?? [] });
     // A saved choice that the row rule hides still shows, after the rows the rule gives.
     const saved = initial?.provider;
@@ -458,12 +473,23 @@ export function createSetupProviders(
       selectedByUser: providerSelectedByUser(),
       withFree: includeFree(),
       blocked: unreachable(),
+      featuredFirst: featuredOnly(),
     }),
-    ({ options: allOptions, selected, selectedByUser, withFree, blocked }) => {
+    ({ options: allOptions, selected, selectedByUser, withFree, blocked, featuredFirst }) => {
       if (selectedByUser && selected && allOptions.some((provider) => provider.id === selected)) return;
       // A step without the free row does not choose the free provider by itself.
       const options = withFree ? allOptions : allOptions.filter((provider) => provider.id !== FREE_PROVIDER);
-      const choice = automaticProviderChoice(options, providerReady, { recommendFree: withFree, unreachable: blocked });
+      const choice = automaticProviderChoice(options, providerReady, {
+        recommendFree: withFree,
+        unreachable: blocked,
+        featuredFirst,
+      });
+      // The featured provider stays the choice while the user has not chosen, also over a ready
+      // provider: it is the first row, and the rest wait behind "More options".
+      if (featuredFirst && choice === FEATURED_PROVIDER) {
+        if (selected !== choice) setSelectedProvider(choice);
+        return;
+      }
       // A ready choice stays, so the selection does not move while a check runs. Builders is the
       // exception: it is the choice only while no account is connected. Its runtime is ready before
       // the host's check ends, so an account that connects after the first render takes its place.

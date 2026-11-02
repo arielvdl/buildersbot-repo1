@@ -158,6 +158,55 @@ describe("the provider rows of setup", () => {
   });
 });
 
+describe("the rows when Cultura Builder is the only row", () => {
+  it("lists Cultura Builder alone and puts every other provider in More options", () => {
+    const options = setupOptions({ claude: "available", opencode: "available" });
+    for (const state of ["not-started", "sign-in-required", "error", "available"] as const) {
+      const rows = onboardingProviderRows(
+        options.map((candidate) => (candidate.id === FEATURED_PROVIDER ? { ...candidate, state } : candidate)),
+        { featuredOnly: true },
+      );
+      expect(ids(rows.listed)).toEqual([FEATURED_PROVIDER]);
+      expect(ids(rows.hidden)).toContain(FREE_PROVIDER);
+      expect(ids(rows.hidden)).toContain("claude");
+    }
+  });
+
+  it("keeps a row that the user chose, and the free row once the user chose it", () => {
+    const options = setupOptions();
+    expect(ids(onboardingProviderRows(options, { featuredOnly: true, kept: ["grok"] }).listed)).toEqual([
+      FEATURED_PROVIDER,
+      "grok",
+    ]);
+    const chosen = onboardingProviderRows(options, { featuredOnly: true, freeChosen: true, kept: ["grok"] });
+    expect(ids(chosen.listed)).toEqual([FEATURED_PROVIDER, FREE_PROVIDER, "grok"]);
+    expect(ids(chosen.hidden)).not.toContain(FREE_PROVIDER);
+  });
+
+  it("lists the rows of before where this window cannot use Cultura Builder", () => {
+    const rows = onboardingProviderRows(OWNER_HOST, { featuredOnly: true, unreachable: ON_HOST });
+    expect(ids(rows.listed)).toEqual(["opencode", "codex", "claude"]);
+  });
+
+  it("hides no provider", () => {
+    const options = setupOptions({ cursor: "available", grok: "outdated" });
+    for (const unreachable of [new Set<AgentProviderId>(), ON_HOST]) {
+      const rows = onboardingProviderRows(options, { featuredOnly: true, unreachable });
+      expect([...ids(rows.listed), ...ids(rows.hidden)].sort()).toEqual(ids(options).sort());
+    }
+  });
+
+  it("chooses Cultura Builder first, also while another provider is connected", () => {
+    const options = setupOptions({ claude: "available", opencode: "available" });
+    expect(automaticProviderChoice(options, neverReady, { recommendFree: true, featuredFirst: true })).toBe(
+      FEATURED_PROVIDER,
+    );
+    expect(
+      automaticProviderChoice(options, neverReady, { recommendFree: true, featuredFirst: true, unreachable: ON_HOST }),
+    ).toBe("claude");
+  });
+});
+
 describe("the provider that setup selects by itself", () => {
   it("is Builders while no other provider is connected, where Builders is a row", () => {
     expect(automaticProviderChoice(setupOptions(), neverReady, { recommendFree: true })).toBe(FREE_PROVIDER);

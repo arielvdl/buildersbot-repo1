@@ -70,7 +70,12 @@ export function FirstRunFlow(props: FirstRunFlowProps) {
    * behind it. Menus mount here instead.
    */
   const [screenElement, setScreenElement] = createSignal<HTMLElement | undefined>();
-  const providers = createSetupProviders(props, undefined, { includeFree: () => state.path !== "plan" });
+  /** The user said "I have a subscription", so the plan step lists the plans and not Cultura Builder alone. */
+  const [ownPlan, setOwnPlan] = createSignal(false);
+  const providers = createSetupProviders(props, undefined, {
+    includeFree: () => state.path !== "plan",
+    featuredOnly: () => !ownPlan(),
+  });
   const next = createSetupNext(providers);
   const nextReasonId = createUniqueId();
   const computerAvatar = createOnboardingAvatarVariant(onboardingSessionSeed(), "computer");
@@ -198,6 +203,7 @@ export function FirstRunFlow(props: FirstRunFlowProps) {
 
   /** Opens the plan step. With `provider`, that row is the user's choice, else the step chooses. */
   function usePlan(provider?: AgentProviderId): void {
+    setOwnPlan(!provider);
     if (provider) providers.chooseProvider(provider);
     else if (providers.selectedProvider() === FREE_PROVIDER && !providers.customSelected()) providers.clearChoice();
     trackStep("next", "plan");

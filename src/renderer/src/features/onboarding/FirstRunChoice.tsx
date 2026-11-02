@@ -1,8 +1,8 @@
 import { ProviderLogo, type ProviderLogoVariant } from "@buildersbot/brand";
-import { Button, ChevronRight, Spinner } from "@buildersbot/ui";
+import { Badge, Button, ChevronDown, ChevronRight, Spinner } from "@buildersbot/ui";
 import { AgentAvatar } from "@buildersbot/ui/features/agents/AgentAvatar";
 import { useText } from "@buildersbot/ui/text";
-import { createUniqueId, For, Show } from "solid-js";
+import { createSignal, createUniqueId, For, Show } from "solid-js";
 import { ConsentNotice } from "./ConsentNotice";
 import type { OnboardingAvatarVariant } from "./onboarding-avatars";
 
@@ -26,9 +26,9 @@ export interface FirstRunChoiceProps {
 const PLAN_LOGOS: readonly ProviderLogoVariant[] = ["codex", "claude", "grok"];
 
 /**
- * The first question of first run: connect Cultura Builder, start free now, or connect a
- * subscription the user already has. The answers are rows of one grouped list, with the same
- * weight. Cultura Builder is the official provider, so it is the first row.
+ * The first question of first run. Cultura Builder is the official provider, so it is the first
+ * row and the only one in view, marked as the recommended one. "More options" opens the others:
+ * start free now, or connect a subscription the user already has.
  */
 export function FirstRunChoice(props: FirstRunChoiceProps) {
   const { t } = useText();
@@ -36,6 +36,8 @@ export function FirstRunChoice(props: FirstRunChoiceProps) {
   const culturaDetailId = createUniqueId();
   const freeDetailId = createUniqueId();
   const planDetailId = createUniqueId();
+  const moreId = createUniqueId();
+  const [moreShown, setMoreShown] = createSignal(false);
   const freeDescribedBy = () => (props.reason ? `${freeDetailId} ${reasonId}` : freeDetailId);
   return (
     <section class="first-run-choice" aria-labelledby="onboarding-title">
@@ -58,7 +60,7 @@ export function FirstRunChoice(props: FirstRunChoiceProps) {
         {t("onboarding.choice.title")}
       </h1>
       <p class="onboarding-description">{t("onboarding.choice.description")}</p>
-      <div class="first-run-choice-rows">
+      <div class="first-run-choice-rows" id={moreId}>
         {/* The name is the title alone; the detail line describes the answer. */}
         <Button
           type="button"
@@ -70,7 +72,10 @@ export function FirstRunChoice(props: FirstRunChoiceProps) {
           onClick={() => props.onUseCulturaBuilder()}
         >
           <span class="first-run-choice-row-text">
-            <strong>{t("onboarding.choice.culturaBuilder")}</strong>
+            <span class="first-run-choice-row-title">
+              <strong>{t("onboarding.choice.culturaBuilder")}</strong>
+              <Badge variant="primary-light">{t("provider.recommended")}</Badge>
+            </span>
             <span id={culturaDetailId}>{t("onboarding.choice.culturaBuilderDetail")}</span>
           </span>
           <span class="first-run-choice-logos" aria-hidden="true">
@@ -78,48 +83,64 @@ export function FirstRunChoice(props: FirstRunChoiceProps) {
           </span>
           <ChevronRight class="first-run-choice-row-chevron" aria-hidden="true" />
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          class="first-run-choice-row"
-          disabled={props.disabled || props.loading}
-          aria-busy={props.loading ? "true" : undefined}
-          aria-label={t("onboarding.choice.startFree")}
-          aria-describedby={freeDescribedBy()}
-          onClick={() => props.onStartFree()}
-        >
-          <span class="first-run-choice-row-text">
-            <strong>{t("onboarding.choice.startFree")}</strong>
-            <span id={freeDetailId}>{t("onboarding.choice.freeDetail")}</span>
-          </span>
-          <Show
-            when={props.loading}
-            fallback={<ChevronRight class="first-run-choice-row-chevron" aria-hidden="true" />}
+        <Show when={moreShown()}>
+          <Button
+            type="button"
+            variant="ghost"
+            class="first-run-choice-row"
+            disabled={props.disabled || props.loading}
+            aria-busy={props.loading ? "true" : undefined}
+            aria-label={t("onboarding.choice.startFree")}
+            aria-describedby={freeDescribedBy()}
+            onClick={() => props.onStartFree()}
           >
-            <Spinner size="sm" label={t("onboarding.opening")} />
-          </Show>
-        </Button>
+            <span class="first-run-choice-row-text">
+              <strong>{t("onboarding.choice.startFree")}</strong>
+              <span id={freeDetailId}>{t("onboarding.choice.freeDetail")}</span>
+            </span>
+            <Show
+              when={props.loading}
+              fallback={<ChevronRight class="first-run-choice-row-chevron" aria-hidden="true" />}
+            >
+              <Spinner size="sm" label={t("onboarding.opening")} />
+            </Show>
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            class="first-run-choice-row"
+            disabled={props.disabled}
+            aria-label={t("onboarding.choice.subscription")}
+            aria-describedby={planDetailId}
+            onClick={() => props.onUsePlan()}
+          >
+            <span class="first-run-choice-row-text">
+              <strong>{t("onboarding.choice.subscription")}</strong>
+              <span id={planDetailId}>{t("onboarding.choice.subscriptionDetail")}</span>
+            </span>
+            <span class="first-run-choice-logos" aria-hidden="true">
+              <For each={PLAN_LOGOS}>
+                {(provider) => <ProviderLogo provider={provider} class="first-run-choice-logo" />}
+              </For>
+            </span>
+            <ChevronRight class="first-run-choice-row-chevron" aria-hidden="true" />
+          </Button>
+        </Show>
+      </div>
+      <Show when={!moreShown()}>
         <Button
           type="button"
           variant="ghost"
-          class="first-run-choice-row"
+          class="first-run-choice-more"
           disabled={props.disabled}
-          aria-label={t("onboarding.choice.subscription")}
-          aria-describedby={planDetailId}
-          onClick={() => props.onUsePlan()}
+          aria-expanded="false"
+          aria-controls={moreId}
+          onClick={() => setMoreShown(true)}
         >
-          <span class="first-run-choice-row-text">
-            <strong>{t("onboarding.choice.subscription")}</strong>
-            <span id={planDetailId}>{t("onboarding.choice.subscriptionDetail")}</span>
-          </span>
-          <span class="first-run-choice-logos" aria-hidden="true">
-            <For each={PLAN_LOGOS}>
-              {(provider) => <ProviderLogo provider={provider} class="first-run-choice-logo" />}
-            </For>
-          </span>
-          <ChevronRight class="first-run-choice-row-chevron" aria-hidden="true" />
+          {t("onboarding.provider.more")}
+          <ChevronDown aria-hidden="true" />
         </Button>
-      </div>
+      </Show>
       <ConsentNotice onOpenTerms={() => props.onOpenTerms()} onOpenPrivacy={() => props.onOpenPrivacy()} />
       <Show when={props.reason}>
         {(reason) => (

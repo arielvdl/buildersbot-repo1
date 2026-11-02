@@ -164,10 +164,10 @@ function expectNoDeadButton(all: Spies, provider: string): void {
   }
 }
 
-/** Chooses `provider` in the "More providers" dialog, so it becomes a row of the list. */
+/** Chooses `provider` in the "More options" dialog, so it becomes a row of the list. */
 async function chooseInMore(provider: string): Promise<void> {
-  fireEvent.click(screen.getByRole("button", { name: /More providers/u }));
-  const dialog = await screen.findByRole("dialog", { name: "More providers" });
+  fireEvent.click(screen.getByRole("button", { name: /More options/u }));
+  const dialog = await screen.findByRole("dialog", { name: "More options" });
   fireEvent.click(within(dialog).getByRole("button", { name: new RegExp(`^${provider}`, "u") }));
   await screen.findByRole("radio", { name: new RegExp(`^${provider}`, "u") });
 }
@@ -188,8 +188,8 @@ describe("the Cultura Builder row of setup", () => {
     await screen.findByRole("radiogroup", { name: "Choose the AI provider of this server" });
     expect(radioValues()).not.toContain("cultura-builder");
     expectNoDeadButton(all, "Cultura Builder");
-    fireEvent.click(screen.getByRole("button", { name: /More providers/u }));
-    const dialog = await screen.findByRole("dialog", { name: "More providers" });
+    fireEvent.click(screen.getByRole("button", { name: /More options/u }));
+    const dialog = await screen.findByRole("dialog", { name: "More options" });
     expect(within(dialog).getByRole("button", { name: /^Cultura Builder/u })).toBeInTheDocument();
   });
 

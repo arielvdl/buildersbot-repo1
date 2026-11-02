@@ -51,7 +51,7 @@ export const messages = defineMessages("onboarding", {
     "Cultura Builder does not connect through a remote server yet. Use Builders or another provider.",
   "onboarding.provider.outdated": "Version {version} is too old.",
   "onboarding.provider.outdatedUnknown": "This version is too old.",
-  "onboarding.provider.more": "More providers",
+  "onboarding.provider.more": "More options",
   "onboarding.provider.moreTitle": "Not in the list?",
   "onboarding.provider.moreDetail": "More plans are here",
   "onboarding.provider.moreSearch": "Search providers",

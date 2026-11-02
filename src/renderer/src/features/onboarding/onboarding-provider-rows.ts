@@ -43,6 +43,14 @@ export interface OnboardingRowRule {
    * host has no Cultura Builder sign-in. They are in "More providers" until they are connected.
    */
   unreachable?: ReadonlySet<AgentProviderId>;
+  /**
+   * The featured provider is the only row, first of all, and each other provider is behind "More
+   * options". Only the rows in `kept` and, with `freeChosen`, the free provider join it. It applies
+   * only where the featured provider is usable: otherwise the step lists the rows it listed before.
+   */
+  featuredOnly?: boolean;
+  /** The user chose the free provider in "More options", so it stays a row after the featured one. */
+  freeChosen?: boolean;
 }
 
 const NONE: ReadonlySet<AgentProviderId> = new Set();
@@ -76,6 +84,9 @@ function owned(option: ProviderPickerOption): boolean {
  * `PLAN_ROWS`. Without the free row, the featured provider is the first row, because the user chose
  * to connect a plan.
  *
+ * With `featuredOnly`, the featured provider is the only row, and every other provider is in "More
+ * options". A step that has no usable featured provider lists the rows above.
+ *
  * A provider whose CLI is too old, or that this window cannot connect, is not a row: it is in "More
  * providers", so no provider goes away. `kept` holds the rows that must stay in the list in their
  * order, so a row does not move or go away under the pointer when a download finishes or a sign-in
@@ -104,6 +115,21 @@ export function onboardingProviderRows(
   const ruled = includeFree
     ? [...featuredConnected, ...connected, ...featuredOpen, ...signInOnly, ...filled]
     : [...featured, ...connected, ...signInOnly, ...filled];
+  if (rule.featuredOnly && featured.length > 0) {
+    const chosen = kept.filter((id) => id !== FEATURED_PROVIDER).flatMap((id) => plans.filter((o) => o.id === id));
+    const pinned = [...featured, ...chosen];
+    const pinnedIds = new Set(pinned.map((option) => option.id));
+    const rest = plans.filter((option) => !pinnedIds.has(option.id));
+    const showFree = rule.freeChosen === true;
+    return {
+      listed: showFree ? [...featured, ...free, ...chosen] : pinned,
+      hidden: [
+        ...rest.filter((option) => usable(option, unreachable)),
+        ...rest.filter((option) => !usable(option, unreachable)),
+        ...(showFree ? [] : free),
+      ],
+    };
+  }
   const keptRows = kept.flatMap((id) => plans.filter((option) => option.id === id));
   const listedPlans = [...keptRows, ...ruled.filter((option) => !kept.includes(option.id))];
   const listedIds = new Set(listedPlans.map((option) => option.id));
@@ -123,6 +149,8 @@ export interface AutomaticChoiceRule {
   recommendFree?: boolean;
   /** The providers that this window cannot connect. The step never chooses one by itself. */
   unreachable?: ReadonlySet<AgentProviderId>;
+  /** The featured provider is the choice whenever this window can use it, also while another is connected. */
+  featuredFirst?: boolean;
 }
 
 /**
@@ -145,6 +173,7 @@ export function automaticProviderChoice(
   const connected = choices.find((option) => option.state === "available" && option.id !== FREE_PROVIDER);
   const free = choices.find((option) => option.id === FREE_PROVIDER);
   const installed = choices.find((option) => owned(option) && !option.freeModels);
+  if (rule.featuredFirst && featured) return featured.id;
   const choice = rule.recommendFree
     ? ((featured?.state === "available" ? featured : undefined) ??
       connected ??
