@@ -2,6 +2,7 @@ import {
   type AgentLimitPreference,
   DEFAULT_AGENT_LIMIT_PREFERENCE,
   DEFAULT_AGENT_TABS,
+  DEFAULT_AGENTS_PER_TAB,
   isAgentLimitPreference,
 } from "@buildersbot/contracts/ipc";
 import { isDynamicRecord } from "@buildersbot/contracts/runtime-values";
@@ -12,7 +13,8 @@ import { type PreferenceFileFailure, readPreferenceFile, writePreferenceFile } f
 /**
  * The cap on the agents that run at the same time: on or off, and the most agents. It is off until
  * the person turns it on. The same file keeps the most channel tabs of one agent that run at the same
- * time (`tabsPerAgent`), which applies whether the cap is on or off. A file that is missing, damaged,
+ * time (`tabsPerAgent`) and the most agents that run at the same time in one tab (`agentsPerTab`);
+ * both apply whether the cap is on or off. A file that is missing, damaged,
  * of another shape, or with a value out of range reads as the default. Writes are chained, as the
  * other preference stores chain theirs.
  */
@@ -34,6 +36,7 @@ export class AgentLimitPreferenceStore {
                 enabled: parsed.enabled,
                 max: parsed.max,
                 ...(parsed.tabsPerAgent === undefined ? {} : { tabsPerAgent: parsed.tabsPerAgent }),
+                ...(parsed.agentsPerTab === undefined ? {} : { agentsPerTab: parsed.agentsPerTab }),
               }
             : null,
         ),
@@ -59,18 +62,25 @@ export class AgentLimitPreferenceStore {
     return this.#preference.tabsPerAgent ?? DEFAULT_AGENT_TABS;
   }
 
+  /** The most agents that run a turn at the same time in one channel tab. */
+  agentsPerTab(): number {
+    return this.#preference.agentsPerTab ?? DEFAULT_AGENTS_PER_TAB;
+  }
+
   readonly set = Effect.fn("AgentLimitPreference.set")(function* (
     this: AgentLimitPreferenceStore,
     preference: AgentLimitPreference,
   ) {
     // The parser of the IPC input checks this first, so a value out of range here is a bug of the caller.
     if (!isAgentLimitPreference(preference)) return yield* Effect.die(new Error("Invalid agent limit preference."));
-    // A client that does not know the tab limit sends none, and the saved one stays.
+    // A client that does not know a tab limit sends none, and the saved one stays.
     const tabsPerAgent = preference.tabsPerAgent ?? this.#preference.tabsPerAgent;
+    const agentsPerTab = preference.agentsPerTab ?? this.#preference.agentsPerTab;
     const next: AgentLimitPreference = {
       enabled: preference.enabled,
       max: preference.max,
       ...(tabsPerAgent === undefined ? {} : { tabsPerAgent }),
+      ...(agentsPerTab === undefined ? {} : { agentsPerTab }),
     };
     yield* this.#writes.withPermit(
       Effect.uninterruptible(

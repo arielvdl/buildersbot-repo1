@@ -145,8 +145,9 @@ export function parseLoadLanePreference(input: unknown): LoadLanePreference {
 }
 
 /**
- * The cap must be a whole number of agents from 1 to 64, and the tabs of one agent a whole number from
- * 1 to 4 when they are given; anything else is refused, not clamped.
+ * The cap must be a whole number of agents from 1 to 64, the tabs of one agent a whole number from 1
+ * to 4 and the agents of one tab a whole number from 1 to 8 when they are given; anything else is
+ * refused, not clamped.
  */
 export function parseAgentLimitPreference(input: unknown): AgentLimitPreference {
   if (!isAgentLimitPreference(input)) throw new Error("An agent limit from 1 to 64 is required.");
@@ -154,6 +155,7 @@ export function parseAgentLimitPreference(input: unknown): AgentLimitPreference 
     enabled: input.enabled,
     max: input.max,
     ...(input.tabsPerAgent === undefined ? {} : { tabsPerAgent: input.tabsPerAgent }),
+    ...(input.agentsPerTab === undefined ? {} : { agentsPerTab: input.agentsPerTab }),
   };
 }
 

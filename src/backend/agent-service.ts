@@ -127,6 +127,7 @@ import {
   type BusyMessageMode,
   CONTEXT_RESET_ITEM_TYPE,
   DEFAULT_AGENT_TABS,
+  DEFAULT_AGENTS_PER_TAB,
   DEFAULT_BUSY_MESSAGE_MODE,
   DEFAULT_CUSTOM_PROVIDER_HARNESS,
   DEFAULT_GUARD_PREFERENCE,
@@ -542,6 +543,11 @@ export interface AgentServiceOptions {
    * tab is its own line of work with its own session. Omitted: `DEFAULT_AGENT_TABS`.
    */
   channelTabLimit?: () => number;
+  /**
+   * The most agents that run a turn at the same time in one channel tab, as the person set it.
+   * Omitted: `DEFAULT_AGENTS_PER_TAB`.
+   */
+  channelParallelLimit?: () => number;
 }
 
 /** How long a user send's `clientMessageId` answers a retry. A retry follows a lost reply, not a day. */
@@ -1311,6 +1317,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       },
       tabLimit: (agentId) =>
         this.#tasks.oneTurnAtATime(agentId) ? 1 : (options.channelTabLimit?.() ?? DEFAULT_AGENT_TABS),
+      parallelLimit: () => options.channelParallelLimit?.() ?? DEFAULT_AGENTS_PER_TAB,
       memoryLow: () => !this.#memoryHold.mayDrain(""),
       waitsOnPerson: (agentId, turnId) => this.#attention.waitsOnPerson(agentId, turnId),
       usageLimited: (agentId) => !this.#usageLimits.mayDrain(agentId),

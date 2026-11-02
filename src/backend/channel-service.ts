@@ -103,6 +103,11 @@ export interface ChannelHooks {
    * works in one tab at a time. A provider that runs one turn at a time gives 1.
    */
   tabLimit?(agentId: string): number;
+  /**
+   * The most agents that run a turn at the same time in one channel tab, as the person set it.
+   * Omitted: `DEFAULT_AGENTS_PER_TAB`. A request over the limit waits in the tab, in order.
+   */
+  parallelLimit?(): number;
   /** Whether the computer is low on memory: no new turn starts, and no agent opens a second tab. */
   memoryLow?(): boolean;
   /**
@@ -1073,7 +1078,7 @@ export class ChannelService {
       assignments.filter((assignment) => {
         const ofAssignment = tasks.get(assignment.taskId);
         return ofAssignment?.channelId === task.channelId && ofAssignment.topicId === task.topicId;
-      }).length >= DEFAULT_AGENTS_PER_TAB ||
+      }).length >= this.#parallelLimit() ||
       task.dependencies.some((id) => tasks.get(id)?.state !== "completed")
     );
   }
@@ -1118,6 +1123,12 @@ export class ChannelService {
     if (working.length >= limit) return { reason: "agent-tabs", busy: working.length, limit };
     if (this.hooks.memoryLow?.()) return { reason: "memory" };
     return null;
+  }
+
+  /** The most agents that run a turn at the same time in one tab (`ChannelHooks.parallelLimit`). */
+  #parallelLimit(): number {
+    const limit = this.hooks.parallelLimit?.() ?? DEFAULT_AGENTS_PER_TAB;
+    return Number.isInteger(limit) && limit > 1 ? limit : 1;
   }
 
   /** The most channel tabs of this agent that run a turn at the same time (`ChannelHooks.tabLimit`). */

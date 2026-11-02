@@ -412,6 +412,16 @@ const valid: [string, (value: unknown) => unknown, unknown][] = [
   ],
   ["an agent limit at the low end", decodeAgentLimitPreference, { enabled: true, max: 1 }],
   ["an agent limit that is off", decodeAgentLimitPreference, { enabled: false, max: 64 }],
+  [
+    "an agent limit with the agents of one tab at the low end",
+    decodeAgentLimitPreference,
+    { enabled: false, max: 10, agentsPerTab: 1 },
+  ],
+  [
+    "an agent limit with the agents of one tab at the high end",
+    decodeAgentLimitPreference,
+    { enabled: false, max: 10, agentsPerTab: 8 },
+  ],
 ];
 
 const malformed: [string, (value: unknown) => unknown, unknown][] = [
@@ -440,6 +450,9 @@ const malformed: [string, (value: unknown) => unknown, unknown][] = [
   ["an agent limit of zero", decodeAgentLimitPreference, { enabled: true, max: 0 }],
   ["an agent limit above 64", decodeAgentLimitPreference, { enabled: true, max: 65 }],
   ["an agent limit that is not whole", decodeAgentLimitPreference, { enabled: true, max: 2.5 }],
+  ["agents of one tab of zero", decodeAgentLimitPreference, { enabled: true, max: 10, agentsPerTab: 0 }],
+  ["agents of one tab above 8", decodeAgentLimitPreference, { enabled: true, max: 10, agentsPerTab: 9 }],
+  ["agents of one tab that are not whole", decodeAgentLimitPreference, { enabled: true, max: 10, agentsPerTab: 2.5 }],
   ["a load snapshot with no agent limit", decodeLoadSnapshot, { ...loadSnapshot, agentLimit: undefined }],
   ["a load snapshot with a stopped total below zero", decodeLoadSnapshot, { ...loadSnapshot, stoppedTotal: -1 }],
   [

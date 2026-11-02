@@ -2103,6 +2103,7 @@ export async function createApplicationServices({
     memoryPressure: macMemory,
     agentLimit: () => agentLimit.limit(),
     channelTabLimit: () => agentLimit.tabsPerAgent(),
+    channelParallelLimit: () => agentLimit.agentsPerTab(),
     requestTimeoutMs: 30_000,
     offProviders: providerUse.off(),
     modelPolicy,

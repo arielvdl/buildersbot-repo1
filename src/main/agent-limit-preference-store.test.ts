@@ -51,6 +51,28 @@ describe("the agent limit preference", () => {
     expect(again.limit()).toBe(3);
   });
 
+  it("gives four agents per tab when none is saved, and keeps the saved one when a client sends none", async () => {
+    const file = await path();
+    const store = new AgentLimitPreferenceStore(file);
+    await Effect.runPromise(store.load());
+    expect(store.agentsPerTab()).toBe(4);
+    await Effect.runPromise(store.set({ enabled: false, max: 10, agentsPerTab: 6 }));
+    await Effect.runPromise(store.set({ enabled: true, max: 5 }));
+    const again = new AgentLimitPreferenceStore(file);
+    await Effect.runPromise(again.load());
+    expect(again.agentsPerTab()).toBe(6);
+    expect(again.get()).toEqual({ enabled: true, max: 5, agentsPerTab: 6 });
+  });
+
+  it("reads the default for a file with agents per tab out of range", async () => {
+    const file = await path();
+    await writeFile(file, JSON.stringify({ version: 1, enabled: true, max: 3, agentsPerTab: 9 }));
+    const store = new AgentLimitPreferenceStore(file);
+    await Effect.runPromise(store.load());
+    expect(store.get()).toEqual({ enabled: false, max: 10 });
+    expect(store.agentsPerTab()).toBe(4);
+  });
+
   it("refuses a value out of range instead of storing it", async () => {
     const store = new AgentLimitPreferenceStore(await path());
     await expect(Effect.runPromise(store.set({ enabled: true, max: 0 }))).rejects.toBeDefined();
@@ -65,6 +87,11 @@ describe("the IPC input of the agent limit", () => {
       enabled: false,
       max: 64,
     });
+    expect(parseAgentLimitPreference({ enabled: true, max: 3, agentsPerTab: 8 })).toEqual({
+      enabled: true,
+      max: 3,
+      agentsPerTab: 8,
+    });
   });
 
   it("refuses anything else, and never clamps it", () => {
@@ -76,6 +103,9 @@ describe("the IPC input of the agent limit", () => {
       { enabled: true, max: 65 },
       { enabled: true, max: 2.5 },
       { enabled: true, max: "10" },
+      { enabled: true, max: 10, agentsPerTab: 0 },
+      { enabled: true, max: 10, agentsPerTab: 9 },
+      { enabled: true, max: 10, agentsPerTab: 2.5 },
       { enabled: "true", max: 10 },
     ])
       expect(() => parseAgentLimitPreference(input)).toThrow();
