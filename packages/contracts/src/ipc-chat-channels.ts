@@ -1,5 +1,6 @@
 import { INPUT_LIMITS } from "./input-limits";
 import { isBoundedString, isIdentifier } from "./ipc-bounded-values";
+import { type ChannelTabCloseReport, parseChannelTabCloseReport } from "./ipc-channel-tab-reports";
 import { type ConversationMessage, isConversationMessage } from "./ipc-conversation-messages";
 import { optionalHistoryExtent } from "./ipc-decoding";
 import { isStartRetryView, type StartRetryView } from "./ipc-start-retry-view";
@@ -249,8 +250,17 @@ export type ChannelCommand =
   | { type: "read"; operationId: string; channelId: string; topicId?: string; throughSequence: number }
   | { type: "topic-create"; operationId: string; channelId: string; topicId: string; name?: string | undefined }
   | { type: "topic-rename"; operationId: string; channelId: string; topicId: string; name: string }
-  /** Deletes a tab with its messages and work. The last tab of a channel cannot go. */
-  | { type: "topic-delete"; operationId: string; channelId: string; topicId: string };
+  /**
+   * Deletes a tab with its messages and work. The last tab of a channel cannot go. With a `report`,
+   * the record of how the tab ended is saved in the same transaction: if it cannot be saved, the tab stays.
+   */
+  | {
+      type: "topic-delete";
+      operationId: string;
+      channelId: string;
+      topicId: string;
+      report?: ChannelTabCloseReport | undefined;
+    };
 
 export interface ChannelReadInput {
   channelId: string;
@@ -503,8 +513,10 @@ export function parseChannelCommand(value: unknown): ChannelCommand {
     isBoundedString(value.name, INPUT_LIMITS.agentName)
   )
     return { ...common, type: value.type, topicId: value.topicId, name: value.name };
-  if (value.type === "topic-delete" && isIdentifier(value.topicId))
-    return { ...common, type: value.type, topicId: value.topicId };
+  if (value.type === "topic-delete" && isIdentifier(value.topicId)) {
+    const report = value.report === undefined ? undefined : parseChannelTabCloseReport(value.report);
+    return { ...common, type: value.type, topicId: value.topicId, ...(report ? { report } : {}) };
+  }
   if (
     (value.type === "stop" || value.type === "resume" || value.type === "reassign") &&
     isIdentifier(value.taskId) &&
