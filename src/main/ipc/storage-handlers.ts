@@ -1,0 +1,187 @@
+import type { Effect } from "effect";
+import type { RemoteWorkflowError } from "../remote-service-effects";
+
+// Storage: what the files, chats and caches of the local host or a joined server take on disk.
+//
+// Every method takes the server explicitly, because Server Settings can be open for a server that
+// is not the selected one. A remote host that predates `storage-v1` answers 404, so a read returns
+// null before the request and the surface says the host needs an update; a change is refused.
+
+import {
+  assertStorageUsageScope,
+  decodeMachineMetrics,
+  decodeStorageDisk,
+  decodeStorageUsage,
+  parseClearStorageInput,
+  parseDeleteStoredFileInput,
+  parseGetStorageUsageInput,
+  parseOpenStorageLocationInput,
+  parseOpenStoredFileInput,
+  parseRemoveCleanupCandidateInput,
+  STORAGE_CAPABILITY,
+} from "@buildersbot/contracts/ipc";
+import { isDynamicRecord } from "@buildersbot/contracts/runtime-values";
+import type { TeamCurrentCapability } from "@buildersbot/contracts/team-protocol/current";
+import {
+  MACHINE_RESOURCES_CAPABILITY,
+  MACHINE_RESOURCES_ROUTES,
+} from "@buildersbot/contracts/team-protocol/machine-resources-v1";
+import { STORAGE_DISK_CAPABILITY, STORAGE_DISK_ROUTES } from "@buildersbot/contracts/team-protocol/storage-disk-v1";
+import { STORAGE_ROUTES } from "@buildersbot/contracts/team-protocol/storage-v1";
+import { sourceText } from "@buildersbot/i18n/source";
+import { dialog } from "electron";
+import { runCauseEffect } from "../../backend/effect-boundary";
+import type { StorageAgent, StorageUsageService } from "../../backend/storage-usage";
+import type { CleanupService } from "../cleanup-service";
+import type { MachineAlertMonitor } from "../machine-alerts";
+import type { ProviderRuntimeManager } from "../provider-runtime-manager";
+import type { ResponseDecoder } from "../remote-host-decoding";
+import type { RemoteRequestInit } from "../remote-server-client";
+import { agentRequest } from "./agent-inputs";
+import { type OpenAttachmentDependencies, openAttachmentForServer } from "./attachment-handlers";
+import { handler, type IpcGroupHandlers, payloadHandler } from "./define-ipc-group";
+import { scopedHandler, scopedQueryHandler } from "./scoped-handler";
+
+/** The RemoteServerManager members this registrar reaches, and nothing else. */
+interface StorageRemoteServers extends Pick<OpenAttachmentDependencies["remoteServers"], "downloadAttachment"> {
+  forgetCachedAttachments(serverId: string): void;
+  supportsCapability(serverId: string, capability: TeamCurrentCapability): boolean;
+  request<T>(
+    serverId: string,
+    path: string,
+    decoder: ResponseDecoder<T>,
+    init?: RemoteRequestInit,
+  ): Effect.Effect<T, RemoteWorkflowError>;
+}
+
+export interface StorageIpcDependencies extends Omit<OpenAttachmentDependencies, "remoteServers"> {
+  storage: Pick<StorageUsageService, "usage" | "deleteFile" | "clear" | "disk">;
+  cleanup: Pick<CleanupService, "scan" | "find" | "remove">;
+  machine: Pick<MachineAlertMonitor, "metrics">;
+  providerRuntimes: Pick<
+    ProviderRuntimeManager,
+    "oldVersions" | "removeOldVersions" | "removableRuntimes" | "removeRemovableRuntimes"
+  >;
+  remoteServers: StorageRemoteServers;
+  agents: () => StorageAgent[];
+  openPath: (path: string) => Promise<string>;
+}
+
+/** Delete and clear answer an empty object. The transport codec has already checked its shape. */
+function decodeStorageChange(value: unknown): undefined {
+  if (value !== undefined && value !== null && !(isDynamicRecord(value) && Object.keys(value).length === 0))
+    throw new Error("The remote server returned data.");
+  return undefined;
+}
+
+export function storageIpcHandlers({
+  storage,
+  cleanup,
+  machine,
+  providerRuntimes,
+  mailbox,
+  remoteServers,
+  getMainWindow,
+  translate,
+  agents,
+  openPath,
+}: StorageIpcDependencies): Pick<IpcGroupHandlers, "storage"> {
+  async function remoteChange(serverId: string, path: string, body: unknown): Promise<void> {
+    if (!remoteServers.supportsCapability(serverId, STORAGE_CAPABILITY))
+      throw new Error(sourceText("error.storage.unsupported"));
+    try {
+      await runCauseEffect(remoteServers.request(serverId, path, decodeStorageChange, { method: "POST", body }));
+    } finally {
+      // A failed answer can still follow a delete that the host completed.
+      remoteServers.forgetCachedAttachments(serverId);
+    }
+  }
+
+  return {
+    storage: {
+      getUsage: scopedHandler(parseGetStorageUsageInput, {
+        local: (parsed) => runCauseEffect(storage.usage(parsed)),
+        remote: async (parsed, serverId) => {
+          if (!remoteServers.supportsCapability(serverId, STORAGE_CAPABILITY)) return null;
+          const usage = await runCauseEffect(
+            remoteServers.request(serverId, STORAGE_ROUTES.usage, decodeStorageUsage, {
+              method: "POST",
+              body: parsed,
+            }),
+          );
+          return assertStorageUsageScope(usage, parsed);
+        },
+      }),
+      getDisk: scopedQueryHandler({
+        local: () => runCauseEffect(storage.disk()),
+        remote: (serverId) => {
+          if (!remoteServers.supportsCapability(serverId, STORAGE_DISK_CAPABILITY)) return null;
+          return runCauseEffect(
+            remoteServers.request(serverId, STORAGE_DISK_ROUTES.disk, decodeStorageDisk, { method: "POST", body: {} }),
+          );
+        },
+      }),
+      getMachineMetrics: scopedQueryHandler({
+        local: () => runCauseEffect(machine.metrics()),
+        remote: (serverId) => {
+          if (!remoteServers.supportsCapability(serverId, MACHINE_RESOURCES_CAPABILITY)) return null;
+          return runCauseEffect(
+            remoteServers.request(serverId, MACHINE_RESOURCES_ROUTES.metrics, decodeMachineMetrics, {
+              method: "POST",
+              body: {},
+            }),
+          );
+        },
+      }),
+      deleteFile: scopedHandler(parseDeleteStoredFileInput, {
+        local: (parsed) => runCauseEffect(storage.deleteFile(parsed.fileId)),
+        remote: (parsed, serverId) => remoteChange(serverId, STORAGE_ROUTES.deleteFile, parsed),
+      }),
+      clear: scopedHandler(parseClearStorageInput, {
+        local: (parsed) => runCauseEffect(storage.clear(parsed.category)),
+        remote: (parsed, serverId) => remoteChange(serverId, STORAGE_ROUTES.clear, parsed),
+      }),
+      // A stored file is a sent or generated attachment, so the chat's open path serves it.
+      openFile: payloadHandler(agentRequest(parseOpenStoredFileInput), (scoped) => {
+        const parsed = scoped.payload;
+        return openAttachmentForServer({ mailbox, remoteServers, getMainWindow, translate }, scoped.serverId, {
+          attachmentId: parsed.fileId,
+          action: parsed.action,
+        });
+      }),
+      // Local only: a remote host's workspace is a path on another computer.
+      openLocation: payloadHandler(parseOpenStorageLocationInput, async ({ agentId }) => {
+        const agent = agents().find((candidate) => candidate.id === agentId);
+        if (!agent) throw new Error(sourceText("error.storage.agentMissing"));
+        const error = await openPath(agent.workspacePath);
+        if (error) throw new Error(error);
+      }),
+      getOldRuntimeVersions: handler(() => runCauseEffect(providerRuntimes.oldVersions())),
+      removeOldRuntimeVersions: handler(() => runCauseEffect(providerRuntimes.removeOldVersions())),
+      getCleanupCandidates: handler(() => cleanup.scan()),
+      // The question is asked here, in a native dialog, so only a click of the person can answer it.
+      removeCleanupCandidate: payloadHandler(parseRemoveCleanupCandidateInput, async ({ id }) => {
+        const candidate = cleanup.find(id);
+        if (!candidate || candidate.blocker !== null) return { removed: false };
+        const megabytes = Math.max(1, Math.round(candidate.bytes / 1_048_576));
+        const options = {
+          type: "warning" as const,
+          message: translate("dialog.cleanup.message", { name: candidate.label }),
+          detail: translate("dialog.cleanup.detail", { size: `${megabytes} MB` }),
+          buttons: [translate("dialog.cleanup.confirm"), translate("dialog.cleanup.cancel")],
+          defaultId: 1,
+          cancelId: 1,
+          noLink: true,
+        };
+        const parent = getMainWindow();
+        const { response } =
+          parent && !parent.isDestroyed()
+            ? await dialog.showMessageBox(parent, options)
+            : await dialog.showMessageBox(options);
+        return { removed: response === 0 && (await cleanup.remove(id)) };
+      }),
+      getRemovableRuntimes: handler(() => runCauseEffect(providerRuntimes.removableRuntimes())),
+      removeRemovableRuntimes: handler(() => runCauseEffect(providerRuntimes.removeRemovableRuntimes())),
+    },
+  };
+}

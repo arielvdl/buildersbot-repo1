@@ -1,0 +1,50 @@
+#!/bin/sh
+set -eu
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin LC_ALL=C
+[ "${3:-/}" = / ] || { echo 'Install the Host package on the running startup volume.' >&2; exit 1; }
+ROOT='/Library/Application Support/Builders Bot/HostManager'
+check_existing() {
+  [ ! -L "$1" ] || exit 1
+  if [ -e "$1" ]; then
+    [ "$(stat -f %u "$1")" = 0 ] || { echo 'Host installation path is not root-owned.' >&2; exit 1; }
+    mode=$(stat -f %Lp "$1")
+    [ "$((0$mode & 0022))" -eq 0 ] || exit 1
+    if ls -lde "$1" | grep -Eq '[0-9]+:.*allow.*(write|append|add_file|add_subdirectory|delete|chown)'; then exit 1; fi
+  fi
+}
+for path in / /Library '/Library/Application Support' '/Library/Application Support/Builders Bot' "$ROOT" \
+  /Library/LaunchAgents /Library/LaunchDaemons /usr /usr/local /usr/local/bin; do
+  check_existing "$path"
+  [ ! -e "$path" ] || [ -d "$path" ] || exit 1
+done
+for path in "$ROOT/host-manager" "$ROOT/buildersbot-host" "$ROOT/create-tenants" "$ROOT/buildersbot-relaunch.sh" \
+  "$ROOT/host-release.json" "$ROOT/config.json" "$ROOT/state.json" \
+  /Library/LaunchAgents/app.buildersbot.desktop.relaunch.plist \
+  /Library/LaunchDaemons/app.buildersbot.host-manager.plist /usr/local/bin/buildersbot-host; do
+  check_existing "$path"
+  [ ! -e "$path" ] || { [ -f "$path" ] && [ "$(stat -f %l "$path")" = 1 ]; } || exit 1
+done
+[ ! -e "$ROOT/setup-in-progress" ] && [ ! -L "$ROOT/setup-in-progress" ] || exit 1
+if [ -e "$ROOT/config.json" ]; then
+  phase=$(plutil -extract phase raw "$ROOT/state.json")
+  case "$phase" in idle|aborted) ;; *) echo 'Wait for host maintenance to finish before upgrading the package.' >&2; exit 1;; esac
+fi
+if launchctl print system/app.buildersbot.host-manager >/dev/null 2>&1; then
+  launchctl bootout system/app.buildersbot.host-manager
+fi
+# The LaunchAgent moved its file and its label with the product name. Boot it out before the folder
+# of its old script goes, so no agent keeps failing on the removed path. A logged-out user loads the
+# new agent at the next login, as before.
+console_user=$(stat -f %Su /dev/console)
+if [ -n "$console_user" ] && [ "$console_user" != root ]; then
+  console_uid=$(id -u "$console_user" 2>/dev/null) || console_uid=
+  if [ -n "$console_uid" ]; then
+    launchctl bootout "gui/$console_uid/app.openbot.desktop.relaunch" >/dev/null 2>&1 || true
+  fi
+fi
+rm -f /Library/LaunchAgents/app.openbot.desktop.relaunch.plist
+# The package moved its folder and its command from the old product name. Remove the old copy, so no
+# second daemon and no stale binary stay behind. Only after the jobs are gone: a running daemon
+# restarts from its old path until it is booted out.
+rm -rf '/Library/Application Support/OpenBot'
+rm -f /usr/local/bin/openbot-host

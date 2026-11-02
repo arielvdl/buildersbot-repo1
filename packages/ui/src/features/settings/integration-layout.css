@@ -1,0 +1,504 @@
+/* The shared integration layout: see IntegrationLayout.tsx. */
+
+.integration-logo-tile {
+  --integration-tile: 36px;
+  display: inline-grid;
+  flex: none;
+  width: var(--integration-tile);
+  height: var(--integration-tile);
+  place-items: center;
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-md);
+  background: var(--buildersbot-bg-surface-raised);
+  color: var(--buildersbot-text-primary);
+}
+
+.integration-logo-tile[data-size="lg"] {
+  --integration-tile: 48px;
+  border-radius: var(--buildersbot-radius-lg);
+}
+
+.integration-logo-tile > svg {
+  width: 55%;
+  height: 55%;
+}
+
+/* An app icon fills its tile. */
+.integration-logo-tile > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.integration-status {
+  gap: var(--buildersbot-space-1);
+}
+
+.integration-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--buildersbot-radius-pill);
+  background: currentColor;
+}
+
+.integration-status[data-status="unavailable"] .integration-status-dot {
+  background: var(--buildersbot-transparent);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+/* ------------------------------------------------ page header */
+
+/* One gap between every part of an integration page. */
+.integration-page {
+  display: grid;
+  gap: var(--buildersbot-space-6);
+}
+
+.integration-detail-header {
+  display: flex;
+  gap: var(--buildersbot-space-3);
+  align-items: center;
+}
+
+.integration-detail-copy {
+  display: grid;
+  /* The column may be narrower than the name and the status together, so the header never pushes
+     its action out of a narrow window. */
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1;
+  gap: var(--buildersbot-space-1);
+  min-width: 0;
+}
+
+/* A long status, such as "Precisa de atenção", goes under the name when the row has no room. */
+.integration-detail-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--buildersbot-space-1) var(--buildersbot-space-2);
+  align-items: center;
+}
+
+.integration-detail-actions {
+  display: flex;
+  flex: none;
+  gap: var(--buildersbot-space-2);
+}
+
+/* ------------------------------------------------ connect dialog */
+
+.integration-wizard {
+  display: grid;
+  gap: var(--buildersbot-space-4);
+  padding: var(--buildersbot-space-6);
+  border-radius: var(--buildersbot-radius-xl);
+  background: var(--buildersbot-bg-sheet);
+  box-shadow: var(--buildersbot-shadow-dialog);
+}
+
+.integration-wizard-head {
+  display: grid;
+  gap: var(--buildersbot-space-2);
+  justify-items: center;
+  text-align: center;
+}
+
+.integration-wizard-logos {
+  display: flex;
+  gap: var(--buildersbot-space-2);
+  align-items: center;
+  margin-bottom: var(--buildersbot-space-2);
+}
+
+.integration-wizard-app {
+  width: 36px;
+  height: 36px;
+}
+
+/* Dots flow from Builders Bot to the other app while the flow runs. */
+.integration-wizard-link {
+  width: 40px;
+  height: 2px;
+  border-radius: var(--buildersbot-radius-pill);
+  background:
+    radial-gradient(circle, var(--buildersbot-accent) 0 1px, var(--buildersbot-transparent) 1.5px) 0 50% / 8px 2px
+    repeat-x;
+  animation: integration-wizard-flow 0.6s linear infinite;
+}
+
+@keyframes integration-wizard-flow {
+  to {
+    background-position-x: 8px;
+  }
+}
+
+.integration-wizard-logos[data-link="connected"] .integration-wizard-link {
+  background: var(--buildersbot-success);
+  animation: none;
+}
+
+.integration-wizard-logos[data-link="broken"] .integration-wizard-link {
+  background:
+    radial-gradient(circle, var(--buildersbot-border-strong) 0 1px, var(--buildersbot-transparent) 1.5px) 0 50% / 8px
+    2px repeat-x;
+  animation: none;
+}
+
+/* The other app breathes while Builders Bot waits for it. */
+.integration-wizard-target {
+  display: inline-grid;
+  border-radius: var(--buildersbot-radius-md);
+}
+
+.integration-wizard-logos[data-link="connecting"] .integration-wizard-target {
+  animation: integration-wizard-pulse 1.8s var(--buildersbot-ease-out) infinite;
+}
+
+.integration-wizard-logos[data-link="connected"] .integration-wizard-target {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--buildersbot-success) 30%, var(--buildersbot-transparent));
+}
+
+@keyframes integration-wizard-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--buildersbot-accent) 45%, var(--buildersbot-transparent));
+  }
+  100% {
+    box-shadow: 0 0 0 8px var(--buildersbot-transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .integration-wizard-link,
+  .integration-wizard-logos[data-link="connecting"] .integration-wizard-target {
+    animation: none;
+  }
+}
+
+.integration-wizard-body {
+  display: grid;
+  gap: var(--buildersbot-space-3);
+}
+
+/* A body whose parts are all hidden, such as a plugin dialog before a failure, takes no gap. */
+.integration-wizard-body:empty {
+  display: none;
+}
+
+.integration-wizard-form {
+  display: grid;
+  gap: var(--buildersbot-space-4);
+}
+
+.integration-wizard-foot {
+  display: flex;
+  gap: var(--buildersbot-space-2);
+  justify-content: flex-end;
+}
+
+/* CopyButton draws its icon at full size; match the 14px icons of the other footer buttons. */
+.integration-wizard-foot .ui-button > svg {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+}
+
+/* Above the settings window the flow opens from. */
+.integration-dialog-backdrop {
+  z-index: calc(var(--buildersbot-layer-dialog) + 1);
+}
+
+.integration-wizard-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: calc(var(--buildersbot-layer-dialog) + 1);
+  width: min(440px, calc(100vw - var(--buildersbot-space-6) * 2));
+  max-height: calc(100dvh - var(--buildersbot-space-6) * 2);
+  overflow-y: auto;
+  outline: 0;
+  transform: translate(-50%, -50%);
+}
+
+/* A page drawn in the dialog, such as a joined server's sign-in page, needs room to type in. */
+.integration-wizard-dialog[data-wide] {
+  width: min(720px, calc(100vw - var(--buildersbot-space-6) * 2));
+}
+
+/* Over the Marketplace window and the menus it opens. Both portals are children of `body`, so the
+   order of insertion alone cannot put this one on top. */
+:is(.integration-dialog-backdrop, .integration-wizard-dialog)[data-nested] {
+  z-index: calc(var(--buildersbot-layer-dialog-host) + 2);
+}
+
+.integration-wizard-dialog h2 {
+  margin: 0;
+}
+
+.integration-dialog-close {
+  position: absolute;
+  top: var(--buildersbot-space-3);
+  right: var(--buildersbot-space-3);
+}
+
+/* ------------------------------------------------ stepper */
+
+.integration-stepper {
+  display: flex;
+  align-items: center;
+  margin: 0 0 var(--buildersbot-space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.integration-step {
+  display: flex;
+  align-items: center;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+/* The line to a step: quiet until the flow reaches that step, then it fills from the left. */
+.integration-step + .integration-step::before {
+  display: block;
+  width: 24px;
+  height: 2px;
+  margin-inline: var(--buildersbot-space-1);
+  border-radius: var(--buildersbot-radius-pill);
+  background:
+    linear-gradient(to right, var(--buildersbot-success), var(--buildersbot-accent)) no-repeat,
+    var(--buildersbot-border-strong);
+  background-size:
+    0% 100%,
+    auto;
+  content: "";
+}
+
+.integration-step + .integration-step[data-state="current"]::before {
+  background-size:
+    100% 100%,
+    auto;
+  animation: integration-step-fill 0.4s var(--buildersbot-ease-out);
+}
+
+.integration-step + .integration-step[data-state="done"]::before {
+  background:
+    linear-gradient(var(--buildersbot-success), var(--buildersbot-success)) no-repeat,
+    var(--buildersbot-border-strong);
+  background-size:
+    100% 100%,
+    auto;
+  animation: integration-step-fill 0.4s var(--buildersbot-ease-out);
+}
+
+@keyframes integration-step-fill {
+  from {
+    background-size:
+      0% 100%,
+      auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .integration-step + .integration-step[data-state="current"]::before,
+  .integration-step + .integration-step[data-state="done"]::before {
+    animation: none;
+  }
+}
+
+.integration-step-index {
+  display: inline-grid;
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1px solid var(--buildersbot-border-strong);
+  border-radius: var(--buildersbot-radius-pill);
+  font-size: var(--buildersbot-text-sm);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--buildersbot-weight-medium);
+  line-height: 1;
+}
+
+.integration-step[data-state="current"] {
+  color: var(--buildersbot-text-primary);
+}
+
+.integration-step[data-state="current"] .integration-step-index {
+  border-color: var(--buildersbot-accent);
+  background: var(--buildersbot-accent);
+  color: var(--buildersbot-text-on-accent);
+}
+
+.integration-step[data-state="done"] .integration-step-index {
+  border-color: var(--buildersbot-success);
+  color: var(--buildersbot-success);
+}
+
+/* ------------------------------------------------ card content */
+
+/* Content of a card that is not rows: a form, a list, information. One body, so no row divider cuts it. */
+.integration-card-body {
+  display: grid;
+  gap: var(--buildersbot-space-3);
+  padding: var(--buildersbot-space-3) var(--buildersbot-space-4);
+}
+
+/* A field in a card has the size of the buttons beside it, as in Server settings. */
+.integration-card-body :where(.ui-input) {
+  font-size: var(--buildersbot-text-lg);
+  line-height: var(--buildersbot-leading-lg);
+}
+
+/* The last line of a card: what the rows above it mean. */
+.integration-card-note {
+  padding: var(--buildersbot-space-3) var(--buildersbot-space-4);
+}
+
+/* On the card fill, the danger tone needs its text step for contrast. */
+.integration-card-note[data-tone="danger"] {
+  color: var(--buildersbot-danger-text);
+}
+
+/* ------------------------------------------------ disconnect dialog */
+
+/* What a disconnect removes and what it keeps, one line each. */
+.integration-effects {
+  display: grid;
+  margin: 0;
+  padding: var(--buildersbot-space-1);
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-bg-surface);
+  list-style: none;
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.integration-effects li {
+  display: flex;
+  gap: var(--buildersbot-space-3);
+  align-items: center;
+  padding: var(--buildersbot-space-2);
+}
+
+.integration-effects li + li {
+  border-top: 1px solid var(--buildersbot-border);
+}
+
+.integration-effect-icon {
+  display: inline-grid;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: var(--buildersbot-radius-md);
+  background: var(--buildersbot-bg-surface-raised);
+  color: var(--buildersbot-text-muted);
+}
+
+.integration-effects .integration-effect-icon > svg {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+}
+
+.integration-effects li[data-tone="danger"] .integration-effect-icon {
+  background: var(--buildersbot-danger-soft);
+  color: var(--buildersbot-danger-text);
+}
+
+.integration-effects li[data-tone="success"] .integration-effect-icon {
+  background: var(--buildersbot-success-soft);
+  color: var(--buildersbot-success);
+}
+
+/* The label on the soft danger fill reads the text step, as the shared confirmation does for contrast. */
+.integration-confirm.ui-button-variant-destructive {
+  color: var(--buildersbot-danger-text);
+}
+
+/* ------------------------------------------------ linked rows */
+
+/* The whole row opens the integration, as on Marketplace cards. Buttons in the row stay on top. */
+.integrations-hub-row {
+  position: relative;
+  border-radius: var(--buildersbot-radius-md);
+  transition: background-color var(--buildersbot-duration-hover) var(--buildersbot-ease-out);
+}
+
+.integrations-hub-row:has(> .integrations-hub-hitarea:hover) {
+  background: var(--buildersbot-hover);
+}
+
+.integrations-hub-hitarea {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: var(--buildersbot-transparent);
+  cursor: pointer;
+  transition: none;
+}
+
+.integrations-hub-hitarea:hover:not(:disabled):not([data-disabled]) {
+  background: var(--buildersbot-transparent);
+}
+
+.integrations-hub-hitarea:focus-visible {
+  outline: 2px solid var(--buildersbot-border-focus);
+  outline-offset: -2px;
+}
+
+.integrations-hub-actions {
+  gap: var(--buildersbot-space-3);
+}
+
+.integrations-hub-actions .ui-button {
+  position: relative;
+  z-index: 2;
+}
+
+.integrations-hub-chevron {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  margin: 0 var(--buildersbot-space-1-5);
+  color: var(--buildersbot-text-muted);
+}
+
+.integrations-face-stack {
+  display: inline-flex;
+  gap: var(--buildersbot-space-0-5);
+  align-items: center;
+}
+
+.integrations-face-more {
+  display: inline-grid;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 var(--buildersbot-space-1);
+  place-items: center;
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-bg-control);
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.integrations-agent-face {
+  --integrations-agent-face-size: 32px;
+  display: inline-block;
+  flex: none;
+  width: var(--integrations-agent-face-size);
+  height: var(--integrations-agent-face-size);
+}
+
+.integrations-agent-face[data-size="sm"] {
+  --integrations-agent-face-size: 24px;
+}
+
+/* An agent avatar stands low in its box. Lift it to the middle, as the marketplace avatar does. */
+.integrations-agent-face > * {
+  --agent-avatar-optical-offset: calc(var(--integrations-agent-face-size) * -0.14);
+  width: 100%;
+  height: 100%;
+}

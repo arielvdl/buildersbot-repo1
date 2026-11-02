@@ -1,0 +1,12 @@
+# Stages the newest release, or stops Builders Bot, moves the staged release into place and starts Builders Bot
+# again, when an owner, an admin or a permitted member asks for it in Server Settings > Updates.
+[Unit]
+Description=Update Builders Bot on request
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/BuildersBot/hosted/buildersbot-hosted-update request
+# A download and an apply: the limits of buildersbot-update.service and buildersbot-update-apply.service.
+TimeoutStartSec=45min

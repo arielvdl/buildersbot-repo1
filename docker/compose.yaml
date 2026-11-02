@@ -1,0 +1,33 @@
+# Builders Bot as a self-hosted server in Docker. See docs/docker.md.
+#
+# Builders Bot has no published container image yet. Build one from docker/Dockerfile, and write its
+# name to the file .env next to this file and seccomp.json (BUILDERSBOT_IMAGE=<image>). Then:
+#
+#   docker compose up -d
+#   docker compose exec buildersbot buildersbot login
+services:
+  buildersbot:
+    # The image that you built. Docker never pulls it from a registry. Builders Bot never goes back to
+    # an older version.
+    image: ${BUILDERSBOT_IMAGE:?Builders Bot has no published container image yet. Set BUILDERSBOT_IMAGE to an image built from docker/Dockerfile.}
+    pull_policy: never
+    restart: unless-stopped
+    security_opt:
+      # The Docker default profile, with user namespaces for the Electron sandbox.
+      - seccomp=./seccomp.json
+      - no-new-privileges:true
+    # Chromium uses shared memory. The Docker default of 64 MB is too small.
+    shm_size: 1g
+    # Builders Bot stops its agents and closes the database before it exits.
+    stop_grace_period: 60s
+    volumes:
+      - buildersbot-data:/data
+    # Builders Bot only connects out. It needs no published port.
+    # On a local network or a Tailscale tailnet, host networking can let devices connect directly.
+    # It removes the network isolation of the container. See "Network" in docs/docker.md.
+    # network_mode: host
+    # environment:
+    #   XAI_API_KEY: ${XAI_API_KEY}
+
+volumes:
+  buildersbot-data:

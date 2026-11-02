@@ -1,0 +1,75 @@
+/* Sonner gives an unstyled toast no width, so the host takes the toaster width. */
+.agent-delete-undo-toast-host {
+  width: var(--width);
+}
+
+/* The same raised surface, border, and shadow as the shared toast. The bottom padding keeps the bar
+   clear of the text. */
+.agent-delete-undo-toast {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--buildersbot-space-3);
+  overflow: hidden;
+  padding: var(--buildersbot-space-3);
+  padding-bottom: calc(var(--buildersbot-space-3) + var(--buildersbot-space-1));
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-bg-surface-raised);
+  box-shadow:
+    0 0 0 1px var(--buildersbot-border),
+    var(--buildersbot-shadow-raised);
+  color: var(--buildersbot-text-primary);
+  font-family: var(--buildersbot-font-sans);
+}
+
+/* Without a fixed track, the grid row grows to the drawing's width, and the drawing's 128% height
+   then resolves against that row. The drawing becomes taller than wide and the body sits low. */
+.agent-delete-undo-toast-avatar {
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  width: 32px;
+  height: 32px;
+}
+
+.agent-delete-undo-toast-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.agent-delete-undo-toast-title {
+  overflow: hidden;
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-medium);
+  line-height: var(--buildersbot-leading-md);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-delete-undo-toast-detail {
+  overflow: hidden;
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+  line-height: var(--buildersbot-leading-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The bar sits on the bottom edge, inside the rounded corners. */
+.agent-delete-undo-toast-bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.agent-delete-undo-toast-bar .ui-progress-track {
+  border-radius: 0;
+  background: transparent;
+}
+
+.agent-delete-undo-toast-bar .ui-progress-fill {
+  background: var(--buildersbot-accent);
+  transition-duration: var(--buildersbot-duration-fast);
+  transition-timing-function: linear;
+}

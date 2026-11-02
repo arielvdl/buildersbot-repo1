@@ -1,0 +1,26 @@
+{
+  "name": "@buildersbot/chrome-extension",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nextlevelcommunity/buildersbot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nextlevelcommunity/buildersbot/issues"
+  },
+  "homepage": "https://buildersbot.culturabuilder.com",
+  "scripts": {
+    "typecheck": "bun ../../scripts/type-checker.ts --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@buildersbot/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}

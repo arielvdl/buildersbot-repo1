@@ -1,0 +1,635 @@
+/* The page rail at the left of the window, on desktop and on the web. The window styles place it in
+ * the window grid. The window buttons of macOS sit at the top of the rail, in the top row. Other
+ * windows can show the Builders Bot logo there. */
+.window-rail {
+  position: relative;
+  display: flex;
+  width: 52px;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(var(--left-header-height, 38px) + var(--buildersbot-space-1)) 0 var(--buildersbot-space-3);
+  -webkit-app-region: drag;
+}
+
+/* The logo has the size of a rail icon, in the column of the icons. Its top padding is the same as
+ * the top padding of `.sidebar-topbar`, so it is on the center line of the server logo. */
+.window-rail-logo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  height: var(--left-header-height, 38px);
+  align-items: center;
+  justify-content: center;
+  padding-top: 2px;
+}
+
+.window-rail-logo .app-logo {
+  display: block;
+  width: var(--buildersbot-icon-lg);
+  height: var(--buildersbot-icon-lg);
+}
+
+.window-rail-logo-link {
+  display: flex;
+  border-radius: var(--buildersbot-radius-logo);
+  -webkit-app-region: no-drag;
+}
+
+.window-rail-logo-link:focus-visible {
+  outline: 0;
+  box-shadow: var(--buildersbot-focus-ring);
+}
+
+.window-rail-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--buildersbot-space-1-5);
+  /* The window swallows mouse events over a drag area. With the gaps between the buttons in the
+   * drag area, the pointer left the group between two buttons, and the tooltip closed instead of
+   * moving to the next button. */
+  -webkit-app-region: no-drag;
+}
+
+.window-rail-button {
+  position: relative;
+  display: flex;
+  width: var(--buildersbot-control-lg);
+  height: var(--buildersbot-control-lg);
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--buildersbot-radius-lg);
+  background: transparent;
+  padding: 0;
+  color: var(--buildersbot-text-muted);
+  font: inherit;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .window-rail-button:hover {
+    background: var(--buildersbot-bg-control-hover);
+    color: var(--buildersbot-text-primary);
+  }
+}
+
+.window-rail-button[aria-current="page"],
+.window-rail-button[aria-current="page"]:hover:not(:disabled):not([data-disabled]) {
+  background: var(--buildersbot-bg-control-active);
+  color: var(--buildersbot-text-primary);
+}
+
+.window-rail-button:focus-visible {
+  outline: 0;
+  box-shadow: var(--buildersbot-focus-ring);
+}
+
+.window-rail-button svg {
+  width: var(--buildersbot-icon-lg);
+  height: var(--buildersbot-icon-lg);
+}
+
+/* The dot of a rail button that has a notice, such as an update. */
+.window-rail-notice {
+  position: absolute;
+  top: var(--buildersbot-space-1-5);
+  right: var(--buildersbot-space-1-5);
+  width: var(--buildersbot-space-2);
+  height: var(--buildersbot-space-2);
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-badge-new);
+}
+
+/* The hover card of a usage ring shows the limits only. The usage page has the refresh. */
+.window-rail-usage-card .account-usage-refresh {
+  display: none;
+}
+
+/* The card opens, closes and moves with the tooltip motion, not with the transition of the usage
+ * popover. A transition would cover the motion. */
+.account-usage-popover.window-rail-usage-card {
+  transition: none;
+  transform-origin: var(--kb-tooltip-content-transform-origin);
+}
+
+/* Usage rings: the provider logo inside one ring per limit window. The hover fill is a circle around
+ * the rings. */
+.window-rail-button.window-rail-usage {
+  border-radius: var(--buildersbot-radius-pill);
+}
+
+.window-rail-button .window-rail-usage-ring {
+  position: absolute;
+  inset: 1px;
+  width: 34px;
+  height: 34px;
+  transform: rotate(-90deg);
+}
+
+.window-rail-button .window-rail-usage-logo {
+  width: var(--buildersbot-icon-xs);
+  height: var(--buildersbot-icon-xs);
+  overflow: visible;
+  fill: var(--buildersbot-provider-current);
+}
+
+.window-rail-usage-track {
+  stroke: currentcolor;
+  opacity: 0.15;
+}
+
+.window-rail-usage-arc {
+  stroke: var(--buildersbot-success);
+}
+
+.window-rail-usage-arc[data-usage-tone="warning"] {
+  stroke: var(--buildersbot-warning);
+}
+
+.window-rail-usage-arc[data-usage-tone="critical"] {
+  stroke: var(--buildersbot-danger);
+}
+
+/* The load ring: the arc is the memory in use, the number is the agents that run. */
+.window-rail-usage-arc[data-load-tone="warning"] {
+  stroke: var(--buildersbot-warning);
+}
+
+.window-rail-usage-arc[data-load-tone="critical"] {
+  stroke: var(--buildersbot-danger);
+}
+
+.window-rail-load-count {
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--buildersbot-weight-semibold);
+  line-height: 1;
+}
+
+/* The load page of Settings, which the ring opens: the rows of the stopped work and the load below them
+ * take the layout that the panel of the ring had. */
+.window-load-page {
+  display: grid;
+  gap: var(--buildersbot-space-3);
+}
+
+/* The count of stopped work: a mark in the danger colour at the corner of the ring. */
+.window-rail-load-alert {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  display: grid;
+  min-width: 15px;
+  height: 15px;
+  place-items: center;
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-danger);
+  padding: 0 3px;
+  color: var(--buildersbot-text-on-accent);
+  font-size: var(--buildersbot-glyph-badge);
+  font-weight: var(--buildersbot-weight-semibold);
+  line-height: 1;
+}
+
+/* The computer is low on memory: new messages wait. It says why, because a message that waits looks like one that failed. */
+.window-rail-load-pressure {
+  margin: 0;
+  border-radius: var(--buildersbot-radius-md);
+  background: color-mix(in srgb, var(--buildersbot-warning) 16%, transparent);
+  padding: var(--buildersbot-space-2);
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.window-rail-load-pressure[data-level="critical"] {
+  background: color-mix(in srgb, var(--buildersbot-danger) 16%, transparent);
+}
+
+.window-rail-load-section-head {
+  display: flex;
+  min-height: var(--buildersbot-control-sm);
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-2);
+}
+
+.window-rail-load-section-head h3 {
+  white-space: nowrap;
+}
+
+.window-rail-load-section-head h3 {
+  margin: 0;
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+/* The work that stopped and the work that runs: a heading with its action, then a short list. Thin
+ * lines, not cards, part the items, so that eleven of them still read as one list. */
+.window-rail-load-work {
+  display: grid;
+  border-bottom: 1px solid color-mix(in srgb, var(--buildersbot-text-primary) 9%, transparent);
+  padding-bottom: var(--buildersbot-space-1);
+}
+
+.window-rail-load-work .window-rail-load-section-head {
+  padding-bottom: var(--buildersbot-space-2);
+}
+
+.window-rail-load-empty {
+  margin: 0;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.window-rail-load-work .window-rail-load-empty {
+  padding-bottom: var(--buildersbot-space-2);
+}
+
+.window-rail-load-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.window-rail-load-item {
+  display: grid;
+  min-width: 0;
+  gap: var(--buildersbot-space-1);
+  border-top: 1px solid color-mix(in srgb, var(--buildersbot-text-primary) 9%, transparent);
+  padding: var(--buildersbot-space-3) 0;
+}
+
+/* The channel, and at the right the state icon of a stopped task or the minutes of a run. */
+.window-rail-load-item-head {
+  display: flex;
+  min-width: 0;
+  min-height: var(--buildersbot-control-xs);
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+}
+
+.window-rail-load-item-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-lg);
+  font-weight: var(--buildersbot-weight-semibold);
+  line-height: var(--buildersbot-leading-lg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-rail-load-item-time {
+  flex: 0 0 auto;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The reason is the tooltip of this icon. A failed task is in a quiet danger colour, a paused one in amber. */
+.window-load-page .window-rail-load-state {
+  flex: 0 0 auto;
+  margin-right: calc(var(--buildersbot-space-1) * -1);
+}
+
+.window-load-page .window-rail-load-state[data-tone="danger"] {
+  color: var(--buildersbot-danger-text);
+}
+
+.window-load-page .window-rail-load-state[data-tone="warning"] {
+  color: var(--buildersbot-warning-text);
+}
+
+/* The tab of the channel, or the chat of the agent: smaller and muted under the channel. */
+.window-rail-load-item-place {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--buildersbot-space-1);
+  margin: 0;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  line-height: var(--buildersbot-leading-sm);
+}
+
+.window-rail-load-item-place svg {
+  width: var(--buildersbot-icon-xs);
+  height: var(--buildersbot-icon-xs);
+  flex: 0 0 auto;
+}
+
+.window-rail-load-item-place-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The actions keep one height and one gap. In a narrow panel they wrap to a second line at the left. */
+.window-rail-load-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  padding-top: var(--buildersbot-space-1-5);
+}
+
+/* A filled button that reads on the panel. The secondary fill is almost the color of the panel. */
+.window-load-page .window-rail-load-action {
+  height: var(--buildersbot-control-sm);
+  gap: var(--buildersbot-space-1-5);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--buildersbot-text-primary) 10%, transparent);
+  padding-inline: var(--buildersbot-space-3);
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-md);
+}
+
+.window-load-page .window-rail-load-action svg {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  flex: 0 0 auto;
+}
+
+.window-load-page .window-rail-load-action[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--buildersbot-text-primary) 16%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .window-load-page .window-rail-load-action:hover:not(:disabled):not([data-disabled]) {
+    background: color-mix(in srgb, var(--buildersbot-text-primary) 16%, transparent);
+  }
+}
+
+/* The request: one line, and all of it when it is open. Closed, the hit area of the chevron covers the
+ * line, so a click anywhere on it opens the request. */
+.window-rail-load-request {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: var(--buildersbot-space-1);
+}
+
+.window-rail-load-request-text {
+  min-width: 0;
+  flex: 1 1 auto;
+  margin: 0;
+  overflow: hidden;
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-md);
+  line-height: var(--buildersbot-leading-md);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-rail-load-request-text[data-empty] {
+  color: var(--buildersbot-text-muted);
+  font-style: italic;
+}
+
+.window-rail-load-request[data-expanded] .window-rail-load-request-text {
+  max-height: calc(var(--buildersbot-leading-md) * 8);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.window-load-page .window-rail-load-request-toggle {
+  position: static;
+  height: var(--buildersbot-leading-md);
+}
+
+.window-load-page .window-rail-load-request-toggle svg {
+  transition: transform var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
+}
+
+.window-load-page .window-rail-load-request[data-expanded] .window-rail-load-request-toggle svg {
+  transform: rotate(180deg);
+}
+
+.window-rail-load-request:not([data-expanded]) .window-rail-load-request-toggle::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+}
+
+/* Who had the task, and what the automatic recovery does with it, on one muted line. */
+.window-rail-load-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--buildersbot-space-1-5);
+  margin: 0;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  line-height: var(--buildersbot-leading-sm);
+}
+
+.window-rail-load-item-meta > span + span::before {
+  margin-right: var(--buildersbot-space-1-5);
+  content: "·";
+}
+
+.window-rail-load-item-meta [data-tone="danger"] {
+  color: var(--buildersbot-danger-text);
+}
+
+/* An `Input` with no keystroke cue. It sets back the auto height and no transition of a plain field. */
+.window-rail-load-number {
+  width: 72px;
+  min-width: 0;
+  height: auto;
+  transition: none;
+  border: 1px solid var(--buildersbot-border-strong);
+  border-radius: var(--buildersbot-radius-sm);
+  background: var(--buildersbot-bg-surface);
+  padding: 3px 8px;
+  color: var(--buildersbot-text-primary);
+  text-align: right;
+  font: inherit;
+  font-size: var(--buildersbot-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The ring of a plain field in `auth.css` skips an `Input`. This rule sets it back with the same
+   specificity. */
+input.window-rail-load-number:focus-visible {
+  outline: 2px solid var(--buildersbot-border-focus);
+  outline-offset: 2px;
+}
+
+.window-rail-load-body {
+  display: grid;
+  gap: var(--buildersbot-space-3);
+}
+
+/* A reading of the load: a compact settings row with the value at the right. */
+.window-rail-load-stat-value {
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.window-rail-load-stat {
+  min-height: 0;
+}
+
+.settings-modal-card > .window-rail-load-lane-block {
+  display: grid;
+  gap: var(--buildersbot-space-2);
+  padding: var(--buildersbot-space-2) var(--buildersbot-space-4) var(--buildersbot-space-3);
+}
+
+/* What the reviewer and the recovery did lately: one sentence per row, in the muted text of a description. */
+.window-rail-load-recent-row {
+  min-height: 0;
+}
+
+.window-rail-load-lane {
+  display: grid;
+  max-height: 240px;
+  gap: var(--buildersbot-space-1);
+  margin: 0;
+  overflow-y: auto;
+  padding: 0;
+  list-style: none;
+}
+
+.window-rail-load-channel {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 var(--buildersbot-space-2);
+  font-size: var(--buildersbot-text-sm);
+}
+
+/* The buttons take a row of their own, so a long channel name keeps the room above them. */
+.window-rail-load-channel-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-self: end;
+  gap: var(--buildersbot-space-1);
+}
+
+.window-rail-load-channel-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--buildersbot-text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-rail-load-channel-state {
+  flex: 0 0 auto;
+  color: var(--buildersbot-text-secondary);
+  white-space: nowrap;
+}
+
+.window-rail-load-channel[data-status="running"] .window-rail-load-channel-state {
+  color: var(--buildersbot-accent-text);
+}
+
+/* The usage of a custom agent: its logo with no ring, at the size of a rail icon. The hover card
+ * shows the answer of the agent as it wrote it. */
+.window-rail-button .window-rail-agent-usage-logo {
+  width: var(--buildersbot-icon-md);
+  height: var(--buildersbot-icon-md);
+}
+
+.window-rail-agent-usage {
+  display: grid;
+  padding-inline: var(--buildersbot-space-1);
+  gap: var(--buildersbot-space-1);
+}
+
+.window-rail-agent-usage-text {
+  margin: 0;
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+  line-height: var(--buildersbot-leading-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* A row of the More menu: the page, then its pin. */
+.window-rail-more-menu .window-rail-more-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--buildersbot-control-md);
+  align-items: center;
+  border-radius: var(--ui-menu-item-radius);
+  transition: background-color var(--buildersbot-duration-hover) var(--buildersbot-ease-out);
+}
+
+/* The whole line highlights, for the page and for its pin. The items have no background of their own. */
+.ui-action-menu.window-rail-more-menu .window-rail-more-row:is(:hover, :has([data-highlighted])) {
+  background: var(--ui-menu-item-hover);
+}
+
+.ui-action-menu.window-rail-more-menu
+  .window-rail-more-row
+  :is([role="menuitem"], [role="menuitemcheckbox"]):is(:hover, :focus-visible, [data-highlighted]) {
+  background: transparent;
+}
+
+/* The pin shows on a pinned page, and on the row under the pointer or the keyboard. The shared
+ * .ui-action-menu item rule outranks a single class, so this rule names the role to center the pin. */
+.ui-action-menu.window-rail-more-menu .window-rail-more-pin[role="menuitemcheckbox"] {
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+}
+
+.ui-action-menu.window-rail-more-menu
+  .window-rail-more-row:is([data-pinned], :hover, :focus-within)
+  .window-rail-more-pin {
+  opacity: 1;
+}
+
+/* A touch screen has no hover, so each pin shows. */
+@media (hover: none) {
+  .ui-action-menu.window-rail-more-menu .window-rail-more-pin[role="menuitemcheckbox"] {
+    opacity: 1;
+  }
+}
+
+/* Only a pinned page has a filled pin. A highlighted pin stays an outline. */
+.ui-action-menu.window-rail-more-menu .window-rail-more-pin > .agent-context-icon > * {
+  fill-opacity: 0;
+}
+
+.window-rail-more-menu .window-rail-more-row[data-pinned] .window-rail-more-pin > .agent-context-icon > * {
+  fill-opacity: 1;
+}
+
+/* The page icon follows the line, also when the pin is highlighted. */
+.ui-action-menu.window-rail-more-menu
+  .window-rail-more-row:is(:hover, :has([data-highlighted]))
+  > [role="menuitem"]
+  > .agent-context-icon {
+  color: var(--buildersbot-text-primary);
+}
+
+.ui-action-menu.window-rail-more-menu
+  .window-rail-more-row:is(:hover, :has([data-highlighted]))
+  > [role="menuitem"]
+  > .agent-context-icon
+  > * {
+  fill-opacity: 1;
+}

@@ -1,0 +1,399 @@
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createBuildersBotLogger } from "@buildersbot/logging";
+
+function filesUnder(directory: string): string[] {
+  return readdirSync(directory).flatMap((entry) => {
+    // The reachable roots below are whole workspaces, and every one of them symlinks a
+    // node_modules that statSync follows straight into the hoisted install.
+    if (entry === "node_modules") return [];
+    const path = resolve(directory, entry);
+    return statSync(path).isDirectory() ? filesUnder(path) : [path];
+  });
+}
+
+function matches(source: string, expression: RegExp): number {
+  return source.match(expression)?.length ?? 0;
+}
+
+export interface UiFoundationReport {
+  /** One human-readable line per violation, in the order the tree was walked. */
+  readonly failures: readonly string[];
+  /** Composite ARIA roles hand-rolled outside `components/ui`. Ratchets down, never up. */
+  readonly manualCompositeCount: number;
+}
+
+/**
+ * Every stretch of source that builds a class string, matched by balancing the brace rather
+ * than by reading a line, because the renderer's array form spans several:
+ *
+ *     class={[
+ *       "remote-desktop-workspace",
+ *       `remote-desktop-workspace-${props.platform}`,
+ *     ]}
+ *
+ * One opener, because this renderer has one. `className` and the `classList={{…}}` prop are
+ * React and Solid idioms it uses zero times, and the `cx()` helper it uses 78 times is inside
+ * a `class={…}` on all 78 - an opener for it widens no region and no fixture can hold it to
+ * account.
+ */
+function classRegions(source: string): string[] {
+  const regions: string[] = [];
+  const opener = /class\s*=\s*\{/gu;
+  let match: RegExpExecArray | null = opener.exec(source);
+  while (match !== null) {
+    let depth = 1;
+    let index = match.index + match[0].length;
+    while (index < source.length && depth > 0) {
+      if (source[index] === "{") depth += 1;
+      else if (source[index] === "}") depth -= 1;
+      index += 1;
+    }
+    regions.push(source.slice(match.index, index));
+    opener.lastIndex = index;
+    match = opener.exec(source);
+  }
+  return regions;
+}
+
+// The prefix of a class family does not have to open the literal:
+// `agent-row-agent-status agent-row-agent-status-${kind}` puts it after a space, so this
+// anchors on the backtick or the whitespace that starts the class name instead.
+const CLASS_FAMILY_PREFIX = /[`\s]([a-zA-Z][a-zA-Z0-9_-]*-)\$\{/gu;
+
+/**
+ * Reads a renderer tree and reports every design-system violation in it. Paths in
+ * `failures` are relative to `labelRoot`, which the CLI sets to the repository root
+ * so a message can be pasted straight into an editor.
+ *
+ * Takes its roots as arguments rather than resolving them, so the fixture trees in
+ * `tools/ui-foundation/fixtures` can prove each check still matches something. Two
+ * of these checks silently matched nothing for months.
+ *
+ * `reachableRoots` is where markup that can name a class lives, and it is wider than
+ * `rendererRoot` in both directions. The renderer's four `.html` entry points and its
+ * `stories/` tree sit beside `src/` rather than inside it, and a class can be named from
+ * outside the renderer altogether: `src/main` injects one into a picture-in-picture window
+ * and `apps/auth-api` renders the preview shell. So the CLI passes `src` and `apps` whole,
+ * rather than a list of the three directories that happen to do it today.
+ */
+/**
+ * The class names a stylesheet declares, read from selector preludes alone. A bare `.name` scan
+ * over the whole file cannot tell a selector from `url("sprite.svg")` or from a comment naming a
+ * rule that was deleted, and either one fails the check for a class nothing ever declared.
+ */
+function declaredClasses(source: string): Set<string> {
+  const names = new Set<string>();
+  const withoutComments = source.replaceAll(/\/\*.*?\*\//gsu, " ");
+  let start = 0;
+  for (let index = 0; index < withoutComments.length; index += 1) {
+    const char = withoutComments[index];
+    // A prelude ends at its block. `;` and `}` end a declaration or a block instead, so
+    // whatever was collecting is a value or the tail of a rule and never a selector.
+    if (char === "{") {
+      for (const [, name] of withoutComments.slice(start, index).matchAll(/\.(-?[a-zA-Z][a-zA-Z0-9_-]*)/gu)) {
+        if (name !== undefined) names.add(name);
+      }
+      start = index + 1;
+    } else if (char === "}" || char === ";") {
+      start = index + 1;
+    }
+  }
+  return names;
+}
+
+/** An i18n key: dotted words, so `${anchor}` in a selector template is not one. */
+const KEY = String.raw`[\w-]+(?:\.[\w-]+)+`;
+/** An anchor written as text: `="key"`, `='key'` or `={"key"}`. */
+const LITERAL_ANCHOR = new RegExp(
+  String.raw`data-settings-row=(?:"(${KEY})"|'(${KEY})'|\{\s*["'\x60](${KEY})["'\x60]\s*\})`,
+  "gu",
+);
+/** An anchor set from a property of a value, such as `data-settings-row={setting.title}`. */
+const PROPERTY_ANCHOR = /data-settings-row=\{\s*[\w$]+(?:\??\.[\w$]+)*\??\.([\w$]+)\s*\}/gu;
+/** A row title that is a catalog key: `t("key")` or `i18n.t("key")`, with or without arguments. */
+const TITLE_KEY = String.raw`\{\s*(?:[\w$]+\.)?t\(\s*"(${KEY})"`;
+
+/** The end of the JSX opening tag that starts at `start`: the `>` outside braces and strings. */
+function openingTagEnd(source: string, start: number): number {
+  let depth = 0;
+  let quote = "";
+  for (let index = start + 1; index < source.length; index += 1) {
+    const char = source[index];
+    if (quote) {
+      if (char === quote) quote = "";
+    } else if (char === '"' || char === "'" || char === "`") quote = char;
+    else if (char === "{") depth += 1;
+    else if (char === "}") depth -= 1;
+    else if (char === ">" && depth === 0) return index;
+  }
+  return source.length;
+}
+
+interface OpeningTag {
+  name: string;
+  start: number;
+  end: number;
+  attributes: string;
+  selfClosing: boolean;
+}
+
+function openingTags(source: string, names: string): OpeningTag[] {
+  const tags: OpeningTag[] = [];
+  for (const match of source.matchAll(new RegExp(String.raw`<(${names})(?=[\s>/])`, "gu"))) {
+    const name = match[1];
+    if (name === undefined) continue;
+    const end = openingTagEnd(source, match.index);
+    const attributes = source.slice(match.index + name.length + 1, end);
+    tags.push({ name, start: match.index, end, attributes, selfClosing: attributes.trimEnd().endsWith("/") });
+  }
+  return tags;
+}
+
+/** Whether the element that `tag` opens is still open at `position`: its closing tag comes later. */
+function openAt(source: string, tag: OpeningTag, position: number): boolean {
+  if (tag.selfClosing || position <= tag.end) return false;
+  const between = source.slice(tag.end, position);
+  const opened = between.match(new RegExp(String.raw`<${tag.name}(?=[\s>])`, "gu"))?.length ?? 0;
+  const closed = between.match(new RegExp(`</${tag.name}>`, "gu"))?.length ?? 0;
+  return opened >= closed;
+}
+
+/**
+ * The rows of a settings file that have a catalog title and no anchor: a `SwitchField` with
+ * `label={t("key")}`, or an `Item` whose `ItemTitle` is `{t("key")}`. A row inside an element with
+ * an anchor, such as a section, moves with that anchor. A row with `data-settings-row-skip` is not
+ * a setting, such as a status line.
+ */
+function rowsWithoutAnchor(source: string): Array<{ key: string; start: number }> {
+  const anchored = openingTags(source, String.raw`[A-Za-z][\w.]*`).filter((tag) =>
+    tag.attributes.includes("data-settings-row="),
+  );
+  const rows: Array<{ key: string; start: number }> = [];
+  for (const tag of openingTags(source, "SwitchField|Item")) {
+    if (/data-settings-row(?:-skip)?=/u.test(tag.attributes)) continue;
+    let key: string | undefined;
+    if (tag.name === "SwitchField") {
+      key = tag.attributes.match(new RegExp(String.raw`\blabel=${TITLE_KEY}`, "u"))?.[1];
+    } else {
+      const body = source.slice(tag.end + 1).split(/<\/Item>|<Item(?=[\s>])/u)[0] ?? "";
+      key = body.match(new RegExp(String.raw`<ItemTitle>\s*${TITLE_KEY}`, "u"))?.[1];
+    }
+    if (key === undefined) continue;
+    if (anchored.some((parent) => parent.start < tag.start && openAt(source, parent, tag.start))) continue;
+    rows.push({ key, start: tag.start });
+  }
+  return rows;
+}
+
+/**
+ * The settings search moves to a row through its `data-settings-row` anchor, and its index names
+ * each anchor as `anchor: "key"`. A row that is not in the index is never found, and an entry with no
+ * row opens its tab and moves nowhere, so both fail. An anchor that markup sets from a property of a
+ * value, such as `data-settings-row={setting.title}`, cannot be read here: an entry counts as placed
+ * when its key is the value of that property in the same file, such as `title: "key"`, and the type
+ * of the index holds that list. In a file that sets an anchor, a row with a catalog title and no
+ * anchor fails too: the search cannot find a setting that the tab adds without one.
+ */
+function settingsSearchFailures(files: readonly string[], labelRoot: string): string[] {
+  const anchors = new Map<string, string>();
+  const entries = new Map<string, string>();
+  const valueAnchorStrings = new Set<string>();
+  const failures: string[] = [];
+  for (const file of files) {
+    if (!/\.tsx?$/u.test(file) || /\.test\.tsx?$/u.test(file)) continue;
+    const source = readFileSync(file, "utf8");
+    const label = relative(labelRoot, file);
+    for (const match of source.matchAll(LITERAL_ANCHOR)) {
+      const key = match[1] ?? match[2] ?? match[3];
+      if (key !== undefined && !anchors.has(key)) anchors.set(key, label);
+    }
+    for (const [, key] of source.matchAll(new RegExp(`\\banchor:\\s*"(${KEY})"`, "gu"))) {
+      if (key !== undefined && !entries.has(key)) entries.set(key, label);
+    }
+    for (const [, property] of source.matchAll(PROPERTY_ANCHOR)) {
+      for (const [, key] of source.matchAll(new RegExp(String.raw`\b${property}:\s*"(${KEY})"`, "gu")))
+        if (key !== undefined) valueAnchorStrings.add(key);
+    }
+    if (!source.includes("data-settings-row=")) continue;
+    for (const row of rowsWithoutAnchor(source)) {
+      failures.push(
+        `${label}: the settings row "${row.key}" has no data-settings-row; add one and a settings search entry, or data-settings-row-skip`,
+      );
+    }
+  }
+  for (const [key, label] of anchors) {
+    if (!entries.has(key)) failures.push(`${label}: the settings row "${key}" has no entry in the settings search`);
+  }
+  for (const [key, label] of entries) {
+    if (!anchors.has(key) && !valueAnchorStrings.has(key)) {
+      failures.push(`${label}: the settings search entry "${key}" has no row with that data-settings-row`);
+    }
+  }
+  return failures;
+}
+
+export function checkUiFoundation(
+  rendererRoot: string,
+  labelRoot: string,
+  reachableRoots: readonly string[] = [rendererRoot],
+  uiRoot = resolve(rendererRoot, "components/ui"),
+): UiFoundationReport {
+  const sourceFiles = [...new Set([...filesUnder(rendererRoot), ...filesUnder(uiRoot)])];
+  // Compared with a separator appended, or components/ui-kit and components/uiLegacy read
+  // as being inside the design system and every check below skips them silently.
+  const insideUi = (path: string): boolean =>
+    path.startsWith(`${uiRoot}${sep}`) &&
+    !path.startsWith(`${uiRoot}${sep}features${sep}`) &&
+    !path.startsWith(`${uiRoot}${sep}components${sep}`);
+  const failures: string[] = [];
+
+  for (const file of sourceFiles.filter((path) => /\.(?:ts|tsx)$/.test(path))) {
+    if (insideUi(file) || /\.test\.tsx?$/u.test(file)) continue;
+    const source = readFileSync(file, "utf8");
+    const label = relative(labelRoot, file);
+
+    if (/<(?:button|input|textarea|select)\b/u.test(source)) {
+      failures.push(`${label}: use a components/ui control instead of a native element`);
+    }
+    if (/from\s+["'](?:@kobalte\/core|lucide-solid)(?:\/[^"']*)?["']/u.test(source)) {
+      failures.push(`${label}: Kobalte/Lucide imports are allowed only in components/ui`);
+    }
+    if (/role=["']switch["']/u.test(source)) {
+      failures.push(`${label}: a hand-rolled switch is forbidden; use components/ui/Switch`);
+    }
+    if (file.endsWith(".tsx")) {
+      // The property may be quoted, and a hyphenated one has to be: `border-color` is not a
+      // bare JS key. Without the optional quote every hyphenated branch of this pattern was
+      // unreachable - dead from the day it was written, and green about it.
+      const inlineColor =
+        /(?:color|background(?:-color)?|border(?:-(?:top|right|bottom|left))?(?:-color)?|fill|stroke)["']?\s*:\s*["'](?:#[\da-f]{3,8}|rgba?\(|hsla?\(|(?:white|black|red|blue|green|yellow|purple|orange|gray|grey|pink)\b)/iu;
+      if (inlineColor.test(source)) {
+        failures.push(`${label}: a colour literal in an inline style is forbidden; use a palette token`);
+      }
+      const inlineFoundationValue =
+        /["']?(?:font-size|border-radius|transition(?:-duration)?)["']?\s*:\s*["'](?!var\()[^"']+["']/iu;
+      if (inlineFoundationValue.test(source)) {
+        failures.push(`${label}: font-size, radius and transition in an inline style must use tokens`);
+      }
+    }
+  }
+
+  failures.push(...settingsSearchFailures(sourceFiles, labelRoot));
+
+  // Every non-test source in the renderer, the shared layer included. The composite-role
+  // scan below deliberately skips components/ui because a primitive there is allowed to
+  // hand-roll a role; a test hook is not, so this one has no exempt directory. Scoping it
+  // to the same join as that scan would leave components/ui free to grow hooks silently,
+  // which is the exact shape of the two blindnesses this file's history records.
+  const testHookSource = sourceFiles
+    .filter((path) => /\.tsx?$/u.test(path))
+    .filter((path) => !/\.test\.tsx?$/u.test(path))
+    .map((path) => readFileSync(path, "utf8"))
+    .join("\n");
+
+  const complexApiPath = resolve(uiRoot, "complex.tsx");
+  if (/export const \w+\s*=\s*\w+Primitive\s*;/u.test(readFileSync(complexApiPath, "utf8"))) {
+    failures.push(
+      `${relative(labelRoot, complexApiPath)}: a Kobalte namespace must go through an adapter, not a direct alias`,
+    );
+  }
+
+  // Every renderer component outside the shared layer, wherever it lives. This
+  // used to walk `components/` alone, which stopped seeing a component the moment
+  // it moved into `features/` - the budget stayed at zero by going blind, not by
+  // being met.
+  const componentSource = sourceFiles
+    .filter((path) => path.endsWith(".tsx") && !insideUi(path))
+    .filter((path) => !path.endsWith(".test.tsx"))
+    .map((path) => readFileSync(path, "utf8"))
+    .join("\n");
+  const manualCompositeCount = matches(
+    componentSource,
+    /role=["'](?:dialog|alertdialog|menu|tablist|tab|tabpanel|listbox|option)["']/gu,
+  );
+
+  // The palette moved to @buildersbot/brand, which is now the only file allowed to hold
+  // a colour literal, so every stylesheet the renderer owns is scanned whole. This
+  // used to slice styles.css after its :root block to spare the palette, which also
+  // spared everything else declared in there. It then named styles.css and styles/
+  // explicitly, which spared a stylesheet placed anywhere else: preview/preview.css
+  // was outside the scan and nothing said so, and a feature stylesheet moving next
+  // to the components it dresses would have left the budget the same silent way.
+  // The whole renderer tree is the scope, so a new stylesheet is covered by
+  // existing there rather than by being listed.
+  const styleSheets = sourceFiles.filter((path) => path.endsWith(".css"));
+  const legacyStyles = styleSheets.map((path) => readFileSync(path, "utf8")).join("\n");
+
+  // CSS is the one renderer surface no compiler reads, so a rule outlives the markup it
+  // dressed in silence. A class counts as reachable when its name appears as a word in any
+  // component, story or HTML entry point, or when a `prefix-${value}` family covers it. The
+  // family prefixes are taken from class-building regions alone: `id={`remote-${index}`}` has
+  // the same shape as a class family, and honouring it there would hide every `remote-*` rule.
+  const markup = reachableRoots.flatMap(filesUnder).filter((path) => /\.(?:tsx?|html)$/u.test(path));
+  const named = new Set<string>();
+  const families: string[] = [];
+  for (const path of markup) {
+    const source = readFileSync(path, "utf8");
+    for (const word of source.matchAll(/[a-zA-Z][a-zA-Z0-9_-]*/gu)) named.add(word[0]);
+    for (const region of classRegions(source)) {
+      for (const [, prefix] of region.matchAll(CLASS_FAMILY_PREFIX)) if (prefix !== undefined) families.push(prefix);
+    }
+  }
+  for (const path of styleSheets) {
+    const declared = declaredClasses(readFileSync(path, "utf8"));
+    for (const name of [...declared].sort()) {
+      if (named.has(name)) continue;
+      if (families.some((prefix) => name.startsWith(prefix) && name.length > prefix.length)) continue;
+      failures.push(`${relative(labelRoot, path)}: .${name} is not reachable from any markup; delete the rule`);
+    }
+  }
+  const colorLiteralCount =
+    matches(legacyStyles, /#[\da-f]{3,8}|rgba?\([^)]*\)|hsla?\([^)]*\)/giu) +
+    matches(legacyStyles, /(?<![-\w])(?:white|black|red|blue|green|yellow|purple|orange|gray|grey|pink)(?![-\w])/giu);
+  const debtBudgets = [
+    ["hand-rolled composite ARIA roles", manualCompositeCount, 0],
+    // Biome rejects the *ByTestId queries, but a GritQL rule cannot see a JSX attribute in
+    // the product tree, so this count is the only guard against a hook in markup. Reach an
+    // element by its accessible name instead.
+    ["data-testid hooks in renderer markup", matches(testHookSource, /data-testid\s*=/gu), 0],
+    ["colour literals outside the palette", colorLiteralCount, 0],
+    ["untokenized font-size", matches(legacyStyles, /font-size:(?!\s*(?:var\(|inherit\b))\s*[^;]+/gu), 0],
+    [
+      "untokenized border-radius",
+      matches(legacyStyles, /border-radius:(?!\s*(?:var\(|0(?:\s|;)|inherit\b))\s*[^;]+/gu),
+      0,
+    ],
+    [
+      "untokenized transition durations",
+      matches(legacyStyles, /transition(?:-duration)?:(?![^;]*var\()(?!\s*(?:none|0\.01ms))[^;]*\b\d+m?s\b[^;]*/gu),
+      0,
+    ],
+  ] as const;
+
+  for (const [label, actual, maximum] of debtBudgets) {
+    if (actual > maximum)
+      failures.push(`${label}: ${actual} (migration budget: ${maximum}; the count may only go down)`);
+  }
+
+  return { failures, manualCompositeCount };
+}
+
+if (import.meta.main) {
+  const logger = createBuildersBotLogger("ui-foundation-check");
+  const projectRoot = fileURLToPath(new URL("..", import.meta.url));
+  const { failures, manualCompositeCount } = checkUiFoundation(
+    resolve(projectRoot, "src/renderer/src"),
+    projectRoot,
+    [resolve(projectRoot, "src"), resolve(projectRoot, "apps"), resolve(projectRoot, "packages/ui/src")],
+    resolve(projectRoot, "packages/ui/src"),
+  );
+
+  if (failures.length > 0) {
+    logger.error(`UI foundation check failed:\n- ${failures.join("\n- ")}`);
+    process.exit(1);
+  }
+
+  logger.info(`UI foundation check passed. Legacy composite debt: ${manualCompositeCount}/0.`);
+}

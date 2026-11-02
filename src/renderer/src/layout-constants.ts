@@ -1,0 +1,28 @@
+/**
+ * Geometry for the workspace shell. These are module constants, not state: the
+ * controller only used to hand them through its context because the view could
+ * not import `App.tsx` without closing an import cycle.
+ */
+
+export const LEFT_PANEL_STORAGE_KEY = "buildersbot:left-panel-width";
+export const LEFT_PANEL_COLLAPSED_STORAGE_KEY = "buildersbot:left-panel-collapsed";
+/**
+ * What the column at the left of the sidebar shows: "sections", the default, or "servers". This key
+ * replaces `buildersbot:server-view` (the server rail or the server menu), which is no longer read, so
+ * each computer starts with the sections.
+ */
+export const LEFT_COLUMN_STORAGE_KEY = "buildersbot:left-column";
+/** Whether the middle shows the open agent's chat or its routines. */
+export const SIDEBAR_VIEW_STORAGE_KEY = "buildersbot:sidebar-view";
+/** The pages that the user pinned to the page rail or took off it: a JSON record of booleans. */
+export const RAIL_PINS_STORAGE_KEY = "buildersbot:rail-pins";
+export const LEFT_PANEL_DEFAULT = 280;
+export const LEFT_PANEL_MIN = 128;
+export const LEFT_PANEL_MAX = 400;
+export const LEFT_PANEL_COMPACT = 88;
+export const LEFT_PANEL_COLLAPSE_THRESHOLD = 110;
+export const LEFT_PANEL_EXPAND_THRESHOLD = 118;
+export const CONVERSATION_MIN_WIDTH = 424;
+export const MAC_SERVER_RAIL_WIDTH = 72;
+export const SERVER_RAIL_WIDTH = 64;
+export const NARROW_SERVER_RAIL_WIDTH = 56;

@@ -1,0 +1,100 @@
+import { resolve } from "node:path";
+import solidPlugin from "@solidjs/vite-plugin";
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig, externalizeDepsPlugin } from "electron-vite";
+import { lazyLanguageCatalogs } from "./packages/i18n/vite-plugin";
+
+const rendererPort = readRendererPort(process.env.BUILDERSBOT_DEV_RENDERER_PORT);
+
+export default defineConfig({
+  main: {
+    // Workspace sources ship as TypeScript and must be bundled for the packaged app.
+    plugins: [
+      externalizeDepsPlugin({
+        exclude: [
+          "@buildersbot/brand",
+          "@buildersbot/contracts",
+          "@buildersbot/i18n",
+          "@buildersbot/logging",
+          "@buildersbot/team-client",
+          "@buildersbot/telemetry",
+          "@buildersbot/user-errors",
+        ],
+      }),
+    ],
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve("src/main/index.ts"),
+          // The database host is its own process. Only node:* and the installed Effect package
+          // are runtime imports; the unpacked host must not load the main process bundle.
+          "agent-database-host": resolve("src/backend/agent-data/agent-database-host.ts"),
+          // The voice hosts are their own processes too. They import only node:* and load the
+          // sherpa-onnx addon by path.
+          "voice-transcription-host": resolve("src/main/voice-transcription-host.ts"),
+          "voice-speech-host": resolve("src/main/voice-speech-host.ts"),
+        },
+      },
+    },
+  },
+  preload: {
+    plugins: [externalizeDepsPlugin({ exclude: ["@buildersbot/contracts"] })],
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve("src/preload/index.ts"),
+          teamWebrtc: resolve("src/preload/team-webrtc.ts"),
+        },
+        output: {
+          format: "cjs",
+          entryFileNames: "[name].cjs",
+        },
+      },
+    },
+  },
+  renderer: {
+    plugins: [
+      // Each window is a renderer process of its own. Each one keeps English and Portuguese in its
+      // bundle and loads another language on first use (see `packages/i18n/src/desktop-catalogs.ts`).
+      // The main process keeps every language.
+      lazyLanguageCatalogs({
+        source: resolve("packages/i18n/src"),
+        replacement: "desktop-catalogs.ts",
+        environment: "client",
+      }),
+      solidPlugin(),
+      tailwindcss({ optimize: false }),
+    ],
+    optimizeDeps: {
+      include: ["@norbert_bodziony/bloub"],
+    },
+    resolve: {
+      dedupe: ["solid-js", "@solidjs/web"],
+    },
+    ...(rendererPort ? { server: { port: rendererPort, strictPort: true } } : {}),
+    build: {
+      // electron-vite leaves the renderer unminified. The web client builds the same renderer code
+      // with the default minifier of Vite, so this build uses it too: each window parses, compiles
+      // and keeps less source.
+      minify: true,
+      rollupOptions: {
+        input: {
+          index: resolve("src/renderer/index.html"),
+          helper: resolve("src/renderer/helper.html"),
+          browserPip: resolve("src/renderer/browser-pip.html"),
+          browserPipControls: resolve("src/renderer/browser-pip-controls.html"),
+          teamWebrtc: resolve("src/renderer/team-webrtc.html"),
+        },
+      },
+    },
+  },
+});
+
+function readRendererPort(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 1_024 || port > 65_535) {
+    throw new Error("BUILDERSBOT_DEV_RENDERER_PORT must be an integer from 1024 to 65535.");
+  }
+  return port;
+}

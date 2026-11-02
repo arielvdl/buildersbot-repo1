@@ -1,0 +1,236 @@
+{
+  "expo": {
+    "name": "Builders Bot",
+    "slug": "buildersbot",
+    "platforms": ["ios", "android"],
+    "version": "1.4.4",
+    "orientation": "portrait",
+    "icon": "./assets/icons/app-icon.png",
+    "scheme": "buildersbot",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "run.buildersbot.mobile",
+      "supportsTablet": true,
+      "associatedDomains": ["applinks:buildersbot.culturabuilder.com"],
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "Allow Builders Bot to connect to your desktop during local development.",
+        "NSHumanReadableCopyright": "Copyright 2026 CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA (CNPJ 62.995.760/0001-33).",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        },
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "icon": "./assets/icons/app-icon.icon"
+    },
+    "android": {
+      "package": "run.buildersbot.mobile",
+      "icon": "./assets/icons/app-icon.png",
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["android.permission.CAMERA"],
+      "blockedPermissions": [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
+      ]
+    },
+    "plugins": [
+      "./plugins/with-rocketsim",
+      "./plugins/with-workspace-bundle-inputs",
+      "expo-router",
+      "expo-video",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#CDADEC",
+          "image": "./assets/splash/eyes.png",
+          "imageWidth": 240,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#756183",
+            "image": "./assets/splash/eyes.png"
+          },
+          "android": {
+            "imageWidth": 188
+          }
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Builders Bot to use your camera to scan QR codes.",
+          "microphonePermission": "Allow Builders Bot to use the microphone to dictate messages.",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Builders Bot to access the photos you choose to share.",
+          "cameraPermission": "Allow Builders Bot to use your camera to add photos.",
+          "microphonePermission": "Allow Builders Bot to use the microphone to dictate messages."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Builders Bot to access the photos you choose to share.",
+          "savePhotosPermission": "Allow Builders Bot to save images and videos you download from a chat to your photo library.",
+          "granularPermissions": ["photo"]
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icons/notification-icon.png",
+          "color": "#6960F1"
+        }
+      ],
+      [
+        "./plugins/with-notification-sounds",
+        {
+          "sounds": [
+            "./assets/sounds/buildersbot-task.wav",
+            "./assets/sounds/buildersbot-warm.wav",
+            "./assets/sounds/buildersbot-mech.wav",
+            "./assets/sounds/buildersbot-bubble.wav",
+            "./assets/sounds/buildersbot-press.wav"
+          ]
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Builders Bot to use Face ID to unlock the app."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true,
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
+      [
+        "./plugins/with-share-target",
+        {
+          "ios": {
+            "enabled": true,
+            "appGroupId": "group.run.buildersbot.mobile",
+            "extensionBundleIdentifier": "run.buildersbot.mobile.ShareExtension",
+            "activationRule": {
+              "supportsText": true,
+              "supportsWebUrlWithMaxCount": 1,
+              "supportsImageWithMaxCount": 10,
+              "supportsFileWithMaxCount": 10
+            }
+          },
+          "android": {
+            "enabled": true,
+            "singleShareMimeTypes": ["text/*", "image/*", "application/*"],
+            "multipleShareMimeTypes": ["*/*"]
+          }
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "ios": {
+            "fonts": [
+              "./assets/fonts/inter/Inter-Regular.ttf",
+              "./assets/fonts/inter/Inter-Italic.ttf",
+              "./assets/fonts/inter/Inter-Medium.ttf",
+              "./assets/fonts/inter/Inter-SemiBold.ttf",
+              "./assets/fonts/inter/Inter-Bold.ttf",
+              "./assets/fonts/inter/Inter-BoldItalic.ttf",
+              "./assets/fonts/inter/Inter-ExtraBold.ttf",
+              "katex/dist/fonts/KaTeX_AMS-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Caligraphic-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Fraktur-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Main-Bold.ttf",
+              "katex/dist/fonts/KaTeX_Main-Italic.ttf",
+              "katex/dist/fonts/KaTeX_Main-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Math-BoldItalic.ttf",
+              "katex/dist/fonts/KaTeX_Math-Italic.ttf",
+              "katex/dist/fonts/KaTeX_SansSerif-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Size1-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Size2-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Typewriter-Regular.ttf"
+            ]
+          },
+          "android": {
+            "fonts": [
+              {
+                "fontFamily": "Inter",
+                "fontDefinitions": [
+                  { "path": "./assets/fonts/inter/Inter-Regular.ttf", "weight": 400 },
+                  { "path": "./assets/fonts/inter/Inter-Italic.ttf", "weight": 400, "style": "italic" },
+                  { "path": "./assets/fonts/inter/Inter-Medium.ttf", "weight": 500 },
+                  { "path": "./assets/fonts/inter/Inter-SemiBold.ttf", "weight": 600 },
+                  { "path": "./assets/fonts/inter/Inter-Bold.ttf", "weight": 700 },
+                  { "path": "./assets/fonts/inter/Inter-BoldItalic.ttf", "weight": 700, "style": "italic" },
+                  { "path": "./assets/fonts/inter/Inter-ExtraBold.ttf", "weight": 800 }
+                ]
+              },
+              "katex/dist/fonts/KaTeX_AMS-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Caligraphic-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Fraktur-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Main-Bold.ttf",
+              "katex/dist/fonts/KaTeX_Main-Italic.ttf",
+              "katex/dist/fonts/KaTeX_Main-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Math-BoldItalic.ttf",
+              "katex/dist/fonts/KaTeX_Math-Italic.ttf",
+              "katex/dist/fonts/KaTeX_SansSerif-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Size1-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Size2-Regular.ttf",
+              "katex/dist/fonts/KaTeX_Typewriter-Regular.ttf"
+            ]
+          }
+        }
+      ],
+      "expo-image",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Builders Bot to use the microphone to dictate messages.",
+          "speechRecognitionPermission": "Allow Builders Bot to turn your speech into message text."
+        }
+      ],
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "run.buildersbot.mobile.ExpoWidgetsTarget",
+          "groupIdentifier": "group.run.buildersbot.mobile",
+          "enablePushNotifications": true,
+          "frequentUpdates": true
+        }
+      ],
+      [
+        "./plugins/with-notification-service",
+        {
+          "targetName": "BuildersBotNotificationService",
+          "bundleIdentifier": "run.buildersbot.mobile.NotificationService",
+          "groupIdentifier": "group.run.buildersbot.mobile"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {}
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "enabled": false
+    }
+  }
+}

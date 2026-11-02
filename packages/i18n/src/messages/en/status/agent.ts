@@ -1,0 +1,86 @@
+import { defineMessages } from "../../../message";
+
+export const messages = defineMessages("status.agent", {
+  "status.agent.claudeWriteOutside":
+    "Write {path}, outside the agent's workspace, the shared folder and the temporary folders.",
+  "status.agent.contextCleared": "Context cleared. A new chat starts here.",
+  "status.agent.instructionsChanged": "Updated its instructions",
+  "status.agent.modelSwitchedForLimit": "Usage limit reached. Switched to {model}.",
+  "status.agent.modelReturnedAfterLimit": "Usage limit ended. Switched back to {model}.",
+  "status.agent.modelSwitchedForError": "Provider error. Switched to {model}.",
+  "status.agent.modelReturnedAfterError": "Switched back to {model} after the provider error.",
+  "status.agent.marketplaceSuggested": "Suggested a Marketplace app: {app}.",
+  "status.agent.channelMemberAdded": "{agent} added {member} to the channel. {person} asked for it.",
+  "status.agent.channelMemberRemoved": "{agent} removed {member} from the channel. {person} asked for it.",
+  "status.agent.channelInstructionsChanged": "{agent} changed the channel instructions. {person} asked for it.",
+  "status.agent.channelRoutineCreated": "{agent} created the routine {routine}. {person} asked for it.",
+  "status.agent.channelRoutineUpdated": "{agent} changed the routine {routine}. {person} asked for it.",
+  "status.agent.channelRoutineDeleted": "{agent} deleted the routine {routine}. {person} asked for it.",
+  "status.agent.screenCaptureScreen": "Capture the main screen and send the image to the agent's model.",
+  "status.agent.screenCaptureChannel":
+    "The image shows in the channel {channel}, and each member of this server who reads the channel can see it.",
+  "status.agent.screenCaptureDisplay": "Capture the display {name} and send the image to the agent's model.",
+  "status.agent.screenCaptureWindow": "Capture the window {name} and send the image to the agent's model.",
+  "status.agent.screenCaptureRegion":
+    "Capture the screen area at {x}, {y}, {width} × {height} points and send the image to the agent's model.",
+  "status.agent.vaultCardFill":
+    "Fill the saved card {card} on {site}. After you approve, agents can fill this card on this site with no approval. Remove the site in Server settings > Vault.",
+  "status.agent.vaultCardFillFrames": "The card fields are in frames from {origins}.",
+  "status.agent.chromeMessageSend": "Send on {site} in your Chrome ({action}). To: {recipients}. Text: {text}",
+  "status.agent.chromeMessageSendUnknown": "(not shown on the page)",
+  "status.agent.chromeSiteAccess":
+    "Let the agents of {project} use {site} in your Chrome? It is {kind}, signed in as you. The answer holds for this project until Builders Bot restarts.",
+  "status.agent.chromeSiteKind.mail": "a mail site",
+  "status.agent.chromeSiteKind.chat": "a chat site",
+  "status.agent.chromeSiteKind.cloud-console": "a cloud or code console",
+  "status.agent.chromeSiteKind.social": "a social network",
+  "status.agent.chromeSiteKind.payment-frame": "a payment page",
+  "status.agent.chromeSiteKind.private-network": "a site on your own network",
+  "status.agent.screenCaptureProgress": "Asking to capture the screen…",
+  "status.agent.screenCaptureReviewing": "Reviewing the screen capture…",
+  "status.agent.browserOpening": "Opening a web page…",
+  "status.agent.browserReading": "Reading the web page…",
+  "status.agent.browserClicking": "Clicking on the web page…",
+  "status.agent.browserTyping": "Typing on the web page…",
+  "status.agent.browserActing": "Using the web page…",
+  "status.agent.browserReviewing": "Reviewing the web page…",
+  "status.agent.memoriesSearching": "Searching its memories…",
+  "status.agent.memoriesSearched": {
+    one: "Searched its memories: {count} found",
+    other: "Searched its memories: {count} found",
+  },
+  "status.agent.memoriesUpdating": "Updating its memories…",
+  "status.agent.skillUsing": "Using the skill {name}…",
+  "status.agent.skillReading": "Reading a skill…",
+  "status.agent.memoryChanges": "Memory: {saved} saved, {updated} updated, {forgotten} forgotten.",
+  "status.agent.memoryChangesWithConflicts":
+    "Memory: {saved} saved, {updated} updated, {forgotten} forgotten, {notChanged} not changed because another thread changed it first.",
+  "status.agent.mcpServerAdd":
+    "Add the MCP server {name}: {target}. Every agent on this server gets its tools. Builders Bot connects to it to test it.",
+  "status.agent.mcpServerChange":
+    "Change the MCP server {name} to {target}. Every agent on this server gets its tools. Builders Bot connects to it to test it.",
+  "status.agent.mcpServerEnable": "Turn on the MCP server {name} for every agent on this server.",
+  "status.agent.mcpServerDisable": "Turn off the MCP server {name} for every agent on this server.",
+  "status.agent.mcpServerRemove": "Remove the MCP server {name} and its sign-in from every agent on this server.",
+  "status.agent.securityScan": "Prompt injection check: {finding}",
+  "status.agent.mcpSignInRequested": "The MCP server {name} needs a sign-in. Sign in from Server settings, MCP.",
+  "status.agent.vaultAdded": "Saved to Vault: {name}",
+  "status.agent.vaultUpdated": "Changed in Vault: {name}",
+  "status.agent.vaultDeleted": "Deleted from Vault: {name}",
+  "status.agent.planContinues": "The plan has open steps. The agent continues ({current} of {limit}).",
+  "status.agent.branchTitle": "Branched chat",
+  "status.agent.connectionConfirmCost":
+    "An agent wants to run {endpoint} from the tool catalog. It costs up to {amount}, paid by {org}. Allow sends this call once. Deny cancels it.",
+  "status.agent.connectionConfirmCostPersonal":
+    "An agent wants to run {endpoint} from the tool catalog with your personal plan. It costs up to {amount}. Allow sends this call once. Deny cancels it.",
+  "status.agent.connectionConfirmCostOnHub":
+    "An agent wants to run {endpoint} from the tool catalog. It costs up to {amount}, paid by {org}. You approve this cost on the Cultura Builder Hub: Allow opens the Hub in your browser, and the call runs once after you approve it there. Deny cancels it.",
+  "status.agent.connectionConfirmCostOnHubPersonal":
+    "An agent wants to run {endpoint} from the tool catalog with your personal plan. It costs up to {amount}. You approve this cost on the Cultura Builder Hub: Allow opens the Hub in your browser, and the call runs once after you approve it there. Deny cancels it.",
+  "status.agent.connectionChoosePayer":
+    "Who pays for {connection}? Allow makes {org} pay for this call and the next ones. Deny does not use this organization.",
+  "status.agent.connectionChoosePayerPersonal":
+    "Pay for {connection} with your personal plan? Allow makes the personal plan pay for this call and the next ones.",
+  "status.agent.connectionPeopleData":
+    "An agent wants to look up data about people with {endpoint}: {subjects}. The data goes to Cultura Builder, to treg.to (USA) and to the provider of the endpoint. Allow covers the next lookups about people in this conversation.",
+});

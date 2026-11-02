@@ -1,0 +1,308 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "buildersbot-auth",
+  "compatibility_date": "2026-08-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/worker-entry.ts",
+  "workers_dev": true,
+  "preview_urls": false,
+  "cache": {
+    "enabled": true,
+    "cross_version_cache": false
+  },
+  "observability": {
+    "enabled": true
+  },
+  // The Cloudflare Vite plugin emits and uploads Worker source maps unless this is false. The Worker
+  // bundles the web app, and its maps pass the 60 MiB upload limit, so every deploy fails.
+  "upload_source_maps": false,
+  // The outbox, the hosted-site cleanup and the hosted server checks are retry paths: the request path
+  // and the webhooks do the first attempt. A run each minute only repeated empty reads. An idle server
+  // stops 15 to 20 minutes after its last use.
+  "triggers": {
+    // The second cron runs only the Signal entry check (`signal-entry-failover.ts`), each minute.
+    "crons": ["*/5 * * * *", "*/1 * * * *"]
+  },
+  "routes": [
+    {
+      "pattern": "buildersbot.culturabuilder.com/*",
+      "zone_name": "culturabuilder.com"
+    }
+  ],
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS"
+  },
+  "secrets": {
+    "required": [
+      "EMAIL_SMTP_PASSWORD",
+      "SKILLS_ADMIN_TOKEN",
+      "SITE_REPORT_HASH_SECRET",
+      "REMOTE_TICKET_PRIVATE_JWK",
+      "REMOTE_TICKET_PUBLIC_JWKS",
+      "REMOTE_AUTH_WEBHOOK_SECRET",
+      "WEB_PUSH_PUBLIC_KEY",
+      "WEB_PUSH_PRIVATE_KEY",
+      "WEB_PUSH_SUBJECT"
+    ]
+  },
+  "vars": {
+    "AUTH_EXPOSE_DEVELOPMENT_CODE": "false",
+    "AUTH_BRIDGE_URL": "https://auth-buildersbot.culturabuilder.com",
+    "EMAIL_SMTP_HOST": "smtp.resend.com",
+    "EMAIL_SMTP_PORT": "465",
+    "EMAIL_SMTP_USERNAME": "resend",
+    "EMAIL_FROM": "noreply@culturabuilder.com",
+    "REMOTE_TICKET_KEY_ID": "buildersbot-remote-1",
+    "REMOTE_SIGNAL_URL": "wss://signal.bb-aws.culturabuilder.com/v1/signal",
+    "REMOTE_SIGNAL_HOMES": "",
+    "REMOTE_AUTH_WEBHOOK_URL": "https://signal.bb-aws.culturabuilder.com/internal/auth-events",
+    "REMOTE_AUTH_WEBHOOK_URLS": "",
+    // The zone of the Signal host. The entry check stays off until the secret SIGNAL_ENTRY_DNS_TOKEN
+    // is set and REMOTE_SIGNAL_HOMES names two machines.
+    "SIGNAL_ENTRY_ZONE_ID": "",
+    // Creates stay off until the boat and Stripe secrets and the template are set. "false" stops new
+    // servers only.
+    "HOSTED_SERVERS_ENABLED": "false",
+    // The bootstrap list of server creation: account IDs or emails. Empty = nobody. Administrators
+    // (the secret ADMIN_USER_IDS) and the people they give the permission to can also create. "*" lets
+    // each account create; it is an explicit opt-in only, and the Worker logs it. ADMIN_USER_IDS is not
+    // a var here: a deploy with --keep-vars would overwrite the dashboard value. See
+    // docs/architecture/server-creation-permission.md.
+    "HOSTED_SERVERS_ALLOWED_USER_IDS": "",
+    // A license bought before this time is free until then: Stripe charges its first payment at this time.
+    // Local development reads it too; set LICENSE_TRIAL_END= in the shell to sell licenses with no trial.
+    "LICENSE_TRIAL_END": "2026-12-01T00:00:00Z",
+    // The public Client ID of the BuildersBotGit GitHub App. Its private key is the optional secret
+    // GITHUB_APP_PRIVATE_KEY (PKCS #8). Without the key, agents act on GitHub as the signed-in user.
+    "GITHUB_APP_CLIENT_ID": "Iv23lik5pzHz70cb0RUL",
+    "APNS_TEAM_ID": "ZTRDTUL87R",
+    "APNS_TOPIC": "run.buildersbot.mobile",
+    // Hosted sites. Production deploys use --keep-vars, so these stay as set in the dashboard;
+    // they are repeated here so a deploy from the repository does not turn publishing off.
+    "SITE_PUBLISH_ENABLED": "true",
+    "SITE_COOKIE_ISOLATION_READY": "true"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "buildersbot-auth",
+      "database_id": "659ed706-ea75-4aec-9ff6-df731ab73cfa",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "MARKETPLACE_INGRESS_RATE_LIMITER",
+      "namespace_id": "2026082701",
+      "simple": { "limit": 300, "period": 60 }
+    },
+    {
+      "name": "MARKETPLACE_MUTATION_RATE_LIMITER",
+      "namespace_id": "2026082702",
+      "simple": { "limit": 30, "period": 60 }
+    },
+    {
+      "name": "MARKETPLACE_UPLOAD_RATE_LIMITER",
+      "namespace_id": "2026082703",
+      "simple": { "limit": 5, "period": 60 }
+    },
+    {
+      "name": "SITE_REPORT_RATE_LIMITER",
+      "namespace_id": "2026083101",
+      "simple": { "limit": 10, "period": 60 }
+    },
+    {
+      "name": "GITHUB_TOKEN_RATE_LIMITER",
+      "namespace_id": "2026092911",
+      "simple": { "limit": 30, "period": 60 }
+    },
+    {
+      "name": "LIVE_ACTIVITY_RATE_LIMITER",
+      "namespace_id": "2026092901",
+      "simple": { "limit": 300, "period": 60 }
+    }
+  ],
+  "env": {
+    "preview": {
+      "name": "buildersbot-landing-preview",
+      "workers_dev": true,
+      "preview_urls": true,
+      "routes": [],
+      "triggers": {
+        "crons": []
+      },
+      "secrets": {
+        "required": []
+      },
+      "vars": {
+        "AUTH_EXPOSE_DEVELOPMENT_CODE": "false",
+        "EMAIL_SMTP_HOST": "smtp.resend.com",
+        "EMAIL_SMTP_PORT": "465",
+        "EMAIL_SMTP_USERNAME": "resend",
+        "EMAIL_FROM": "noreply@culturabuilder.com",
+        "SITE_PUBLISH_ENABLED": "false",
+        "SITE_COOKIE_ISOLATION_READY": "false",
+        "REMOTE_TICKET_KEY_ID": "buildersbot-remote-1",
+        "REMOTE_SIGNAL_URL": "ws://127.0.0.1:8081/v1/signal",
+        "REMOTE_SIGNAL_HOMES": "",
+        "REMOTE_AUTH_WEBHOOK_URL": "http://127.0.0.1:8081/internal/auth-events",
+        "REMOTE_AUTH_WEBHOOK_URLS": "",
+        "SIGNAL_ENTRY_ZONE_ID": ""
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "buildersbot-auth-test",
+          "database_id": "38f1a836-6c70-44bb-bbf3-f0bbc5b766b3",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "AVATARS",
+          "bucket_name": "buildersbot-avatars-test"
+        },
+        {
+          "binding": "SKILLS",
+          "bucket_name": "buildersbot-skills-test"
+        },
+        {
+          "binding": "SITES",
+          "bucket_name": "buildersbot-sites-test"
+        }
+      ],
+      "ratelimits": [
+        {
+          "name": "MARKETPLACE_INGRESS_RATE_LIMITER",
+          "namespace_id": "2026082704",
+          "simple": { "limit": 300, "period": 60 }
+        },
+        {
+          "name": "MARKETPLACE_MUTATION_RATE_LIMITER",
+          "namespace_id": "2026082705",
+          "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "MARKETPLACE_UPLOAD_RATE_LIMITER",
+          "namespace_id": "2026082706",
+          "simple": { "limit": 5, "period": 60 }
+        },
+        {
+          "name": "SITE_REPORT_RATE_LIMITER",
+          "namespace_id": "2026083102",
+          "simple": { "limit": 10, "period": 60 }
+        },
+        {
+          "name": "GITHUB_TOKEN_RATE_LIMITER",
+          "namespace_id": "2026092912",
+          "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "LIVE_ACTIVITY_RATE_LIMITER",
+          "namespace_id": "2026092902",
+          "simple": { "limit": 300, "period": 60 }
+        }
+      ]
+    },
+    "test": {
+      "name": "buildersbot-auth-api-test",
+      "workers_dev": true,
+      "preview_urls": false,
+      "routes": [],
+      // Each minute: the cron starts hosted servers that stopped again, and checks servers that a webhook missed.
+      "triggers": {
+        "crons": ["* * * * *"]
+      },
+      // Hosted servers stay off until these are set. `api:deploy:test` sets the Stripe pair, BOAT_API_KEY,
+      // BOAT_WEBHOOK_SECRET and HOSTED_SERVERS_DEVELOPER_KEY from the `.env.dev`, and
+      // HOSTED_SERVERS_ALLOWED_USER_IDS from its HOSTED_SERVERS_TEST_ALLOW_LIST.
+      // Set HOSTED_SERVER_TEMPLATE with `wrangler secret put <name> --env test`.
+      // They are not required, so the test Worker deploys without them. See docs/hosted-servers.md.
+      "secrets": {
+        "required": [
+          "EMAIL_SMTP_PASSWORD",
+          "SKILLS_ADMIN_TOKEN",
+          "SITE_REPORT_HASH_SECRET",
+          "REMOTE_TICKET_PRIVATE_JWK",
+          "REMOTE_TICKET_PUBLIC_JWKS",
+          "REMOTE_AUTH_WEBHOOK_SECRET"
+        ]
+      },
+      "vars": {
+        "AUTH_EXPOSE_DEVELOPMENT_CODE": "false",
+        "EMAIL_SMTP_HOST": "smtp.resend.com",
+        "EMAIL_SMTP_PORT": "465",
+        "EMAIL_SMTP_USERNAME": "resend",
+        "EMAIL_FROM": "noreply@culturabuilder.com",
+        "SITE_PUBLISH_ENABLED": "false",
+        "SITE_COOKIE_ISOLATION_READY": "false",
+        "REMOTE_TICKET_KEY_ID": "buildersbot-remote-1",
+        "REMOTE_SIGNAL_URL": "wss://auth-buildersbot.culturabuilder.com/v1/signal",
+        "REMOTE_SIGNAL_HOMES": "",
+        "REMOTE_AUTH_WEBHOOK_URL": "https://auth-buildersbot.culturabuilder.com/internal/auth-events",
+        "REMOTE_AUTH_WEBHOOK_URLS": "",
+        // The test Worker never moves the production entry name.
+        "SIGNAL_ENTRY_ZONE_ID": "",
+        "HOSTED_SERVERS_ENABLED": "true",
+        "GITHUB_APP_CLIENT_ID": "Iv23lik5pzHz70cb0RUL",
+        "APNS_TEAM_ID": "ZTRDTUL87R",
+        "APNS_TOPIC": "run.buildersbot.mobile"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "buildersbot-auth-test",
+          "database_id": "38f1a836-6c70-44bb-bbf3-f0bbc5b766b3",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "AVATARS",
+          "bucket_name": "buildersbot-avatars-test"
+        },
+        {
+          "binding": "SKILLS",
+          "bucket_name": "buildersbot-skills-test"
+        },
+        {
+          "binding": "SITES",
+          "bucket_name": "buildersbot-sites-test"
+        }
+      ],
+      "ratelimits": [
+        {
+          "name": "MARKETPLACE_INGRESS_RATE_LIMITER",
+          "namespace_id": "2026082707",
+          "simple": { "limit": 300, "period": 60 }
+        },
+        {
+          "name": "MARKETPLACE_MUTATION_RATE_LIMITER",
+          "namespace_id": "2026082708",
+          "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "MARKETPLACE_UPLOAD_RATE_LIMITER",
+          "namespace_id": "2026082709",
+          "simple": { "limit": 5, "period": 60 }
+        },
+        {
+          "name": "SITE_REPORT_RATE_LIMITER",
+          "namespace_id": "2026083103",
+          "simple": { "limit": 10, "period": 60 }
+        },
+        {
+          "name": "GITHUB_TOKEN_RATE_LIMITER",
+          "namespace_id": "2026092913",
+          "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "LIVE_ACTIVITY_RATE_LIMITER",
+          "namespace_id": "2026092903",
+          "simple": { "limit": 300, "period": 60 }
+        }
+      ]
+    }
+  }
+}

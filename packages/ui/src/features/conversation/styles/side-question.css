@@ -1,0 +1,47 @@
+/* The side question pane, in the place of the other side panels. */
+.side-question-empty {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--buildersbot-space-1-5);
+  padding: var(--buildersbot-space-8) var(--buildersbot-space-4);
+  text-align: center;
+}
+
+.side-question-empty > svg {
+  width: var(--buildersbot-icon-lg);
+  height: var(--buildersbot-icon-lg);
+  margin-bottom: var(--buildersbot-space-1);
+  color: var(--buildersbot-text-muted);
+  stroke-width: var(--buildersbot-icon-stroke);
+}
+
+.side-question-empty > strong {
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-md);
+  font-weight: 500;
+}
+
+.side-question-empty > p {
+  max-width: 320px;
+  margin: 0;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  line-height: var(--buildersbot-leading-sm);
+}
+
+/* The chat composer's compact row, without its attach button: the editor and the send button. */
+.side-question-composer.composer[data-compact] {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.side-question-composer.composer[data-compact] > .composer-input-label {
+  grid-column: 1;
+}
+
+.side-question-composer.composer[data-compact] .composer-primary-actions {
+  grid-column: 2;
+}

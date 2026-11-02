@@ -1,0 +1,94 @@
+@import "../styles.css";
+@source "../";
+
+.buildersbot-playground-root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--buildersbot-bg-canvas);
+}
+
+.buildersbot-playground-loading {
+  width: 100%;
+  height: 100%;
+  background: var(--buildersbot-bg-canvas);
+}
+
+.buildersbot-playground-root .unread-messages-banner {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .buildersbot-playground-root .app-frame,
+  .buildersbot-playground-root .app-frame-with-server-rail {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 68px minmax(0, 1fr);
+  }
+
+  .buildersbot-playground-root .server-rail,
+  .buildersbot-playground-root .left-panel-resizer,
+  .buildersbot-playground-root .sidebar-topbar,
+  .buildersbot-playground-root .sidebar-search-wrap,
+  .buildersbot-playground-root .sidebar-list-context-trigger,
+  .buildersbot-playground-root .sidebar-chat-group > header {
+    display: none;
+  }
+
+  .buildersbot-playground-root .sidebar {
+    grid-column: 1;
+    grid-row: 1;
+    flex-direction: row;
+    border-right: 0;
+    border-bottom: 1px solid var(--buildersbot-border);
+  }
+
+  .buildersbot-playground-root .agent-list,
+  .buildersbot-playground-root .sidebar-compact .agent-list {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    align-items: center;
+    justify-content: center;
+    gap: var(--buildersbot-space-1-5);
+    padding: var(--buildersbot-space-2) var(--buildersbot-space-3);
+  }
+
+  /* Every wrapper between the list and the rows becomes one row of avatars. */
+  .buildersbot-playground-root .agent-list-content,
+  .buildersbot-playground-root .sidebar-chat-group,
+  .buildersbot-playground-root .sidebar-section-collapse,
+  .buildersbot-playground-root .sidebar-section-body {
+    display: flex;
+    align-items: center;
+    gap: var(--buildersbot-space-1-5);
+    margin: 0;
+  }
+
+  .buildersbot-playground-root .agent-row,
+  .buildersbot-playground-root .sidebar-compact .agent-row {
+    --agent-row-avatar-size: 36px;
+    --sidebar-pinned-avatar-size: 36px;
+
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    margin: 0;
+    padding: 6px;
+  }
+
+  .buildersbot-playground-root .sidebar-compact .agent-row-avatar {
+    transform: none;
+  }
+
+  .buildersbot-playground-root .agent-row-copy {
+    display: none;
+  }
+
+  /* The chat is inside the panes wrapper, which the frame puts in the first row. */
+  .buildersbot-playground-root .app-frame-panes,
+  .buildersbot-playground-root .conversation-panel,
+  .buildersbot-playground-root .app-frame-with-server-rail .conversation-panel {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}

@@ -1,0 +1,583 @@
+import { INPUT_LIMITS } from "@buildersbot/contracts/input-limits";
+import type {
+  AgentDefaults,
+  AgentLimitPreference,
+  AgentMemoryLimitPreference,
+  AgentProviderId,
+  AppBehaviorPreferenceChange,
+  AutoRecoveryPreference,
+  BrowserDockAction,
+  BrowserDockFrame,
+  BrowserDockPresentation,
+  BusyMessageModePreference,
+  ChatWindowTarget,
+  DeleteHostedSiteInput,
+  DynamicIslandAction,
+  DynamicIslandPreference,
+  DynamicIslandPresentation,
+  ExternalDestination,
+  ExternalLinkPreference,
+  HostUpdateSettingsChange,
+  IdleRestartTarget,
+  InstallMarketplaceAgentInput,
+  InstallSkillInput,
+  LoadLanePreference,
+  MacAutomationTarget,
+  MacPermissionId,
+  MarketplaceAgentQuery,
+  MarketplaceSkillQuery,
+  MarketplaceSkillSort,
+  MemoryReviewPreference,
+  NotificationPreference,
+  PublishHostedSiteInput,
+  ReassignStoppedWorkInput,
+  RemoteNetworkRoutePreference,
+  RemoteSessionReusePreference,
+  ReplaceHostedSiteInput,
+  ResumeInterruptedWorkInput,
+  ResumeStoppedWorkInput,
+  RunChannelNowInput,
+  SaveSetupInput,
+  SetAnalyticsPreferenceInput,
+  SetAppAppearancePreferenceInput,
+  SetAppInterfaceSizePreferenceInput,
+  SetAppLanguagePreferenceInput,
+  SetAppLogoColorPreferenceInput,
+  SetDynamicIslandInteractiveInput,
+  SetEnabledSkillInput,
+  SetOptimizationsInput,
+  StartRetrySettings,
+  StoppedWorkBulkInput,
+  StopWorkInput,
+  SubmitMarketplaceAgentInput,
+  SubmitSkillInput,
+  TaskWatchPreference,
+  UninstallSkillInput,
+  UpdatePreferenceChange,
+  VerifyEmailCodeInput,
+} from "@buildersbot/contracts/ipc";
+import {
+  decodeExternalLinkTarget,
+  IDLE_RESTART_TARGETS,
+  isAgentDefaults,
+  isAgentLimitPreference,
+  isAgentMemoryLimit,
+  isAgentModel,
+  isAgentProvider,
+  isAppAppearance,
+  isAppInterfaceSize,
+  isAppLanguage,
+  isAppLogoColor,
+  isAutoRecoveryPreference,
+  isBrowserDockAction,
+  isBrowserDockFrame,
+  isBrowserDockPresentation,
+  isBusyMessageMode,
+  isDynamicIslandAction,
+  isDynamicIslandInteractive,
+  isDynamicIslandPreference,
+  isDynamicIslandPresentation,
+  isLoadLanePreference,
+  isMemoryReviewInterval,
+  isReassignStoppedWorkInput,
+  isRemoteNetworkRoute,
+  isResumeInterruptedWorkInput,
+  isResumeStoppedWorkInput,
+  isRunChannelNowInput,
+  isSetOptimizationsInput,
+  isSkillCategory,
+  isStartRetrySettings,
+  isStoppedWorkBulkInput,
+  isStopWorkInput,
+  isTaskWatchPreference,
+  MAC_AUTOMATION_TARGETS,
+  WEB_ACCESS_MODES,
+} from "@buildersbot/contracts/ipc";
+import {
+  type DynamicRecord,
+  isBoolean,
+  isDynamicRecord,
+  isNumber,
+  isOneOf,
+  isString,
+} from "@buildersbot/contracts/runtime-values";
+import { validateProfileName } from "@buildersbot/contracts/validation";
+import { startRetrySettings } from "../start-retry-preference-store";
+import { parseAvatarImage } from "./avatar-inputs";
+import { isObject, optionalBoolean, requireString } from "./validation";
+
+export function parseSetup(input: unknown): SaveSetupInput {
+  if (!isDynamicRecord(input)) throw new Error("Setup input is required.");
+  const provider = input.preferredProvider;
+  if (!isAgentProvider(provider)) throw new Error("Unknown provider.");
+  // `null` is the whole meaning of "no model chosen", so a missing field is not accepted in its
+  // place: setup is written from one screen that always knows which of the two it means.
+  const model = input.preferredModel;
+  if (model !== null && !isAgentModel(model)) throw new Error("Unknown model.");
+  return { preferredProvider: provider, preferredModel: model };
+}
+
+export function parseProviderId(input: unknown): AgentProviderId {
+  if (!isAgentProvider(input)) throw new Error("Unknown provider.");
+  return input;
+}
+
+export function parseAnalyticsPreference(input: unknown): SetAnalyticsPreferenceInput {
+  if (!isDynamicRecord(input) || !isBoolean(input.enabled)) throw new Error("Analytics preference is required.");
+  if (input.chosen !== undefined && !isBoolean(input.chosen)) throw new Error("Analytics choice is not valid.");
+  return { enabled: input.enabled, ...(input.chosen ? { chosen: true } : {}) };
+}
+
+export function parseBusyMessageModePreference(input: unknown): BusyMessageModePreference {
+  if (!isDynamicRecord(input) || !isBusyMessageMode(input.mode)) throw new Error("Busy message mode is required.");
+  return { mode: input.mode };
+}
+
+/** One to eight known switches, each one at most once, each with a boolean. Anything else is refused. */
+export function parseSetOptimizationsInput(input: unknown): SetOptimizationsInput {
+  if (!isSetOptimizationsInput(input)) throw new Error("Optimization changes are not valid.");
+  return { changes: input.changes.map(({ id, enabled }) => ({ id, enabled })) };
+}
+
+export function parseLoadLanePreference(input: unknown): LoadLanePreference {
+  if (!isLoadLanePreference(input)) throw new Error("Channel lane preference is required.");
+  return { enabled: input.enabled, order: [...input.order] };
+}
+
+/**
+ * The cap must be a whole number of agents from 1 to 64, and the tabs of one agent a whole number from
+ * 1 to 4 when they are given; anything else is refused, not clamped.
+ */
+export function parseAgentLimitPreference(input: unknown): AgentLimitPreference {
+  if (!isAgentLimitPreference(input)) throw new Error("An agent limit from 1 to 64 is required.");
+  return {
+    enabled: input.enabled,
+    max: input.max,
+    ...(input.tabsPerAgent === undefined ? {} : { tabsPerAgent: input.tabsPerAgent }),
+  };
+}
+
+export function parseAutoRecoveryPreference(input: unknown): AutoRecoveryPreference {
+  if (!isAutoRecoveryPreference(input)) throw new Error("A recovery preference is required.");
+  return { enabled: input.enabled, intervalMinutes: input.intervalMinutes, reassign: input.reassign };
+}
+
+/** The threshold must be a whole number of minutes from 5 to 120; anything else is refused, not clamped. */
+export function parseTaskWatchPreference(input: unknown): TaskWatchPreference {
+  if (!isTaskWatchPreference(input)) throw new Error("A task reviewer preference is required.");
+  return { enabled: input.enabled, quietMinutes: input.quietMinutes };
+}
+
+export function parseStartRetrySettings(input: unknown): StartRetrySettings {
+  if (!isStartRetrySettings(input)) throw new Error("Start retry settings are required.");
+  return startRetrySettings(input);
+}
+
+export function parseStopWorkInput(input: unknown): StopWorkInput {
+  if (!isStopWorkInput(input)) throw new Error("A turn to stop is required.");
+  return { turnId: input.turnId, agentId: input.agentId, channelId: input.channelId, taskId: input.taskId };
+}
+
+export function parseResumeStoppedWorkInput(input: unknown): ResumeStoppedWorkInput {
+  if (!isResumeStoppedWorkInput(input)) throw new Error("A choice of stopped work is required.");
+  return "all" in input
+    ? { all: true }
+    : { items: input.items.map((item) => ({ channelId: item.channelId, taskId: item.taskId })) };
+}
+
+export function parseReassignStoppedWorkInput(input: unknown): ReassignStoppedWorkInput {
+  if (!isReassignStoppedWorkInput(input)) throw new Error("A task and an agent are required.");
+  return { channelId: input.channelId, taskId: input.taskId, recipientAgentId: input.recipientAgentId };
+}
+
+export function parseStoppedWorkBulkInput(input: unknown): StoppedWorkBulkInput {
+  if (!isStoppedWorkBulkInput(input)) throw new Error("An action on stopped work is required.");
+  const items = (value: { items: { channelId: string; taskId: string }[] }) =>
+    value.items.map((item) => ({ channelId: item.channelId, taskId: item.taskId }));
+  switch (input.action) {
+    case "undo":
+      return { action: "undo", undoId: input.undoId };
+    case "reassign":
+      return { action: "reassign", items: items(input), recipientAgentId: input.recipientAgentId };
+    case "model":
+      return { action: "model", items: items(input), provider: input.provider, model: input.model };
+    default:
+      return { action: input.action, items: items(input) };
+  }
+}
+
+export function parseRunChannelNowInput(input: unknown): RunChannelNowInput {
+  if (!isRunChannelNowInput(input)) throw new Error("A channel is required.");
+  return { channelId: input.channelId };
+}
+
+/** All the work that a restart stopped, or bounded lists of channel and agent ids, each id once. */
+export function parseResumeInterruptedWorkInput(input: unknown): ResumeInterruptedWorkInput {
+  if (!isResumeInterruptedWorkInput(input)) throw new Error("A choice of work to resume is required.");
+  if ("all" in input) return { all: true };
+  return { channelIds: [...new Set(input.channelIds)], agentIds: [...new Set(input.agentIds)] };
+}
+
+export function parseAgentDefaults(input: unknown): AgentDefaults {
+  if (!isAgentDefaults(input)) throw new Error("Agent defaults are required.");
+  return {
+    allowAutomation: input.allowAutomation,
+    allowNewChat: input.allowNewChat,
+    quickAcknowledgement: input.quickAcknowledgement,
+    securityGuard: input.securityGuard,
+  };
+}
+
+export function parseAgentMemoryLimitPreference(input: unknown): AgentMemoryLimitPreference {
+  if (!isDynamicRecord(input) || !isAgentMemoryLimit(input.limit)) throw new Error("Agent memory limit is required.");
+  return { limit: input.limit };
+}
+
+export function parseMemoryReviewPreference(input: unknown): MemoryReviewPreference {
+  if (!isDynamicRecord(input) || !isMemoryReviewInterval(input.interval))
+    throw new Error("Memory review interval is required.");
+  return { interval: input.interval };
+}
+
+export function parseChatWindowTarget(input: unknown): ChatWindowTarget {
+  if (!isDynamicRecord(input)) throw new Error("A chat is required.");
+  return { serverId: requireString(input.serverId, "Server"), agentId: requireString(input.agentId, "Agent") };
+}
+
+export function parseExternalLinkPreference(input: unknown): ExternalLinkPreference {
+  const target = isDynamicRecord(input) ? decodeExternalLinkTarget(input.target) : null;
+  if (!target) throw new Error("The external link setting is required.");
+  return { target };
+}
+
+export function parseRemoteSessionReusePreference(input: unknown): RemoteSessionReusePreference {
+  if (!isDynamicRecord(input) || !isBoolean(input.keepBetweenRuns))
+    throw new Error("The remote session setting is required.");
+  return { keepBetweenRuns: input.keepBetweenRuns };
+}
+
+export function parseRemoteNetworkRoutePreference(input: unknown): RemoteNetworkRoutePreference {
+  if (!isDynamicRecord(input) || !isRemoteNetworkRoute(input.route)) throw new Error("The network route is required.");
+  return { route: input.route };
+}
+
+export function parseAppLanguagePreference(input: unknown): SetAppLanguagePreferenceInput {
+  if (!isDynamicRecord(input) || !isAppLanguage(input.language)) throw new Error("Language preference is required.");
+  return { language: input.language };
+}
+
+export function parseAppLogoColorPreference(input: unknown): SetAppLogoColorPreferenceInput {
+  if (!isDynamicRecord(input) || !isAppLogoColor(input.color)) throw new Error("Logo color is required.");
+  return { color: input.color };
+}
+
+export function parseAppAppearancePreference(input: unknown): SetAppAppearancePreferenceInput {
+  if (!isDynamicRecord(input)) throw new Error("Appearance is required.");
+  const { appearance, transparentWindow } = input;
+  if (appearance !== undefined && !isAppAppearance(appearance)) throw new Error("Appearance is invalid.");
+  if (transparentWindow !== undefined && typeof transparentWindow !== "boolean")
+    throw new Error("Transparent window must be true or false.");
+  if (appearance === undefined && transparentWindow === undefined) throw new Error("Appearance is required.");
+  return {
+    ...(appearance === undefined ? {} : { appearance }),
+    ...(transparentWindow === undefined ? {} : { transparentWindow }),
+  };
+}
+
+export function parseAppInterfaceSizePreference(input: unknown): SetAppInterfaceSizePreferenceInput {
+  if (!isDynamicRecord(input) || !isAppInterfaceSize(input.percent)) throw new Error("Interface size is required.");
+  return { percent: input.percent };
+}
+
+export function parseIdleRestartTarget(input: unknown): IdleRestartTarget {
+  if (!isOneOf(IDLE_RESTART_TARGETS, input)) throw new Error("A restart target is required.");
+  return input;
+}
+
+export function parseAppBehaviorPreferenceChange(input: unknown): AppBehaviorPreferenceChange {
+  const message = "The app behavior setting is required.";
+  if (!isDynamicRecord(input)) throw new Error(message);
+  const keys = [
+    "launchAtLogin",
+    "keepRunningInBackground",
+    "keepAwake",
+    "keepAwakeOnBattery",
+    "browserInApp",
+    "culturaBuilderFullContext",
+  ] as const;
+  // `webAccess` is the one choice that is not a switch: a closed list of modes.
+  const { webAccess } = input;
+  if (webAccess === undefined) return parseSwitches(input, keys, message);
+  if (!isOneOf(WEB_ACCESS_MODES, webAccess)) throw new Error(message);
+  const hasSwitch = keys.some((key) => input[key] !== undefined);
+  return { ...(hasSwitch ? parseSwitches(input, keys, message) : {}), webAccess };
+}
+
+export function parseUpdatePreference(input: unknown): UpdatePreferenceChange {
+  return parseSwitches(input, ["autoDownload", "allowRemoteUpdates", "autoInstall"], "Update preference is required.");
+}
+
+/** The switches an admin of a joined server sets on its host. `allowRemoteUpdates` stays with the host user. */
+export function parseHostUpdateSettings(input: unknown): HostUpdateSettingsChange {
+  return parseSwitches(input, ["autoDownload", "autoInstall"], "Update settings are required.");
+}
+
+/** At least one of `keys`, each a boolean. An absent key stays absent. */
+function parseSwitches<Key extends string>(
+  input: unknown,
+  keys: readonly Key[],
+  message: string,
+): Partial<Record<Key, boolean>> {
+  if (!isDynamicRecord(input)) throw new Error(message);
+  const change: Partial<Record<Key, boolean>> = {};
+  for (const key of keys) {
+    const value = input[key];
+    if (value === undefined) continue;
+    if (!isBoolean(value)) throw new Error(message);
+    change[key] = value;
+  }
+  if (Object.keys(change).length === 0) throw new Error(message);
+  return change;
+}
+
+export function parseNotificationPreference(input: unknown): NotificationPreference {
+  if (!isDynamicRecord(input) || !isBoolean(input.desktopNotifications) || !isBoolean(input.messagePreview)) {
+    throw new Error("Notification preference is required.");
+  }
+  return { desktopNotifications: input.desktopNotifications, messagePreview: input.messagePreview };
+}
+
+export function parseDynamicIslandPreference(input: unknown): DynamicIslandPreference {
+  if (!isDynamicIslandPreference(input)) {
+    throw new Error("Dynamic Island preference is required.");
+  }
+  return input;
+}
+
+export function parseDynamicIslandInteractive(input: unknown): SetDynamicIslandInteractiveInput {
+  if (!isDynamicIslandInteractive(input)) {
+    throw new Error("Dynamic Island interaction state is required.");
+  }
+  return input;
+}
+
+export function parseDynamicIslandPresentation(input: unknown): DynamicIslandPresentation {
+  if (!isDynamicIslandPresentation(input)) throw new Error("Dynamic Island presentation is invalid.");
+  return input;
+}
+
+export function parseDynamicIslandAction(input: unknown): DynamicIslandAction {
+  if (isDynamicIslandAction(input)) return input;
+  throw new Error("Dynamic Island action is invalid.");
+}
+
+export function parseBrowserDockPresentation(input: unknown): BrowserDockPresentation | null {
+  if (input === null || isBrowserDockPresentation(input)) return input;
+  throw new Error("Browser dock presentation is invalid.");
+}
+
+export function parseBrowserDockAction(input: unknown): BrowserDockAction {
+  if (isBrowserDockAction(input)) return input;
+  throw new Error("Browser dock action is invalid.");
+}
+
+export function parseBrowserDockFrame(input: unknown): BrowserDockFrame {
+  if (isBrowserDockFrame(input)) return input;
+  throw new Error("Browser dock frame is invalid.");
+}
+
+export function parseMacPermission(input: unknown): MacPermissionId {
+  if (input !== "screen-recording" && input !== "accessibility") {
+    throw new Error("Unknown macOS permission.");
+  }
+  return input;
+}
+
+/** Each app once, in the order asked: macOS shows one prompt at a time. */
+export function parseMacAutomationTargets(input: unknown): readonly MacAutomationTarget[] {
+  if (!Array.isArray(input) || !input.every((target) => isOneOf(MAC_AUTOMATION_TARGETS, target))) {
+    throw new Error("Unknown Apple app.");
+  }
+  return [...new Set(input)];
+}
+
+export function parseExternalDestination(input: unknown): ExternalDestination {
+  if (
+    input !== "agent-setup" &&
+    input !== "claude-install" &&
+    input !== "opencode-install" &&
+    input !== "opencode-auth" &&
+    input !== "feedback" &&
+    input !== "message" &&
+    input !== "changelog" &&
+    input !== "guides" &&
+    input !== "discord" &&
+    input !== "x" &&
+    input !== "grok-bot-export" &&
+    input !== "hosted-server-contact" &&
+    input !== "mac-screen-recording" &&
+    input !== "mac-microphone" &&
+    input !== "windows-microphone"
+  ) {
+    throw new Error("Unknown external destination.");
+  }
+  return input;
+}
+
+export function parseEmailCodeVerification(input: unknown): VerifyEmailCodeInput {
+  if (!isObject(input)) throw new Error("Sign-in code details are required.");
+  return {
+    challengeId: requireString(input.challengeId, "challengeId", INPUT_LIMITS.identifier),
+    code: requireString(input.code, "code", 32),
+  };
+}
+
+export function parseProfileName(input: unknown): string {
+  const validation = validateProfileName(requireString(input, "name", INPUT_LIMITS.accountName));
+  if (validation.error) {
+    throw new Error(`name must contain ${INPUT_LIMITS.profileNameMin} to ${INPUT_LIMITS.profileName} safe characters.`);
+  }
+  return validation.name;
+}
+
+// The two marketplaces share query fields and validate their category filters at the boundary.
+// `query` is truncated rather than rejected, which is the behaviour these channels have always had.
+function parseMarketplaceQueryFields(input: DynamicRecord) {
+  return {
+    ...(isString(input.query) ? { query: input.query.slice(0, 100) } : {}),
+    ...(input.featured === true ? { featured: true } : {}),
+    ...(isString(input.cursor) ? { cursor: input.cursor } : {}),
+    ...(isNumber(input.limit) ? { limit: input.limit } : {}),
+  };
+}
+
+function parseMarketplaceSort<T extends string>(value: unknown, sorts: readonly T[], error: string): { sort?: T } {
+  if (value === undefined) return {};
+  if (!isOneOf(sorts, value)) throw new Error(error);
+  return { sort: value };
+}
+
+const SKILL_SORTS = ["installs", "updated", "name"] as const satisfies readonly MarketplaceSkillSort[];
+
+export function parseMarketplaceSkillQuery(input: unknown): MarketplaceSkillQuery {
+  if (!isObject(input)) throw new Error("Invalid marketplace query.");
+  const category = input.category;
+  if (category !== undefined && !isSkillCategory(category)) throw new Error("Unknown skill category.");
+  const verified = input.verified;
+  if (verified !== undefined && !isBoolean(verified)) throw new Error("Invalid skill source filter.");
+  return {
+    ...parseMarketplaceQueryFields(input),
+    ...parseMarketplaceSort(input.sort, SKILL_SORTS, "Unknown skill sort order."),
+    ...(verified === undefined ? {} : { verified }),
+    ...(category ? { category } : {}),
+  };
+}
+
+export function parseMarketplaceAgentQuery(input: unknown): MarketplaceAgentQuery {
+  if (!isObject(input)) throw new Error("Invalid agent marketplace query.");
+  const category = input.category;
+  if (category !== undefined && !isSkillCategory(category)) throw new Error("Unknown agent category.");
+  return {
+    ...parseMarketplaceQueryFields(input),
+    ...parseMarketplaceSort(input.sort, ["installs"] as const, "Unknown agent sort order."),
+    ...(category ? { category } : {}),
+  };
+}
+
+export function parseSubmitSkill(input: unknown): SubmitSkillInput {
+  if (!isObject(input) || !isSkillCategory(input.category)) throw new Error("Invalid skill submission.");
+  return {
+    draftId: requireString(input.draftId, "draftId"),
+    ...creatorAvatarOption(input),
+    category: input.category,
+    icon: parseAvatarImage(input.icon),
+    ...(input.skillId === undefined ? {} : { skillId: requireString(input.skillId, "skillId") }),
+  };
+}
+
+export function parseInstallSkill(input: unknown): InstallSkillInput {
+  if (!isObject(input)) throw new Error("Invalid skill installation.");
+  return {
+    agentId: requireString(input.agentId, "agentId"),
+    skillId: requireString(input.skillId, "skillId"),
+    ...(input.versionId === undefined ? {} : { versionId: requireString(input.versionId, "versionId") }),
+    ...(input.replaceModified === true ? { replaceModified: true } : {}),
+  };
+}
+
+export function parseUninstallSkill(input: unknown): UninstallSkillInput {
+  if (!isObject(input)) throw new Error("Invalid skill removal.");
+  return {
+    agentId: requireString(input.agentId, "agentId"),
+    skillId: requireString(input.skillId, "skillId"),
+    ...(input.removeModified === true ? { removeModified: true } : {}),
+  };
+}
+
+export function parseSetEnabledSkill(input: unknown): SetEnabledSkillInput {
+  if (!isObject(input)) throw new Error("Invalid skill enablement.");
+  const enabled = optionalBoolean(input.enabled, "enabled");
+  if (enabled === undefined) throw new Error("Invalid skill enablement.");
+  return {
+    agentId: requireString(input.agentId, "agentId"),
+    skillId: requireString(input.skillId, "skillId"),
+    enabled,
+  };
+}
+
+export function parsePublishHostedSite(input: unknown): PublishHostedSiteInput {
+  if (!isObject(input)) throw new Error("Invalid site publication.");
+  const spaFallback = optionalBoolean(input.spaFallback, "spaFallback");
+  return {
+    sourcePath: requireString(input.sourcePath, "sourcePath", INPUT_LIMITS.path),
+    title: requireString(input.title, "title", 120),
+    description: requireString(input.description, "description", 500),
+    ...(spaFallback !== undefined ? { spaFallback } : {}),
+  };
+}
+
+export function parseReplaceHostedSite(input: unknown): ReplaceHostedSiteInput {
+  if (!isObject(input)) throw new Error("Invalid site replacement.");
+  const spaFallback = optionalBoolean(input.spaFallback, "spaFallback");
+  return {
+    siteId: requireString(input.siteId, "siteId", INPUT_LIMITS.identifier),
+    sourcePath: requireString(input.sourcePath, "sourcePath", INPUT_LIMITS.path),
+    title: requireString(input.title, "title", 120),
+    description: requireString(input.description, "description", 500),
+    ...(spaFallback !== undefined ? { spaFallback } : {}),
+  };
+}
+
+export function parseDeleteHostedSite(input: unknown): DeleteHostedSiteInput {
+  if (!isObject(input)) throw new Error("Invalid site deletion.");
+  return { siteId: requireString(input.siteId, "siteId", INPUT_LIMITS.identifier) };
+}
+
+export function parseSubmitMarketplaceAgent(input: unknown): SubmitMarketplaceAgentInput {
+  if (!isObject(input)) throw new Error("Invalid agent submission.");
+  const category = input.category;
+  if (category !== undefined && !isSkillCategory(category)) throw new Error("Unknown agent category.");
+  return {
+    agentId: requireString(input.agentId, "agentId"),
+    ...(input.listingId === undefined ? {} : { listingId: requireString(input.listingId, "listingId") }),
+    ...(category ? { category } : {}),
+    ...creatorAvatarOption(input),
+  };
+}
+
+export function parseInstallMarketplaceAgent(input: unknown): InstallMarketplaceAgentInput {
+  if (!isObject(input)) throw new Error("Invalid agent installation.");
+  return {
+    listingId: requireString(input.listingId, "listingId"),
+    ...(input.agentId === undefined
+      ? {}
+      : { agentId: requireString(input.agentId, "agentId", INPUT_LIMITS.identifier) }),
+    timezone: requireString(input.timezone, "timezone", 255),
+    receiptId: requireString(input.receiptId, "receiptId", INPUT_LIMITS.identifier),
+  };
+}
+
+function creatorAvatarOption(input: DynamicRecord): { showCreatorAvatar?: boolean } {
+  const showCreatorAvatar = optionalBoolean(input.showCreatorAvatar, "showCreatorAvatar");
+  return showCreatorAvatar === undefined ? {} : { showCreatorAvatar };
+}

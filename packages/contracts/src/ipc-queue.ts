@@ -1,0 +1,286 @@
+import { INPUT_LIMITS } from "./input-limits";
+import { type AttachmentSummary, isAttachmentSummary } from "./ipc-attachments";
+import { isBoundedString, isIdentifier } from "./ipc-bounded-values";
+import { isStartRetryView, type StartRetryView } from "./ipc-start-retry-view";
+import { isBoolean, isDynamicRecord, isNumber, isOneOf } from "./runtime-values";
+import type { QueueEditRequest } from "./team-protocol/queue-edit-v1";
+
+export const QUEUE_DELIVERY_STATUSES = [
+  "queued",
+  "starting",
+  "running",
+  "completed",
+  "failed",
+  "interrupted",
+  "cancelled",
+] as const;
+export type QueueDeliveryStatus = (typeof QUEUE_DELIVERY_STATUSES)[number];
+
+/**
+ * What a message sent to a busy agent does. `queue` waits behind the running turn; `steer` joins
+ * that turn at the provider's next step. Idle agents start every message the same way.
+ */
+export const BUSY_MESSAGE_MODES = ["queue", "steer"] as const;
+export type BusyMessageMode = (typeof BUSY_MESSAGE_MODES)[number];
+export const DEFAULT_BUSY_MESSAGE_MODE: BusyMessageMode = "queue";
+
+export function isBusyMessageMode(value: unknown): value is BusyMessageMode {
+  return isOneOf(BUSY_MESSAGE_MODES, value);
+}
+
+/** The app default, as it is stored and as it crosses IPC. An agent's own setting comes first. */
+export interface BusyMessageModePreference {
+  mode: BusyMessageMode;
+}
+
+/** Why a message sent in `steer` mode waits in the queue instead. */
+export const QUEUE_STEER_FALLBACKS = ["provider-unsupported", "steer-failed"] as const;
+export type QueueSteerFallback = (typeof QUEUE_STEER_FALLBACKS)[number];
+
+export interface QueueDelivery {
+  id: string;
+  messageId: string;
+  recipientAgentId: string;
+  sender:
+    | { kind: "user" }
+    | { kind: "agent"; agentId: string }
+    | { kind: "routine"; routineId: string; runId: string; routineName: string; scheduledFor: string };
+  text: string;
+  attachments: AttachmentSummary[];
+  replyToMessageId: string | null;
+  status: QueueDeliveryStatus;
+  position: number | null;
+  turnId: string | null;
+  error: string | null;
+  createdAt: string;
+  /**
+   * Another editor holds this queued message. It keeps its place in the queue and the agent does
+   * not start it until the edit is saved or cancelled.
+   *
+   * Absent rather than false on a released Team API response: the shipped adapters project a fixed
+   * key list, so a remote server drops this field instead of reporting it.
+   */
+  editing?: boolean;
+  /**
+   * Whether the sender waits for an answer. Only an agent sender sets it, and only to `false`:
+   * a message the sender marked as information the recipient may act on, but must not answer.
+   *
+   * Absent means an answer is expected: what every message stored before this field existed meant,
+   * and what a remote server too old to send it reports.
+   */
+  expectsReply?: boolean;
+  /**
+   * The message was sent to steer the running turn and waits in the queue instead. Absent on a
+   * released Team API response: the shipped adapters project a fixed key list.
+   */
+  steerFallback?: QueueSteerFallback;
+  /**
+   * The provider did not start this message, and the app tries it again (`StartRetryView`). Local-only:
+   * the released Team API adapters project a fixed key list, so a remote server drops it.
+   */
+  startRetry?: StartRetryView;
+}
+
+/**
+ * A queued answer from another agent to a question this agent asked. A client shows it in the
+ * waiting block, with the question it answers. Its only queue action is steer, while a turn runs.
+ *
+ * A host too old to send `expectsReply` reports every delivery as a question, so each one stays an
+ * ordinary queue row there.
+ */
+export function isQueuedAgentReply(delivery: QueueDelivery): boolean {
+  return (
+    delivery.status === "queued" &&
+    delivery.sender.kind === "agent" &&
+    delivery.replyToMessageId !== null &&
+    delivery.expectsReply === false
+  );
+}
+
+export function isQueueDelivery(value: unknown): value is QueueDelivery {
+  return (
+    isDynamicRecord(value) &&
+    isIdentifier(value.id) &&
+    isIdentifier(value.messageId) &&
+    isIdentifier(value.recipientAgentId) &&
+    isQueueSender(value.sender) &&
+    isBoundedString(value.text, INPUT_LIMITS.messageText) &&
+    Array.isArray(value.attachments) &&
+    value.attachments.length <= INPUT_LIMITS.attachments &&
+    value.attachments.every(isAttachmentSummary) &&
+    (value.replyToMessageId === null || isIdentifier(value.replyToMessageId)) &&
+    isOneOf(QUEUE_DELIVERY_STATUSES, value.status) &&
+    (value.position === null ||
+      (isNumber(value.position) && Number.isInteger(value.position) && value.position >= 1)) &&
+    (value.turnId === null || isIdentifier(value.turnId)) &&
+    (value.error === null || isBoundedString(value.error, INPUT_LIMITS.messageText)) &&
+    isBoundedString(value.createdAt, 160) &&
+    (value.editing === undefined || isBoolean(value.editing)) &&
+    (value.expectsReply === undefined || isBoolean(value.expectsReply)) &&
+    (value.steerFallback === undefined || isOneOf(QUEUE_STEER_FALLBACKS, value.steerFallback)) &&
+    (value.startRetry === undefined || isStartRetryView(value.startRetry))
+  );
+}
+
+function isQueueSender(value: unknown): value is QueueDelivery["sender"] {
+  if (!isDynamicRecord(value)) return false;
+  if (value.kind === "user") return true;
+  if (value.kind === "agent") return isIdentifier(value.agentId);
+  return (
+    value.kind === "routine" &&
+    isIdentifier(value.routineId) &&
+    isIdentifier(value.runId) &&
+    isBoundedString(value.routineName, INPUT_LIMITS.routineName) &&
+    isBoundedString(value.scheduledFor, 160)
+  );
+}
+
+export const QUEUE_HOLD_REASONS = ["channel-task"] as const;
+export type QueueHoldReason = (typeof QUEUE_HOLD_REASONS)[number];
+
+/**
+ * Why a queue is waiting for something other than its own running turn.
+ *
+ * A channel assignment holds the member agent that does it, so an agent with nothing running in its
+ * own chat can still be unable to start the message the user just sent it. Without this the wait has
+ * no visible cause: the channel turn's events are not the agent's own, so the agent reads as idle.
+ */
+export interface QueueHold {
+  reason: QueueHoldReason;
+  channelId: string;
+  channelName: string;
+  /** The agent the channel work belongs to. Equal to the snapshot's agent when it is its own work. */
+  agentId: string;
+  /** The tab of that channel work. Absent from a host older than tab lanes. */
+  topicName?: string;
+  /**
+   * The channel tabs where the agent works now, this one included: each tab is its own line of work,
+   * and the chat waits for all of them. Absent from a host older than tab lanes.
+   */
+  tabs?: number;
+}
+
+export function isQueueHold(value: unknown): value is QueueHold {
+  return (
+    isDynamicRecord(value) &&
+    isOneOf(QUEUE_HOLD_REASONS, value.reason) &&
+    isIdentifier(value.channelId) &&
+    isBoundedString(value.channelName, INPUT_LIMITS.agentTitle) &&
+    isIdentifier(value.agentId) &&
+    (value.topicName === undefined || isBoundedString(value.topicName, INPUT_LIMITS.agentName)) &&
+    (value.tabs === undefined || (typeof value.tabs === "number" && Number.isInteger(value.tabs) && value.tabs >= 1))
+  );
+}
+
+export interface QueueSnapshot {
+  agentId: string;
+  deliveries: QueueDelivery[];
+  /**
+   * Absent rather than null on a released Team API response: the shipped adapters project a fixed
+   * key list, so a remote server drops this field instead of reporting it.
+   */
+  hold?: QueueHold | null;
+}
+
+export function isQueueSnapshot(value: unknown): value is QueueSnapshot {
+  return (
+    isDynamicRecord(value) &&
+    isIdentifier(value.agentId) &&
+    Array.isArray(value.deliveries) &&
+    value.deliveries.every(isQueueDelivery) &&
+    (value.hold === undefined || value.hold === null || isQueueHold(value.hold))
+  );
+}
+
+export interface QueuedMessageReceipt {
+  messageId: string;
+  deliveries: Array<{
+    id: string;
+    recipientAgentId: string;
+    status: QueueDeliveryStatus;
+    position: number | null;
+  }>;
+}
+
+export function isQueuedMessageReceipt(value: unknown): value is QueuedMessageReceipt {
+  return (
+    isDynamicRecord(value) &&
+    isIdentifier(value.messageId) &&
+    Array.isArray(value.deliveries) &&
+    value.deliveries.every(
+      (delivery) =>
+        isDynamicRecord(delivery) &&
+        isIdentifier(delivery.id) &&
+        isIdentifier(delivery.recipientAgentId) &&
+        isOneOf(QUEUE_DELIVERY_STATUSES, delivery.status) &&
+        (delivery.position === null ||
+          (isNumber(delivery.position) && Number.isInteger(delivery.position) && delivery.position >= 1)),
+    )
+  );
+}
+
+export interface CancelQueuedMessageInput {
+  agentId: string;
+  deliveryId: string;
+}
+
+export interface AcknowledgeFailedTurnInput {
+  agentId: string;
+  turnId: string;
+}
+
+export interface SteerQueuedMessageInput {
+  agentId: string;
+  deliveryId: string;
+  expectedTurnId: string;
+}
+
+/**
+ * Stops the running turn of the agent that owns a queued message, and starts that message next, alone,
+ * before the other queued messages. The stop is the Stop button's stop: the partial work stays in the
+ * conversation. `expectedTurnId` is the turn of the agent's own chat that the person saw running, or
+ * null when the chat showed none. A turn of that chat that the person did not see is not stopped.
+ */
+export interface ForceQueuedMessageInput {
+  agentId: string;
+  deliveryId: string;
+  expectedTurnId: string | null;
+}
+
+/**
+ * What a force did. `interrupted`: the running turn was told to stop, and the message starts when it
+ * ends. `started`: no turn ran, so the message starts now. `next`: no turn was stopped, and the message
+ * waits at the head of the person's queue: a turn that the person did not see runs, other work of the
+ * agent (a channel or messaging turn) starts first, or the queue is held, for example by a compaction.
+ */
+export const FORCE_QUEUED_MESSAGE_OUTCOMES = ["interrupted", "started", "next"] as const;
+export type ForceQueuedMessageOutcome = (typeof FORCE_QUEUED_MESSAGE_OUTCOMES)[number];
+
+export interface ForceQueuedMessageResult {
+  outcome: ForceQueuedMessageOutcome;
+}
+
+export function isForceQueuedMessageResult(value: unknown): value is ForceQueuedMessageResult {
+  return isDynamicRecord(value) && isOneOf(FORCE_QUEUED_MESSAGE_OUTCOMES, value.outcome);
+}
+
+export interface UpdateQueuedMessageInput {
+  agentId: string;
+  deliveryId: string;
+  text: string;
+  keepAttachmentIds: string[];
+  attachmentDraftIds: string[];
+}
+
+export interface ReorderQueueInput {
+  agentId: string;
+  deliveryIds: string[];
+}
+
+export interface InterruptTurnInput {
+  agentId: string;
+  turnId: string;
+}
+
+/** A queue edit for one agent. The Team API route names the agent, so the request body does not. */
+export type EditQueuedMessageInput = QueueEditRequest & { agentId: string };

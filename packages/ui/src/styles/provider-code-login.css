@@ -1,0 +1,181 @@
+/*
+ * The code sign-in dialog. It opens from the provider rows, which appear inside the settings modal
+ * as well as on their own, so it sits one layer above the shared dialog layer for the same reason
+ * `opencode-key-dialog.css` does: both portals are children of `body`, and insertion order alone
+ * would decide it wrongly the first time a caller mounts it from elsewhere.
+ *
+ * The code itself is the largest thing on screen. It is about to be typed on another device from
+ * this screen alone, so it is set in the mono face at display size with the characters spaced
+ * apart: a code read wrong costs the whole round trip.
+ */
+
+.provider-code-login-backdrop {
+  z-index: calc(var(--buildersbot-layer-dialog) + 1);
+}
+
+.provider-code-login-dialog {
+  position: relative;
+  width: min(420px, 100%);
+  max-height: calc(100dvh - var(--buildersbot-space-6) * 2);
+  overflow-y: auto;
+  outline: 0;
+  border-radius: var(--buildersbot-radius-xl);
+  background: var(--buildersbot-bg-control);
+  padding: var(--buildersbot-space-6);
+  color: var(--buildersbot-text-primary);
+  animation: provider-code-login-dialog-in var(--buildersbot-duration-slow) var(--buildersbot-ease-out) both;
+}
+
+/* The host's sign-in page needs the width of a browser window. */
+.provider-code-login-dialog[data-page] {
+  width: min(720px, 100%);
+}
+
+.provider-code-login-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--buildersbot-space-1);
+  /* The close button sits in the corner the title would otherwise run into. */
+  padding-right: var(--buildersbot-space-8);
+}
+
+.provider-code-login-title {
+  margin: 0;
+  font-size: var(--buildersbot-text-xl);
+  line-height: var(--buildersbot-leading-xl);
+  font-weight: var(--buildersbot-weight-semibold);
+  letter-spacing: var(--buildersbot-tracking-tight);
+}
+
+.provider-code-login-description {
+  margin: 0;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-md);
+  line-height: var(--buildersbot-leading-md);
+}
+
+.provider-code-login-body {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--buildersbot-space-6);
+}
+
+/* The two waits, which look the same because they are the same to the user: Builders Bot is busy and
+   there is nothing to do. */
+.provider-code-login-pending {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--buildersbot-space-2);
+  padding: var(--buildersbot-space-8) 0;
+  text-align: center;
+}
+
+.provider-code-login-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--buildersbot-space-4);
+}
+
+.provider-code-login-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--buildersbot-space-1);
+  margin: 0;
+  padding-left: var(--buildersbot-space-4);
+  list-style: decimal;
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-md);
+  line-height: var(--buildersbot-leading-md);
+  align-self: stretch;
+}
+
+/* The link is a button, so it needs the baseline of the sentence it sits in rather than a line of
+   its own. */
+.provider-code-login-url {
+  display: inline-flex;
+  height: auto;
+  gap: var(--buildersbot-space-1-5);
+  padding: 0;
+}
+
+.provider-code-login-url > svg {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  flex: 0 0 auto;
+  stroke-width: var(--buildersbot-icon-stroke);
+}
+
+.provider-code-login-secondary-actions {
+  display: flex;
+  flex-direction: row;
+  gap: var(--buildersbot-space-2);
+  align-self: stretch;
+}
+
+.provider-code-login-secondary-actions > button {
+  flex: 1 1 0;
+}
+
+.provider-code-login-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-3);
+  align-self: stretch;
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-bg-surface);
+  padding: var(--buildersbot-space-3) var(--buildersbot-space-4);
+}
+
+/* The copy icon belongs to the label beside it, not to the code: the default icon size would make
+   it the second largest thing in the row. */
+.provider-code-login-copy > svg {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  flex: 0 0 auto;
+  stroke-width: var(--buildersbot-icon-stroke);
+}
+
+.provider-code-login-digits {
+  font-family: var(--buildersbot-font-mono);
+  font-size: var(--buildersbot-text-2xl);
+  line-height: var(--buildersbot-leading-2xl);
+  font-weight: var(--buildersbot-weight-semibold);
+  letter-spacing: var(--buildersbot-tracking-wide);
+}
+
+/* The pasted code and its button, full width under the steps. */
+.provider-code-login-paste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--buildersbot-space-3);
+  align-self: stretch;
+}
+
+.provider-code-login-expiry {
+  margin: 0;
+  text-align: center;
+}
+
+/* The app hand-off has no phase to show: only its two actions, in the order of a dialog footer. */
+.provider-use-app-actions {
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: var(--buildersbot-space-2);
+}
+
+.provider-code-login-close {
+  position: absolute;
+  top: var(--buildersbot-space-3);
+  right: var(--buildersbot-space-3);
+}
+
+@keyframes provider-code-login-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}

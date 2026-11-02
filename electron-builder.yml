@@ -1,0 +1,252 @@
+appId: app.buildersbot.desktop
+productName: Builders Bot
+copyright: Copyright © 2026 CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA (CNPJ 62.995.760/0001-33)
+protocols:
+  - name: Builders Bot invitations
+    schemes:
+      - buildersbot
+asar: true
+artifactName: ${productName}-${version}-${arch}.${ext}
+electronUpdaterCompatibility: ">=2.16"
+electronFuses:
+  resetAdHocDarwinSignature: true
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  loadBrowserProcessSpecificV8Snapshot: false
+  grantFileProtocolExtraPrivileges: false
+# Builders Bot has no update feed yet, so no build may name one. With `null`, electron-builder writes no
+# app-update.yml and no latest*.yml. Do not remove the key: without it, electron-builder uses the
+# `repository` of package.json as a GitHub feed. `src/main/update-feed-policy.ts` refuses every feed
+# until the signed Builders Bot feed exists, and `scripts/update-feed-guard-e2e.ts` checks both.
+publish: null
+files:
+  - out/**/*
+  - package.json
+  - LICENSE
+  - NOTICE
+  - "!node_modules/@anthropic-ai/claude-agent-sdk-darwin-*/**/*"
+  - "!node_modules/@anthropic-ai/claude-agent-sdk-linux-*/**/*"
+  - "!node_modules/@anthropic-ai/claude-agent-sdk-win32-*/**/*"
+  # Packages that only the renderer uses. Vite puts them in out/renderer, and the main, preload and
+  # host bundles import none of them, at run time or through a dependency (about 230 MB). The
+  # @buildersbot workspace packages are TypeScript sources that the main bundle already contains.
+  # `scripts/build-output-check.ts` fails when a bundle needs one of these.
+  - "!node_modules/mermaid/**/*"
+  - "!node_modules/@mermaid-js/**/*"
+  - "!node_modules/lucide-solid/**/*"
+  - "!node_modules/cytoscape/**/*"
+  - "!node_modules/cytoscape-*/**/*"
+  - "!node_modules/elkjs/**/*"
+  - "!node_modules/katex/**/*"
+  - "!node_modules/@buildersbot/**/*"
+asarUnpack:
+  # The database host is loaded by path as a separate process, not required into the main bundle.
+  - out/main/agent-database-host.js
+  # The voice transcription and speech hosts are started by path in the same way.
+  - out/main/voice-transcription-host.js
+  - out/main/voice-speech-host.js
+  # The unpacked host resolves Effect without loading any application module from asar.
+  - node_modules/effect/**/*
+extraResources:
+  - from: resources/managed-skills
+    to: managed-skills
+  - from: resources/plugin-catalog
+    to: plugin-catalog
+  - from: resources/agent-import
+    to: agent-import
+  # `buildersbot-cli.mjs` runs tasks on agents through the Local scripts API; see docs/automation.md.
+  - from: resources/cli
+    to: cli
+  # `cpu-limit.cjs` makes os.cpus() follow the CPU limit for the Node programs of agents on a server.
+  - from: resources/agent-runtime
+    to: agent-runtime
+  - from: build/buildersbot.png
+    to: icons/icon-production.png
+  - from: build/icon-dev.png
+    to: icons/icon-dev.png
+  - from: build/icon-preview.png
+    to: icons/icon-preview.png
+  # The Dock and window icons for the logo color setting. macOS has no alternate app icon API, so
+  # the app sets one of these while it runs.
+  - from: build/logo-colors
+    to: icons/logo-colors
+  - from: node_modules/electron/dist/LICENSE
+    to: licenses/Electron-LICENSE
+  - from: node_modules/electron/dist/LICENSES.chromium.html
+    to: licenses/LICENSES.chromium.html
+  - from: build/licenses/sherpa-onnx-LICENSE
+    to: licenses/sherpa-onnx-LICENSE
+  - from: build/licenses/onnxruntime-LICENSE
+    to: licenses/onnxruntime-LICENSE
+  - from: build/licenses/NVIDIA-Parakeet-TDT-0.6B-v3-LICENSE
+    to: licenses/NVIDIA-Parakeet-TDT-0.6B-v3-LICENSE
+  - from: build/licenses/Underdog-Bark-3.0-Plus-LICENSE
+    to: licenses/Underdog-Bark-3.0-Plus-LICENSE
+  - from: build/licenses/OpenAI-Whisper-LICENSE
+    to: licenses/OpenAI-Whisper-LICENSE
+  - from: build/licenses/Supertone-Supertonic-3-LICENSE
+    to: licenses/Supertone-Supertonic-3-LICENSE
+# The voice runtime, the remote desktop runtime and each Computer Use driver are built for one
+# target, so their resources are listed under each platform instead of here.
+# electron-builder merges the root and platform lists, so every build still gets its own, while a
+# build has no missing `from` to fail on and no other platform's driver to carry.
+directories:
+  output: dist
+toolsets:
+  # The static AppImage runtime (AppImage/type2-runtime) has libfuse built in, so the AppImage starts
+  # on Arch Linux, Omarchy and other systems with no libfuse.so.2. It needs only `fusermount3`
+  # from fuse3. The default toolset needs libfuse.so.2. `--appimage-extract` works with both.
+  appimage: "1.0.3"
+mac:
+  category: public.app-category.productivity
+  minimumSystemVersion: "13.0"
+  notarize: true
+  hardenedRuntime: true
+  # macOS 26 shows the catalog that `CFBundleIconName` names, with our own dark version; without it,
+  # macOS 26 makes the dark icon a black tile with black eyes. The catalog also has flat images, and
+  # `icon.icns` stays for macOS versions that read only `CFBundleIconFile`. Make the catalog again
+  # with `bun scripts/compile-macos-icon.ts` after a change to the `.icon` file.
+  icon: build/buildersbot.icns
+  extraResources:
+    - from: build/macos/Assets.car
+      to: Assets.car
+    - from: build/buildersbot-macos-safe-area.png
+      to: icons/icon-production-macos-safe-area.png
+    - from: build/icon-dev-macos-safe-area.png
+      to: icons/icon-dev-macos-safe-area.png
+    - from: build/icon-preview-macos-safe-area.png
+      to: icons/icon-preview-macos-safe-area.png
+    # The sherpa-onnx addon and its libraries. The dictation and speech models are downloaded on demand.
+    - from: .buildersbot-build/voice/runtime
+      to: voice/runtime
+    # The background app of the system dictation of macOS. Windows runs PowerShell and needs no file.
+    - from: .buildersbot-build/voice/os-speech
+      to: voice/os-speech
+    - from: build/remote-desktop-runtime
+      to: remote-desktop-runtime
+    - from: build/cua-driver/darwin/${arch}
+      to: cua-driver/darwin/${arch}
+    # The `chrome-peer` addon (`bun run prepare:chrome-bridge`): before the app reads a byte from a Chrome
+    # host connection, it checks the host's signature and that Google Chrome started it. The host itself
+    # is built for one signing certificate, so it is not here: `scripts/sign-local-macos.sh` adds the one
+    # for the owner's certificate (channel `local`). A Developer ID build has no host until the store ID exists.
+    - from: .buildersbot-build/chrome-peer/${arch}
+      to: chrome-peer
+    # The unpacked extension of a locally signed app (channel `local`), which the person loads in
+    # Developer mode until the store listing exists. The app writes the Native Messaging manifest.
+    - from: .buildersbot-build/chrome-extension/local
+      to: chrome-extension
+  # The Computer Use driver arrives signed by Cua AI with the hardened runtime, a secure timestamp
+  # and `com.apple.security.automation.apple-events`. Re-signing it with Builders Bot's inherited
+  # entitlements would drop that entitlement and break the driver's Automation route, so its own
+  # Developer ID signature is kept. Notarization accepts a nested binary signed by another team.
+  signIgnore:
+    - Contents/Resources/cua-driver/
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
+  darkModeSupport: true
+  extendInfo:
+    CFBundleIconName: Icon
+    ElectronTeamID: ZTRDTUL87R
+    # Each process of the bundle registers with LaunchServices as a UI element, before its script runs.
+    # The desktop app becomes a regular app with a Dock tile at its first line, and a server on this
+    # computer becomes background-only (`setMacApplicationTypeAtStart`). Without this key, each start of
+    # a server registered as a regular app, and an open Force Quit or low-memory panel listed it as a
+    # second "Builders Bot". `scripts/local-server-window-e2e.ts` checks it.
+    LSUIElement: true
+    # Agent commands are child processes, and macOS gives them the grant of the app. Say so until
+    # they ask for the microphone in their own name (voice-anywhere design, section 7.10).
+    NSMicrophoneUsageDescription: Builders Bot uses the microphone for dictation and voice conversations. Commands that agents run from Builders Bot can also use it. The audio stays on this Mac unless you choose a cloud voice model or your own voice server in Settings.
+    NSSpeechRecognitionUsageDescription: Builders Bot uses the speech recognition of macOS to turn your dictation into text on this Mac.
+    # Computer Use runs the driver as a child process, so macOS asks for both grants in Builders Bot's
+    # name and shows these sentences. Under the hardened runtime, macOS shows the Automation prompt
+    # only when the app has `com.apple.security.automation.apple-events` in its entitlements.
+    NSScreenCaptureUsageDescription: Builders Bot captures the screen so an agent can see the app windows you ask it to control.
+    NSAppleEventsUsageDescription: Builders Bot sends Automation events so an agent can control the apps you ask it to control.
+    NSUserActivityTypes:
+      - NSUserActivityTypeBrowsingWeb
+  # No `arch` here: a target's own `arch` list replaces the one given on the command line, so
+  # `--x64` would still build ARM64. With no flag, electron-builder builds for the machine it runs
+  # on. Build one architecture at a time: the voice runtime and remote desktop builds on disk are for the
+  # architecture of the machine that made them.
+  target:
+    - dmg
+    - zip
+win:
+  icon: build/buildersbot.ico
+  extraResources:
+    - from: .buildersbot-build/voice/runtime
+      to: voice/runtime
+    - from: build/remote-desktop-runtime
+      to: remote-desktop-runtime
+    - from: build/cua-driver/win32/x64
+      to: cua-driver/win32/x64
+  target:
+    - target: nsis
+      arch:
+        - x64
+# The assisted installer lets the user choose the disk and folder. `build/installer.nsh` keeps it
+# per-user and moves the install into an `Builders Bot` subfolder when the chosen folder holds other
+# files, because the uninstaller deletes the whole folder. An update reads the folder from
+# `InstallLocation`. The app starts it silently (`src/main/update-service.ts`), so an update shows
+# no page.
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+linux:
+  # The server scripts and the Docker image start `/opt/BuildersBot/app/buildersbot` (scripts/hosting,
+  # docker/Dockerfile). Without this name, electron-builder names the binary after `name` in
+  # package.json (`buildersbot`), and the image does not start. macOS and Windows keep their names.
+  # `bun run check:linux-image-names` checks this name against the scripts.
+  executableName: buildersbot
+  category: Development
+  icon: build/buildersbot.png
+  synopsis: A local-first multi-agent desktop workspace.
+  extraResources:
+    - from: build/linux/buildersbot.apparmor
+      to: linux/buildersbot.apparmor
+    # A hosted server installs the packages, scripts and units of the release that it updates to.
+    - from: scripts/hosting
+      to: hosting
+      filter:
+        - "**/*"
+        - "!*.ts"
+    # The sherpa-onnx addon and its libraries. The dictation and speech models are downloaded on demand.
+    - from: .buildersbot-build/voice/runtime
+      to: voice/runtime
+    # Only the x64 build installs this runtime. For arm64 the directory does not exist, and
+    # electron-builder skips a missing source with a warning.
+    - from: build/remote-desktop-runtime
+      to: remote-desktop-runtime
+    - from: build/cua-driver/linux/${arch}
+      to: cua-driver/linux/${arch}
+  # Electron takes its Linux app id from `desktopName` in package.json, and the window manager
+  # matches a running window to the launcher through `StartupWMClass`. Syncing the two from one
+  # value is what makes the taskbar icon group with the window it belongs to.
+  syncDesktopName: true
+  target:
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+dmg:
+  title: ${productName} ${version}
+  background: build/dmg-background.png
+  iconSize: 128
+  iconTextSize: 14
+  window:
+    x: 400
+    y: 467
+    width: 680
+    height: 506
+  contents:
+    - x: 190
+      y: 220
+    - x: 490
+      y: 220
+      type: link
+      path: /Applications

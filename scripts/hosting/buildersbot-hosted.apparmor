@@ -1,0 +1,6 @@
+abi <abi/4.0>,
+include <tunables/global>
+
+profile buildersbot-hosted /opt/BuildersBot/app/buildersbot flags=(unconfined) {
+  userns,
+}

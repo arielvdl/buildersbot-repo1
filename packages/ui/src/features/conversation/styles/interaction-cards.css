@@ -1,0 +1,64 @@
+.conversation-interaction-card {
+  box-sizing: border-box;
+  min-width: 0;
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-card);
+  background: var(--buildersbot-bg-canvas);
+  color: var(--buildersbot-text-primary);
+  padding: var(--buildersbot-space-4);
+}
+
+.conversation-interaction-header {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-3);
+}
+
+.conversation-interaction-header > :is(strong, h2) {
+  min-width: 0;
+  margin: 0;
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-lg);
+  font-weight: var(--buildersbot-weight-medium);
+  line-height: var(--buildersbot-leading-lg);
+  overflow-wrap: anywhere;
+}
+
+/* The siren of a Guard question stands before the title, and the title takes the space up to the badge. */
+.approval-card-siren {
+  align-self: center;
+}
+
+.approval-card-siren + :is(strong, h2) {
+  flex: 1 1 auto;
+  align-self: center;
+}
+
+.conversation-interaction-status[data-slot="badge"] {
+  flex: 0 0 auto;
+  gap: var(--buildersbot-space-1-5);
+  border-radius: var(--buildersbot-radius-md);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-medium);
+}
+
+.conversation-interaction-status svg {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  flex: 0 0 auto;
+  stroke-width: var(--buildersbot-icon-stroke);
+}
+
+/* The badge says the card is waiting on the person, so its loader has to turn: a frozen spinner
+   reads as a stalled step rather than one that is ready for them. */
+.conversation-interaction-spinner {
+  animation: ui-spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-interaction-spinner {
+    animation: none;
+  }
+}

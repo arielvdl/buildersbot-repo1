@@ -1,0 +1,70 @@
+# One Builders Bot container of several on one host. `buildersbot-instance` runs it with the env file of the
+# instance, so each instance has its own project, container, data and limits. See
+# docs/docker.md#several-instances-on-one-host.
+services:
+  buildersbot:
+    # Builders Bot has no published container image yet. `buildersbot-instance create` writes the image
+    # that the owner built from docker/Dockerfile to the env file of the instance. Docker never pulls
+    # it from a registry.
+    image: ${BUILDERSBOT_IMAGE:?Builders Bot has no published container image yet. Set BUILDERSBOT_IMAGE to an image built from docker/Dockerfile.}
+    pull_policy: never
+    container_name: buildersbot-${BUILDERSBOT_NAME:?}
+    restart: unless-stopped
+    security_opt:
+      - seccomp=../seccomp.json
+      - no-new-privileges:true
+    shm_size: 1g
+    stop_grace_period: 60s
+    cpus: ${BUILDERSBOT_CPUS:?}
+    mem_limit: ${BUILDERSBOT_MEM:?}
+    # No swap above the memory limit.
+    memswap_limit: ${BUILDERSBOT_MEM:?}
+    pids_limit: 8192
+    # The soft limit of Docker is 1024 open files, which is too few for Chromium and agent builds.
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 524288
+    # The container layer is on the disk of the host and has no size limit, so nothing can write to
+    # it. Builders Bot and agents write to /data and to these tmpfs folders, which count toward the memory
+    # limit.
+    read_only: true
+    tmpfs:
+      - /tmp:exec,mode=1777,size=${BUILDERSBOT_TMP:-8g}
+      - /var/tmp:exec,mode=1777,size=1g
+      - /run/lock:mode=1777,size=1m
+      # XDG_RUNTIME_DIR: the control socket, D-Bus and the keyring. Main refuses it unless the image
+      # user owns it with mode 0700.
+      - /run/buildersbot:mode=0700,uid=1000,gid=1000,size=64m
+    # The file system of the instance, with its disk limit. Builders Bot only connects out, so the
+    # instances publish no port.
+    volumes:
+      - /srv/buildersbot/${BUILDERSBOT_NAME:?}/data:/data
+      # Updates from the app: Builders Bot writes requests, and root on the host writes the state. See
+      # update-request in buildersbot-instance.
+      - /srv/buildersbot/${BUILDERSBOT_NAME:?}/update-requests:/var/lib/buildersbot-update/requests
+      - /srv/buildersbot/${BUILDERSBOT_NAME:?}/update-status:/var/lib/buildersbot-update/status:ro
+      # The model policy of the instance: the providers and models that its picker offers (see
+      # docs/architecture/providers.md#server-model-policy). Root on the host writes it, and the
+      # container can only read it, so an agent cannot change it. With no file, there is no policy.
+      - /srv/buildersbot/${BUILDERSBOT_NAME:?}/policy:/etc/buildersbot/policy:ro
+    environment:
+      BUILDERSBOT_MODEL_POLICY_FILE: /etc/buildersbot/policy/model-policy.json
+    # The network of all instances. They cannot reach each other, and buildersbot-firewall lets them
+    # reach only the internet.
+    networks:
+      - buildersbot
+    # rsyslog writes the log to /var/log/buildersbot/buildersbot-<name>.log, and logrotate keeps 30 days.
+    # `docker logs` reads the local cache of Docker. A line longer than 8 KB is cut.
+    logging:
+      driver: syslog
+      options:
+        syslog-address: unixgram:///var/lib/buildersbot-docker/dev/log
+        tag: "{{.Name}}"
+        # A slow rsyslog never stops Builders Bot. When the buffer is full, lines are lost.
+        mode: non-blocking
+        max-buffer-size: 4m
+
+networks:
+  buildersbot:
+    external: true

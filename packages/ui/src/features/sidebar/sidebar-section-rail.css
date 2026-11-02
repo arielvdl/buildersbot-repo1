@@ -1,0 +1,694 @@
+/*
+ * The section rail (`SidebarSectionRail.tsx`). It has the server rail classes, so `app-shell.css`
+ * gives it the column, the padding, the drag region and the selection bar, and the web and window
+ * styles place and hide it as they do the server rail. These rules draw the section marks, the
+ * badges, the laser of a section that works, and the icon editor.
+ *
+ * A section with a color has `--sidebar-section-color` (a stored #rrggbb) and `data-section-color`.
+ * Its mark shows a light tint and a ring of that color. A section without a color stays neutral.
+ */
+
+.section-rail-mark-tile {
+  position: relative;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-bg-surface);
+  color: var(--buildersbot-text-secondary);
+  transition:
+    background-color var(--buildersbot-duration-hover) var(--buildersbot-ease-out),
+    border-color var(--buildersbot-duration-hover) var(--buildersbot-ease-out),
+    color var(--buildersbot-duration-hover) var(--buildersbot-ease-out);
+}
+
+/* The editor preview draws the same mark, larger. */
+.section-icon-preview-tile .section-rail-mark-tile {
+  width: 56px;
+  height: 56px;
+}
+
+.section-rail-letter {
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.section-icon-preview-tile .section-rail-letter {
+  font-size: var(--buildersbot-text-xl);
+}
+
+.section-rail-mark-tile[data-wide] .section-rail-letter {
+  font-size: var(--buildersbot-text-sm);
+}
+
+.section-icon-preview-tile .section-rail-mark-tile[data-wide] .section-rail-letter {
+  font-size: var(--buildersbot-text-lg);
+}
+
+.section-rail-glyph {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--buildersbot-icon-stroke);
+}
+
+.section-icon-preview-tile .section-rail-glyph {
+  width: 26px;
+  height: 26px;
+}
+
+.section-rail-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.section-rail-mark-tile[data-kind="image"] {
+  border-color: transparent;
+  outline: 1px solid var(--buildersbot-image-outline);
+  outline-offset: -1px;
+}
+
+/* An emoji sits on the tile, large and centered, in the system emoji font. */
+.section-rail-emoji {
+  font-family: var(--section-emoji-font);
+  font-size: var(--buildersbot-text-3xl);
+  line-height: 1;
+}
+
+.section-icon-preview-tile .section-rail-emoji {
+  font-size: var(--buildersbot-glyph-emoji-lg);
+}
+
+/* "No section" holds the chats outside every section, so its mark is an open box. */
+.section-rail-mark-tile[data-kind="unassigned"] {
+  border-style: dashed;
+  background: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .section-rail-button:hover .section-rail-mark-tile {
+    border-color: var(--buildersbot-border-strong);
+    color: var(--buildersbot-text-primary);
+  }
+}
+
+.section-rail-button[aria-pressed="true"] .section-rail-mark-tile {
+  border-color: var(--buildersbot-border-strong);
+  background: var(--buildersbot-bg-control-active);
+  color: var(--buildersbot-text-primary);
+}
+
+.section-rail-button[data-section-color] .section-rail-mark-tile,
+.section-icon-preview-tile[data-section-color] .section-rail-mark-tile {
+  border-color: color-mix(in srgb, var(--sidebar-section-color) 55%, transparent);
+  background: color-mix(in srgb, var(--sidebar-section-color) 22%, var(--buildersbot-bg-surface));
+  color: var(--buildersbot-text-primary);
+}
+
+.section-rail-button[data-section-color][aria-pressed="true"] .section-rail-mark-tile {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sidebar-section-color) 70%, transparent);
+}
+
+/* An image covers the tint, so its line takes the color. */
+.section-rail-button[data-section-color] .section-rail-mark-tile[data-kind="image"],
+.section-icon-preview-tile[data-section-color] .section-rail-mark-tile[data-kind="image"] {
+  outline-color: color-mix(in srgb, var(--sidebar-section-color) 70%, transparent);
+}
+
+/* One badge: a dot for a wait, the count of unread messages, or a dot for work in flight. */
+.section-rail-badge {
+  position: absolute;
+  z-index: 2;
+  right: -1px;
+  bottom: -1px;
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 2px solid var(--buildersbot-bg-sidebar);
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-text-primary);
+  padding: 0 4px;
+  color: var(--buildersbot-bg-sidebar);
+  font-size: var(--buildersbot-text-sm);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--buildersbot-weight-semibold);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.section-rail-badge[data-kind="waiting"],
+.section-rail-badge[data-kind="working"] {
+  top: 0;
+  bottom: auto;
+  min-width: 14px;
+  height: 14px;
+  padding: 0;
+}
+
+.section-rail-badge[data-kind="waiting"] {
+  background: var(--buildersbot-warning);
+}
+
+/* The work dot does not pulse: the laser on the border is the motion of a section that works. */
+.section-rail-badge[data-kind="working"] {
+  background: var(--buildersbot-accent);
+}
+
+/*
+ * The laser of a section with work in flight (`data-running`): a short bright arc with a faint trail
+ * goes round the border of the mark once in 2.4 s, over a quiet ring, and the mark has a soft halo.
+ * It has the section color, or the app accent when the section has no color. The section color keeps
+ * its hue and chroma, but its lightness stays in a range that shows on the sidebar: at least 0.55 on
+ * the dark theme and at most 0.72 on the light theme (OKLCH). Thus a custom color near the sidebar
+ * color (a very dark color on the dark theme, a very light color on the light theme) does not go out
+ * of view. The preset colors keep their lightness, except the two lightest presets, which are darker
+ * on the light theme. The head mixes the color with the primary text color: lighter on the dark
+ * theme, darker on the light theme.
+ *
+ * Cost: only one compositor layer turns. `.section-rail-laser-ring` is a 2 px ring of the mark shape
+ * (a mask), and its `::before` is a conic gradient, larger than the mark, that turns with `transform`.
+ * No custom property, gradient, filter or shadow changes during the turn, so the main thread does not
+ * style or paint for it. The elements exist only while the section works, so `will-change` applies
+ * only then. The rail sets `--section-rail-laser-play` to `paused` while the document is hidden; the
+ * dragged item pauses too. With reduced motion, the ring stays still and lit.
+ * `scripts/sidebar-section-rail-laser-smoke.ts` checks these rules in a headless browser.
+ */
+.section-rail-button[data-running] {
+  --section-rail-laser: var(--buildersbot-accent);
+  --section-rail-laser-head: color-mix(in srgb, var(--section-rail-laser) 35%, var(--buildersbot-text-primary));
+}
+
+.section-rail-button[data-running][data-section-color] {
+  --section-rail-laser: oklch(from var(--sidebar-section-color) max(l, 0.55) c h);
+}
+
+:root[data-buildersbot-color-scheme="light"] .section-rail-button[data-running] {
+  --section-rail-laser-head: color-mix(in srgb, var(--section-rail-laser) 60%, var(--buildersbot-text-primary));
+}
+
+:root[data-buildersbot-color-scheme="light"] .section-rail-button[data-running][data-section-color] {
+  --section-rail-laser: oklch(from var(--sidebar-section-color) min(l, 0.72) c h);
+}
+
+/* On the mark: 40 px, centered in the 46 px button, under the badge. The halo does not change. */
+.section-rail-laser {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 40px;
+  height: 40px;
+  margin: auto;
+  border-radius: var(--buildersbot-radius-lg);
+  box-shadow: 0 0 8px -1px color-mix(in srgb, var(--section-rail-laser) 50%, transparent);
+  pointer-events: none;
+}
+
+.section-rail-laser-ring {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  border-radius: inherit;
+  padding: 2px;
+  background: color-mix(in srgb, var(--section-rail-laser) 24%, transparent);
+  contain: strict;
+  mask:
+    linear-gradient(var(--buildersbot-text-primary) 0 0) content-box,
+    linear-gradient(var(--buildersbot-text-primary) 0 0);
+  mask-composite: exclude;
+}
+
+/* The arc goes clockwise: the head is at the end of the turn, and the trail fades behind it. */
+.section-rail-laser-ring::before {
+  position: absolute;
+  inset: -25%;
+  background: conic-gradient(
+    transparent 0turn 0.45turn,
+    color-mix(in srgb, var(--section-rail-laser) 18%, transparent) 0.68turn,
+    color-mix(in srgb, var(--section-rail-laser) 72%, transparent) 0.86turn,
+    var(--section-rail-laser) 0.94turn,
+    var(--section-rail-laser-head) 0.98turn 0.994turn,
+    transparent 1turn
+  );
+  content: "";
+  animation: section-rail-laser 2.4s linear infinite;
+  animation-play-state: var(--section-rail-laser-play, running);
+  will-change: transform;
+}
+
+.section-rail-button[data-dragging] .section-rail-laser-ring::before {
+  animation-play-state: paused;
+}
+
+@keyframes section-rail-laser {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-rail-laser-ring {
+    background: color-mix(in srgb, var(--section-rail-laser) 85%, transparent);
+  }
+
+  .section-rail-laser-ring::before {
+    content: none;
+    animation: none;
+    will-change: auto;
+  }
+}
+
+.section-rail-add .server-rail-monogram svg {
+  width: 20px;
+  height: 20px;
+}
+
+.section-rail-tooltip-name {
+  display: block;
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.section-rail-tooltip-status {
+  display: block;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+/*
+ * The reorder of the sections: the items between the dragged section and the drop place slide by one
+ * step (a 46 px button and the 8 px gap), and the dragged item shows as a lifted copy under the pointer.
+ */
+.section-rail-button[data-section-rail-id] {
+  transform: translate3d(0, calc(var(--section-rail-drag-step, 0) * 54px), 0);
+  transition: transform var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
+}
+
+.section-rail[data-dragging] .section-rail-button[data-section-rail-id] {
+  cursor: grabbing;
+}
+
+.section-rail-button[data-dragging] {
+  opacity: 0.35;
+}
+
+.section-rail-drag-preview {
+  position: fixed;
+  z-index: var(--buildersbot-layer-dropdown);
+  margin: 0;
+  pointer-events: none;
+}
+
+/* The copy is a section button, so this rule must out-rank the ring of a selected tinted section. */
+.section-rail-button.section-rail-drag-preview[data-section-rail-id] .section-rail-mark-tile {
+  box-shadow: var(--buildersbot-shadow-raised);
+  transform: scale(1.08);
+}
+
+/*
+ * The laser stays on the border of the lifted mark. The copy has paint containment
+ * (`createVerticalDragPreview`), which would cut the halo at the edge of the button, and the lifted
+ * mark has its own shadow, so the copy shows no halo.
+ */
+.section-rail-button.section-rail-drag-preview .section-rail-laser {
+  transform: scale(1.08);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-rail-button[data-section-rail-id] {
+    transition: none;
+  }
+}
+
+/* The icon editor. */
+/* The editor has the surface of the confirmation dialog (`primitives.css`). */
+.ui-dialog-content.section-icon-dialog {
+  width: min(400px, 100%);
+  max-height: calc(100dvh - 2 * var(--buildersbot-space-6));
+  overflow: auto;
+  outline: 0;
+  border: 1px solid var(--buildersbot-dialog-ring);
+  border-radius: var(--buildersbot-radius-xl);
+  background: var(--buildersbot-bg-sidebar);
+  box-shadow: none;
+  padding: var(--buildersbot-space-4) var(--buildersbot-space-6) var(--buildersbot-space-6);
+  color: var(--buildersbot-text-primary);
+  animation: ui-confirm-dialog-in var(--buildersbot-duration-slow) var(--buildersbot-ease-out);
+}
+
+.section-icon-form {
+  display: grid;
+  gap: var(--buildersbot-space-4);
+}
+
+.section-icon-header,
+.section-icon-footer,
+.section-icon-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-3);
+}
+
+.section-icon-header {
+  justify-content: space-between;
+}
+
+.section-icon-title {
+  margin: 0;
+  font-size: var(--buildersbot-text-lg);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.section-icon-preview-name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: var(--buildersbot-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-icon-image {
+  display: grid;
+  justify-items: start;
+  gap: var(--buildersbot-space-2);
+}
+
+.section-icon-hint {
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.section-icon-error {
+  color: var(--buildersbot-danger-text);
+}
+
+.section-icon-footer {
+  justify-content: flex-end;
+}
+
+/* The reset is not the next step, so it stands apart at the start of the row. */
+.section-icon-reset {
+  margin-right: auto;
+}
+
+/* The drop zone of the image tab. It lights while a file is over the dialog. */
+.section-icon-drop {
+  display: grid;
+  justify-self: stretch;
+  min-height: 112px;
+  place-items: center;
+  align-content: center;
+  gap: var(--buildersbot-space-2);
+  border: 1px dashed var(--buildersbot-border-strong);
+  border-radius: var(--buildersbot-radius-lg);
+  padding: var(--buildersbot-space-4);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  text-align: center;
+  transition:
+    background-color var(--buildersbot-duration-hover) var(--buildersbot-ease-out),
+    border-color var(--buildersbot-duration-hover) var(--buildersbot-ease-out);
+}
+
+.section-icon-drop[data-active] {
+  border-color: var(--buildersbot-accent);
+  background: var(--buildersbot-accent-soft);
+  color: var(--buildersbot-text-primary);
+}
+
+.section-icon-drop-glyph {
+  width: 24px;
+  height: 24px;
+}
+
+.section-icon-drop-current {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--buildersbot-radius-lg);
+  object-fit: cover;
+  outline: 1px solid var(--buildersbot-image-outline);
+  outline-offset: -1px;
+}
+
+/* The crop editor: the frame, the zoom, the place buttons and the background. */
+.section-icon-crop {
+  display: grid;
+  justify-self: stretch;
+  justify-items: center;
+  gap: var(--buildersbot-space-3);
+}
+
+/* The line is an outline, not a border, so the frame keeps all of its 200 px for the crop. */
+.section-icon-crop-frame {
+  overflow: hidden;
+  border-radius: var(--buildersbot-radius-lg);
+  outline: 1px solid var(--buildersbot-border-strong);
+  outline-offset: -1px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.section-icon-crop-frame:active {
+  cursor: grabbing;
+}
+
+.section-icon-crop-frame:focus-visible {
+  box-shadow: var(--buildersbot-focus-ring);
+}
+
+.section-icon-crop-zoom {
+  justify-self: stretch;
+}
+
+/* The canvas of the crop. It fills the frame, or the tile of the preview. */
+.section-icon-crop-canvas {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* A transparent background shows as a check pattern. Light and dark are the fixed fills of the saved
+   image (`SECTION_ICON_FILLS` in `section-icon-image.ts`): the canvas takes them from that table as an
+   inline style, so the preview shows the same colors. */
+.section-icon-crop-canvas[data-background="transparent"] {
+  background: repeating-conic-gradient(var(--buildersbot-bg-control-active) 0 25%, transparent 0 50%) 0 0 / 16px 16px;
+}
+
+.section-icon-crop-image {
+  position: absolute;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.section-icon-crop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--buildersbot-space-1);
+}
+
+.section-icon-crop-backgrounds {
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.section-icon-crop-legend {
+  margin-bottom: var(--buildersbot-space-1);
+  padding: 0;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-icon-drop {
+    transition: none;
+  }
+}
+
+/*
+ * The Icon and Emoji pickers (`SidebarSectionIconPicker.tsx`): a search field, category buttons, the
+ * recents and a grid of eight columns. The grid has the eight columns that its arrow keys count.
+ */
+:root {
+  --section-emoji-font: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+
+.section-picker {
+  display: grid;
+  min-width: 0;
+  gap: var(--buildersbot-space-2);
+}
+
+.section-picker-search {
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-1);
+}
+
+.section-picker-search-field {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.section-picker-search-icon {
+  position: absolute;
+  top: 50%;
+  left: var(--buildersbot-space-2);
+  width: 16px;
+  height: 16px;
+  color: var(--buildersbot-text-muted);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.ui-input.section-picker-search-input {
+  width: 100%;
+  padding-left: calc(var(--buildersbot-space-2) + 22px);
+}
+
+.section-picker-categories,
+.section-picker-tones {
+  display: flex;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  gap: var(--buildersbot-space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.section-picker-categories::-webkit-scrollbar {
+  display: none;
+}
+
+.section-picker-categories .ui-button {
+  flex: none;
+}
+
+.section-picker-emoji-categories {
+  justify-content: space-between;
+}
+
+.section-picker-heading {
+  margin: 0;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.section-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 2px;
+  max-height: 232px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--buildersbot-radius-md);
+  outline: 0;
+}
+
+.section-picker-grid.section-picker-recent {
+  max-height: none;
+  overflow: visible;
+}
+
+.section-picker-item {
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: var(--buildersbot-radius-md);
+  color: var(--buildersbot-text-secondary);
+  cursor: pointer;
+  outline: 0;
+  transition:
+    background-color var(--buildersbot-duration-hover) var(--buildersbot-ease-out),
+    transform var(--buildersbot-duration-hover) var(--buildersbot-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .section-picker-item:hover {
+    background: var(--buildersbot-bg-control-hover);
+    color: var(--buildersbot-text-primary);
+  }
+
+  .section-picker-item:hover .section-picker-emoji {
+    transform: scale(1.12);
+  }
+}
+
+.section-picker-item:focus-visible {
+  box-shadow: var(--buildersbot-focus-ring);
+  background: var(--buildersbot-bg-control-hover);
+}
+
+.section-picker-item[aria-selected="true"] {
+  background: var(--buildersbot-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--buildersbot-accent);
+  color: var(--buildersbot-accent-text);
+}
+
+.section-picker-glyph {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--buildersbot-icon-stroke);
+}
+
+.section-picker-emoji {
+  display: inline-block;
+  font-family: var(--section-emoji-font);
+  font-size: var(--buildersbot-glyph-emoji-md);
+  line-height: 1;
+  transition: transform var(--buildersbot-duration-hover) var(--buildersbot-ease-out);
+}
+
+.section-picker-categories .section-picker-emoji,
+.section-picker-tones .section-picker-emoji,
+.section-picker-tone-button .section-picker-emoji {
+  font-size: var(--buildersbot-text-2xl);
+}
+
+.section-picker-status {
+  display: flex;
+  min-height: 96px;
+  margin: 0;
+  align-items: center;
+  justify-content: center;
+  gap: var(--buildersbot-space-2);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-picker-item,
+  .section-picker-emoji {
+    transition: none;
+  }
+
+  .section-picker-item:hover .section-picker-emoji {
+    transform: none;
+  }
+}
