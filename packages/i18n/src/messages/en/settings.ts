@@ -846,7 +846,6 @@ export const messages = defineMessages("settings", {
   "settings.profile.tabReports.empty": "No closed tabs in this period.",
   "settings.profile.tabReports.more": "Show more",
   "settings.profile.tabReports.error": "Could not load the closed tabs.",
-  "settings.profile.tabReports.delete.action": "Delete record",
   "settings.profile.tabReports.delete.label": "Delete the record of {name}",
   "settings.profile.tabReports.delete.title": "Delete this record?",
   "settings.profile.tabReports.delete.description":
