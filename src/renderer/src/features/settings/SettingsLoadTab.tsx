@@ -33,6 +33,7 @@ import {
   X,
 } from "@buildersbot/ui";
 import { AgentPicker } from "@buildersbot/ui/features/agents/AgentPicker";
+import { AgentLinesSettings } from "@buildersbot/ui/features/window/AgentLinesSettings";
 import { LoadOverview, StoppedState, WorkRequest, WorkTab } from "@buildersbot/ui/features/window/LoadRing";
 import { stoppedPlanText, toggledKey } from "@buildersbot/ui/features/window/load-view";
 import { useText } from "@buildersbot/ui/text";
@@ -497,6 +498,23 @@ export function SettingsLoadTab(props: {
                 onAgentLimitChange={(preference) => void props.load.setAgentLimit(preference)}
                 onTaskWatchChange={(preference) => void props.load.setTaskWatch(preference)}
                 onOpenTaskReviewerSettings={props.onOpenTaskReviewer}
+              />
+            </div>
+          )}
+        </Show>
+      </SettingsSection>
+
+      <SettingsSection
+        data-settings-row="settings.load.lines.title"
+        title={t("settings.load.lines.title")}
+        description={t("settings.load.lines.description")}
+      >
+        <Show when={props.load.snapshot()}>
+          {(snapshot) => (
+            <div class="window-load-page">
+              <AgentLinesSettings
+                limit={snapshot().agentLimit}
+                onChange={(preference) => void props.load.setAgentLimit(preference)}
               />
             </div>
           )}

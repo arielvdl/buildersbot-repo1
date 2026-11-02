@@ -344,6 +344,11 @@ export const navItems: ReadonlyArray<SettingsNavItem> = [
         descriptionKey: "settings.load.overview.description",
         keywordsKey: "settings.search.keywords.load",
       },
+      {
+        anchor: "settings.load.lines.title",
+        descriptionKey: "settings.load.lines.description",
+        keywordsKey: "settings.search.keywords.load",
+      },
     ],
   },
   // The task reviewer ("Fiscal" in Portuguese). Its switches are also on the load page;

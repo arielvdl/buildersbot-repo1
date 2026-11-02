@@ -634,6 +634,12 @@ export const messages = defineMessages("settings", {
   "settings.load.overview.title": "This computer now",
   "settings.load.overview.description":
     "What runs and what waits for a place, the memory, and how the app recovers stopped work by itself.",
+  "settings.load.lines.title": "Agents in one tab",
+  "settings.load.lines.description": "How many agents of a channel tab work at the same time.",
+  "settings.load.lines.label": "Agents of one tab at the same time",
+  "settings.load.lines.unit": "(1 to 8, 4 is suggested)",
+  "settings.load.lines.hint":
+    "In a team channel, a request for more agents than this number waits in the tab, in order, and starts when one of them ends its turn. Each agent at work uses memory.",
   "settings.loadPanel.title": "Load page",
   "settings.loadPanel.description":
     "The page that the ring in the bar on the left opens: the stopped work, with actions on many runs at once, what runs, and the switches of Resume by itself and of the task reviewer.",

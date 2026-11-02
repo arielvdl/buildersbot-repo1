@@ -12,6 +12,9 @@ import {
 } from "../conversation/AgentActivity";
 import type { AgentStep } from "../conversation/AgentSteps";
 
+/** The most faces that animate in the row. The names of the other workers show only in the text. */
+const MAX_ANIMATED_FACES = 4;
+
 /** One agent the channel is waiting on. The profile is missing while the agent list has no such id. */
 export interface ChannelWorker {
   id: string;
@@ -67,9 +70,9 @@ function workerNameStyle(worker: ChannelWorker) {
  * It uses the `agent-activity-*` rules and the same shifting label as the agent chat, so a reader
  * who moves between a channel and an agent chat meets one indicator. What differs is the number of
  * faces and the names: in a channel the face alone does not say which member works. The channel is
- * the open chat, so each face works `live`. A channel runs at most `CHANNEL_PARALLEL_LIMIT` agents,
- * which is what keeps the count of animating avatars low - each one costs the renderer a style
- * recalculation and a paint per frame. The steps of the turns that have no answer yet open under
+ * the open chat, so each face works `live`. A tab can run up to `agentsPerTab` agents (1 to 8), so
+ * only the first `MAX_ANIMATED_FACES` faces show: each animating avatar costs the renderer a style
+ * recalculation and a paint per frame. The names of all the workers stay in the sentence. The steps of the turns that have no answer yet open under
  * the line, as in the agent chat.
  */
 export function ChannelActivityIndicator(props: {
@@ -117,7 +120,7 @@ export function ChannelActivityIndicator(props: {
         live
       >
         <div class="channel-activity-faces">
-          <For each={props.workers}>
+          <For each={props.workers.slice(0, MAX_ANIMATED_FACES)}>
             {(worker) => (
               <AgentAvatar
                 agent={worker.agent}
