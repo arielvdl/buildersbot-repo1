@@ -185,12 +185,23 @@ export const messages = {
   "settings.tab.billing.description": "Licentie, serverabonnementen, betaalmethode en facturen.",
   "settings.tab.hostedServers.title": "Gehoste servers",
   "settings.tab.hostedServers.description": "Maak Builders Bot-servers die draaien wanneer deze computer uit staat.",
-  "settings.load.lines.title": "Agenten in één tabblad",
-  "settings.load.lines.description": "Hoeveel agenten van één kanaaltabblad tegelijk werken.",
+  "settings.load.lines.title": "Parallel werk in kanalen",
+  "settings.load.lines.description":
+    "Hoeveel agenten tegelijk werken in één kanaaltabblad, en in hoeveel tabbladen één agent tegelijk werkt.",
   "settings.load.lines.label": "Agenten van één tabblad tegelijk",
   "settings.load.lines.unit": "(1 tot 8, 4 wordt aanbevolen)",
   "settings.load.lines.hint":
     "In een teamkanaal wacht een verzoek om meer agenten dan dit aantal in het tabblad, op volgorde, en start zodra een van hen zijn beurt afrondt. Elke agent die werkt, gebruikt geheugen.",
+  "settings.load.lines.modeLabel": "Tabbladen openen op basis van vrij geheugen",
+  "settings.load.lines.modeHint":
+    "Aan: een agent opent alleen een extra kanaaltabblad zolang de computer daarvoor vrij geheugen heeft. Uit: een agent opent altijd zoveel tabbladen als het getal hieronder toestaat.",
+  "settings.load.lines.tabsCeilingLabel": "Maximaal aantal tabbladen van een agent",
+  "settings.load.lines.tabsFixedLabel": "Tabbladen van een agent tegelijk",
+  "settings.load.lines.tabsUnit": "(1 tot 8, {suggested} wordt aanbevolen)",
+  "settings.load.lines.tabsCeilingHint":
+    "Het vrije geheugen bepaalt hoeveel tabbladen draaien, en nooit meer dan dit getal. Waar de app het geheugen niet kan lezen, geldt dit getal zoals het is.",
+  "settings.load.lines.tabsFixedHint":
+    "Elk tabblad van een kanaal is een eigen werklijn: een bericht wacht alleen op de eerdere berichten van zijn tabblad. Met 1 werkt een agent in één tabblad tegelijk.",
   "settings.sections.label": "Onderdelen van instellingen",
   "settings.panel.resize": "Grootte rechterpaneel wijzigen",
   "settings.preferences.loadFailed": "Kan je instellingen niet laden.",

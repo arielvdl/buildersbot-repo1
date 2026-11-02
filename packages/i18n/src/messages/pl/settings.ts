@@ -170,12 +170,23 @@ export const messages = {
   "settings.tab.hostedServers.title": "Hostowane serwery",
   "settings.tab.hostedServers.description":
     "Twórz serwery Builders Bot, które działają, gdy ten komputer jest wyłączony.",
-  "settings.load.lines.title": "Agenci w jednej karcie",
-  "settings.load.lines.description": "Ilu agentów z karty kanału pracuje jednocześnie.",
+  "settings.load.lines.title": "Praca równoległa w kanałach",
+  "settings.load.lines.description":
+    "Ilu agentów pracuje jednocześnie w jednej karcie kanału i w ilu kartach jednocześnie pracuje jeden agent.",
   "settings.load.lines.label": "Agenci jednej karty jednocześnie",
   "settings.load.lines.unit": "(od 1 do 8, zalecane 4)",
   "settings.load.lines.hint":
     "W kanale zespołu prośba o więcej agentów niż ta liczba czeka w karcie, po kolei, i startuje, gdy jeden z nich skończy swoją turę. Każdy pracujący agent zużywa pamięć.",
+  "settings.load.lines.modeLabel": "Otwieraj karty według wolnej pamięci",
+  "settings.load.lines.modeHint":
+    "Włączone: agent otwiera kolejną kartę kanału tylko wtedy, gdy komputer ma dla niej wolną pamięć. Wyłączone: agent zawsze otwiera tyle kart, ile pozwala liczba poniżej.",
+  "settings.load.lines.tabsCeilingLabel": "Najwięcej kart jednego agenta",
+  "settings.load.lines.tabsFixedLabel": "Karty jednego agenta jednocześnie",
+  "settings.load.lines.tabsUnit": "(od 1 do 8, zalecane {suggested})",
+  "settings.load.lines.tabsCeilingHint":
+    "Wolna pamięć decyduje, ile kart działa, i nigdy nie jest to więcej niż ta liczba. Tam, gdzie aplikacja nie może odczytać pamięci, ta liczba obowiązuje bez zmian.",
+  "settings.load.lines.tabsFixedHint":
+    "Każda karta kanału to osobna linia pracy: wiadomość czeka tylko na wcześniejsze wiadomości swojej karty. Przy 1 agent pracuje w jednej karcie naraz.",
   "settings.sections.label": "Sekcje ustawień",
   "settings.panel.resize": "Zmień rozmiar prawego panelu",
   "settings.preferences.loadFailed": "Nie udało się wczytać ustawień.",

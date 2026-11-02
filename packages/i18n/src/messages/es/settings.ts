@@ -168,12 +168,23 @@ export const messages = {
   "settings.tab.billing.description": "Licencia, planes de servidor, método de pago y facturas.",
   "settings.tab.hostedServers.title": "Servidores alojados",
   "settings.tab.hostedServers.description": "Crea servidores de Builders Bot que funcionen con este equipo apagado.",
-  "settings.load.lines.title": "Agentes en una pestaña",
-  "settings.load.lines.description": "Cuántos agentes de una pestaña de canal trabajan al mismo tiempo.",
+  "settings.load.lines.title": "Trabajo en paralelo en los canales",
+  "settings.load.lines.description":
+    "Cuántos agentes trabajan a la vez en una pestaña de canal, y en cuántas pestañas trabaja a la vez un agente.",
   "settings.load.lines.label": "Agentes de una pestaña al mismo tiempo",
   "settings.load.lines.unit": "(de 1 a 8, se sugiere 4)",
   "settings.load.lines.hint":
     "En un canal de equipo, una solicitud de más agentes que este número espera en la pestaña, en orden, y empieza cuando uno de ellos termina su turno. Cada agente que trabaja usa memoria.",
+  "settings.load.lines.modeLabel": "Abrir pestañas según la memoria libre",
+  "settings.load.lines.modeHint":
+    "Activado, un agente abre una pestaña de canal más solo mientras el equipo tenga memoria libre para ella. Desactivado, un agente siempre abre tantas pestañas como permita el número de abajo.",
+  "settings.load.lines.tabsCeilingLabel": "Máximo de pestañas de un agente",
+  "settings.load.lines.tabsFixedLabel": "Pestañas de un agente al mismo tiempo",
+  "settings.load.lines.tabsUnit": "(de 1 a 8, se sugiere {suggested})",
+  "settings.load.lines.tabsCeilingHint":
+    "La memoria libre decide cuántas pestañas se ejecutan, y nunca más que este número. Donde la app no puede leer la memoria, este número se aplica tal cual.",
+  "settings.load.lines.tabsFixedHint":
+    "Cada pestaña de un canal es una línea de trabajo propia: un mensaje espera solo a los mensajes anteriores de su pestaña. Con 1, un agente trabaja en una pestaña a la vez.",
   "settings.sections.label": "Secciones de ajustes",
   "settings.panel.resize": "Cambiar el tamaño del panel derecho",
   "settings.preferences.loadFailed": "No se pudieron cargar tus ajustes.",

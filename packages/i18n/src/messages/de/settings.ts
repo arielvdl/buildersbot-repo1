@@ -169,12 +169,23 @@ export const messages = {
   "settings.tab.hostedServers.title": "Gehostete Server",
   "settings.tab.hostedServers.description":
     "Erstelle Builders Bot-Server, die auch bei ausgeschaltetem Computer laufen.",
-  "settings.load.lines.title": "Agenten in einem Tab",
-  "settings.load.lines.description": "Wie viele Agenten eines Kanal-Tabs gleichzeitig arbeiten.",
+  "settings.load.lines.title": "Parallele Arbeit in Kanälen",
+  "settings.load.lines.description":
+    "Wie viele Agenten gleichzeitig in einem Kanal-Tab arbeiten und in wie vielen Tabs ein Agent gleichzeitig arbeitet.",
   "settings.load.lines.label": "Agenten eines Tabs gleichzeitig",
   "settings.load.lines.unit": "(1 bis 8, 4 empfohlen)",
   "settings.load.lines.hint":
     "In einem Team-Kanal wartet eine Anfrage nach mehr Agenten als dieser Zahl im Tab, der Reihe nach, und startet, sobald einer seinen Zug beendet. Jeder arbeitende Agent braucht Speicher.",
+  "settings.load.lines.modeLabel": "Tabs nach freiem Speicher öffnen",
+  "settings.load.lines.modeHint":
+    "Ein: Ein Agent öffnet einen weiteren Kanal-Tab nur, solange der Computer dafür freien Speicher hat. Aus: Ein Agent öffnet immer so viele Tabs, wie die Zahl unten erlaubt.",
+  "settings.load.lines.tabsCeilingLabel": "Höchstzahl Tabs eines Agenten",
+  "settings.load.lines.tabsFixedLabel": "Tabs eines Agenten gleichzeitig",
+  "settings.load.lines.tabsUnit": "(1 bis 8, {suggested} empfohlen)",
+  "settings.load.lines.tabsCeilingHint":
+    "Der freie Speicher bestimmt, wie viele Tabs laufen, aber nie mehr als diese Zahl. Wo die App den Speicher nicht lesen kann, gilt diese Zahl unverändert.",
+  "settings.load.lines.tabsFixedHint":
+    "Jeder Tab eines Kanals ist eine eigene Arbeitslinie: Eine Nachricht wartet nur auf die früheren Nachrichten ihres Tabs. Bei 1 arbeitet ein Agent immer nur in einem Tab.",
   "settings.sections.label": "Einstellungsbereiche",
   "settings.panel.resize": "Größe des rechten Bereichs ändern",
   "settings.preferences.loadFailed": "Deine Einstellungen konnten nicht geladen werden.",

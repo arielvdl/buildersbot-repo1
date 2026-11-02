@@ -623,12 +623,23 @@ export const messages = {
   "settings.load.overview.title": "Este computador agora",
   "settings.load.overview.description":
     "O que roda e o que espera vaga, a memória, e como o app retoma sozinho o trabalho parado.",
-  "settings.load.lines.title": "Agentes em uma aba",
-  "settings.load.lines.description": "Quantos agentes de uma aba de canal trabalham ao mesmo tempo.",
+  "settings.load.lines.title": "Trabalho paralelo nos canais",
+  "settings.load.lines.description":
+    "Quantos agentes trabalham ao mesmo tempo em uma aba de canal, e em quantas abas um agente trabalha ao mesmo tempo.",
   "settings.load.lines.label": "Agentes de uma aba ao mesmo tempo",
   "settings.load.lines.unit": "(de 1 a 8, sugerido: 4)",
   "settings.load.lines.hint":
     "Em um canal de time, um pedido de mais agentes que esse número espera na aba, em ordem, e começa quando um deles termina o turno. Cada agente em trabalho usa memória.",
+  "settings.load.lines.modeLabel": "Abrir abas conforme a memória livre",
+  "settings.load.lines.modeHint":
+    "Ligado, um agente abre mais uma aba de canal só enquanto o computador tem memória livre para ela. Desligado, um agente sempre abre tantas abas quantas o número abaixo permitir.",
+  "settings.load.lines.tabsCeilingLabel": "Máximo de abas de um agente",
+  "settings.load.lines.tabsFixedLabel": "Abas de um agente ao mesmo tempo",
+  "settings.load.lines.tabsUnit": "(de 1 a 8, sugerido: {suggested})",
+  "settings.load.lines.tabsCeilingHint":
+    "A memória livre decide quantas abas rodam, e nunca mais do que este número. Onde o app não consegue ler a memória, este número vale como está.",
+  "settings.load.lines.tabsFixedHint":
+    "Cada aba de um canal é uma linha de trabalho própria: uma mensagem espera só as mensagens anteriores da sua aba. Com 1, um agente trabalha em uma aba por vez.",
   "settings.loadPanel.title": "Página de Carga",
   "settings.loadPanel.description":
     "A página que o anel na barra à esquerda abre: o trabalho parado, com ações em muitas execuções de uma vez, o que roda e as opções de Retomar sozinho e do Fiscal.",

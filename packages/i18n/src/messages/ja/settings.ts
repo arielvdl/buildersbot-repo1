@@ -162,12 +162,23 @@ export const messages = {
   "settings.tab.hostedServers.title": "ホスト型サーバー",
   "settings.tab.hostedServers.description":
     "このコンピューターの電源が切れているときも動作する Builders Bot サーバーを作成します。",
-  "settings.load.lines.title": "1つのタブ内のエージェント",
-  "settings.load.lines.description": "チャンネルのタブで同時に動かすエージェントの数です。",
+  "settings.load.lines.title": "チャンネルでの並列作業",
+  "settings.load.lines.description":
+    "チャンネルのタブ1つで同時に作業するエージェント数と、1人のエージェントが同時に作業するタブ数です。",
   "settings.load.lines.label": "1つのタブで同時に動くエージェント数",
   "settings.load.lines.unit": "(1〜8、おすすめは4)",
   "settings.load.lines.hint":
     "チームのチャンネルでは、この数を超えるエージェントを求める依頼はタブ内で順番に待ち、いずれかのエージェントがターンを終えると始まります。作業中の各エージェントはメモリを使います。",
+  "settings.load.lines.modeLabel": "空きメモリに応じてタブを開く",
+  "settings.load.lines.modeHint":
+    "オンのときは、コンピューターに空きメモリがある間だけ、エージェントがチャンネルのタブをもう1つ開きます。オフのときは、下の数までいつも同じ数のタブを開きます。",
+  "settings.load.lines.tabsCeilingLabel": "1人のエージェントが開くタブの上限",
+  "settings.load.lines.tabsFixedLabel": "1人のエージェントが同時に使うタブ数",
+  "settings.load.lines.tabsUnit": "(1〜8、おすすめは{suggested})",
+  "settings.load.lines.tabsCeilingHint":
+    "空きメモリで動くタブ数を決めますが、この数を超えることはありません。アプリがメモリを読めない場合は、この数がそのまま使われます。",
+  "settings.load.lines.tabsFixedHint":
+    "チャンネルの各タブは独立した作業の流れです。メッセージはそのタブの前のメッセージだけを待ちます。1にすると、エージェントは一度に1つのタブで作業します。",
   "settings.sections.label": "設定のセクション",
   "settings.panel.resize": "右パネルのサイズを変更",
   "settings.preferences.loadFailed": "設定を読み込めませんでした。",

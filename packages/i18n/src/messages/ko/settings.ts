@@ -180,12 +180,23 @@ export const messages = {
   "settings.tab.billing.description": "라이선스, 서버 요금제, 결제 수단, 청구서예요.",
   "settings.tab.hostedServers.title": "호스팅 서버",
   "settings.tab.hostedServers.description": "이 컴퓨터가 꺼져 있어도 실행되는 Builders Bot 서버를 만들어요.",
-  "settings.load.lines.title": "탭 하나의 에이전트",
-  "settings.load.lines.description": "채널 탭 하나에서 동시에 작업하는 에이전트 수입니다.",
+  "settings.load.lines.title": "채널의 병렬 작업",
+  "settings.load.lines.description":
+    "채널 탭 하나에서 동시에 작업하는 에이전트 수와, 한 에이전트가 동시에 작업하는 탭 수입니다.",
   "settings.load.lines.label": "탭 하나에서 동시에 작업할 에이전트 수",
   "settings.load.lines.unit": "(1~8, 권장 4)",
   "settings.load.lines.hint":
     "팀 채널에서 이 수보다 많은 에이전트를 요청하면 탭에서 순서대로 기다렸다가, 에이전트 중 한 명이 턴을 마치면 시작합니다. 작업 중인 에이전트마다 메모리를 사용합니다.",
+  "settings.load.lines.modeLabel": "여유 메모리에 따라 탭 열기",
+  "settings.load.lines.modeHint":
+    "켜면 에이전트는 컴퓨터에 여유 메모리가 있을 때만 채널 탭을 하나 더 엽니다. 끄면 에이전트는 아래 숫자가 허용하는 만큼 항상 탭을 엽니다.",
+  "settings.load.lines.tabsCeilingLabel": "에이전트 하나의 최대 탭 수",
+  "settings.load.lines.tabsFixedLabel": "에이전트 하나가 동시에 작업하는 탭 수",
+  "settings.load.lines.tabsUnit": "(1~8, 권장 {suggested})",
+  "settings.load.lines.tabsCeilingHint":
+    "여유 메모리가 실행되는 탭 수를 정하며, 이 숫자를 넘지 않습니다. 앱이 메모리를 읽을 수 없으면 이 숫자가 그대로 적용됩니다.",
+  "settings.load.lines.tabsFixedHint":
+    "채널의 각 탭은 독립된 작업 흐름입니다. 메시지는 같은 탭의 앞선 메시지만 기다립니다. 1이면 에이전트는 한 번에 한 탭에서만 작업합니다.",
   "settings.sections.label": "설정 섹션",
   "settings.panel.resize": "오른쪽 패널 크기 조절",
   "settings.preferences.loadFailed": "설정을 불러올 수 없어요.",

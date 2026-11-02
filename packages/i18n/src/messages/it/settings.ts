@@ -168,12 +168,23 @@ export const messages = {
   "settings.tab.hostedServers.title": "Server ospitati",
   "settings.tab.hostedServers.description":
     "Crea server Builders Bot che funzionano anche quando questo computer è spento.",
-  "settings.load.lines.title": "Agenti in una scheda",
-  "settings.load.lines.description": "Quanti agenti di una scheda del canale lavorano nello stesso momento.",
+  "settings.load.lines.title": "Lavoro in parallelo nei canali",
+  "settings.load.lines.description":
+    "Quanti agenti lavorano insieme in una scheda di canale, e in quante schede un agente lavora nello stesso momento.",
   "settings.load.lines.label": "Agenti di una scheda contemporaneamente",
   "settings.load.lines.unit": "(da 1 a 8, consigliato 4)",
   "settings.load.lines.hint":
     "In un canale di team, una richiesta di più agenti di questo numero attende nella scheda, in ordine, e parte quando uno di loro termina il turno. Ogni agente al lavoro usa memoria.",
+  "settings.load.lines.modeLabel": "Apri schede in base alla memoria libera",
+  "settings.load.lines.modeHint":
+    "Attivo: un agente apre una scheda di canale in più solo finché il computer ha memoria libera per lei. Disattivo: un agente apre sempre tante schede quante ne permette il numero qui sotto.",
+  "settings.load.lines.tabsCeilingLabel": "Numero massimo di schede di un agente",
+  "settings.load.lines.tabsFixedLabel": "Schede di un agente contemporaneamente",
+  "settings.load.lines.tabsUnit": "(da 1 a 8, consigliato {suggested})",
+  "settings.load.lines.tabsCeilingHint":
+    "La memoria libera decide quante schede girano, e mai più di questo numero. Dove l'app non riesce a leggere la memoria, questo numero vale così com'è.",
+  "settings.load.lines.tabsFixedHint":
+    "Ogni scheda di un canale è una linea di lavoro propria: un messaggio attende solo i messaggi precedenti della sua scheda. Con 1, un agente lavora in una scheda alla volta.",
   "settings.sections.label": "Sezioni delle impostazioni",
   "settings.panel.resize": "Ridimensiona il pannello destro",
   "settings.preferences.loadFailed": "Impossibile caricare le tue impostazioni.",

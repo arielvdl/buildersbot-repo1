@@ -163,12 +163,23 @@ export const messages = {
   "settings.tab.billing.description": "Lisans, sunucu planları, ödeme yöntemi ve faturalar.",
   "settings.tab.hostedServers.title": "Barındırılan sunucular",
   "settings.tab.hostedServers.description": "Bu bilgisayar kapalıyken çalışan Builders Bot sunucuları oluşturun.",
-  "settings.load.lines.title": "Bir sekmedeki ajanlar",
-  "settings.load.lines.description": "Bir kanal sekmesindeki kaç ajanın aynı anda çalışacağı.",
+  "settings.load.lines.title": "Kanallarda paralel çalışma",
+  "settings.load.lines.description":
+    "Bir kanal sekmesinde aynı anda kaç ajanın çalıştığı ve bir ajanın aynı anda kaç sekmede çalıştığı.",
   "settings.load.lines.label": "Bir sekmedeki ajanlar aynı anda",
   "settings.load.lines.unit": "(1 ile 8 arası, önerilen 4)",
   "settings.load.lines.hint":
     "Bir ekip kanalında, bu sayıdan fazla ajan isteyen bir istek sekmede sırayla bekler ve ajanlardan biri turunu bitirince başlar. Çalışan her ajan bellek kullanır.",
+  "settings.load.lines.modeLabel": "Sekmeleri boş belleğe göre aç",
+  "settings.load.lines.modeHint":
+    "Açıkken bir ajan, bilgisayarda ona yetecek boş bellek olduğu sürece bir kanal sekmesi daha açar. Kapalıyken bir ajan her zaman aşağıdaki sayının izin verdiği kadar sekme açar.",
+  "settings.load.lines.tabsCeilingLabel": "Bir ajanın en fazla sekme sayısı",
+  "settings.load.lines.tabsFixedLabel": "Bir ajanın aynı anda sekme sayısı",
+  "settings.load.lines.tabsUnit": "(1 ile 8 arası, önerilen {suggested})",
+  "settings.load.lines.tabsCeilingHint":
+    "Kaç sekmenin çalışacağına boş bellek karar verir ve hiçbir zaman bu sayıyı geçmez. Uygulama belleği okuyamıyorsa bu sayı olduğu gibi uygulanır.",
+  "settings.load.lines.tabsFixedHint":
+    "Bir kanalın her sekmesi kendi çalışma hattıdır: bir mesaj yalnızca kendi sekmesindeki önceki mesajları bekler. 1 ile bir ajan aynı anda tek sekmede çalışır.",
   "settings.sections.label": "Ayar bölümleri",
   "settings.panel.resize": "Sağ paneli yeniden boyutlandır",
   "settings.preferences.loadFailed": "Ayarlarınız yüklenemedi.",
