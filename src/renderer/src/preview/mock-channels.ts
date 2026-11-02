@@ -9,12 +9,16 @@ import type {
   ChannelRoutine,
   ChannelRoutineRun,
   ChannelSummary,
+  ChannelTabReport,
+  ChannelTabReportsInput,
+  ChannelTabReportsPage,
   ChannelTask,
   ChannelTopic,
   CreateChannelMemoryInput,
   CreateChannelRoutineInput,
   DeleteChannelMemoryInput,
   DeleteChannelRoutineInput,
+  DeleteChannelTabReportInput,
   ListChannelRoutineRunsInput,
   RoutineSchedule,
   RoutineTrigger,
@@ -22,7 +26,13 @@ import type {
   UpdateChannelMemoryInput,
   UpdateChannelRoutineInput,
 } from "@buildersbot/contracts/ipc";
-import { channelRoutingConversationEventItemType } from "@buildersbot/contracts/ipc";
+import {
+  CHANNEL_TAB_REPORT_PAGE,
+  CHANNEL_TAB_RESULT_LIMIT,
+  channelRoutingConversationEventItemType,
+  parseChannelTabCloseReport,
+  parseChannelTabReportsInput,
+} from "@buildersbot/contracts/ipc";
 import { markdownPreviewText } from "@buildersbot/contracts/markdown-preview-text";
 
 /**
@@ -42,6 +52,7 @@ export function createMockChannels(
   emit: (event: AgentEvent) => void,
   agentName: (agentId: string) => string,
   seeds: readonly MockChannelSeed[] = [],
+  tabReportSeeds: readonly ChannelTabReport[] = [],
 ) {
   const channels = new Map<string, Channel>(seeds.map((seed) => [seed.channel.id, structuredClone(seed.channel)]));
   const messages = new Map<string, ChannelMessage[]>(
@@ -54,17 +65,66 @@ export function createMockChannels(
   const routineRuns = new Map<string, ChannelRoutineRun[]>();
   /** The tabs that `topic-create` added, after the first tab, by channel. */
   const addedTopics = new Map<string, ChannelTopic[]>();
+  /** Channels whose first tab was closed. The first tab is not in `addedTopics`, so it needs a mark. */
+  const closedFirstTopics = new Set<string>();
+  /** The close records, as the real store keeps them: no link to the channel, so they outlive it. */
+  const tabReports: ChannelTabReport[] = structuredClone([...tabReportSeeds]);
+  const firstTopic = (channel: Channel): ChannelTopic => ({
+    id: MOCK_CHANNEL_TOPIC_ID,
+    channelId: channel.id,
+    name: "General",
+    createdAt: channel.createdAt,
+    revision: 1,
+  });
+  const allTopics = (channel: Channel): ChannelTopic[] => [
+    ...(closedFirstTopics.has(channel.id) ? [] : [firstTopic(channel)]),
+    ...(addedTopics.get(channel.id) ?? []),
+  ];
   const topicsOf = (channel: Channel): ChannelTopic[] | undefined => {
-    const added = addedTopics.get(channel.id);
-    if (!added?.length) return undefined;
-    const first: ChannelTopic = {
-      id: MOCK_CHANNEL_TOPIC_ID,
-      channelId: channel.id,
-      name: "General",
-      createdAt: channel.createdAt,
-      revision: 1,
-    };
-    return [first, ...added].map((topic) => ({ ...topic, unreadCount: 0, activeTasks: 0, openTasks: 0 }));
+    const all = allTopics(channel);
+    if (all.length < 2) return undefined;
+    return all.map((topic) => ({ ...topic, unreadCount: 0, activeTasks: 0, openTasks: 0 }));
+  };
+  /** The same checks and the same record as `ChannelStore.deleteTopic`, with the preview's single conversation. */
+  const closeTopic = (channel: Channel, input: Extract<ChannelCommand, { type: "topic-delete" }>) => {
+    const all = allTopics(channel);
+    const topic = all.find((item) => item.id === input.topicId);
+    if (!topic) throw new Error("Channel tab not found.");
+    if (all.length === 1) throw new Error("A channel keeps at least one tab.");
+    if (input.report) {
+      const report = parseChannelTabCloseReport(input.report);
+      const work = tasks.get(channel.id) ?? [];
+      const agentMessages = (messages.get(channel.id) ?? []).filter(
+        (message) => message.author.kind === "agent" && message.message.itemType === undefined,
+      );
+      const lastText = agentMessages.at(-1)?.message.text.trim();
+      tabReports.push({
+        id: crypto.randomUUID(),
+        channelId: channel.id,
+        channelName: channel.name,
+        topicId: topic.id,
+        topicName: topic.name,
+        outcome: report.outcome,
+        note: report.note ?? null,
+        openedAt: topic.createdAt,
+        closedAt: new Date().toISOString(),
+        agents: [...new Map(agentMessages.map((message) => [message.author.id, message.author.name])).entries()]
+          .slice(0, 12)
+          .map(([id, name]) => ({ id, name })),
+        tasks: {
+          completed: work.filter((task) => task.state === "completed").length,
+          failed: work.filter((task) => task.state === "failed").length,
+          open: work.filter((task) => !["completed", "failed", "cancelled"].includes(task.state)).length,
+        },
+        lastResult: lastText ? Array.from(lastText).slice(0, CHANNEL_TAB_RESULT_LIMIT).join("") : null,
+      });
+    }
+    if (topic.id === MOCK_CHANNEL_TOPIC_ID) closedFirstTopics.add(channel.id);
+    else
+      addedTopics.set(
+        channel.id,
+        (addedTopics.get(channel.id) ?? []).filter((item) => item.id !== topic.id),
+      );
   };
   const changed = (channelId: string, revision: number) => emit({ type: "channels-changed", channelId, revision });
   const requireChannel = (id: string) => {
@@ -99,7 +159,9 @@ export function createMockChannels(
     }): Promise<ChannelPage> => ({
       channel: structuredClone(requireChannel(channelId)),
       topicId:
-        addedTopics.get(channelId)?.some((topic) => topic.id === topicId) && topicId ? topicId : MOCK_CHANNEL_TOPIC_ID,
+        topicId && allTopics(requireChannel(channelId)).some((topic) => topic.id === topicId)
+          ? topicId
+          : (allTopics(requireChannel(channelId))[0]?.id ?? MOCK_CHANNEL_TOPIC_ID),
       messages: structuredClone(messages.get(channelId) ?? []),
       tasks: structuredClone(tasks.get(channelId) ?? []),
       olderCursor: null,
@@ -133,6 +195,7 @@ export function createMockChannels(
           },
         ]);
       }
+      if (input.type === "topic-delete") closeTopic(channel, input);
       const work = tasks.get(channel.id) ?? [];
       if (input.type === "archive")
         for (const task of work) {
@@ -247,6 +310,42 @@ export function createMockChannels(
       receipts.set(input.operationId, structuredClone(channel));
       changed(channel.id, channel.revision);
       return structuredClone(channel);
+    },
+    listChannelTabReports: async (input: ChannelTabReportsInput): Promise<ChannelTabReportsPage> => {
+      const range = parseChannelTabReportsInput(input);
+      const limit = range.limit ?? CHANNEL_TAB_REPORT_PAGE;
+      const inPeriod = tabReports
+        .filter((report) => report.closedAt >= range.since && report.closedAt < range.until)
+        .sort((a, b) => (a.closedAt === b.closedAt ? b.id.localeCompare(a.id) : b.closedAt.localeCompare(a.closedAt)));
+      const at = range.cursor?.lastIndexOf("|") ?? -1;
+      const after =
+        range.cursor === undefined ? null : { closedAt: range.cursor.slice(0, at), id: range.cursor.slice(at + 1) };
+      const start = after
+        ? inPeriod.findIndex(
+            (report) =>
+              report.closedAt < after.closedAt || (report.closedAt === after.closedAt && report.id < after.id),
+          )
+        : 0;
+      const rest = start < 0 ? [] : inPeriod.slice(start);
+      const page = rest.slice(0, limit);
+      const last = page.at(-1);
+      return structuredClone({
+        totals: !after
+          ? {
+              done: inPeriod.filter((report) => report.outcome === "done").length,
+              "not-done": inPeriod.filter((report) => report.outcome === "not-done").length,
+              other: inPeriod.filter((report) => report.outcome === "other").length,
+            }
+          : null,
+        reports: page,
+        nextCursor: rest.length > limit && last ? `${last.closedAt}|${last.id}` : null,
+      });
+    },
+    deleteChannelTabReport: async (input: DeleteChannelTabReportInput): Promise<boolean> => {
+      const index = tabReports.findIndex((report) => report.id === input.id);
+      if (index < 0) return false;
+      tabReports.splice(index, 1);
+      return true;
     },
     deleteChannel: async (channelId: string): Promise<void> => {
       requireChannel(channelId);

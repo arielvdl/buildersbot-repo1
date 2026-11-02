@@ -4,6 +4,7 @@ import type {
   AgentLimitPreference,
   AgentSessionSettings,
   AutoRecoveryPreference,
+  ChannelTabReport,
   HiddenAgentsSnapshot,
   LidAwakeStatus,
   LoadLanePreference,
@@ -290,6 +291,8 @@ export interface MockBuildersBotOptions
   storyForeignAgent?: boolean;
   /** The channels, and their history, when the preview starts. */
   channels?: MockChannelSeed[];
+  /** Close records of channel tabs, as the Profile lists them. Closing a tab in the preview adds one. */
+  channelTabReports?: ChannelTabReport[];
   /** The sidebar sections and assignments when the preview starts. */
   sidebarLayout?: SidebarLayoutSnapshot;
 }
@@ -1156,6 +1159,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
     emitAgentEvent,
     (agentId) => agents.find((entry) => entry.id === agentId)?.name ?? agentId,
     options.channels,
+    options.channelTabReports,
   );
   const mockProviderRuntimes = createMockProviderRuntimes(options, runtime);
   const mockVoice = createMockVoice(options, runtime);

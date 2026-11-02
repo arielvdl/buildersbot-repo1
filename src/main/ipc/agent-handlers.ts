@@ -32,6 +32,8 @@ import {
   parseAskSideQuestion,
   parseChannelCommand,
   parseChannelRead,
+  parseChannelTabReportsInput,
+  parseDeleteChannelTabReportInput,
   parseGenerateAgentProfile,
   parseHostAnalyticsInput,
   parseLocalBrowserSecretResponse,
@@ -393,6 +395,15 @@ export function agentIpcHandlers({
           runCauseEffect(
             remoteServers.request(serverId, CHANNEL_ROUTES.command, decodeChannel, { method: "POST", body: input }),
           ),
+      }),
+      // The close records are in the SQLite of this computer. A joined server has none to give.
+      listChannelTabReports: scopedHandler(parseChannelTabReportsInput, {
+        local: (input) => service.channels.store.tabReports.list(input),
+        remote: () => null,
+      }),
+      deleteChannelTabReport: scopedHandler(parseDeleteChannelTabReportInput, {
+        local: (input) => service.channels.store.tabReports.delete(input.id),
+        remote: () => null,
       }),
       deleteChannel: scopedHandler(parseChannelId, {
         local: (channelId) => runCauseEffect(service.deleteChannel(channelId)),

@@ -232,6 +232,11 @@ import type {
   TestChannelRoutineInput,
   UpdateChannelRoutineInput,
 } from "./ipc-channel-routines";
+import type {
+  ChannelTabReportsInput,
+  ChannelTabReportsPage,
+  DeleteChannelTabReportInput,
+} from "./ipc-channel-tab-reports";
 import type { Channel, ChannelCommand, ChannelPage, ChannelReadInput, ChannelSummary } from "./ipc-chat-channels";
 import type {
   CancelMessageLinkInput,
@@ -1609,6 +1614,14 @@ export const IPC_ENDPOINTS = {
     listChannels: scopedQuery<ChannelSummary[]>()("agent:channels:list"),
     readChannel: scopedRequest<ChannelReadInput, ChannelPage>()("agent:channels:read"),
     channelCommand: scopedRequest<ChannelCommand, Channel>()("agent:channels:command"),
+    // The records of closed tabs live in the SQLite of the computer that ran them. A joined server answers null.
+    listChannelTabReports: scopedRequest<ChannelTabReportsInput, ChannelTabReportsPage | null, "required">()(
+      "agent:channels:tab-reports",
+    ),
+    // True when the record existed. A joined server answers null.
+    deleteChannelTabReport: scopedRequest<DeleteChannelTabReportInput, boolean | null, "required">()(
+      "agent:channels:tab-report-delete",
+    ),
     deleteChannel: scopedRequest<string, void>()("agent:channels:delete"),
     getSidebarLayout: scopedQuery<SidebarLayoutSnapshot>()("agent:get-sidebar-layout"),
     mutateSidebarLayout: scopedRequest<SidebarLayoutAction, SidebarLayoutSnapshot>()("agent:mutate-sidebar-layout"),
