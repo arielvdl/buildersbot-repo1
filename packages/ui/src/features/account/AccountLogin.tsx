@@ -1,16 +1,15 @@
-import { AppLogo } from "@buildersbot/brand";
 import { INPUT_LIMITS } from "@buildersbot/contracts/input-limits";
-import type { AppVariant, CentralAuthIssue, CentralAuthState } from "@buildersbot/contracts/ipc";
+import type { CentralAuthIssue, CentralAuthState } from "@buildersbot/contracts/ipc";
 import { normalizeEmailAddress, normalizeOneTimeCode } from "@buildersbot/contracts/validation";
 import { ArrowLeft, Button, ErrorReference, Input, Lock, RefreshCw } from "@buildersbot/ui";
 import { errorReference, type UserErrorDetails } from "@buildersbot/user-errors";
 import type { JSX } from "@solidjs/web";
 import { createEffect, createMemo, createSignal, onCleanup, Show, untrack } from "solid-js";
 import { useText } from "../../text";
+import { AccountLoginTeam } from "./AccountLoginTeam";
 import { OtpInput, type OtpInputStatus } from "./OtpInput";
 
 interface AccountLoginProps {
-  variant: AppVariant;
   state: CentralAuthState;
   onRetry: () => Promise<void>;
   /** The e-mail code. A screen with only the Cultura Builder sign-in, such as the web app, has none. */
@@ -45,7 +44,6 @@ const UNCERTAIN_EMAIL_DELIVERY_ISSUES = new Set([
   "email_delivery_unknown",
 ]);
 
-const PRODUCT_NAME = "Builders Bot";
 const EMAIL_PLACEHOLDER = "you@example.com";
 const EMAIL_MARKER = "\u0000";
 
@@ -369,10 +367,7 @@ export function AccountLogin(props: AccountLoginProps) {
   return (
     <main class="account-login-screen">
       <div class="account-login-shell">
-        <header class="account-login-brand-lockup">
-          <AppLogo variant={props.variant} animation="blink" interactive class="account-login-logo" />
-          <span class="account-login-wordmark">{PRODUCT_NAME}</span>
-        </header>
+        <AccountLoginTeam />
 
         <section
           class="account-login"

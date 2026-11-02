@@ -36,6 +36,38 @@
   margin-bottom: 42px;
 }
 
+/* The team above the title: three marks, the middle one largest and in front. The two beside it sit
+   lower and behind it, tucked against its sides. Only the marks' own CSS moves. */
+.account-login-team {
+  --account-login-team-size: 104px;
+  --account-login-team-side: 68px;
+  display: flex;
+  align-items: flex-end;
+  align-self: center;
+  justify-content: center;
+  margin-bottom: 36px;
+  padding-bottom: 8px;
+  pointer-events: none;
+}
+
+/* Two classes: `.agent-avatar` in app-shell.css loads later and sets 32px at one class. */
+.account-login-team > .account-login-team-member {
+  width: var(--account-login-team-side);
+  height: var(--account-login-team-side);
+  margin-inline: -6px;
+  translate: 0 8px;
+  opacity: 0.92;
+}
+
+.account-login-team > .account-login-team-member:nth-child(2) {
+  position: relative;
+  z-index: 1;
+  width: var(--account-login-team-size);
+  height: var(--account-login-team-size);
+  translate: 0 0;
+  opacity: 1;
+}
+
 .account-login-logo {
   display: block;
   width: 80px;
@@ -1171,6 +1203,12 @@
   }
 
   .account-login-brand-lockup {
+    margin-bottom: 24px;
+  }
+
+  .account-login-team {
+    --account-login-team-size: 80px;
+    --account-login-team-side: 52px;
     margin-bottom: 24px;
   }
 }

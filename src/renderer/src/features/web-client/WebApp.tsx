@@ -3,7 +3,7 @@ import {
   WEB_APP_AGENT_TEMPLATE_PARAM,
 } from "@buildersbot/contracts/agent-template-links";
 import { inviteUrlFromWebAppSearch, WEB_APP_INVITE_FIELDS } from "@buildersbot/contracts/invite-links";
-import type { AppVariant, CentralAuthState, CentralAuthUser } from "@buildersbot/contracts/ipc";
+import type { CentralAuthState, CentralAuthUser } from "@buildersbot/contracts/ipc";
 import { pluginSlugFromWebAppSearch, WEB_APP_PLUGIN_PARAM } from "@buildersbot/contracts/plugin-links";
 import { isBoolean, isDynamicRecord, isString } from "@buildersbot/contracts/runtime-values";
 import { formatLocale, resolveLocale } from "@buildersbot/i18n";
@@ -415,7 +415,6 @@ export function WebApp(props: { createRuntime?: WebRuntimeFactory } = {}) {
       });
     },
   );
-  const variant: AppVariant = import.meta.env.DEV ? "dev" : "production";
   const languagePreference = createWebLanguagePreference();
   const appearancePreference = createWebAppearancePreference();
   return (
@@ -433,7 +432,6 @@ export function WebApp(props: { createRuntime?: WebRuntimeFactory } = {}) {
               fallback={
                 <>
                   <AccountLogin
-                    variant={variant}
                     state={state.login}
                     onRetry={checkSession}
                     onStartDeviceSignIn={startDeviceSignIn}

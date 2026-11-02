@@ -82,7 +82,6 @@ export function AppAccessGate() {
                 fallback={
                   <>
                     <AccountLogin
-                      variant={platform.appInfo()?.variant ?? "production"}
                       state={auth.centralAuth()}
                       onRetry={auth.retryCentralAccount}
                       onRequestEmailCode={auth.requestEmailCode}

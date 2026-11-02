@@ -7,7 +7,6 @@ import type { Meta, StoryObj } from "storybook-solidjs-vite";
 const signedOut: CentralAuthState = { status: "signed_out" };
 
 const args: Parameters<typeof AccountLogin>[0] = {
-  variant: "production",
   state: signedOut,
   onRetry: async () => undefined,
   onRequestEmailCode: async () => undefined,
