@@ -13,12 +13,28 @@ export interface IdleThread {
   idleSince: number;
 }
 
-export interface IdleThreadPoolOptions<Thread extends IdleThread, Released> {
-  /** How long a thread with no turn stays open. */
-  releaseAfterMs: number;
-  scope(): Scope.Scope;
-  /** How many idle threads stay open before the timeout. */
+/**
+ * How a client keeps idle threads now: how many stay open before the timeout, and how long each one
+ * waits before it closes. A client reads it each time a thread goes idle, so the memory of the
+ * computer can change it while threads are open (`LaneBudget.idlePolicy`).
+ */
+export interface IdlePolicy {
   idleLimit: number;
+  releaseAfterMs: number;
+}
+
+/** A number, or a function that gives the number now. */
+type Dynamic = number | (() => number);
+
+export interface IdleThreadPoolOptions<Thread extends IdleThread, Released> {
+  /**
+   * How long a thread with no turn stays open. Read when the thread is armed, so a timer that runs
+   * keeps the value it had; `releaseIdle` closes the threads that must go sooner.
+   */
+  releaseAfterMs: Dynamic;
+  scope(): Scope.Scope;
+  /** How many idle threads stay open before the timeout. Read each time a thread goes idle. */
+  idleLimit: Dynamic;
   /**
    * When a thread that cannot be released keeps its process anyway. `canRelease` answers for the
    * state it can see; a provider that stops reporting one of those reasons would otherwise hold the
@@ -147,7 +163,7 @@ export class IdleThreadPool<Thread extends IdleThread, Released> {
   ) {
     thread.idleSince = Date.now();
     this.#arm(thread);
-    yield* this.#releaseIdleOver(this.#options.idleLimit);
+    yield* this.#releaseIdleOver(this.#idleLimit());
   });
 
   /** Opens a released thread again. One reopen per thread, however many callers ask for it. */
@@ -191,6 +207,16 @@ export class IdleThreadPool<Thread extends IdleThread, Released> {
     return true;
   }, Effect.uninterruptible);
 
+  #releaseAfterMs(): number {
+    const { releaseAfterMs } = this.#options;
+    return typeof releaseAfterMs === "function" ? releaseAfterMs() : releaseAfterMs;
+  }
+
+  #idleLimit(): number {
+    const { idleLimit } = this.#options;
+    return typeof idleLimit === "function" ? idleLimit() : idleLimit;
+  }
+
   #arm(thread: Thread, armedAt: number = Date.now()): void {
     this.#disarm(thread);
     // `idleSince` stays 0 for a thread opened for a turn that has not started, so the cap counts
@@ -203,7 +229,7 @@ export class IdleThreadPool<Thread extends IdleThread, Released> {
         // idle past the hard cap. Without the retry no timer would ever be armed again, and without
         // the cap a reason that never clears holds the process until the app quits.
         if (!this.#options.canRelease(thread)) {
-          const forceAfter = this.#options.forceReleaseAfterMs ?? this.#options.releaseAfterMs * 3;
+          const forceAfter = this.#options.forceReleaseAfterMs ?? this.#releaseAfterMs() * 3;
           if (Date.now() - armedAt < forceAfter) {
             this.#arm(thread, armedAt);
             return;
@@ -212,7 +238,7 @@ export class IdleThreadPool<Thread extends IdleThread, Released> {
         Effect.runFork(this.#release(thread));
       },
       // A thread that cannot be released is re-checked every minute rather than every timeout.
-      this.#options.canRelease(thread) ? this.#options.releaseAfterMs : RETRY_UNRELEASABLE_MS,
+      this.#options.canRelease(thread) ? this.#releaseAfterMs() : RETRY_UNRELEASABLE_MS,
     );
     thread.idleRelease.unref?.();
   }

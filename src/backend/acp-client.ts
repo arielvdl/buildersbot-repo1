@@ -47,7 +47,7 @@ import {
 } from "./agent-client";
 import type { AgentCliInfo } from "./cli";
 import { runCauseEffect } from "./effect-boundary";
-import { IdleThreadPool } from "./idle-thread-pool";
+import { type IdlePolicy, IdleThreadPool } from "./idle-thread-pool";
 import { type DynamicToolNamespace, LocalMcpBridge, type LocalMcpSession } from "./local-mcp-bridge";
 import {
   acpMcpServers,
@@ -451,10 +451,12 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
   /** Whether `#endIfUnresponsive` waits for its probe. */
   #probing = false;
   readonly #bridge = new LocalMcpBridge();
+  /** The idle policy that follows the memory of the computer, or null for the fixed values above. */
+  #idlePolicy: () => IdlePolicy | null = () => null;
   readonly #threads = new IdleThreadPool<AcpThread, ReleasedAcpThread>({
     scope: () => this.#scope,
-    releaseAfterMs: ACP_SESSION_IDLE_RELEASE_MS,
-    idleLimit: ACP_IDLE_SESSION_LIMIT,
+    releaseAfterMs: () => this.#idlePolicy()?.releaseAfterMs ?? ACP_SESSION_IDLE_RELEASE_MS,
+    idleLimit: () => this.#idlePolicy()?.idleLimit ?? ACP_IDLE_SESSION_LIMIT,
     // An agent that cannot close a session and load it again would keep its MCP servers or lose it.
     // A session with a process of its own closes when that process ends.
     // A watched session stays open: a closed one would not report the end of its background task.
@@ -805,6 +807,11 @@ export class AcpAgentClient extends EventEmitter<ClientEvents> {
       method: "buildersbot/context-compaction",
       params: { threadId: thread.id, status: "completed" },
     });
+  }
+
+  /** Lets the idle limit and the idle time follow a policy (`LaneBudget.idlePolicy`). Null keeps the fixed ones. */
+  useIdlePolicy(policy: () => IdlePolicy | null): void {
+    this.#idlePolicy = policy;
   }
 
   releaseIdleThreads(minIdleMs?: number): Effect.Effect<void, ProviderClientOperationError> {

@@ -29,6 +29,12 @@ export interface MemoryHoldOptions {
   /** Null on a desktop computer: nothing is held there. */
   memory: HostMemory | null;
   hooks: MemoryHoldHooks;
+  /**
+   * Whether the tab mode follows the memory (`tabsMode` `memory` with a memory reading). Then the idle
+   * threads that had no turn for `LOW_MEMORY_IDLE_RELEASE_MS` also close when the level goes from `ok`
+   * to `low`, whatever the switch `idle-release-low` says. Omitted: no.
+   */
+  releaseOnLow?: () => boolean;
   /** The advanced optimizations (beta). Omitted: every switch off. */
   optimizations?: OptimizationPort;
 }
@@ -43,13 +49,14 @@ export const LOW_MEMORY_IDLE_RELEASE_MS = 2 * 60_000;
  * Owns the memory clause of the queue drain. While the machine is low on memory no new turn starts,
  * and the delivery stays queued: a message to a busy machine waits, as it does for a busy agent. Each
  * held agent is told one time in each low period. At a critical level the idle provider threads close.
- * With the switch `idle-release-low` on, the threads with no turn for `LOW_MEMORY_IDLE_RELEASE_MS` also
- * close when the level goes from `ok` to `low`. It never imports the service.
+ * With the switch `idle-release-low` on, or the tab mode `memory` (`releaseOnLow`), the threads with no
+ * turn for `LOW_MEMORY_IDLE_RELEASE_MS` also close when the level goes from `ok` to `low`. It never imports the service.
  */
 export class MemoryHold {
   readonly #memory: HostMemory | null;
   readonly #hooks: MemoryHoldHooks;
   readonly #optimizations: OptimizationPort;
+  readonly #releaseOnLow: () => boolean;
   #scope = Scope.makeUnsafe();
   readonly #told = new Set<string>();
   #level: HostMemoryLevel = "ok";
@@ -59,6 +66,7 @@ export class MemoryHold {
     this.#memory = options.memory;
     this.#hooks = options.hooks;
     this.#optimizations = options.optimizations ?? OPTIMIZATIONS_OFF;
+    this.#releaseOnLow = options.releaseOnLow ?? (() => false);
   }
 
   start(): void {
@@ -123,7 +131,11 @@ export class MemoryHold {
             Effect.sync(() => this.#hooks.emitError("idle_thread_release_failed", failure.cause)),
           ),
         );
-    else if (level === "low" && previous === "ok" && this.#optimizations.optimizationEnabled("idle-release-low"))
+    else if (
+      level === "low" &&
+      previous === "ok" &&
+      (this.#optimizations.optimizationEnabled("idle-release-low") || this.#releaseOnLow())
+    )
       yield* this.#hooks
         .releaseIdleThreads(LOW_MEMORY_IDLE_RELEASE_MS)
         .pipe(

@@ -1,4 +1,12 @@
 import { type HostMemory, LANE_SESSION_MB } from "../host-memory";
+import type { IdlePolicy } from "../idle-thread-pool";
+
+const MINUTE_MS = 60_000;
+/** The idle time under pressure: the same as `LOW_MEMORY_IDLE_RELEASE_MS` of the memory hold. */
+const PRESSURE_RELEASE_MS = 2 * MINUTE_MS;
+const COMFORT_SPARE_SESSIONS = 16;
+const MOST_WARM_SESSIONS = 8;
+const LEAST_WARM_SESSIONS = 2;
 
 export interface LaneBudgetOptions {
   /** The memory of this computer, or null when it gives no reading (a server, Windows, Linux). */
@@ -53,6 +61,32 @@ export class LaneBudget {
     const floor = this.floorMb();
     if (free === null || floor === null) return null;
     return Math.max(0, Math.floor((free - this.#claimedMb - floor) / this.#sessionMb));
+  }
+
+  /**
+   * How many idle provider sessions stay open before their timeout, and for how long each one waits
+   * before it closes, by the room that is left (`spareSessions`). More room keeps more sessions warm,
+   * so a return to a tab skips the cold resume; less room closes them sooner.
+   *
+   * | Memory | Warm sessions | Idle time |
+   * | --- | --- | --- |
+   * | `ok`, spare 16 or more | `min(8, floor(spare / 2))` | 10 min |
+   * | `ok`, spare 1 to 15 | `max(2, floor(spare / 2))` | 5 min |
+   * | spare 0, or `low` | 2 | 2 min |
+   * | `critical` | 0 | 2 min (the memory hold also closes them at once) |
+   *
+   * Null without a reading, and the client keeps its fixed values (2 sessions, 10 min). Values are a
+   * first guess to confirm with a measurement.
+   */
+  idlePolicy(): IdlePolicy | null {
+    const spare = this.spareSessions();
+    if (spare === null || !this.#memory) return null;
+    const level = this.#memory.level();
+    if (level === "critical") return { idleLimit: 0, releaseAfterMs: PRESSURE_RELEASE_MS };
+    if (level === "low" || spare === 0) return { idleLimit: LEAST_WARM_SESSIONS, releaseAfterMs: PRESSURE_RELEASE_MS };
+    if (spare < COMFORT_SPARE_SESSIONS)
+      return { idleLimit: Math.max(LEAST_WARM_SESSIONS, Math.floor(spare / 2)), releaseAfterMs: 5 * MINUTE_MS };
+    return { idleLimit: Math.min(MOST_WARM_SESSIONS, Math.floor(spare / 2)), releaseAfterMs: 10 * MINUTE_MS };
   }
 
   /** Whether one extra tab may start. Without a reading it may: the fixed limit decides. */

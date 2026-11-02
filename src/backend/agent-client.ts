@@ -5,6 +5,7 @@ import type {
 } from "@buildersbot/contracts/ipc";
 import { sourceText } from "@buildersbot/i18n/source";
 import type { Effect } from "effect";
+import type { IdlePolicy } from "./idle-thread-pool";
 import type { AppServerNotification, AppServerRequest, RequestId, ResponseDecoder, RpcError } from "./protocol";
 import type { ProviderClientOperationError } from "./provider-client-effects";
 import type { ReadProviderHistory } from "./provider-history";
@@ -66,6 +67,12 @@ export interface AgentClient {
    * nothing this way.
    */
   releaseIdleThreads?(minIdleMs?: number): Effect.Effect<void, ProviderClientOperationError>;
+  /**
+   * Lets the idle limit and the idle time of the client's open threads follow a policy that reads the
+   * memory of the computer. A null answer keeps the client's fixed values. Optional: a client that
+   * keeps no pool of idle threads ignores it.
+   */
+  useIdlePolicy?(policy: () => IdlePolicy | null): void;
   /**
    * Whether this client holds the thread open now, so a turn on it starts with no new process. False
    * for a thread that `releaseIdleThreads` or its idle timer closed. Optional: a client without it keeps

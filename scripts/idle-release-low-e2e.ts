@@ -39,7 +39,11 @@ const LOW: MacMemorySample = { freePercent: 12, swapUsedMb: 2_000, kernelPressur
 const CRITICAL: MacMemorySample = { freePercent: 6, swapUsedMb: 2_000, kernelPressure: "normal" };
 
 /** Runs the samples through a real reading and queue clause, and gives each call of the release hook. */
-async function releases(store: OptimizationStore, samples: readonly MacMemorySample[]): Promise<(number | null)[]> {
+async function releases(
+  store: OptimizationStore,
+  samples: readonly MacMemorySample[],
+  releaseOnLow?: () => boolean,
+): Promise<(number | null)[]> {
   const calls: (number | null)[] = [];
   let next = OK;
   // Each sample of the queue clause first tries the waiting lanes: the count of those calls says that
@@ -55,6 +59,7 @@ async function releases(store: OptimizationStore, samples: readonly MacMemorySam
   const hold = new MemoryHold({
     memory,
     optimizations: store,
+    ...(releaseOnLow ? { releaseOnLow } : {}),
     hooks: {
       scheduleAll: () => {},
       retryWaiting: () => {
@@ -100,6 +105,17 @@ try {
   // 1. Off.
   report.releasesOff = await releases(store, [LOW, LOW, CRITICAL, OK, LOW]);
   assert.deepEqual(report.releasesOff, [null], "with the switch off only critical closes threads, as before");
+
+  // 1b. Off, but the tab mode follows the memory (`releaseOnLow`): `low` closes the threads idle for 2
+  // minutes, with the switch still off. Without that mode the result is the one above.
+  const followsMemory = await releases(store, [LOW, LOW, CRITICAL, OK, LOW], () => true);
+  assert.deepEqual(
+    followsMemory,
+    [LOW_MEMORY_IDLE_RELEASE_MS, null, LOW_MEMORY_IDLE_RELEASE_MS],
+    "the tab mode `memory` closes the threads idle for 2 minutes at low, with the switch off",
+  );
+  const fixedMode = await releases(store, [LOW, LOW, CRITICAL, OK, LOW], () => false);
+  assert.deepEqual(fixedMode, [null], "the tab mode `fixed` with the switch off closes nothing at low");
 
   // 2. On.
   await Effect.runPromise(store.set([{ id: "idle-release-low", enabled: true }]));

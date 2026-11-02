@@ -989,6 +989,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         // so a full server in normal use would stop its idle processes, and it stops agent processes
         // itself when memory is critical.
         memoryLow: () => (memoryPressure?.level() ?? "ok") !== "ok",
+        // The idle threads of Claude and ACP follow the memory budget in the `memory` tab mode.
+        idlePolicy: () => (options.channelTabsMode?.() === "memory" ? (this.#laneBudget?.idlePolicy() ?? null) : null),
         captureConfigRevision: () => this.#endpoints.committedRevision(),
         onProviderActivated: (provider, configRevision) =>
           Effect.gen({ self: this }, function* () {
@@ -1440,6 +1442,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     this.#memoryHold = new MemoryHold({
       memory: hostMemory ?? memoryPressure,
       optimizations: this.optimizations,
+      // D3: with the tab mode that follows the memory, idle sessions close when the level reaches `low`.
+      releaseOnLow: () => options.channelTabsMode?.() === "memory" && this.#laneBudget?.readable === true,
       hooks: {
         scheduleAll: () => {
           for (const agent of this.#store.list()) this.#drain.scheduleDrain(agent.id);

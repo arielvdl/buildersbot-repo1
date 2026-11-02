@@ -94,7 +94,7 @@ import {
   isClaudeTaskNotification,
 } from "./conversation-snapshots";
 import { runCauseEffect } from "./effect-boundary";
-import { IdleThreadPool } from "./idle-thread-pool";
+import { type IdlePolicy, IdleThreadPool } from "./idle-thread-pool";
 import {
   agentMcpServers,
   claudeMcpServers,
@@ -331,11 +331,13 @@ export class ClaudeAgentClient extends EventEmitter<ClientEvents> {
   /** Whether the last account read found no claude.ai account and signed in with the key. */
   #onApiKey = false;
   readonly readHistory: ReadProviderHistory;
+  /** The idle policy that follows the memory of the computer, or null for the fixed values above. */
+  #idlePolicy: () => IdlePolicy | null = () => null;
   /** Threads whose process was closed for being idle keep the config that resumes them. */
   readonly #threads = new IdleThreadPool<ThreadRuntime, ThreadConfig>({
     scope: () => this.#scope,
-    releaseAfterMs: CLAUDE_THREAD_IDLE_RELEASE_MS,
-    idleLimit: CLAUDE_IDLE_THREAD_LIMIT,
+    releaseAfterMs: () => this.#idlePolicy()?.releaseAfterMs ?? CLAUDE_THREAD_IDLE_RELEASE_MS,
+    idleLimit: () => this.#idlePolicy()?.idleLimit ?? CLAUDE_IDLE_THREAD_LIMIT,
     // A session that is not persisted has nothing on disk to resume from.
     canRelease: (runtime) => runtime.config.persistSession && runtime.backgroundTasks === 0,
     snapshot: (runtime) => runtime.config,
@@ -434,6 +436,11 @@ export class ClaudeAgentClient extends EventEmitter<ClientEvents> {
     yield* Scope.close(this.#scope, Exit.void);
     this.#serverRequests.rejectAll("Claude session stopped.");
   });
+
+  /** Lets the idle limit and the idle time follow a policy (`LaneBudget.idlePolicy`). Null keeps the fixed ones. */
+  useIdlePolicy(policy: () => IdlePolicy | null): void {
+    this.#idlePolicy = policy;
+  }
 
   releaseIdleThreads(minIdleMs?: number): Effect.Effect<void, ProviderClientOperationError> {
     return this.#threads.releaseIdle(minIdleMs);

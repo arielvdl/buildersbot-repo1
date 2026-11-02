@@ -53,6 +53,7 @@ import {
 } from "../cultura-builder-auth";
 import { readCursorUsage } from "./../cursor-usage";
 import { causeHelpers } from "../effect-boundary";
+import type { IdlePolicy } from "../idle-thread-pool";
 import { McpHandoffLog } from "./../mcp-handoff-log";
 import { providerMcpServerName } from "./../mcp-provider-shapes";
 import { customProvidersOn, openCodeSignInMessage } from "./../opencode-config";
@@ -345,6 +346,11 @@ export interface ProviderHooks {
    * Absent: never low.
    */
   memoryLow?(): boolean;
+  /**
+   * How a client keeps its idle threads now, from the memory of the computer (`LaneBudget.idlePolicy`),
+   * or null for the fixed values of the client. Read each time a thread goes idle. Absent: fixed.
+   */
+  idlePolicy?(): IdlePolicy | null;
   /**
    * Runs when the own process of a Workspace only agent exits by itself. The provider's shared
    * process still runs, so nothing restarts: the next turn of this agent starts a new process.
@@ -3922,6 +3928,8 @@ export class ProviderRuntime implements ProviderPort {
     // Taken before `start()`, which is where the CLI reads the endpoint files.
     this.#configRevisions.set(client, this.#hooks.captureConfigRevision());
     this.#hooks.bindClient(client);
+    // The idle limit and time of its open threads follow the memory of the computer, read when each one goes idle.
+    client.useIdlePolicy?.(() => this.#hooks.idlePolicy?.() ?? null);
     const readAcpRequestEcho = createAcpRequestEchoReader();
     client.on("diagnostic", (raw, origin) => {
       const echo = readAcpRequestEcho(raw);
