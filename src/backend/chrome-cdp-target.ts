@@ -28,7 +28,7 @@ export interface ChromeCdpCommand {
   readonly params: DynamicRecord;
   readonly session?: string;
 }
-export type ChromeCdpOutcome = { readonly result: unknown } | { readonly error: Error };
+type ChromeCdpOutcome = { readonly result: unknown } | { readonly error: Error };
 
 /** How a target reaches its tab: the bridge requests of `ChromeTabsHost`, bound to one handle. */
 export interface ChromeTabChannel {

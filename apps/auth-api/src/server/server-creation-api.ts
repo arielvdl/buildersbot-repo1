@@ -16,7 +16,7 @@ import type { AuthUser } from "./types";
  * type of a write. See docs/architecture/server-creation-permission.md.
  */
 
-export const SERVER_CREATION_PATH = "v2/server-creation/";
+const SERVER_CREATION_PATH = "v2/server-creation/";
 
 /** The account of a request, and the kind of its session. */
 export interface ServerCreationCaller {

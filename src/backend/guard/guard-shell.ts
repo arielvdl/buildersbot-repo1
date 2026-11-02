@@ -16,7 +16,7 @@ export interface ShellWord {
 }
 
 /** A part of the command, such as the text of a subcommand, with its place. */
-export interface ShellSpan {
+interface ShellSpan {
   readonly text: string;
   readonly start: number;
   readonly end: number;
@@ -341,7 +341,7 @@ const WRAPPER_VALUE_OPTIONS: Readonly<Record<string, ReadonlySet<string>>> = {
 /** Words of the shell that come before a command, such as `if`, `!` or the `{` of a group. */
 const KEYWORDS: ReadonlySet<string> = new Set(["{", "!", "if", "then", "elif", "else", "do", "while", "until"]);
 /** A shell assignment before a command, such as `TOKEN=abc curl …`. */
-export const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]{0,120}=/u;
+const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]{0,120}=/u;
 
 /** The name of a program, without its folder and in lower case. */
 export function programName(word: string): string {

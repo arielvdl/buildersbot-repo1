@@ -10,7 +10,7 @@ import type { AgentClient } from "../agent-client";
 import { GuardJudgeFailed, type GuardModelPort } from "./guard-judge";
 
 /** A provider process starts for each review, so this reviewer gets a longer deadline. */
-export const PROVIDER_GUARD_TIMEOUT_MS = 12_000;
+const PROVIDER_GUARD_TIMEOUT_MS = 12_000;
 
 export interface ProviderGuardModelOptions {
   /** The models that can run now. */

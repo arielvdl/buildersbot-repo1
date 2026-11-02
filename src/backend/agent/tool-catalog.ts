@@ -48,10 +48,7 @@ const DIRECT_NAMES = new Set([
  * namespace that is not granted is not in the catalog text, in a search, in a describe or in
  * `tool_call`, so an agent cannot find or run it.
  */
-export const GATED_TOOL_NAMESPACES: ReadonlySet<string> = new Set([
-  HUB_CONNECTIONS_NAMESPACE,
-  BUILDERSBOT_CHROME_NAMESPACE,
-]);
+const GATED_TOOL_NAMESPACES: ReadonlySet<string> = new Set([HUB_CONNECTIONS_NAMESPACE, BUILDERSBOT_CHROME_NAMESPACE]);
 
 /** The catalog entries that an agent may see, with the gated namespaces that it was granted. */
 function visibleCatalog(granted: ReadonlySet<string>) {

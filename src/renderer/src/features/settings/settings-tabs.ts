@@ -48,7 +48,7 @@ export interface SettingsRowState {
  * anchor: the row markup sets `data-settings-row` to it, so a search result can move to the row.
  * `bun run check:ui` fails when a `data-settings-row` has no row here, or a row here has no markup.
  */
-export interface SettingsRow {
+interface SettingsRow {
   anchor: AppTextKey;
   descriptionKey?: AppTextKey;
   /** More words that find the row, such as other names and related words. */

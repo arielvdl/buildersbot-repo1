@@ -65,7 +65,7 @@ export interface AgentTab {
   lastCommandAt: number;
 }
 
-export interface Limits {
+interface Limits {
   tabsPerLease: number;
   tabsPerProject: number;
   tabsTotal: number;

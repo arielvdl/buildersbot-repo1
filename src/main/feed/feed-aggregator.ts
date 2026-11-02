@@ -42,7 +42,7 @@ import {
 import { cleanAgentMessageText } from "@buildersbot/team-client/agent-message-text";
 
 /** How long an ended card stays. */
-export const FEED_RETAIN_MS = 24 * 60 * 60 * 1_000;
+const FEED_RETAIN_MS = 24 * 60 * 60 * 1_000;
 /** The most text read from one value before it is cleaned: the card shows at most `FEED_TEXT_LIMIT`. */
 const RAW_TEXT_LIMIT = 2_000;
 /** The most task titles kept for cards that do not exist yet. */
@@ -133,7 +133,7 @@ function clip(text: string, limit: number): string {
  * The program of a shell command, with no path, argument or variable: `GITHUB_TOKEN=x /usr/bin/git push`
  * is `git`. Empty when the first word does not look like a program name.
  */
-export function commandProgram(command: string | null): string {
+function commandProgram(command: string | null): string {
   if (!command) return "";
   for (const word of command.slice(0, RAW_TEXT_LIMIT).trim().split(SPACES)) {
     if (ENVIRONMENT_ASSIGNMENT.test(word) || COMMAND_PREFIXES.has(word)) continue;

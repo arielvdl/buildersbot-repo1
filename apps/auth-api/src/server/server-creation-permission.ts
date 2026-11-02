@@ -89,8 +89,6 @@ export class ServerCreationStoreError extends Schema.TaggedError<ServerCreationS
   {},
 ) {}
 
-export type ServerCreationFailure = ServerCreationError | ServerCreationStoreError;
-
 function adminRequired(): ServerCreationError {
   return new ServerCreationError(403, "admin_required", sourceText("error.remote.serverCreationAdminRequired"));
 }
@@ -143,7 +141,7 @@ interface UserGrantRow {
 }
 
 /** An account as the administrator search shows it: its grant, or null. */
-export interface ServerCreationAccount {
+interface ServerCreationAccount {
   userId: string;
   email: string;
   name: string | null;

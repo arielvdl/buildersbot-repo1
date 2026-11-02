@@ -35,7 +35,7 @@ const OPUS = "claude-opus-5-5";
 const SONNET = "claude-sonnet-5-5";
 const HAIKU = "claude-haiku-5-5";
 
-export const ORBITS_AGENTS: OrbitAgentProfile[] = [
+const ORBITS_AGENTS: OrbitAgentProfile[] = [
   agent("lider-produto", "Líder Produto", "Líder", OPUS, 185),
   agent("backend", "Backend", "Backend", OPUS, 185),
   agent("automacao", "Automação", "Automação", SONNET, 185),
@@ -113,7 +113,7 @@ export const ORBITS_CHANNELS: OrbitChannel[] = [
   channel("marketing", "marketing", "Marketing", "arquivista", [], { activeTasks: 0 }),
 ];
 
-export const ORBITS_LAYOUT: OrbitsViewInput["layout"] = {
+const ORBITS_LAYOUT: OrbitsViewInput["layout"] = {
   order: [SIDEBAR_PEOPLE_SECTION_ID, "times", "pessoal", SIDEBAR_UNASSIGNED_SECTION_ID],
   sections: [
     // A coloured section: its channels still take the hue of their leads.
@@ -167,7 +167,7 @@ function queue(agentId: string, deliveries: QueueDelivery[], holdChannel?: strin
   };
 }
 
-export const ORBITS_QUEUES: Record<string, QueueSnapshot> = {
+const ORBITS_QUEUES: Record<string, QueueSnapshot> = {
   backend: queue("backend", [], "produto"),
   automacao: queue("automacao", [], "produto"),
   auditor: queue("auditor", [delivery("auditor", "queued", { kind: "agent", agentId: "backend" })], "seguranca"),
@@ -179,7 +179,7 @@ export const ORBITS_QUEUES: Record<string, QueueSnapshot> = {
   triagem: queue("triagem", [], "bugs"),
 };
 
-export const ORBITS_LOAD: LoadSnapshot = {
+const ORBITS_LOAD: LoadSnapshot = {
   sampledAt: minutesAgo(0),
   memory: { usedMb: 6200, agentsMb: 4100, totalMb: 16384 },
   activeAgents: 7,
@@ -273,26 +273,6 @@ export const ORBITS_QUIET_INPUT: OrbitsViewInput = {
   recentReplies: {},
   turnSteps: {},
   load: null,
-};
-
-const withoutKey = <T>(record: Readonly<Record<string, T>>, key: string): Record<string, T> =>
-  Object.fromEntries(Object.entries(record).filter(([entry]) => entry !== key));
-
-/** The busy workspace after the Backend agent finished: its work left the load, and it has a reply. */
-export const ORBITS_BACKEND_DONE_INPUT: OrbitsViewInput = {
-  ...ORBITS_INPUT,
-  queues: withoutKey(ORBITS_QUEUES, "backend"),
-  recentReplies: { ...ORBITS_INPUT.recentReplies, backend: true },
-  load: { ...ORBITS_LOAD, running: ORBITS_LOAD.running.filter((work) => work.agentId !== "backend") },
-};
-
-/** The busy workspace after the Bugs channel and the Pesquisa agent stopped: their systems leave. */
-export const ORBITS_BUGS_GONE_INPUT: OrbitsViewInput = {
-  ...ORBITS_INPUT,
-  channels: ORBITS_CHANNELS.map((entry) => (entry.id === "bugs" ? { ...entry, activeTasks: 0 } : entry)),
-  queues: withoutKey(ORBITS_QUEUES, "triagem"),
-  activeTurns: {},
-  load: { ...ORBITS_LOAD, running: ORBITS_LOAD.running.filter((work) => work.agentId !== "triagem") },
 };
 
 /** Two agents of the Produto channel ask the person, while its lead writes a message. */

@@ -30,7 +30,7 @@ export const EGRESS_DEFAULT_FILE = "buildersbot-egress-default-v1.json";
 const MAX_FILE_BYTES = 64 * 1024;
 const MAX_PENDING_SERVERS = 64;
 
-export const EMPTY_EGRESS_SETTINGS: EgressProxySettings = {
+const EMPTY_EGRESS_SETTINGS: EgressProxySettings = {
   enabled: false,
   host: "",
   port: null,
@@ -44,7 +44,7 @@ export const EMPTY_EGRESS_SETTINGS: EgressProxySettings = {
  * Masks the password and the forms of the full line that a person pastes or a tool prints, so no
  * log, export or error shows them.
  */
-export function registerEgressSecrets(settings: EgressProxySettings, password: string | null): void {
+function registerEgressSecrets(settings: EgressProxySettings, password: string | null): void {
   if (!password) return;
   registerSecretValue(password, { allowShort: true });
   if (!settings.host || settings.port === null) return;

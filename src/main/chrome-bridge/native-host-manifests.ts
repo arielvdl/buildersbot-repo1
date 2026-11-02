@@ -25,14 +25,6 @@ import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { extensionOrigin } from "@buildersbot/contracts/chrome-bridge/extension-ids";
 
-/** The per-user Native Messaging folders of the browsers that the app may write to, under the home folder. */
-export const BROWSER_MANIFEST_FOLDERS = {
-  "google-chrome": "Library/Application Support/Google/Chrome/NativeMessagingHosts",
-  "google-chrome-beta": "Library/Application Support/Google/Chrome Beta/NativeMessagingHosts",
-  "google-chrome-dev": "Library/Application Support/Google/Chrome Dev/NativeMessagingHosts",
-  "google-chrome-canary": "Library/Application Support/Google/Chrome Canary/NativeMessagingHosts",
-} as const;
-
 const REAL_BROWSER_ROOTS = [
   "Library/Application Support/Google",
   "Library/Application Support/BraveSoftware",
@@ -70,12 +62,12 @@ function inside(folder: string, root: string): boolean {
 }
 
 /** Whether a folder belongs to a real browser of the person, where development builds never write. */
-export function isRealBrowserFolder(folder: string, home = homedir()): boolean {
+function isRealBrowserFolder(folder: string, home = homedir()): boolean {
   const target = resolve(folder);
   return REAL_BROWSER_ROOTS.some((root) => inside(target, join(home, root)));
 }
 
-export function manifestPath(folder: string, name: string): string {
+function manifestPath(folder: string, name: string): string {
   return join(folder, `${name}.json`);
 }
 

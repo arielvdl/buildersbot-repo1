@@ -33,7 +33,7 @@ export function stoppedWorkKey(item: StoppedWorkItem): string {
  * parts are encoded: a select matches its rows with a `[data-key="…"]` selector, and the separator
  * would otherwise be the only thing telling the two kinds apart.
  */
-export function placeKey(channelId: string, topicId: string | null): string {
+function placeKey(channelId: string, topicId: string | null): string {
   return `${encodeURIComponent(channelId)}/${encodeURIComponent(topicId ?? "")}`;
 }
 

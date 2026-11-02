@@ -26,7 +26,7 @@ export interface BridgeSocket {
 const MAX_SOCKET_PATH_BYTES = 103;
 
 /** The per-user temporary folder of macOS, as `confstr` gives it: not `$TMPDIR`, which a parent can set. */
-export function darwinUserTempDir(): string {
+function darwinUserTempDir(): string {
   const folder = execFileSync("/usr/bin/getconf", ["DARWIN_USER_TEMP_DIR"], { encoding: "utf8" }).trim();
   if (!folder.startsWith("/")) throw new Error("getconf gave no per-user temporary folder.");
   return folder.endsWith("/") ? folder.slice(0, -1) : folder;

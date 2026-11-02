@@ -20,7 +20,7 @@ import {
 export type StoppedWorkPort = Pick<AppPort, "listStoppedWork" | "bulkStoppedWork">;
 
 /** What the last action did, for the line under the actions. */
-export interface StoppedWorkReport {
+interface StoppedWorkReport {
   action: StoppedWorkBulkInput["action"];
   done: number;
   failed: StoppedWorkBulkResult["failed"];

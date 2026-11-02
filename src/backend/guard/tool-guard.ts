@@ -15,7 +15,6 @@ import { judgeExcerpt, judgeSubject } from "./guard-excerpt";
 import {
   decodeGuardJudgeReply,
   GUARD_JUDGE_SYSTEM,
-  type GuardDirection,
   GuardJudgeFailed,
   type GuardJudgeRequest,
   type GuardJudgeVerdict,
@@ -267,6 +266,4 @@ const CLEAN: GuardTriage = {
   incomplete: false,
   unplaced: false,
 };
-
 /** The direction of an item, for callers that build one. */
-export type { GuardDirection };

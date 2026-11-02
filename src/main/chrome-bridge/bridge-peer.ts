@@ -12,7 +12,7 @@ import type { ChromeBridgeChannel } from "@buildersbot/contracts/chrome-bridge/e
 import { Schema } from "effect";
 
 /** The signed host inside the app bundle (`scripts/build-chrome-host.ts`). */
-export const STORE_HOST_REQUIREMENT =
+const STORE_HOST_REQUIREMENT =
   'anchor apple generic and certificate leaf[subject.OU] = "ZTRDTUL87R" and identifier "app.buildersbot.chrome-host"';
 
 /** The signing identifier of the host that `scripts/sign-local-macos.sh` puts in a locally signed app. */
@@ -26,7 +26,7 @@ const CERTIFICATE_HASH = /^[0-9a-f]{40}$/u;
  * identifier of a release channel. A copy of the signed host that another program started has another
  * parent, and the app does not take it.
  */
-export const GOOGLE_CHROME_REQUIREMENT =
+const GOOGLE_CHROME_REQUIREMENT =
   'anchor apple generic and certificate leaf[subject.OU] = "EQHXZ8M8AV" and (identifier "com.google.Chrome" or identifier "com.google.Chrome.beta" or identifier "com.google.Chrome.dev" or identifier "com.google.Chrome.canary")';
 
 export interface PeerIdentity {

@@ -15,10 +15,10 @@ import type { ChannelTask } from "@buildersbot/contracts/ipc";
 export const CHANNEL_ROUTING = "routing";
 
 /** The follow-up words of the channel before the switch, in English only. */
-export const ENGLISH_FOLLOW_UP =
+const ENGLISH_FOLLOW_UP =
   /^(?:also|instead|actually|please change|change that|correction|continue|resume|go on|keep going|yes|no|use that|make it)\b/iu;
 /** The words that continue stopped work, before the switch. */
-export const ENGLISH_RESUME = /^(?:continue|resume|go on|keep going)\b/iu;
+const ENGLISH_RESUME = /^(?:continue|resume|go on|keep going)\b/iu;
 
 /**
  * The end of a word. `\b` knows ASCII letters only, so it finds no end after "sí" or "não" with a
@@ -118,7 +118,7 @@ export function asksToResume(text: string, optimized: boolean): boolean {
 }
 
 /** How many routing answers of one task a change to its tab can discard, with the switch on. */
-export const ROUTING_TAB_DISCARDS = 2;
+const ROUTING_TAB_DISCARDS = 2;
 
 /** What a routing answer depends on, with the switch on. */
 export interface RoutingState {

@@ -24,7 +24,7 @@ import {
 export type GuardAction = "allow" | "annotate" | "ask" | "block";
 
 /** Who decided: the level, the local check, the reviewer, or the local check after the reviewer gave nothing. */
-export type GuardDecider = "off" | "local" | "model" | "fallback";
+type GuardDecider = "off" | "local" | "model" | "fallback";
 
 /** What the reviewer gave for one item. */
 export type GuardJudgeOutcome =
@@ -74,7 +74,7 @@ export function guardNeedsJudge(level: GuardAvailableLevel, direction: GuardDire
   return triage.hits.some((hit) => guardFindingNeedsReview(hit.code));
 }
 
-export const GUARD_ALLOW: GuardDecision = {
+const GUARD_ALLOW: GuardDecision = {
   action: "allow",
   category: "none",
   reason: null,

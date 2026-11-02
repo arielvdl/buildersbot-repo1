@@ -77,7 +77,7 @@ export function playwrightOutboundItem(name: string, args: unknown): GuardOutbou
 }
 
 /** What the Guard decides about one call: its action, and the local reason that the agent may read. */
-export interface BrokerCallVerdict {
+interface BrokerCallVerdict {
   readonly action: GuardAction;
   readonly reason: string | null;
 }
@@ -97,7 +97,7 @@ export type BrokerCallDecision =
  * What the agent reads when it asks the shared browser to run code from a file. The Guard reads code,
  * not files, so the agent is told to give the code itself. The agent reads it, so it is English.
  */
-export const BROKER_CODE_FILE_REFUSAL =
+const BROKER_CODE_FILE_REFUSAL =
   "Builders Bot Guard cannot read code from a file in the shared browser, so the call did not run. Give the code in the `code` argument instead.";
 
 /**
@@ -105,11 +105,11 @@ export const BROKER_CODE_FILE_REFUSAL =
  * path against a folder that the call chooses, so the Guard cannot know the file. The agent reads it,
  * so it is English.
  */
-export const BROKER_RELATIVE_PATH_REFUSAL =
+const BROKER_RELATIVE_PATH_REFUSAL =
   "Builders Bot Guard needs an absolute path for each file of a shared browser upload, so the call did not run. Give the absolute path of each file.";
 
 /** What the agent reads when the Guard held back a call. The agent reads it, so it is English. */
-export function brokerRefusal(reason: string | null): string {
+function brokerRefusal(reason: string | null): string {
   return `Builders Bot Guard held back this browser call.${reason ? ` ${reason}` : ""} The shared browser cannot ask the person, so the call did not run. Tell the person what you wanted to do and why; do not try it another way.`;
 }
 

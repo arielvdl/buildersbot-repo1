@@ -14,8 +14,6 @@ import { sourceText } from "@buildersbot/i18n/source";
 import { Effect, Option, Schema, Semaphore } from "effect";
 import { type ProviderClientOperationError, ProviderSignInError, providerFailure } from "./provider-client-effects";
 
-export const CULTURA_BUILDER_PROVIDER = "cultura-builder" as const;
-
 /** The Hub origin, and the OpenAI-compatible gateway that the provider's models run on. */
 export const CULTURA_BUILDER_HUB = "https://hub.culturabuilder.com";
 export const CULTURA_BUILDER_GATEWAY = `${CULTURA_BUILDER_HUB}/api/builder-ai/gateway/v1`;
@@ -42,13 +40,6 @@ const DEFAULT_INTERVAL_MS = 5_000;
  * first answer: the gateway's own `/models` needs a token, and a signed-out row would have none. The
  * order is the gateway's, with `builder-auto` first as the default.
  */
-export const CULTURA_BUILDER_MODELS = [
-  { id: "builder-auto", name: "Cultura Builder" },
-  { id: "builder-plan", name: "Builder Plan" },
-  { id: "builder-code", name: "Builder Code" },
-  { id: "builder-fast", name: "Builder Fast" },
-  { id: "builder-review", name: "Builder Review" },
-] as const;
 
 /** One stored sign-in. It is kept as JSON under the provider's credential. */
 export interface CulturaBuilderSession {

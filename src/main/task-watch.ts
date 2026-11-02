@@ -54,9 +54,9 @@ const STALL_FACTOR = 2;
  * looks every 60 s while the app runs. Three looks, so a busy main process that delays one look is not a
  * sleep.
  */
-export const SLEEP_GAP_MS = 3 * 60_000;
+const SLEEP_GAP_MS = 3 * 60_000;
 /** The looks after a sleep in which every task is held (`fiscal-resume-grace`). */
-export const SLEEP_GRACE_LOOKS = 2;
+const SLEEP_GRACE_LOOKS = 2;
 
 /** `running`: Working. `queued`: Requested. `start-failed`: Failed, because the provider did not start it. */
 export type WatchKind = "running" | "queued" | "start-failed";
@@ -238,7 +238,7 @@ export interface WatchOutlook {
  * open work step), and never sooner than one interval after the last action. A slow task can get a
  * resume sooner when the model of the Guard says so; this is not shown.
  */
-export function watchOutlook(
+function watchOutlook(
   tasks: readonly WatchedTask[],
   context: WatchContext,
   recordOf: (task: WatchedTask) => LedgerRecord | undefined,
@@ -304,7 +304,7 @@ export function watchAction(
  * agent's. After `TASK_WATCH_START_ACTIONS` actions, it gives up: the
  * person decides.
  */
-export function startFailedAction(
+function startFailedAction(
   record: Pick<LedgerRecord, "resumes" | "reassigns" | "startActions"> | undefined,
   reassign: boolean,
   pick: () => string | null,

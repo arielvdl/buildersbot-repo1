@@ -11,8 +11,8 @@ import { createSignal, onSettled } from "solid-js";
 import type { AppPort } from "../../app-port";
 
 /** How often the window reads the load while the panel is closed, and while it is open. */
-export const LOAD_POLL_MS = 15_000;
-export const LOAD_POLL_OPEN_MS = 3_000;
+const LOAD_POLL_MS = 15_000;
+const LOAD_POLL_OPEN_MS = 3_000;
 
 export type LoadPort = Pick<
   AppPort,

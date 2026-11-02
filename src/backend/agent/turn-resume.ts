@@ -20,7 +20,7 @@ import type { EffectReach, EffectState, OwnToolCall, TurnEffect } from "./turn-e
  * of a second action. A site change asks the person in another path, and a browser or Hub call has its
  * own path: the effect journal reads those from the provider's items, as outside steps.
  */
-export const OWN_EXTERNAL_TOOLS: ReadonlySet<string> = new Set([
+const OWN_EXTERNAL_TOOLS: ReadonlySet<string> = new Set([
   "buildersbot.send_message",
   "buildersbot.channel_assign",
   "buildersbot.channel_transfer",
@@ -85,7 +85,7 @@ export interface ResumeEffect {
 }
 
 /** A call to an own outside tool that ended with a result, for the repeat guard of the continued turn. */
-export interface ResumeDoneCall {
+interface ResumeDoneCall {
   tool: string;
   digest: string;
 }
@@ -172,7 +172,7 @@ export function turnResumeView(marker: TurnResumeMarker): StartRetryView {
 }
 
 /** The wait before continuation `attempt` (1 for the first), 25% up or down at random. */
-export function turnResumeDelayMs(delays: readonly number[], attempt: number, random: number): number {
+function turnResumeDelayMs(delays: readonly number[], attempt: number, random: number): number {
   const seconds = delays[Math.min(Math.max(1, attempt), delays.length) - 1] ?? TURN_RESUME_DELAYS_SECONDS[0] ?? 15;
   return Math.round(seconds * 1000 * (0.75 + 0.5 * Math.min(1, Math.max(0, random))));
 }

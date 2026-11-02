@@ -3,16 +3,16 @@
 
 import { SERVICE_MAX_CLOSED_HOURS } from "./lid-awake-policy";
 
-export const LID_AWAKE_LABEL = "app.buildersbot.lid-awake";
+const LID_AWAKE_LABEL = "app.buildersbot.lid-awake";
 export const LID_AWAKE_TOOL_PATH = "/Library/PrivilegedHelperTools/app.buildersbot.lid-awake.sh";
 export const LID_AWAKE_PLIST_PATH = "/Library/LaunchDaemons/app.buildersbot.lid-awake.plist";
-export const LID_AWAKE_BASE = "/Library/Application Support/BuildersBot/LidAwake";
+const LID_AWAKE_BASE = "/Library/Application Support/BuildersBot/LidAwake";
 /** Owned by the user who installed the service. The app keeps its grant file here. */
 export const LID_AWAKE_GRANT_DIR = `${LID_AWAKE_BASE}/grant`;
 /** Owned by root. The service touches it at each check. */
 export const LID_AWAKE_ALIVE_PATH = `${LID_AWAKE_BASE}/alive`;
 /** The service looks for a process with this path. A development run cannot use the `battery` mode. */
-export const LID_AWAKE_APP_EXECUTABLE = "/Applications/Builders Bot.app/Contents/MacOS/Builders Bot";
+const LID_AWAKE_APP_EXECUTABLE = "/Applications/Builders Bot.app/Contents/MacOS/Builders Bot";
 export const OSASCRIPT_PATH = "/usr/bin/osascript";
 
 /**

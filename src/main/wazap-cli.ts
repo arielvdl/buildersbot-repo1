@@ -92,7 +92,7 @@ export function wazapArgs(command: WazapCommand, dataDir?: string): string[] {
 
 const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;?]*[A-Za-z]`, "g");
 
-export function stripAnsi(text: string): string {
+function stripAnsi(text: string): string {
   return text.replace(ANSI, "");
 }
 
@@ -393,7 +393,7 @@ export function accountState(
  * Whether an account that has no `owner` in `accounts.json` keeps the history of a number: its
  * database names a number, or it holds messages (a database that main could not read).
  */
-export function keepsHistory(row: WazapStatusAccount, storage: WazapStorage | undefined): boolean {
+function keepsHistory(row: WazapStatusAccount, storage: WazapStorage | undefined): boolean {
   return row.databaseOwner !== null || (storage?.messages ?? 0) > 0;
 }
 

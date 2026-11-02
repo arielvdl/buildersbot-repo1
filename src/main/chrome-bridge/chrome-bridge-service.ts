@@ -51,23 +51,23 @@ import {
   writeNativeHostManifest,
 } from "./native-host-manifests";
 
-export const MAX_CONNECTIONS = 8;
+const MAX_CONNECTIONS = 8;
 /** The "a Chrome wants to connect" card, outside a pairing window. */
-export const UNEXPECTED_CARDS_PER_HOUR = 3;
+const UNEXPECTED_CARDS_PER_HOUR = 3;
 /**
  * After the person says "Not now" or taps the wrong words, the same extension key gets `busy` for this
  * long, unless the person opens a pairing window. Without it, the host reconnects, the extension tries
  * again, and the card the person just closed comes back.
  */
-export const REFUSED_KEY_QUIET_MS = 10 * 60 * 1000;
+const REFUSED_KEY_QUIET_MS = 10 * 60 * 1000;
 /** A request that met a connection renewing its keys waits this long for the next connection of the profile. */
-export const RENEWAL_WAIT_MS = 10_000;
+const RENEWAL_WAIT_MS = 10_000;
 
-export class ChromeBridgeFailure extends Schema.TaggedError<ChromeBridgeFailure>()("ChromeBridgeFailure", {
+class ChromeBridgeFailure extends Schema.TaggedError<ChromeBridgeFailure>()("ChromeBridgeFailure", {
   cause: Schema.Defect(),
 }) {}
 
-export class ChromeBridgeRequestFailure extends Schema.TaggedError<ChromeBridgeRequestFailure>()(
+class ChromeBridgeRequestFailure extends Schema.TaggedError<ChromeBridgeRequestFailure>()(
   "ChromeBridgeRequestFailure",
   { code: Schema.String, message: Schema.String },
 ) {}
@@ -90,7 +90,7 @@ export interface ChromeBridgeOptions {
   readonly nativeHost?: NativeHostInstall;
 }
 
-export interface NativeHostInstall {
+interface NativeHostInstall {
   /** The user-level manifest folder: the person's Chrome in a packaged app, a test profile in E2E. */
   readonly folder: string;
   readonly hostPath: string;
@@ -171,7 +171,7 @@ async function clearStaleSocket(path: string) {
   await rm(path);
 }
 
-export const makeChromeBridge = Effect.fn("ChromeBridge.make")(function* (options: ChromeBridgeOptions) {
+const makeChromeBridge = Effect.fn("ChromeBridge.make")(function* (options: ChromeBridgeOptions) {
   const now = options.now ?? Date.now;
   const log = options.log ?? (() => undefined);
   const socket = options.socket ?? bridgeSocket(options.channel);

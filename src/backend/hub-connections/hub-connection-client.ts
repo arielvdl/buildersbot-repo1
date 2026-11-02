@@ -62,7 +62,7 @@ import {
  * - `token_refused`: the Hub refused to give a proxy token; `tokenError` says why.
  * - `disabled`: the capability is off in `/session` (the kill switch).
  */
-export const HUB_CLIENT_FAILURES = [
+const HUB_CLIENT_FAILURES = [
   "signed_out",
   "offline",
   "hub_unavailable",
@@ -105,7 +105,7 @@ const PROXY_RESOURCE = `${CULTURA_BUILDER_HUB}${HUB_CONNECTIONS_PATHS.proxyResou
  * A failed read of `/session` or of the catalog is kept this long: the next reads fail at once, closed,
  * instead of each waiting for the Hub's timeout again. A fresh read (the person's Refresh) asks again.
  */
-export const HUB_FAILURE_CACHE_MS = 60_000;
+const HUB_FAILURE_CACHE_MS = 60_000;
 /** The key of the catalog token, which names no organization. */
 const CATALOG_TOKEN = "\u0000catalog";
 

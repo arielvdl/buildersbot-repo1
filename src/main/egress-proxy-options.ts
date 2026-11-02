@@ -26,19 +26,6 @@ export type EgressMode =
   | { kind: "proxy"; upstream: EgressUpstream; bypass: readonly string[] }
   | { kind: "blocked"; bypass: readonly string[] };
 
-/** The variable names that tools read, in both cases: curl reads lower case first, Go and Node upper case. */
-export const EGRESS_ENVIRONMENT_NAMES = [
-  "HTTP_PROXY",
-  "HTTPS_PROXY",
-  "ALL_PROXY",
-  "NO_PROXY",
-  "http_proxy",
-  "https_proxy",
-  "all_proxy",
-  "no_proxy",
-  "NODE_USE_ENV_PROXY",
-] as const;
-
 /** Always direct, whatever the list says: the gateway and the agents' own local servers are here. */
 const LOOPBACK_ENTRIES = ["localhost", "127.0.0.1", "::1"];
 
@@ -50,7 +37,7 @@ function bracketed(host: string): string {
  * The Chromium bypass list (`proxyBypassRules`, `--proxy-bypass-list`, Playwright `bypass`): a
  * comma-separated list. An IPv6 address takes brackets; a CIDR range does not.
  */
-export function chromiumBypassList(rules: readonly string[]): string {
+function chromiumBypassList(rules: readonly string[]): string {
   const entries = rules.map((rule) => (rule.includes("/") ? rule : bracketed(rule)));
   return [...new Set([...entries, "localhost", "127.0.0.1", "[::1]"])].join(",");
 }
@@ -71,7 +58,7 @@ export function noProxyValue(rules: readonly string[]): string {
 }
 
 /** The gateway URL with its token, as a tool reads it from `HTTP_PROXY`. */
-export function gatewayProxyUrl(gateway: EgressGatewayAddress): string {
+function gatewayProxyUrl(gateway: EgressGatewayAddress): string {
   return `http://${encodeURIComponent(gateway.username)}:${encodeURIComponent(gateway.token)}@127.0.0.1:${gateway.port}`;
 }
 

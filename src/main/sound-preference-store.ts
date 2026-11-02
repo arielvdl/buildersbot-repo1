@@ -27,7 +27,7 @@ export const CUSTOM_SOUND_FOLDER = "sounds";
 
 type CustomSoundExtension = (typeof CUSTOM_SOUND_EXTENSIONS)[number];
 
-export class CustomSoundFailure extends Schema.TaggedError<CustomSoundFailure>()("CustomSoundFailure", {
+class CustomSoundFailure extends Schema.TaggedError<CustomSoundFailure>()("CustomSoundFailure", {
   message: Schema.String,
   cause: Schema.Defect(),
 }) {}
@@ -40,7 +40,7 @@ interface StoredSoundPreference extends SoundPreference {
  * Whether the first bytes of a file are of the type its extension names. The file is never run: the
  * check only keeps a renamed file of another type out of the sound folder.
  */
-export function customSoundBytesMatch(extension: CustomSoundExtension, head: Uint8Array): boolean {
+function customSoundBytesMatch(extension: CustomSoundExtension, head: Uint8Array): boolean {
   const text = (start: number, end: number) => String.fromCharCode(...head.subarray(start, end));
   switch (extension) {
     case "wav":

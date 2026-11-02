@@ -44,7 +44,7 @@ export type EgressProxyCalls = Pick<
   "getEgressProxy" | "setEgressProxy" | "testEgressProxy"
 >;
 /** The app default for new servers. Only the desktop app has one. */
-export type EgressDefaultCalls = Pick<BuildersBotDesktopApi["hostAdmin"], "getEgressDefault" | "setEgressDefault">;
+type EgressDefaultCalls = Pick<BuildersBotDesktopApi["hostAdmin"], "getEgressDefault" | "setEgressDefault">;
 
 export interface ServerEgressOptions {
   /** The calls of a client with no `window.buildersbot`, such as the web client. */

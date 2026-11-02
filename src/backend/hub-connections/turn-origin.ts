@@ -14,7 +14,7 @@
  * connections it is `agent` (`hubConnectionOrigin`). It stays on every message that such a turn sends,
  * so the owner's Chrome, which no routine may use, stays closed along the whole chain.
  */
-export const HUB_TURN_ORIGINS = [
+const HUB_TURN_ORIGINS = [
   "owner_ui",
   "routine",
   "agent",

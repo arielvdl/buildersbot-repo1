@@ -221,7 +221,7 @@ function agentLabelOf(name: string): string {
 }
 
 /** The sentence an agent reads for a refusal of the extension or the bridge. */
-export function chromeRefusalText(code: string, message: string): string {
+function chromeRefusalText(code: string, message: string): string {
   switch (code) {
     case "site_blocked":
       return `This site is blocked for agents in the person's Chrome (${message}). Banks, exchanges, password vaults, Google and Apple accounts, and government sites stay with the person. Ask the person to do this step.`;

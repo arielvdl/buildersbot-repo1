@@ -30,19 +30,6 @@ interface TransactionScope {
 /** The maximum serialized size retained for one completed conversation. */
 export const CONVERSATION_CACHE_BYTES_LIMIT = 8 * 1024 * 1024;
 
-const debugClients = new WeakMap<AgentClient, number>();
-let debugNextClient = 0;
-
-/** A stable number for a client, for a log that must tell two of them apart. */
-export function debugClientLabel(client: AgentClient): number {
-  let label = debugClients.get(client);
-  if (label === undefined) {
-    label = ++debugNextClient;
-    debugClients.set(client, label);
-  }
-  return label;
-}
-
 /** The maximum serialized size retained by all completed conversation caches. */
 export const CONVERSATION_CACHE_TOTAL_BYTES_LIMIT = 64 * 1024 * 1024;
 

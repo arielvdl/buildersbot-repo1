@@ -49,12 +49,12 @@ export const TASK_WATCH_JUDGE_SYSTEM = [
 ].join("\n");
 
 /** The first `limit` characters of `text`, masked before the cut. */
-export function maskedHead(text: string, limit: number): string {
+function maskedHead(text: string, limit: number): string {
   return maskSecrets(text.slice(0, MASK_WINDOW)).replace(/\s+/gu, " ").trim().slice(0, limit);
 }
 
 /** The last `limit` characters of `text`, masked before the cut. */
-export function maskedTail(text: string, limit: number): string {
+function maskedTail(text: string, limit: number): string {
   const line = maskSecrets(text.slice(-MASK_WINDOW)).replace(/\s+/gu, " ").trim();
   return line.length <= limit ? line : line.slice(-limit);
 }

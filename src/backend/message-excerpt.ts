@@ -2,7 +2,7 @@
  * The most characters that a kept first or last message has: the first message and the preview of a
  * side thread (also as migration 49 fills them), and the first and last message of an agent's own chat.
  */
-export const MESSAGE_EXCERPT_LIMIT = 2000;
+const MESSAGE_EXCERPT_LIMIT = 2000;
 
 /**
  * The text trimmed. A text that is longer than `MESSAGE_EXCERPT_LIMIT` characters is cut, and ends

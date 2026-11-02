@@ -28,7 +28,7 @@ export type DevicePollResult =
   | { status: "rate_limited"; retryAfterSeconds: number }
   | { status: "authorized"; user: DeviceAccount };
 
-export interface DeviceAccount {
+interface DeviceAccount {
   email: string;
   name: string | null;
   avatarUrl: string | null;

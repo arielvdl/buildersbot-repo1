@@ -49,7 +49,7 @@ function isCredentialParam(name: string): boolean {
  * each query parameter with a credential name or the name of a signed URL's credential (decoded from
  * percent-encoding), and each vendor line.
  */
-export function maskResultString(text: string): string {
+function maskResultString(text: string): string {
   return maskVendorPhrases(
     replacePlaces(text, findSecretValues(text))
       .replace(BEARER, `$1${REDACTED}`)

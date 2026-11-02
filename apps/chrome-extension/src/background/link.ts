@@ -54,7 +54,7 @@ import { BridgeError, chromeErrorText } from "./util";
  * agent's own scripts) waits for a switch for each project in this popup: the app alone does not
  * turn scripts on.
  */
-export const EXTENSION_FEATURES: readonly ChromeBridgeFeature[] = CHROME_BRIDGE_FEATURES.filter(
+const EXTENSION_FEATURES: readonly ChromeBridgeFeature[] = CHROME_BRIDGE_FEATURES.filter(
   (feature) => feature !== "tab-handoff" && feature !== "agent-scripts",
 );
 

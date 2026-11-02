@@ -20,7 +20,7 @@ export interface EgressCheckTarget {
 }
 
 /** ipinfo.io answers `{ ip, city, region, country }` without a key, over HTTPS. */
-export const EGRESS_CHECK_TARGET: EgressCheckTarget = { host: "ipinfo.io", port: 443, path: "/json", secure: true };
+const EGRESS_CHECK_TARGET: EgressCheckTarget = { host: "ipinfo.io", port: 443, path: "/json", secure: true };
 
 export type EgressCheckResult =
   | { ok: true; ip: string; city: string | null; region: string | null; country: string | null }
@@ -44,7 +44,7 @@ function place(value: unknown): string | null {
 }
 
 /** The fields of the answer, or null when it has no IP address. */
-export function parseEgressCheckAnswer(value: unknown): Omit<Extract<EgressCheckResult, { ok: true }>, "ok"> | null {
+function parseEgressCheckAnswer(value: unknown): Omit<Extract<EgressCheckResult, { ok: true }>, "ok"> | null {
   if (!isDynamicRecord(value)) return null;
   const ip = place(value.ip);
   if (!ip || ip.length > EGRESS_PROXY_LIMITS.ip || !/^[0-9a-f:.]+$/iu.test(ip)) return null;

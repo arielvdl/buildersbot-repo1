@@ -36,7 +36,7 @@ const POLICY_LIMIT_BYTES = 64 * 1024;
 const MODELS_PER_PROVIDER_LIMIT = 200;
 
 /** `"*"`: every model that the provider lists. A list: only these model ids. */
-export type ProviderModelRule = "*" | readonly string[];
+type ProviderModelRule = "*" | readonly string[];
 
 export interface ServerModelPolicy {
   /** The providers that the server runs, with the models it offers from each. */
@@ -54,7 +54,7 @@ export interface ServerModelPolicy {
  * The policy of a policy file that is not valid: the Cultura Builder gateway only. The gateway
  * gives each account only the models that the Hub allows it, so this default opens nothing more.
  */
-export const SAFE_DEFAULT_POLICY: ServerModelPolicy = {
+const SAFE_DEFAULT_POLICY: ServerModelPolicy = {
   providers: new Map([["cultura-builder", "*"]]),
   freeModels: false,
   source: "safe-default",
@@ -71,7 +71,7 @@ const PolicyFile = Schema.Struct({
  * that the contract refuses make the file not valid: a policy that the app reads in part is a policy
  * that the administrator did not write.
  */
-export function decodeServerModelPolicy(value: unknown): ServerModelPolicy | null {
+function decodeServerModelPolicy(value: unknown): ServerModelPolicy | null {
   const file = Option.getOrNull(Schema.decodeUnknownOption(PolicyFile)(value));
   if (!file) return null;
   const providers = new Map<AgentProviderId, ProviderModelRule>();

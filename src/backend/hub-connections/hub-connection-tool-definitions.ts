@@ -14,7 +14,7 @@ const connectionId = z
   .regex(/^[a-z0-9][a-z0-9-]{1,39}$/u)
   .describe("The connection id from buildersbot_connections.list, such as tool-catalog.");
 
-export const listConnectionsToolSchema = z.strictObject({});
+const listConnectionsToolSchema = z.strictObject({});
 
 export const callConnectionToolSchema = z.strictObject({
   connection: connectionId,

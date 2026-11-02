@@ -9,7 +9,7 @@ import { VENDOR_LINE_MARKER } from "../guard/guard-triage";
  * an installer, or a rule that conflicts with the cost approval. Text from the Hub (a mirrored title,
  * summary or parameter description, a result) that holds one is dropped or masked by the app.
  */
-export const VENDOR_PHRASES: readonly RegExp[] = [
+const VENDOR_PHRASES: readonly RegExp[] = [
   /reach\s+for\s+\S+\s+first/iu,
   /\btreg\s+first\b/iu,
   /\bstar\s+the\s+(?:project|repo)/iu,

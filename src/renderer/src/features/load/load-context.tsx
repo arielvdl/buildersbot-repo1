@@ -51,7 +51,7 @@ export function createLoadStore(port: () => LoadPort, railShown: () => boolean) 
   };
 }
 
-export type LoadStore = ReturnType<typeof createLoadStore>;
+type LoadStore = ReturnType<typeof createLoadStore>;
 
 const context = createSimpleContext({
   name: "Load",

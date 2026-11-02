@@ -1,6 +1,6 @@
 import { type SoundEventId, soundEventPreference } from "@buildersbot/contracts/ipc";
 import { SOUND_THEMES, type SoundChoice, type SoundTheme } from "@buildersbot/ui/features/settings/app-settings";
-import { previewSound, saveSoundPreference, soundCenterState, startSoundCenter } from "./sound-center";
+import { previewSound, saveSoundPreference, soundCenterState } from "./sound-center";
 
 /** The cues of the old "Sound feedback" choice, now events of the sound center. */
 const FEEDBACK_EVENTS = [
@@ -44,9 +44,4 @@ export function setActionSoundChoice(choice: SoundChoice): void {
     void previewSound("interface.actions", { enabled: true, sound: choice, volume: 100, customSoundId: null }).catch(
       () => undefined,
     );
-}
-
-/** Starts the sound center and the control sounds. Later calls do nothing. */
-export function startActionSounds(): void {
-  void startSoundCenter();
 }

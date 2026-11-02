@@ -12,13 +12,13 @@ import type { ChannelMessage, ChannelTask, OptimizationId } from "@buildersbot/c
 /** The id of the optimization in Settings > Advanced optimizations. */
 export const CHANNEL_CONTEXT_SPILL = "channel-context-spill" satisfies OptimizationId;
 /** The most characters of a message that a packet carries in full: the request, a reply, a mention. */
-export const KEPT_CHARACTERS = 4_000;
+const KEPT_CHARACTERS = 4_000;
 /** The characters of any other message in a packet. */
-export const EXCERPT_CHARACTERS = 1_200;
+const EXCERPT_CHARACTERS = 1_200;
 /** The characters of a large result in a packet, and of a row of the compact `channel_history`. */
-export const PREVIEW_CHARACTERS = 200;
+const PREVIEW_CHARACTERS = 200;
 /** The characters that one `channel_history` read of a message gives. */
-export const READ_PAGE_CHARACTERS = 12_000;
+const READ_PAGE_CHARACTERS = 12_000;
 /** The most rows of one page of the compact `channel_history`, and its default. */
 export const HISTORY_PAGE_LIMIT = 20;
 /** The last messages of a packet that it carries in full. */
@@ -67,7 +67,7 @@ function fences(text: string): Array<[number, number]> {
  * the block when that keeps at least a quarter of the limit, and otherwise the block is closed after
  * its last whole line.
  */
-export function cutText(text: string, limit: number): SpillPart {
+function cutText(text: string, limit: number): SpillPart {
   if (text.length <= limit) return { text, nextOffset: null };
   const floor = Math.floor(limit * 0.6);
   let end = safeEnd(text, limit);
@@ -94,7 +94,7 @@ export function readPage(text: string, offset: number): SpillPart & { offset: nu
 }
 
 /** A short one-line preview of a message for the compact `channel_history`. */
-export function preview(text: string): string {
+function preview(text: string): string {
   const flat = text.replace(/\s+/gu, " ").trim();
   return flat.length <= PREVIEW_CHARACTERS ? flat : `${flat.slice(0, safeEnd(flat, PREVIEW_CHARACTERS))}…`;
 }

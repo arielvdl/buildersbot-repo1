@@ -18,6 +18,11 @@ const config: KnipConfig = {
     "packages/contracts/src/team-protocol/provider-aware-codec.ts": ["exports", "types"],
     // A generator writes this file.
     "apps/auth-api/src/lib/plugin-catalog.generated.ts": ["exports", "types"],
+    // The guard is imported by the E2E scripts, which knip reads as entries only for their own file.
+    "src/backend/guard/guard-triage.ts": ["exports", "types"],
+    // Two names for the same value, kept for the callers that read each one.
+    "packages/contracts/src/invite-links.ts": ["duplicates"],
+    "packages/contracts/src/team-protocol/push-notifications-v1.ts": ["duplicates"],
   },
   // Host tools that scripts and tests call. They are not npm packages.
   ignoreBinaries: [
@@ -52,6 +57,12 @@ const config: KnipConfig = {
     "browser-harness",
     // Reads the memory that programs can still use on macOS, for the machine part of Storage.
     "vm_stat",
+    // The memory pressure of macOS in the Chrome E2E scripts.
+    "memory_pressure",
+    // Copies the extension folder with its resource forks in the Chrome E2E script.
+    "ditto",
+    // Rewrites the WhatsApp phone link in the phone web app test.
+    "perl",
   ],
   workspaces: {
     ".": {
@@ -67,6 +78,10 @@ const config: KnipConfig = {
       ],
       project: ["src/**/*.{ts,tsx,css}", "scripts/**/*.ts", "tools/**/*.ts"],
       ignoreDependencies: [
+        // `@buildersbot/brand` imports it for the avatar; the CSS compiler does not see a value import.
+        "@norbert_bodziony/bloub",
+        // The Chrome bridge script imports the compiler API by this name; it is a transitive package.
+        "@typescript/typescript6",
         // `packages/ui` declares and imports these. The root copies date from before the UI moved to
         // that package; removing them changes what electron-builder packs, so it needs a package check.
         "@speed-highlight/core",
@@ -78,7 +93,6 @@ const config: KnipConfig = {
         "expo",
         // `@buildersbot/team-client` imports it, and the main bundle keeps it external through this
         // entry. Bundled, a JSDoc `import` line in it takes the `__dirname` shim of electron-vite.
-        "@noble/hashes",
       ],
       // Scripts start other scripts by path (`bun scripts/<name>.ts`), relative to the repository
       // root. Every file in scripts/ is already an entry.
@@ -93,7 +107,7 @@ const config: KnipConfig = {
     },
     // The wrangler plugin of knip reads `main` from wrangler.jsonc.
     "apps/site-router": {
-      project: ["src/**/*.ts"],
+      project: ["src/**/*.{ts,css}"],
     },
     "apps/mobile": {
       entry: [
@@ -106,7 +120,7 @@ const config: KnipConfig = {
         // scripts/mobile-share-sender.ts builds the share extension page from this file by path.
         "src/features/share/extension/share-sender.ts",
       ],
-      project: ["src/**/*.{ts,tsx}", "plugins/**/*.{js,ts}"],
+      project: ["src/**/*.{ts,tsx,css}", "plugins/**/*.{js,ts}"],
       ignoreDependencies: [
         // `expo` installs it; Expo config plugins import it by this name.
         "@expo/config-plugins",
@@ -116,14 +130,18 @@ const config: KnipConfig = {
         "@expo/plist",
         // A native module that `expo-router` imports. The direct entry keeps its native version
         // pinned to the Expo SDK and visible to autolinking.
-        "expo-symbols",
       ],
     },
     // src/index.ts is a default entry of knip. The capacity-report Compose service runs
     // src/capacity-report.ts.
     "remote/api": {
       entry: ["src/capacity-report.ts"],
-      project: ["src/**/*.ts"],
+      project: ["src/**/*.{ts,css}"],
+    },
+    "apps/chrome-extension": {
+      // Chrome starts the worker and the two pages from `manifest.base.json`, which knip does not read.
+      entry: ["src/background/service-worker.ts", "src/pages/popup.ts", "src/pages/welcome.ts", "src/pages/pages.css"],
+      project: ["src/**/*.{ts,tsx,css}"],
     },
     "packages/i18n": {
       // packages/i18n/vite-plugin.ts, which apps/auth-api/vite.config.ts and electron.vite.config.ts
@@ -132,11 +150,21 @@ const config: KnipConfig = {
       // place of mobile-catalogs.ts.
       entry: ["src/lazy-catalogs.ts", "src/desktop-catalogs.ts", "src/mobile-catalogs.native.ts"],
       project: ["src/**/*.{ts,tsx,css}"],
+      // The error catalogs are the contract of the messages, read by the source catalog.
+      ignore: ["src/messages/*/error/**"],
     },
     "packages/*": {
       project: ["src/**/*.{ts,tsx,css}"],
     },
   },
+  ignore: [
+    // The error catalogs are the contract of the messages, read by the source catalog; the other
+    // locales load them through `pt/source.ts` and keep the files for parity.
+    "packages/i18n/src/messages/*/error/**",
+    // A card that the sidebar shows only while the community feature is on.
+    "src/renderer/src/features/sidebar/community-card.ts",
+    "packages/i18n/src/messages/*/chromeExtension.ts",
+  ],
 };
 
 export default config;

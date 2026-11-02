@@ -45,7 +45,7 @@ function isMissing(error: unknown): boolean {
  * path and its twin under a renamed workspace, or a relative path in the workspace and then in the
  * shared folder. A path that starts with `~` is also tried in the home folder, in case a tool expands it.
  */
-export function guardPathCandidates(input: string, context: GuardPathContext): string[] {
+function guardPathCandidates(input: string, context: GuardPathContext): string[] {
   const value = input.trim();
   if (!value) return [];
   const home = context.home ?? homedir();

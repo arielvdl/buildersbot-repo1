@@ -33,7 +33,7 @@ export interface GuardModelRow {
   readonly recommended: boolean;
 }
 
-export const LOCAL_ONLY_KEY = "local";
+const LOCAL_ONLY_KEY = "local";
 
 export function guardModelKey(choice: GuardJudgeChoice | null): string {
   return choice ? JSON.stringify([choice.provider, choice.model]) : LOCAL_ONLY_KEY;
@@ -58,10 +58,7 @@ function sameChoice(left: GuardJudgeChoice, right: GuardJudgeChoice): boolean {
  * default and the current choice are in the list also when the provider does not list them now,
  * such as Cultura Builder with no sign-in.
  */
-export function guardModelRows(
-  models: readonly ClientAgentModelOption[],
-  current: GuardJudgeChoice | null,
-): GuardModelRow[] {
+function guardModelRows(models: readonly ClientAgentModelOption[], current: GuardJudgeChoice | null): GuardModelRow[] {
   const listed = models.flatMap((model) =>
     isAgentProvider(model.provider)
       ? [{ choice: { provider: model.provider, model: model.id }, name: model.name }]

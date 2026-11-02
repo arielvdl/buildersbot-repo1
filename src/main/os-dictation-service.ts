@@ -241,8 +241,3 @@ export function dictationFailureKey(error: unknown): string {
   if (error.code === "too-long") return "error.dictation.tooLong";
   return reasonOf(error.code);
 }
-
-/** Reads the file of a test recording. */
-export async function readRecording(path: string): Promise<Uint8Array> {
-  return readFile(path);
-}

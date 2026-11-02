@@ -1,5 +1,4 @@
 import {
-  NATIVE_SOUND_CHOICES,
   RECENT_SOUND_LIMIT,
   type RecentSound,
   SOUND_EVENT_GROUPS,
@@ -396,4 +395,3 @@ export function SettingsSoundsSection(props: SettingsSoundsSectionProps) {
 }
 
 /** The macOS sounds, for a check that every choice has a name. */
-export const NATIVE_SOUND_NAMES = NATIVE_SOUND_CHOICES;

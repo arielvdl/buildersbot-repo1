@@ -51,7 +51,7 @@ import {
   type ResultBodies,
 } from "@buildersbot/contracts/chrome-bridge/protocol";
 
-export const CONNECTION_LIMITS = {
+const CONNECTION_LIMITS = {
   pendingFrames: 32,
   staleFramesBeforeCommit: 64,
   inFlight: BRIDGE_LIMITS.inFlightTotal,

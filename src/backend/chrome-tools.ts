@@ -15,7 +15,7 @@ import { BROWSER_TOOL_DEFINITIONS, type BrowserToolCall } from "./browser-tools"
 
 export const BUILDERSBOT_CHROME_NAMESPACE = "buildersbot_chrome";
 
-export const CHROME_TOOL_NAMES = [
+const CHROME_TOOL_NAMES = [
   "open",
   "list_tabs",
   "status",

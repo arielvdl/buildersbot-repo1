@@ -71,7 +71,7 @@ export async function registerWebApp(): Promise<void> {
 }
 
 /** Takes the waiting release: the new worker claims the page and the page reloads under it. */
-export function applyWebUpdate(): void {
+function applyWebUpdate(): void {
   if (!waitingWorker) {
     window.location.reload();
     return;
@@ -84,7 +84,7 @@ export function applyWebUpdate(): void {
 }
 
 /** The browser's install prompt, kept until the person takes it. */
-export function watchInstallPrompt(): () => void {
+function watchInstallPrompt(): () => void {
   if (typeof window === "undefined") return () => {};
   const onPrompt = (event: Event) => {
     // Chrome shows a mini-infobar of its own unless the page takes the event.
@@ -105,7 +105,7 @@ export function watchInstallPrompt(): () => void {
 }
 
 /** Asks the browser to install. `false` means it has no prompt now (iOS, or already installed). */
-export async function promptWebInstall(): Promise<boolean> {
+async function promptWebInstall(): Promise<boolean> {
   if (!installEvent) return false;
   const event = installEvent;
   installEvent = null;

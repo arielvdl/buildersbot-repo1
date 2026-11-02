@@ -40,5 +40,3 @@ export function createSidebarTabStripStore() {
 
   return { isExpanded, isOpen, toggle };
 }
-
-export type SidebarTabStripStore = ReturnType<typeof createSidebarTabStripStore>;

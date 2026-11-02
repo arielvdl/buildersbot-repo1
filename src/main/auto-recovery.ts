@@ -212,7 +212,7 @@ export function decideRecovery(
   return agentId ? { type: "reassign", agentId } : { type: "give-up" };
 }
 
-export interface AutoRecoveryPreference {
+interface AutoRecoveryPreference {
   enabled: boolean;
   intervalMinutes: number;
   reassign: boolean;

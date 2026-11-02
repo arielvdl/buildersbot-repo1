@@ -23,10 +23,10 @@ import { type DynamicRecord, isDynamicRecord, isString } from "@buildersbot/cont
 export type PersonalVendorMcpPolicy = "hub-only" | "allowed";
 
 /** The policy of this build. */
-export const PERSONAL_VENDOR_MCP_POLICY: PersonalVendorMcpPolicy = "hub-only";
+const PERSONAL_VENDOR_MCP_POLICY: PersonalVendorMcpPolicy = "hub-only";
 
 /** The name that treg's installer gives its MCP entry. */
-export const TREG_SERVER_NAME = "treg";
+const TREG_SERVER_NAME = "treg";
 
 /** The installer's names that a provider layer always turns off under the policy, also with no file read. */
 export function vendorNamesOff(policy: PersonalVendorMcpPolicy = PERSONAL_VENDOR_MCP_POLICY): string[] {
@@ -37,7 +37,7 @@ export function vendorNamesOff(policy: PersonalVendorMcpPolicy = PERSONAL_VENDOR
 const FILE_LIMIT = 4 * 1024 * 1024;
 
 /** Whether a host is treg's: `treg.to` or a sub-domain of it. */
-export function isTregHost(host: string): boolean {
+function isTregHost(host: string): boolean {
   const name = host.toLowerCase().replace(/\.$/u, "");
   return name === "treg.to" || name.endsWith(".treg.to");
 }
@@ -67,7 +67,7 @@ function programName(command: string): string {
  * a command of treg's own CLI. Only the address fields are read: `url`, `httpUrl`, `serverUrl`,
  * `command` and `args`. Headers and environment values are never read.
  */
-export function isTregEntry(name: string, entry: unknown): boolean {
+function isTregEntry(name: string, entry: unknown): boolean {
   if (name.trim().toLowerCase() === TREG_SERVER_NAME) return true;
   if (!isDynamicRecord(entry)) return false;
   const addresses: string[] = [];
@@ -163,7 +163,7 @@ function firstTomlKey(dotted: string): string {
  * keys (`mcp_servers.treg.url = …`). A small line reader, not a TOML parser: it reads only what it
  * needs to find a name, a URL and a command, and each entry text is read by `isTregEntry`'s rules.
  */
-export function codexTomlServers(text: string): Map<string, string> {
+function codexTomlServers(text: string): Map<string, string> {
   const servers = new Map<string, string>();
   const add = (name: string, line: string) => {
     if (!name) return;
@@ -235,12 +235,12 @@ function configHome(env: NodeJS.ProcessEnv, home: string): string {
 }
 
 /** The Codex user file that the default Codex account reads. */
-export function codexConfigFile(env: NodeJS.ProcessEnv = process.env, home = homedir()): string {
+function codexConfigFile(env: NodeJS.ProcessEnv = process.env, home = homedir()): string {
   return join(env.CODEX_HOME?.trim() || join(home, ".codex"), "config.toml");
 }
 
 /** The global OpenCode files: `OPENCODE_CONFIG`, then `opencode.json`, `opencode.jsonc` and `config.json`. */
-export function openCodeConfigFiles(env: NodeJS.ProcessEnv = process.env, home = homedir()): string[] {
+function openCodeConfigFiles(env: NodeJS.ProcessEnv = process.env, home = homedir()): string[] {
   const folder = join(configHome(env, home), "opencode");
   const own = env.OPENCODE_CONFIG?.trim();
   return [

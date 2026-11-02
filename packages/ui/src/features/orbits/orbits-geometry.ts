@@ -4,7 +4,7 @@
  * a column at the right edge. Pure, so the panel measures once and the frame loop only reads.
  */
 
-export interface OrbitEllipse {
+interface OrbitEllipse {
   rx: number;
   ry: number;
 }
@@ -63,9 +63,9 @@ export interface OrbitPoint {
 }
 
 /** Seconds for one lap of a working agent: fast enough to read as busy. */
-export const ORBIT_LAP_SECONDS = 3.6;
+const ORBIT_LAP_SECONDS = 3.6;
 /** Seconds for one swing of a waiting agent. */
-export const ORBIT_DRIFT_SECONDS = 11;
+const ORBIT_DRIFT_SECONDS = 11;
 const TAU = Math.PI * 2;
 const RING_FLATNESS = 0.36;
 /** The outer ring's top right, under the bubbles: an agent that talks moves there. */

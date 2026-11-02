@@ -69,7 +69,7 @@ export async function appLockSupported(): Promise<boolean> {
   }
 }
 
-export function appLockEnabled(): boolean {
+function appLockEnabled(): boolean {
   return readStored() !== null;
 }
 
@@ -96,7 +96,7 @@ async function verify(credentialId: string): Promise<AppLockResult> {
 }
 
 /** Makes the passkey of this installation. Throws when the device refuses one. */
-export async function createAppLock(label: string): Promise<void> {
+async function createAppLock(label: string): Promise<void> {
   const credential = await navigator.credentials.create({
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
@@ -119,7 +119,7 @@ export async function createAppLock(label: string): Promise<void> {
   writeStored({ credentialId: encode(new Uint8Array(credential.rawId)), createdAt: Date.now() });
 }
 
-export function disableAppLock(): void {
+function disableAppLock(): void {
   writeStored(null);
 }
 

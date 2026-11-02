@@ -188,7 +188,7 @@ const TEXT_ROLES = new Set(["textbox", "searchbox", "combobox"]);
 const MAX_CARD_TEXT = 1_500;
 const MAX_RECIPIENTS = 20;
 
-export function isCommunicationSite(url: string): boolean {
+function isCommunicationSite(url: string): boolean {
   let host: string;
   try {
     const parsed = new URL(url);

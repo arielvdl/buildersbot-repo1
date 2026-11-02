@@ -21,7 +21,7 @@ import {
   state,
   tabsOfProject,
 } from "./state";
-import { chromeErrorText, retryTabEdit } from "./util";
+import { retryTabEdit } from "./util";
 
 const GROUP_COLORS: readonly ProjectColor[] = ["blue", "red", "yellow", "green", "pink", "purple", "cyan", "orange"];
 
@@ -350,9 +350,4 @@ async function settleRemovedGroup(project: Project, oldGroupId: number): Promise
   // tab of a group is not; the next tab makes the group again.
   if (ungrouped > 0 || closedTogether.length >= 2) stopProjectByPerson(project.projectKey, "group");
   emit("group.removed", { projectKey: project.projectKey });
-}
-
-/** Chrome error text that says a group edit failed for a reason other than a drag in progress. */
-export function isGroupGone(error: unknown): boolean {
-  return /No group with id|No tab with id/u.test(chromeErrorText(error));
 }

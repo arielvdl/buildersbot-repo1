@@ -30,7 +30,7 @@ import { markdownPreviewText } from "@buildersbot/contracts/markdown-preview-tex
  * tab shows the same conversation: the preview draws the tab bar and which tab is open, not a
  * transcript per tab.
  */
-export const MOCK_CHANNEL_TOPIC_ID = "mock-channel-topic";
+const MOCK_CHANNEL_TOPIC_ID = "mock-channel-topic";
 
 /** A channel that exists when the preview starts, with its history. */
 export interface MockChannelSeed {

@@ -16,7 +16,7 @@ import type { MailboxStore } from "../backend/mailbox-store";
  * The text that a resumed agent gets in its own chat. It is a prompt to the provider, so it stays in
  * English (docs/i18n.md). Boot recovery never repeats a side effect, and the agent must not either.
  */
-export const RESUME_CONTINUE_TEXT =
+const RESUME_CONTINUE_TEXT =
   "Builders Bot stopped before your last turn was complete. Continue that work from where it stopped. Before you do a step again, make sure that it is not already done.";
 
 /**

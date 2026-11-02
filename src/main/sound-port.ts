@@ -28,7 +28,7 @@ export function setNativeSoundSource(next: NativeSoundSource | null): void {
  * off or has no sound; the macOS default sound; or a named sound of `/System/Library/Sounds`. macOS
  * can still keep it quiet: the Notifications page of System Settings has a sound switch for each app.
  */
-export function nativeSoundOptions(
+function nativeSoundOptions(
   eventId: NativeSoundEventId,
   preference: SoundPreference,
 ): { options: Pick<NotificationConstructorOptions, "silent" | "sound">; outcome: SoundPlayOutcome; sound: string } {

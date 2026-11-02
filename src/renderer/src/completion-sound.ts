@@ -39,10 +39,7 @@ export function playSoundChoice(choice: TaskSoundChoice): void {
  * that a teammate started, and a turn in a channel or task thread are background work, so the person
  * can keep them quiet and still hear the replies to their own messages.
  */
-export function completionSoundEvent(
-  event: AgentEvent,
-  agents: NotificationAgent[],
-): (typeof FINISHED_WORK)[number] | null {
+function completionSoundEvent(event: AgentEvent, agents: NotificationAgent[]): (typeof FINISHED_WORK)[number] | null {
   if (event.type !== "turn-completed" || event.status !== "completed" || event.quiet || event.continues) return null;
   const agent = agents.find((candidate) => candidate.id === event.agentId && candidate.notifications);
   if (!agent) return null;

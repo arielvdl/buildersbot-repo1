@@ -171,7 +171,7 @@ const PASSIVE_ITEMS: ReadonlySet<string> = new Set([
  * Codex's `commandActions` is another reader, and a difference between two readers must not make a
  * step safe.
  */
-export function classifyToolItem(item: ThreadItem): Kind | null {
+function classifyToolItem(item: ThreadItem): Kind | null {
   if (PASSIVE_ITEMS.has(item.type)) return null;
   const bridged = bridgedToolName(item);
   if (bridged) {

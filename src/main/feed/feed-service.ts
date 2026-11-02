@@ -29,9 +29,9 @@ import { redactMcpValues } from "../../backend/mcp-redaction";
 import { FeedAggregator, type FeedLoadWork, feedSimpleQuestion } from "./feed-aggregator";
 
 /** The shortest time between two deltas. */
-export const FEED_BATCH_MS = 1_000 / FEED_DELTAS_PER_SECOND;
+const FEED_BATCH_MS = 1_000 / FEED_DELTAS_PER_SECOND;
 /** How often the load of this computer is read while a window watches. */
-export const FEED_LOAD_MS = 5_000;
+const FEED_LOAD_MS = 5_000;
 const SWEEP_MS = 60_000;
 
 /** A window that shows the feed page. `send` answers false when the window cannot take it any more. */

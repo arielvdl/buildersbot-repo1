@@ -65,11 +65,11 @@ export interface LidAwakeDecision {
 const NONE = { assertion: false, grant: false } as const;
 
 /** Hot enough that macOS slows the computer. The safety service also stops at a thermal warning. */
-export function isTooHot(thermal: ThermalState): boolean {
+function isTooHot(thermal: ThermalState): boolean {
   return thermal === "serious" || thermal === "critical";
 }
 
-export function timeLimitReached(lidClosedSince: number | null, now: number, hours: number): boolean {
+function timeLimitReached(lidClosedSince: number | null, now: number, hours: number): boolean {
   return hours > 0 && lidClosedSince !== null && now - lidClosedSince >= hours * 3_600_000;
 }
 
@@ -77,7 +77,7 @@ export function timeLimitReached(lidClosedSince: number | null, now: number, hou
  * The hours with the lid closed before the mode stops. On battery, the `battery` mode also has the
  * limit of the safety service, so the app stops when the service stops.
  */
-export function effectiveTimeLimitHours(preference: LidAwakePreference, onPowerAdapter: boolean): number {
+function effectiveTimeLimitHours(preference: LidAwakePreference, onPowerAdapter: boolean): number {
   if (preference.mode !== "battery" || onPowerAdapter) return preference.timeLimitHours;
   return preference.timeLimitHours === 0
     ? SERVICE_MAX_CLOSED_HOURS
@@ -128,7 +128,7 @@ export function isActive(state: LidAwakeState): boolean {
 }
 
 /** The service touches `alive` each 15 seconds. After a wake, its next check can be 15 seconds away. */
-export const SERVICE_ALIVE_MAX_AGE_MS = 45_000;
+const SERVICE_ALIVE_MAX_AGE_MS = 45_000;
 
 /**
  * The files of the service can be in place while it does not run: macOS can turn off its background
@@ -216,7 +216,6 @@ export const GRANT_FILE_NAMES = LID_AWAKE_BATTERY_FLOORS.map(grantFileName);
 
 /** The service accepts a grant changed in the last 90 seconds. The app renews it each 30 seconds. */
 export const GRANT_RENEW_MS = 30_000;
-export const GRANT_MAX_AGE_SECONDS = 90;
 
 export const SYSCTL_PATH = "/usr/sbin/sysctl";
 export const SLEEP_WAKE_TIME_ARGS = ["-n", "kern.sleeptime", "kern.waketime"] as const;
@@ -271,14 +270,14 @@ export interface LidTestProgress {
 }
 
 /** The lid must be closed this long while the Mac is on, for a test to pass. */
-export const LID_TEST_MIN_CLOSED_MS = 120_000;
-export const LID_TEST_MAX_MS = 10 * 60_000;
+const LID_TEST_MIN_CLOSED_MS = 120_000;
+const LID_TEST_MAX_MS = 10 * 60_000;
 export const LID_TEST_BEAT_MS = 5_000;
 /**
  * A gap between two records that is longer than this shows that the app did not run: the Mac slept,
  * or the app stopped. Either way, the Mac was not proven on in that time.
  */
-export const LID_TEST_GAP_LIMIT_MS = 3 * LID_TEST_BEAT_MS;
+const LID_TEST_GAP_LIMIT_MS = 3 * LID_TEST_BEAT_MS;
 
 export function startLidTest(sample: LidTestSample): LidTestProgress {
   return { startedAtMs: sample.wallMs, last: sample, closedMs: 0, sleptMs: 0, longestGapMs: 0 };
@@ -312,7 +311,7 @@ export function lidTestDone(progress: LidTestProgress): boolean {
 }
 
 /** Any sleep fails the test, also a short one: a record in a maintenance wake is not a pass. */
-export function lidTestVerdict(progress: LidTestProgress, finished: boolean): LidAwakeTestVerdict {
+function lidTestVerdict(progress: LidTestProgress, finished: boolean): LidAwakeTestVerdict {
   if (!finished) return "running";
   if (progress.sleptMs > 0) return "slept";
   return progress.closedMs >= LID_TEST_MIN_CLOSED_MS ? "stayed-awake" : "lid-not-closed";

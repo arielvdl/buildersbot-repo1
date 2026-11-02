@@ -161,7 +161,7 @@ export const collectBoundedSnapshot = Effect.fn("Browser.collectBoundedSnapshot"
  * The visible text of a document, the text in the viewport first, and whether it has a canvas, a video
  * or a frame. Runs in the automation world.
  */
-export const PAGE_SUMMARY_FUNCTION = `function(maxNodes, maxText) {
+const PAGE_SUMMARY_FUNCTION = `function(maxNodes, maxText) {
         const roots = [document];
         const seen = new Set();
         // Text in the viewport comes first: a dialog is often the last child of the body, and the

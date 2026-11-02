@@ -92,7 +92,7 @@ async function folderBytes(path: string): Promise<number> {
   }
 }
 
-export function candidateId(path: string): string {
+function candidateId(path: string): string {
   return createHash("sha256").update(path).digest("hex").slice(0, 16);
 }
 

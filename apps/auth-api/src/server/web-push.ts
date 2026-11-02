@@ -23,7 +23,7 @@ export interface WebPushSender {
   send(subscription: WebPushSubscription, payload: string): Promise<WebPushResult>;
 }
 
-export type WebPushResult = "sent" | "gone" | "rejected" | "unavailable";
+type WebPushResult = "sent" | "gone" | "rejected" | "unavailable";
 
 /** The push service keeps the message this long for a phone that is off. */
 const TTL_SECONDS = 86_400;

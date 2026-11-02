@@ -196,10 +196,6 @@ export function storyToolCatalogView(state: StoryConnectionState, locale: "en" |
   };
 }
 
-export function storyHubConnectionsView(state: StoryConnectionState, locale: "en" | "pt" = "en"): HubConnectionsView {
-  return { status: "ready", connections: [storyToolCatalogView(state, locale)], readAt: AS_OF };
-}
-
 /** The person's own use in Empresa A, with the platforms of the vendor catalog. */
 export function storyHubConnectionUsage(state: "ok" | "warning" = "warning"): HubConnectionUsageView {
   const settled = state === "warning" ? 20_400_000 : 6_180_000;

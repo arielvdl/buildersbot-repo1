@@ -69,7 +69,7 @@ export function snapshotImageResult(
  * knows: network requests that succeeded, and its own actions that succeeded with no detail. The
  * snapshot tool description says so.
  */
-export function snapshotJson(value: SnapshotToolPayload): string {
+function snapshotJson(value: SnapshotToolPayload): string {
   return JSON.stringify(value, function (this: unknown, key, field: unknown) {
     if (!Array.isArray(field) || !isDynamicRecord(this) || !Array.isArray(this.elements)) return field;
     return key === "elements" ? field.map(elementLine) : field;

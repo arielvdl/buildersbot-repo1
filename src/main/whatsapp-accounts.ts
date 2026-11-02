@@ -78,7 +78,7 @@ const WAZAP_SERVER: McpServerConfig = {
   headers: [],
 };
 
-export interface WazapLaunch {
+interface WazapLaunch {
   command: string;
   path: string | null;
 }

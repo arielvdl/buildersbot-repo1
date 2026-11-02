@@ -43,7 +43,7 @@ export interface RankedSettingsEntry<Entry> {
 }
 
 /** A broad query shows a short list for each group, not every entry. */
-export const SETTINGS_SEARCH_LIMIT = 12;
+const SETTINGS_SEARCH_LIMIT = 12;
 
 /** The catalog key that lists the filler words of a language, separated by commas. */
 const FILLER_WORDS_KEY: AppTextKey = "settings.search.fillerWords";
@@ -61,12 +61,12 @@ const NO_SPACE_SCRIPT = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p
  * text, so a query typed without accents finds the entry. Only the Latin, Greek and Cyrillic accents
  * go; the marks of Japanese kana stay, and NFC joins Korean syllables again.
  */
-export function foldSearchText(value: string): string {
+function foldSearchText(value: string): string {
   return value.normalize("NFD").replace(/[̀-ͯ]/gu, "").normalize("NFC").toLocaleLowerCase().replace(/\s+/gu, " ").trim();
 }
 
 /** The keyword keys of an entry as a list. */
-export function keyList(keys: SettingsSearchKeys["keywordsKey"]): ReadonlyArray<AppTextKey> {
+function keyList(keys: SettingsSearchKeys["keywordsKey"]): ReadonlyArray<AppTextKey> {
   if (keys === undefined) return [];
   return typeof keys === "string" ? [keys] : keys;
 }

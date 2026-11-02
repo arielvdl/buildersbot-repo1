@@ -32,10 +32,10 @@ export interface MockFeedOptions {
 }
 
 /** A card whose id has this mark refuses every action, as main does when the card changed meanwhile. */
-export const MOCK_FEED_REFUSES = ":refuses:";
+const MOCK_FEED_REFUSES = ":refuses:";
 
 /** The fixed time of the fixtures, so the times on the cards do not change. */
-export const MOCK_FEED_NOW = Date.parse("2026-11-02T14:30:00.000Z");
+const MOCK_FEED_NOW = Date.parse("2026-11-02T14:30:00.000Z");
 
 const PROJECTS = [
   { id: "section-hub", name: "Hub" },
@@ -122,7 +122,7 @@ function iso(time: number): string {
 }
 
 /** One card of the fixtures. `index` 0 is the oldest. */
-export function mockFeedItem(
+function mockFeedItem(
   index: number,
   total: number,
   now = MOCK_FEED_NOW,
@@ -366,7 +366,7 @@ export function mockFeedActionItems(now = MOCK_FEED_NOW): FeedItem[] {
 }
 
 /** `count` cards in timeline order, the newest last. */
-export function mockFeedItems(
+function mockFeedItems(
   count: number,
   now = MOCK_FEED_NOW,
   agents: readonly MockFeedAgent[] = MOCK_FEED_AGENTS,

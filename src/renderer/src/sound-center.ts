@@ -12,7 +12,6 @@ import {
   decodeSoundCenterState,
   isAppSoundEventId,
   RECENT_SOUND_LIMIT,
-  SOUND_EVENTS,
   SOUND_THEME_NAMES,
   SOUND_VOLUME_MAX,
   type SoundCenterState,
@@ -179,7 +178,7 @@ const LEGACY_THEMES = SOUND_THEME_NAMES;
  * The preference that the choices of the versions before the sound center give: the task sound for
  * finished work, and the old "Sound feedback" choice for the cues.
  */
-export function preferenceFromLegacy(read: (key: string) => string | null = readLegacy): SoundPreference {
+function preferenceFromLegacy(read: (key: string) => string | null = readLegacy): SoundPreference {
   const events: SoundPreference["events"] = {};
   const set = (id: SoundEventId, enabled: boolean, sound: string) => {
     events[id] = { enabled, sound, volume: SOUND_VOLUME_MAX, customSoundId: null };
@@ -426,7 +425,7 @@ async function render(id: AppSoundEventId, event: SoundEventPreference, options:
 let context: AudioContext | undefined;
 
 /** The one audio context of the app sounds, so that each sound does not keep its own output open. */
-export async function appSoundContext(): Promise<AudioContext> {
+async function appSoundContext(): Promise<AudioContext> {
   try {
     context ??= new AudioContext();
     if (context.state === "suspended") await context.resume();
@@ -564,4 +563,3 @@ async function playCustom(id: string, gain: number): Promise<void> {
 }
 
 /** The events of the Sounds section, in the order of the registry. */
-export const SOUND_CENTER_EVENTS = SOUND_EVENTS;

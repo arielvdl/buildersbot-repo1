@@ -9,7 +9,7 @@ import { storedIO, storedSync } from "../stored-state-effects";
 import { databaseRow, errorCode, requiredNumberColumn, requiredStringColumn } from "./database-rows";
 
 /** The SQLite database file of the profile. */
-export const DATABASE_FILE = "buildersbot.db";
+const DATABASE_FILE = "buildersbot.db";
 
 export interface OrchestrationEventInput {
   aggregateType: string;

@@ -21,15 +21,6 @@ export function pushSupported(): boolean {
   );
 }
 
-/** Whether this installation asked for notifications before. The subscription is checked separately. */
-export function pushAsked(): boolean {
-  try {
-    return window.localStorage.getItem(PUSH_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
 function remember(on: boolean): void {
   try {
     if (on) window.localStorage.setItem(PUSH_KEY, "1");

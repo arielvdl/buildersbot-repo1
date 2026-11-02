@@ -11,7 +11,7 @@
 
 import { isDynamicRecord } from "@buildersbot/contracts/runtime-values";
 
-export type RpcKind = "initialize" | "tab-new" | "tab-close";
+type RpcKind = "initialize" | "tab-new" | "tab-close";
 
 export interface RpcEntry {
   id: number | string | null;

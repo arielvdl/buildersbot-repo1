@@ -29,7 +29,7 @@ import { isBalanceDiagnostic, isPlanLimitDiagnostic, isUsageLimitDiagnostic } fr
  * `retry`: a brief failure that a wait can fix. `fallback`: a failure of the provider or the model,
  * which a wait does not fix, but another model can. `terminal`: nothing that the app tries fixes it.
  */
-export type StartFailureClass = "retry" | "fallback" | "terminal";
+type StartFailureClass = "retry" | "fallback" | "terminal";
 
 export interface StartFailure {
   class: StartFailureClass;
@@ -172,7 +172,7 @@ const RELATIVE = /\b(?:try again|resets?) in\s+(?:(\d+)\s*h(?:ours?)?)?\s*(?:(\d
  * "resets 8:40pm" are read in the local time of this computer, as the CLI writes them; "resets in 2h
  * 10m" is read from now.
  */
-export function resetAtMs(message: string, now = Date.now()): number | null {
+function resetAtMs(message: string, now = Date.now()): number | null {
   const relative = RELATIVE.exec(message);
   if (relative && (relative[1] || relative[2])) {
     const ms = (Number(relative[1] ?? 0) * 60 + Number(relative[2] ?? 0)) * 60_000;

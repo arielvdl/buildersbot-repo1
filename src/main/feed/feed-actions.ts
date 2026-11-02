@@ -34,7 +34,7 @@ import {
 import { feedApprovalHighRisk } from "./feed-aggregator";
 
 /** A request that waits for the person now, as the attention registry holds it. */
-export type FeedPendingRequest =
+type FeedPendingRequest =
   | {
       kind: "approval";
       requestId: string | number;

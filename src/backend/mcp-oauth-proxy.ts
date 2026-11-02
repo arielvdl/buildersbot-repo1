@@ -73,7 +73,7 @@ export interface McpOAuthProxyOptions {
 }
 
 /** The `fetch` that reaches the MCP server. */
-export type UpstreamFetch = (input: URL, init: RequestInit) => Promise<Response>;
+type UpstreamFetch = (input: URL, init: RequestInit) => Promise<Response>;
 
 /** The client that a server sees: Builders Bot, and the agent of the route when it has one. */
 interface McpOAuthProxyClient {

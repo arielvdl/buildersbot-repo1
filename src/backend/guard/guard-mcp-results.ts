@@ -47,7 +47,7 @@ const KEY_LIMIT = 16;
  * and not as text inside a page, and it counts the characters of base64 data (`content[].data` and
  * `content[].resource.blob`). Text before the first `{` or `[`, such as `data:` of an event, is skipped.
  */
-export class JsonCursor {
+class JsonCursor {
   readonly #stack: JsonFrame[] = [];
   #read = 0;
   #started = false;
@@ -140,7 +140,7 @@ export class JsonCursor {
  * no content list of a result. The list is found by the structure of the message, because the rest
  * of it has not arrived: `"result"` inside the text of a page is not the result.
  */
-export function withLeadingNote(prefix: string, notice: string, cursor?: JsonCursor): string | null {
+function withLeadingNote(prefix: string, notice: string, cursor?: JsonCursor): string | null {
   let reader = cursor;
   if (!reader) {
     reader = new JsonCursor();

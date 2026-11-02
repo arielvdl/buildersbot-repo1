@@ -11,19 +11,12 @@ export class BridgeError extends Error {
   }
 }
 
-export function bytesToBase64Url(bytes: Uint8Array): string {
+function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (let index = 0; index < bytes.length; index += 0x8000) {
     binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
   }
   return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
-}
-
-export function base64UrlToBytes(text: string): Uint8Array {
-  const binary = atob(text.replaceAll("-", "+").replaceAll("_", "/"));
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  return bytes;
 }
 
 /** A 128-bit opaque value in base64url (22 characters): tab handles and install ids. */

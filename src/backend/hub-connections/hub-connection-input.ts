@@ -18,7 +18,7 @@ import { findSecretValue } from "@buildersbot/logging";
 import { cookieOrToken } from "../guard/guard-triage";
 import { isPublicAddress } from "../network-address";
 
-export const INPUT_RULES = [
+const INPUT_RULES = [
   "too_large",
   "too_deep",
   "not_an_object",
@@ -45,7 +45,7 @@ export interface InputRefusal {
 }
 
 /** Fields that only the main process may set. The router drops them from an agent's input. */
-export const MAIN_PROCESS_FIELDS = ["confirmationId", "maxCostMicros"] as const;
+const MAIN_PROCESS_FIELDS = ["confirmationId", "maxCostMicros"] as const;
 
 /**
  * Names that hold a credential, a cookie or a session, after case and `-`/`_`/`.` are removed. Whole
@@ -182,7 +182,7 @@ export function isSignedQueryName(name: string): boolean {
  * dot in its name, no user or password, and no signature in the query. The Hub resolves the name and
  * checks the address again; the app refuses what it can see without a lookup.
  */
-export function isUrlAllowed(text: string): boolean {
+function isUrlAllowed(text: string): boolean {
   if (text.length > 2048) return false;
   // A protocol-relative URL (`//host/path`) takes the scheme of whatever reads it.
   if (text.trimStart().startsWith("//")) return false;
@@ -225,7 +225,7 @@ function depthOf(value: unknown, limit: number): number {
 }
 
 /** Size and nesting of a whole input, before any schema is read. */
-export function checkInputShape(input: unknown): InputRefusal | null {
+function checkInputShape(input: unknown): InputRefusal | null {
   let text: string;
   try {
     text = JSON.stringify(input) ?? "";
@@ -239,7 +239,7 @@ export function checkInputShape(input: unknown): InputRefusal | null {
 }
 
 /** Walks every key and string of a value: credential names and secret, cookie or token values. */
-export function checkSecrets(value: unknown, path: string): InputRefusal | null {
+function checkSecrets(value: unknown, path: string): InputRefusal | null {
   if (isString(value)) {
     const rule = valueRule(value);
     return rule ? { rule, field: path || null } : null;
@@ -308,7 +308,7 @@ function checkParam(schema: HubParamSchema, value: unknown, field: string): Inpu
 }
 
 /** A value against a closed object schema: no field that the schema does not declare. */
-export function checkObject(schema: HubObjectSchema, value: unknown, path: string): InputRefusal | null {
+function checkObject(schema: HubObjectSchema, value: unknown, path: string): InputRefusal | null {
   if (!isDynamicRecord(value)) return { rule: "not_an_object", field: path || null };
   for (const name of Object.keys(value)) {
     if (!Object.hasOwn(schema.properties, name))

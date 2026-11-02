@@ -48,8 +48,6 @@ import { maskedResultJson, maskedResultText, maskResultValue } from "./result-ma
 import { CONNECTION_ORIGINS, type HubTurnOrigin } from "./turn-origin";
 import { hasVendorPhrase } from "./vendor-lines";
 
-export { type HubDeliveryOrigin, type HubTurnOrigin, hubTurnOrigin } from "./turn-origin";
-
 const NO_CONNECTIONS: readonly string[] = [];
 
 /** The `input` object of a call, as the tool schema parsed it. Each operation reads its own fields. */
@@ -64,13 +62,13 @@ export interface HubConnectionContext {
 }
 
 /** The person's answer on an approval card. `cancel`: the turn ended, and nobody waits. */
-export type HubConnectionAnswer = "accept" | "decline" | "cancel";
+type HubConnectionAnswer = "accept" | "decline" | "cancel";
 
 /** Shows one approval card with this reason and waits for the person. Only the owner may answer. */
 export type HubConnectionAsk = (reason: string) => Effect.Effect<HubConnectionAnswer>;
 
 /** The Guard check of what a call sends out. `result` answers the agent; null means nobody waits. */
-export type HubConnectionGuard = () => Effect.Effect<
+type HubConnectionGuard = () => Effect.Effect<
   { readonly proceed: true } | { readonly proceed: false; readonly result: DynamicToolResult | null }
 >;
 
@@ -79,7 +77,7 @@ export type HubConnectionGuard = () => Effect.Effect<
  * of the cap, or a call that the cap stopped. Only for the person's own turns and routines: a turn that
  * another agent started gets no amounts.
  */
-export type HubConnectionNotify = (event: HubConnectionChatEvent) => void;
+type HubConnectionNotify = (event: HubConnectionChatEvent) => void;
 
 /** What the router gives each call: the approval card and the Guard, both of the router's own path. */
 export interface HubConnectionHooks {
@@ -112,9 +110,9 @@ type ConnectionAccess =
 const logger = createBuildersBotLogger("hub-connections");
 
 /** The most calls of one connection in one turn, and of all agents of this computer in one hour. */
-export const HUB_CALL_LIMITS = { perTurn: 20, lookupsPerTurn: 40, perHour: 200, page: 30_000 } as const;
+const HUB_CALL_LIMITS = { perTurn: 20, lookupsPerTurn: 40, perHour: 200, page: 30_000 } as const;
 /** How long tool discovery waits for `/session` before it answers without the connection tools. */
-export const DISCOVERY_WAIT_MS = 750;
+const DISCOVERY_WAIT_MS = 750;
 /** A confirmation id is good for 5 minutes at most, whatever the Hub says. */
 const CONFIRMATION_MS = 5 * 60_000;
 /** How often the app reads the state of a cost approval while the person decides on the Hub page. */
@@ -173,7 +171,7 @@ export const CONTACT_DATA_NOTE =
   "Unverified contact data: this result holds emails or phone numbers that a provider found or guessed. They are not facts. Do not send a message, an email or an invitation to any of them unless the person asks for that address.";
 
 /** Whether a result text holds an email or a phone number. */
-export function holdsContactData(text: string): boolean {
+function holdsContactData(text: string): boolean {
   return EMAIL.test(text) || PHONE.test(text);
 }
 
@@ -210,7 +208,7 @@ function escapedJson(value: unknown): string {
 }
 
 /** Text from outside, as the agent reads it: a data block that says it is untrusted. */
-export function connectionEnvelope(attributes: Record<string, string>, body: string): string {
+function connectionEnvelope(attributes: Record<string, string>, body: string): string {
   const attrs = Object.entries(attributes)
     .filter(([, value]) => ENDPOINT_ATTR.test(value))
     .map(([name, value]) => ` ${name}="${value}"`)
@@ -219,7 +217,7 @@ export function connectionEnvelope(attributes: Record<string, string>, body: str
 }
 
 /** Amounts for the person, cut down to cents as the Hub contract says. */
-export function formatConnectionMoney(micros: number, currency: string): string {
+function formatConnectionMoney(micros: number, currency: string): string {
   const cents = Math.floor(micros / 10_000);
   let formatter: Intl.NumberFormat;
   try {
