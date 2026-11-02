@@ -9,8 +9,12 @@
 - The Builders Bot Chrome extension can now connect to the app with no token and no network port:
   through a small signed program in the app and a private, encrypted channel. You pair a Chrome
   profile with two taps: one on the words in the app, and one on the words in Chrome. Nothing is
-  copied or typed. The app package does not hold that program yet.
-- Settings > General has a new switch, off by default: "Let agents use my Chrome (beta)". On,
+  copied or typed. The app package holds the program and the extension for a locally signed build.
+- The Builders Bot extension is the default way to the web, and Playwright is the alternative that
+  you can turn off in Settings. An agent that finds the extension not connected says so and offers
+  to install it. In a development build, or with an installed app, the extension is loaded unpacked
+  in Developer mode; the app writes the link that lets Chrome start it at each start.
+- Settings > General has the switch "Use the Builders Bot extension in my Chrome", on by default. On,
   agents work in tabs of your own Chrome through the Builders Bot extension. Each project gets a tab
   group with its name, an agent keeps its tabs from one turn to the next, and tabs open in the
   background without taking the focus. Banks, password vaults and government sites stay blocked, an
@@ -41,5 +45,5 @@
 
 - One slow page in your Chrome no longer cuts the connection for every agent.
 - The connection renews its keys once a day without failing an agent's action.
-- Turning "Let agents use my Chrome" off removes the link that lets Chrome start Builders Bot. Builders
-  Bot writes that link back when another program changes it.
+- Turning the extension off removes the link that lets Chrome start Builders Bot. Builders Bot writes
+  that link back at each start in Chrome mode, and repairs it when another program changes it.

@@ -667,6 +667,8 @@ phone and tabs that outlive a restart. The switch and the Builders Bot browser s
 of three; turning one on turns the other off, and the Playwright row leaves the providers in both
 (`applyBrowserAccess`). A change refreshes every agent (`AgentService.notifyWebAccessChanged`).
 Turning Chrome mode off closes the bridge socket; the tabs stay in Chrome, and the pairing stays.
+The "Open Builders Bot" button of the extension's welcome page is `buildersbot://browser/connect`: it
+selects Chrome mode if another route was chosen, then opens the pairing.
 
 | Part | Where | What it does |
 | --- | --- | --- |

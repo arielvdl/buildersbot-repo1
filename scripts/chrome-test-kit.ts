@@ -19,7 +19,7 @@
  * can run again at any time: each run replaces the earlier build, and Chrome then needs a click on the
  * extension's reload button. It checks that each extension ID from its manifest key is the one that the
  * host of its channel accepts. It never writes into a Chrome folder: only the app writes the Native
- * Messaging manifest, after the person turns on "Let agents use my Chrome".
+ * Messaging manifest; the extension is on by default, and the app writes it at each start.
  */
 
 import { execFileSync } from "node:child_process";
@@ -86,9 +86,9 @@ recarregar (↻) no cartão da extensão em chrome://extensions.
 
    (Para usar o perfil de desenvolvimento que você já usa, acrescente \`--shared\` no fim.)
 
-2. No app: Configurações > Geral > ligue "Deixar os agentes usarem o meu Chrome (beta)".
-   Ligar é o "Conectar Chrome": o app grava o arquivo que deixa o Chrome abrir o Builders Bot e
-   espera o pareamento por 2 minutos.
+2. No app: Configurações > Geral > "Usar a extensão do Builders Bot no meu Chrome" já vem ligada.
+   O app grava o arquivo que deixa o Chrome abrir o Builders Bot. Para abrir o pareamento agora,
+   desligue e ligue a opção; ela espera o pareamento por 2 minutos.
 
 3. Em até 2 minutos, no Chrome: chrome://extensions > Modo do desenvolvedor ligado >
    "Carregar sem compactação" > escolha esta pasta:
@@ -118,8 +118,8 @@ Só para um app feito por \`bun run package:signed\` (ou \`bun run package:insta
 versão: ele leva o host e a checagem dentro do pacote e não precisa do modo de desenvolvimento.
 
 1. Remova a extensão "Builders Bot (Dev)" do Chrome, se estiver lá, e feche o app em desenvolvimento.
-2. Abra o Builders Bot instalado (em Aplicativos). Configurações > Geral > ligue "Deixar os agentes
-   usarem o meu Chrome (beta)".
+2. Abra o Builders Bot instalado (em Aplicativos). Configurações > Geral > "Usar a extensão do
+   Builders Bot no meu Chrome" já vem ligada; desligue e ligue para abrir o pareamento.
 3. Em até 2 minutos: chrome://extensions > "Carregar sem compactação" > esta pasta:
 
        ${paths.extensionLocal}
