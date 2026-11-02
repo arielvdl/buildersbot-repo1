@@ -3308,15 +3308,35 @@ export class ChannelService {
   ): Effect.fn.Return<unknown, ChannelOperationError> {
     const channel = yield* channelSync(() => this.store.get(channelId));
     yield* channelSync(() => this.requireMember(channel, agentId));
-    const assignment = (yield* channelSync(() => this.store.assignments(channelId))).find(
-      (item) => item.agentId === agentId && item.turnId === turnId && activeAssignment(item),
-    );
-    if (!assignment || channel.archived)
-      return yield* channelFailure(new Error("The channel assignment is no longer active."));
+    const findAssignment = () =>
+      channelSync(() => this.store.assignments(channelId)).pipe(
+        Effect.map((all) => all.find((item) => item.agentId === agentId && item.turnId === turnId)),
+      );
+    let assignment = yield* findAssignment();
+    // The provider can call a tool a moment before `accepted` links its turn to the assignment.
+    // The assignment of this agent that has no turn yet is that case: wait for the link a short time.
+    for (let wait = 0; wait < TURN_LINK_RETRIES && !assignment && !channel.archived; wait++) {
+      const unlinked = (yield* channelSync(() => this.store.assignments(channelId))).some(
+        (item) => item.agentId === agentId && item.turnId === null && activeAssignment(item),
+      );
+      if (!unlinked) break;
+      yield* Effect.sleep(TURN_LINK_WAIT_MS);
+      assignment = yield* findAssignment();
+    }
+    if (!assignment || !activeAssignment(assignment) || channel.archived)
+      return inactiveAssignment(
+        channel.archived
+          ? "channel_archived"
+          : !assignment
+            ? "turn_not_linked"
+            : assignment.state === "interrupted"
+              ? "stopped_or_replaced"
+              : assignment.state,
+      );
     const tasks = yield* channelSync(() => this.store.tasks(channelId));
     const task = tasks.find((item) => item.id === assignment.taskId);
     if (!task || task.revision !== assignment.taskRevision || task.state !== "running")
-      return yield* channelFailure(new Error("The channel task has changed."));
+      return inactiveAssignment("task_changed");
     if (!isDynamicRecord(args)) return yield* channelFailure(new Error("Provide channel tool arguments."));
     if (CHANNEL_MANAGEMENT_TOOLS.has(tool)) {
       const person = channelRequester(task, tasks, (messageId) => this.store.message(channelId, messageId));
@@ -4134,6 +4154,22 @@ function routingFailureText(error: unknown): string | null {
 
 function terminal(task: ChannelTask): boolean {
   return task.state === "completed" || task.state === "cancelled";
+}
+/** A tool call may reach the service just before the turn is linked to its assignment. */
+const TURN_LINK_RETRIES = 5;
+const TURN_LINK_WAIT_MS = 200;
+/**
+ * The answer to a channel tool call from a turn whose assignment has ended. It is a plain result,
+ * not an error: the member then ends its turn at once, with no retry and no failure card. The
+ * reason tells why, so each cause of an ended assignment can be counted.
+ */
+function inactiveAssignment(reason: string): { accepted: false; reason: string; instruction: string } {
+  return {
+    accepted: false,
+    reason,
+    instruction:
+      "Your channel assignment has ended (stopped, replaced by a newer request, or restarted). Do not call another channel tool and do not repeat the work. End your turn now with no more text.",
+  };
 }
 /** The states in which an assignment still holds the host. */
 const ACTIVE_ASSIGNMENT_STATES: readonly ChannelAssignment["state"][] = ["starting", "running", "queued"];

@@ -257,6 +257,20 @@ describe("closing a channel tab", () => {
     const historyMessages = decodeChannelPage(history).messages.map((message) => message.message.text);
     expect(historyMessages).toContain("Do it");
     expect(historyMessages).toContain("Done.");
+
+    // A late call from a turn that no assignment owns is a plain result with a reason, not an error.
+    const stray = await Effect.runPromise(
+      service.tool(channelId, "writer", "turn-gone", "call-4", "channel_result", { text: "Late." }),
+    );
+    expect(stray).toMatchObject({ accepted: false, reason: "turn_not_linked" });
+    // The same for a turn whose assignment ended: it is told to stop, not to retry.
+    const current = service.store.assignments(channelId).find((entry) => entry.id === assignment.id);
+    if (!current) throw new Error("the assignment is gone");
+    service.store.update(service.store.get(channelId), { assignments: [{ ...current, state: "interrupted" }] });
+    const ended = await Effect.runPromise(
+      service.tool(channelId, "writer", "turn-1", "call-5", "channel_result", { text: "Late." }),
+    );
+    expect(ended).toMatchObject({ accepted: false, reason: "stopped_or_replaced" });
   });
 
   it("requeues a task of another tab that waited on a deleted one", async () => {
