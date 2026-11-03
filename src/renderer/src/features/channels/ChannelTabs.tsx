@@ -12,6 +12,7 @@ import {
 import { useText } from "@buildersbot/ui/text";
 import { createEffect, createMemo, createSignal, createStore, For, flush, Show } from "solid-js";
 import { channelTabAgeLabel } from "./channel-tab-age-label";
+import { useNewTabShortcut } from "../../new-tab-shortcut";
 import {
   channelTabClose,
   channelTabDetails,
@@ -139,6 +140,12 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
     // The name follows the position, so two new tabs are told apart before either is renamed.
     await channels.createTopic(t("channel.topic.defaultName", { n: topics().length + 1 }));
   }
+
+  // The key of a new tab in other browsers, as in the full browser view.
+  useNewTabShortcut(
+    () => void add(),
+    () => !props.archived,
+  );
 
   /** Puts a tab at `to` and keeps the order on this device. */
   function reorder(topicId: string, to: number): void {

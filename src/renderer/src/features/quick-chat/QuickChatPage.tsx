@@ -11,6 +11,7 @@ import {
 import { useText } from "@buildersbot/ui/text";
 import { createEffect, createMemo, createSignal, Match, onCleanup, onSettled, Show, Switch, untrack } from "solid-js";
 import { actionToast } from "../../action-toast";
+import { useNewTabShortcut } from "../../new-tab-shortcut";
 import { useAgentTasks } from "../agent-tasks/agent-tasks-context";
 import { useAgentThreads } from "../agent-threads/agent-threads-context";
 import { useAgents } from "../agents/agents-context";
@@ -106,6 +107,17 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   onCleanup(quick.close);
 
   const agentId = () => quick.agent()?.id;
+  /** Opens a new conversation of the Quick chat agent. */
+  const startNewConversation = () => {
+    const id = agentId();
+    if (!id) return;
+    setCalled(null);
+    runtime.resetDraft();
+    tabs.startNew(id);
+  };
+  // The key of a new tab in other browsers, as in the full browser view.
+  useNewTabShortcut(startNewConversation);
+
   /** The agents that a message can call: the ones that the person sees. The Quick chat agent is in no list. */
   const mentionable = () => agentList().filter((agent) => !userHiddenAgentIds().has(agent.id));
 
@@ -376,13 +388,7 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
               setCalled(item.agentId === agentId() ? null : { agentId: item.agentId, taskId: item.taskId });
               tabs.open(item.agentId, item.taskId);
             }}
-            onNew={() => {
-              const id = agentId();
-              if (!id) return;
-              setCalled(null);
-              runtime.resetDraft();
-              tabs.startNew(id);
-            }}
+            onNew={startNewConversation}
             onArchive={(item) => void tabs.archive(item.agentId, item.taskId)}
             onRestore={(item) => void tabs.restore(item.agentId, item.taskId)}
             onRestoreMany={async (items) => {
