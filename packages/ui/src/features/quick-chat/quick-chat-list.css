@@ -397,7 +397,9 @@
   font-weight: var(--buildersbot-weight-medium);
   line-height: 1.4;
   text-overflow: ellipsis;
-  vertical-align: 1px;
+  /* `overflow: hidden` moves an inline block's baseline to its bottom edge, so a pixel offset left
+   * the chip raised above the text. `middle` centers it on the line. */
+  vertical-align: middle;
   white-space: nowrap;
 }
 
@@ -422,9 +424,19 @@
   margin-inline-start: auto;
 }
 
-/* The dialog that names a tag and picks its color. */
-.quick-tag-dialog {
+/* The dialog that names a tag and picks its color. It has the surface of the confirmation dialog
+ * (`primitives.css`): `.ui-dialog-content` alone has no background, so the page showed through. */
+.ui-dialog-content.quick-tag-dialog {
   width: min(22rem, calc(100vw - 2rem));
+  box-sizing: border-box;
+  padding: var(--buildersbot-space-4);
+  outline: 0;
+  border: 1px solid var(--buildersbot-dialog-ring);
+  border-radius: var(--buildersbot-radius-xl);
+  background: var(--buildersbot-bg-sidebar);
+  box-shadow: none;
+  color: var(--buildersbot-text-primary);
+  animation: ui-confirm-dialog-in var(--buildersbot-duration-slow) var(--buildersbot-ease-out);
 }
 
 .quick-tag-form {
