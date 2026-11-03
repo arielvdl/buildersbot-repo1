@@ -6,6 +6,7 @@
  * One attribute on its root pauses every loop while it is off screen or the window is hidden.
  */
 
+import { avatarMarkAccent } from "@buildersbot/brand/agent-mark";
 import type { JSX } from "@solidjs/web";
 import { createEffect, createMemo, createSignal, For, onSettled, Show, untrack } from "solid-js";
 import { observeOnScreen } from "../agents/AgentAvatar";
@@ -14,6 +15,7 @@ import { type StageLinkData, StageLinks } from "./StageLinks";
 import { StageTable } from "./StageTable";
 import { type StageGeometry, seatPoint, stageGeometry } from "./stage-geometry";
 import { observeSize } from "./stage-observers";
+import { pickScanFocus } from "./stage-scan";
 
 /** Up to this many agents, each has a bubble. Above it, only the first few (the ones that need attention). */
 const BUBBLE_ALL = 4;
@@ -81,6 +83,20 @@ export function StageBoard(props: StageBoardProps) {
     props.actors.some(
       (actor) => actor.activity !== "waiting" && actor.activity !== "failed" && actor.activity !== "done",
     );
+  const scanFocus = createMemo(
+    () =>
+      props.scan === true
+        ? pickScanFocus(
+            props.actors.map((actor) => ({
+              id: actor.id,
+              color: avatarMarkAccent(actor.hue),
+              seat: actor.seat,
+              activity: actor.activity,
+            })),
+          )
+        : null,
+    { equals: (a, b) => a?.id === b?.id && a?.seat === b?.seat && a?.color === b?.color },
+  );
   const find = (id: string | null) => (id === null ? undefined : props.actors.find((actor) => actor.id === id));
 
   return (
@@ -92,7 +108,7 @@ export function StageBoard(props: StageBoardProps) {
       data-paused={paused() ? "" : undefined}
     >
       <Show when={ready()}>
-        <StageTable geometry={geometry()} scan={props.scan} working={working()} />
+        <StageTable geometry={geometry()} scan={props.scan} working={working()} focus={scanFocus()} />
         {props.overlay?.(geometry())}
         <StageLinks links={props.links ?? []} actors={props.actors} geometry={geometry()} />
         <ul class="agent-stage-actors">

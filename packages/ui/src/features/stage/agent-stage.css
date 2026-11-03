@@ -39,7 +39,9 @@
 
 /*
  * The scan of the table (`StageTable`, `scan`): while an agent works, a thin laser crosses the table, and the cells it
- * passes glow a little and fade behind it. One cycle is 26 s: a 9 s pass from the back to the front, a 4 s rest, a 9 s
+ * passes glow a little and fade behind it. It has the color of the agent that does the work, and it crosses from the
+ * seat of that agent (`--agent-stage-scan-color`, and `--agent-stage-scan-tx` and `-ty`, the way across in the units of
+ * the drawing). One cycle is 26 s: a 9 s pass from the back to the front, a 4 s rest, a 9 s
  * pass back, a 4 s rest. The percentages below are those seconds over 26. The laser moves `transform` and `opacity`
  * only; each cell moves `opacity` only. The group shows while `data-working` is on the table and fades out in 1.5 s
  * when it goes; the loops stand still then, and while the stage is off screen.
@@ -54,8 +56,12 @@
   opacity: 1;
 }
 
+.agent-stage-table[data-working] .agent-stage-scan[data-switching] {
+  opacity: 0;
+}
+
 .agent-stage-scan-cell {
-  fill: var(--buildersbot-accent);
+  fill: var(--agent-stage-scan-color, var(--buildersbot-accent));
   opacity: 0;
   animation: agent-stage-scan-glow 26s linear infinite paused;
 }
@@ -66,12 +72,18 @@
 }
 
 .agent-stage-scan-halo {
-  fill: var(--buildersbot-accent);
+  stroke: var(--agent-stage-scan-color, var(--buildersbot-accent));
+  stroke-width: 4.6;
   opacity: 0.2;
 }
 
 .agent-stage-scan-ray {
-  fill: var(--buildersbot-accent-text);
+  stroke: color-mix(
+    in oklab,
+    var(--agent-stage-scan-color, var(--buildersbot-accent-text)) 70%,
+    var(--buildersbot-text-primary)
+  );
+  stroke-width: 1.4;
 }
 
 .agent-stage-table[data-working] .agent-stage-scan-cell,
@@ -106,7 +118,7 @@
 @keyframes agent-stage-scan-sweep {
   0% {
     opacity: 0;
-    transform: translateY(0);
+    transform: translate(0, 0);
   }
 
   1.9% {
@@ -115,37 +127,37 @@
 
   34.6% {
     opacity: 0.8;
-    transform: translateY(var(--agent-stage-scan-travel));
+    transform: translate(var(--agent-stage-scan-tx), var(--agent-stage-scan-ty));
   }
 
   36.2% {
     opacity: 0;
-    transform: translateY(var(--agent-stage-scan-travel));
+    transform: translate(var(--agent-stage-scan-tx), var(--agent-stage-scan-ty));
   }
 
   50% {
     opacity: 0;
-    transform: translateY(var(--agent-stage-scan-travel));
+    transform: translate(var(--agent-stage-scan-tx), var(--agent-stage-scan-ty));
   }
 
   51.9% {
     opacity: 0.8;
-    transform: translateY(var(--agent-stage-scan-travel));
+    transform: translate(var(--agent-stage-scan-tx), var(--agent-stage-scan-ty));
   }
 
   84.6% {
     opacity: 0.8;
-    transform: translateY(0);
+    transform: translate(0, 0);
   }
 
   86.2% {
     opacity: 0;
-    transform: translateY(0);
+    transform: translate(0, 0);
   }
 
   100% {
     opacity: 0;
-    transform: translateY(0);
+    transform: translate(0, 0);
   }
 }
 
@@ -909,7 +921,7 @@
 @keyframes agent-stage-levitate {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translate(0, 0);
   }
 
   50% {
