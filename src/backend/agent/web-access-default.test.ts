@@ -60,6 +60,16 @@ describe("web access when the Builders Bot extension is the default", () => {
     expect(text).toContain("buildersbot_browser is Builders Bot's own persistent browser, the fallback");
     expect(text).toContain("request_takeover");
   });
+
+  it("does not let the agent pick the Builders Bot browser while the extension is connected", () => {
+    const text = instructions();
+    expect(text).toContain("do every web step in buildersbot_chrome, also a page that needs a sign-in");
+    expect(text).toContain("to keep the person's Chrome session untouched");
+    expect(text).toContain("only for what the Chrome tools cannot do");
+    expect(toolGuidance("buildersbot_browser", "snapshot").join("\n")).toContain(
+      "never to keep the person's Chrome session untouched",
+    );
+  });
 });
 
 describe("web access when the person chooses another route in Settings", () => {
