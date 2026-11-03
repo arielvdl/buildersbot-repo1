@@ -73,20 +73,23 @@ export function createQuickChatRuntime(options: QuickChatRuntimeOptions) {
   /** A choice that was sent and that the task list has not shown yet. */
   const [pending, setPending] = createSignal<{ taskId: string; runtime: QuickChatRuntime } | undefined>(undefined);
 
-  const defaultRuntime = createMemo<QuickChatRuntime | undefined>(() => {
+  /** The model that runs a conversation with no model of its own: the one of the agent. */
+  const agentRuntime = createMemo<QuickChatRuntime | undefined>(() => {
     const agent = options.agent();
-    return lastUsed() ?? (agent ? quickChatRuntimeOf(agent) : undefined);
+    return agent ? quickChatRuntimeOf(agent) : undefined;
   });
+  /** Where a new conversation starts: the last model used, until the agent is read again. Never for a saved conversation. */
+  const newConversationRuntime = () => lastUsed() ?? agentRuntime();
 
   /** The model of what the page shows now: the open conversation, or the draft. */
   const current = createMemo<QuickChatRuntime | undefined>(() => {
     const open = options.open();
     if (open === undefined) return undefined;
-    if (open === null) return draft() ?? defaultRuntime();
+    if (open === null) return draft() ?? newConversationRuntime();
     const choice = pending();
     if (choice?.taskId === open.id && !(open.runtime && sameRuntime(open.runtime, choice.runtime)))
       return choice.runtime;
-    return open.runtime ?? defaultRuntime();
+    return open.runtime ?? agentRuntime();
   });
 
   /** The agent for the header, or the agent itself while its model is not known. */
