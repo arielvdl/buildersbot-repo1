@@ -37,6 +37,118 @@
   opacity: 0.6;
 }
 
+/*
+ * The scan of the table (`StageTable`, `scan`): while an agent works, a thin laser crosses the table, and the cells it
+ * passes glow a little and fade behind it. One cycle is 26 s: a 9 s pass from the back to the front, a 4 s rest, a 9 s
+ * pass back, a 4 s rest. The percentages below are those seconds over 26. The laser moves `transform` and `opacity`
+ * only; each cell moves `opacity` only. The group shows while `data-working` is on the table and fades out in 1.5 s
+ * when it goes; the loops stand still then, and while the stage is off screen.
+ */
+.agent-stage-scan {
+  --agent-stage-scan-fade: 1.5s;
+  opacity: 0;
+  transition: opacity var(--agent-stage-scan-fade) ease;
+}
+
+.agent-stage-table[data-working] .agent-stage-scan {
+  opacity: 1;
+}
+
+.agent-stage-scan-cell {
+  fill: var(--buildersbot-accent);
+  opacity: 0;
+  animation: agent-stage-scan-glow 26s linear infinite paused;
+}
+
+.agent-stage-scan-laser {
+  opacity: 0;
+  animation: agent-stage-scan-sweep 26s linear infinite paused;
+}
+
+.agent-stage-scan-halo {
+  fill: var(--buildersbot-accent);
+  opacity: 0.2;
+}
+
+.agent-stage-scan-ray {
+  fill: var(--buildersbot-accent-text);
+}
+
+.agent-stage-table[data-working] .agent-stage-scan-cell,
+.agent-stage-table[data-working] .agent-stage-scan-laser {
+  animation-play-state: running;
+}
+
+.agent-stage-board[data-paused] .agent-stage-table[data-working] .agent-stage-scan-cell,
+.agent-stage-board[data-paused] .agent-stage-table[data-working] .agent-stage-scan-laser {
+  animation-play-state: paused;
+}
+
+/* A cell: it rises in 0.54 s, fades in 2.25 s, and stays dark until the laser comes again. */
+@keyframes agent-stage-scan-glow {
+  0% {
+    opacity: 0;
+  }
+
+  2.1% {
+    opacity: 0.32;
+  }
+
+  10.7% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes agent-stage-scan-sweep {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+
+  1.9% {
+    opacity: 0.8;
+  }
+
+  34.6% {
+    opacity: 0.8;
+    transform: translateY(var(--agent-stage-scan-travel));
+  }
+
+  36.2% {
+    opacity: 0;
+    transform: translateY(var(--agent-stage-scan-travel));
+  }
+
+  50% {
+    opacity: 0;
+    transform: translateY(var(--agent-stage-scan-travel));
+  }
+
+  51.9% {
+    opacity: 0.8;
+    transform: translateY(var(--agent-stage-scan-travel));
+  }
+
+  84.6% {
+    opacity: 0.8;
+    transform: translateY(0);
+  }
+
+  86.2% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+}
+
 /* Hand-offs */
 .agent-stage-links {
   position: absolute;
@@ -737,7 +849,8 @@
     animation: none;
   }
 
-  .agent-stage-fx {
+  .agent-stage-fx,
+  .agent-stage-scan {
     display: none;
   }
 }

@@ -24,6 +24,8 @@ export interface StageBoardProps {
   links?: readonly StageLinkData[] | undefined;
   /** Whether the agents have a speech bubble. The feed draws none. */
   bubbles?: boolean | undefined;
+  /** The table shows a slow laser scan while an agent works. The stage of a channel sets it; the feed does not. */
+  scan?: boolean | undefined;
   /** The widest the table gets, in pixels. */
   maxTable?: number | undefined;
   /** The window is hidden: the caller reads the page visibility once and passes it to every board. */
@@ -73,6 +75,12 @@ export function StageBoard(props: StageBoardProps) {
   const geometry = createMemo(() => stageGeometry(size().width, size().height, props.maxTable));
   const ready = () => size().width > 0 && size().height > 0;
   const paused = () => !onScreen() || props.suspended === true;
+  /** An agent works now: not a wait, a failure or a finished run. */
+  const working = () =>
+    props.scan === true &&
+    props.actors.some(
+      (actor) => actor.activity !== "waiting" && actor.activity !== "failed" && actor.activity !== "done",
+    );
   const find = (id: string | null) => (id === null ? undefined : props.actors.find((actor) => actor.id === id));
 
   return (
@@ -84,7 +92,7 @@ export function StageBoard(props: StageBoardProps) {
       data-paused={paused() ? "" : undefined}
     >
       <Show when={ready()}>
-        <StageTable geometry={geometry()} />
+        <StageTable geometry={geometry()} scan={props.scan} working={working()} />
         {props.overlay?.(geometry())}
         <StageLinks links={props.links ?? []} actors={props.actors} geometry={geometry()} />
         <ul class="agent-stage-actors">

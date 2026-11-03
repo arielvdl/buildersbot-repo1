@@ -144,6 +144,7 @@ export function ChannelStage(props: ChannelStageProps) {
             actors={props.actors}
             links={props.links}
             suspended={playState() === "paused"}
+            scan
             overlay={(geometry) => (
               <Show when={props.request}>{(request) => <StageRequest request={request()} geometry={geometry} />}</Show>
             )}
