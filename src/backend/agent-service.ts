@@ -5487,11 +5487,12 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     this: AgentService,
     input: BranchAgentTaskInput,
     readerId: string,
+    via?: HiddenAgentAccess,
   ): Effect.fn.Return<AgentTask, AgentLifecycleFailed | AgentTaskBranchFailed> {
     yield* lifecycleStep("find agent", () => {
       if (!this.#roster().some((agent) => agent.id === input.agentId))
         throw new Error(sourceText("error.agent.unknown", { id: input.agentId }));
-      this.#requireNotHidden(input.agentId);
+      this.#requireNotHidden(input.agentId, via);
     });
     const task = yield* this.#tasks.branch(input);
     const through = task.branch?.throughMessageId;
