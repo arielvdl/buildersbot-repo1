@@ -7,6 +7,7 @@ import { Button } from "@buildersbot/ui";
 import { createMemo, onSettled, Show } from "solid-js";
 import { useText } from "../../text";
 import { orbitFamily } from "../agents/agent-model-family";
+import { StageActorEffects } from "./StageActorEffects";
 import type { StageActivity } from "./stage-activity";
 import { FIGURE_HEIGHT, FIGURE_WIDTH, type StageGeometry, seatIsFront, seatPoint, seatSide } from "./stage-geometry";
 import { ENTER_EASING, ENTER_MS, FADE_MS, LEAVE_MS, prefersReducedMotion } from "./stage-motion";
@@ -214,6 +215,7 @@ export function StageActor(props: {
         "z-index": place().y,
         "--stage-width": `${Math.round(FIGURE_WIDTH * place().scale)}px`,
         "--stage-height": `${Math.round(FIGURE_HEIGHT * place().scale)}px`,
+        "--stage-scale": String(place().scale),
         "--stage-accent": avatarMarkAccent(props.actor.hue),
         "--stage-bubble-max": `${bubbleMax()}px`,
       }}
@@ -247,6 +249,7 @@ export function StageActor(props: {
               accent={avatarMarkAccent(props.actor.hue)}
               style={{ "--agent-mark-eyelid": String(ACTIVITY_EYELID[props.actor.activity]) }}
             />
+            <StageActorEffects activity={props.actor.activity} />
           </div>
         </div>
       </div>

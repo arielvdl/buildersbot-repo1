@@ -296,6 +296,7 @@ export function AgentMark(props: AgentMarkProps) {
       viewBox={`0 0 ${MARK_SIZE} ${MARK_SIZE}`}
       data-mood={mood()}
       data-animated={props.animated === false ? "false" : "true"}
+      data-activity={props.activity}
       aria-hidden="true"
     >
       <defs>

@@ -368,8 +368,340 @@
   }
 }
 
+/*
+ * The effects round an agent (`StageActorEffects`). They sit on a plane of the size of the figure at
+ * scale 1 and the actor scales it with `--stage-scale`, so the numbers below are those of the mockup.
+ * The colour of an effect is the accent of its agent.
+ */
+.agent-stage-fx {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100px;
+  height: 108px;
+  pointer-events: none;
+  transform: scale(var(--stage-scale, 1));
+  transform-origin: 0 0;
+}
+
+.agent-stage-fx > * {
+  position: absolute;
+  display: block;
+}
+
+.agent-stage-fx-puff {
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-text-primary);
+  opacity: 0;
+  animation: agent-stage-puff 2.4s ease-in-out infinite;
+}
+
+.agent-stage-fx-puff-1 {
+  top: 12px;
+  left: 74px;
+  width: 6px;
+  height: 6px;
+}
+
+.agent-stage-fx-puff-2 {
+  top: -2px;
+  left: 82px;
+  width: 9px;
+  height: 9px;
+  animation-delay: 0.25s;
+}
+
+.agent-stage-fx-puff-3 {
+  top: -20px;
+  left: 92px;
+  width: 13px;
+  height: 13px;
+  animation-delay: 0.5s;
+}
+
+.agent-stage-fx-glyph {
+  top: 8px;
+  left: 44px;
+  color: var(--stage-accent);
+  font: 700 13px / 1 var(--buildersbot-font-mono);
+  opacity: 0;
+  animation: agent-stage-glyph 1.5s ease-out infinite;
+}
+
+.agent-stage-fx-glyph-1::before {
+  content: "</>";
+}
+
+.agent-stage-fx-glyph-2::before {
+  content: "{ }";
+}
+
+.agent-stage-fx-glyph-3::before {
+  content: ";";
+}
+
+.agent-stage-fx-glyph-1 {
+  --glyph-x: -30px;
+  --glyph-y: -30px;
+}
+
+.agent-stage-fx-glyph-2 {
+  --glyph-x: 26px;
+  --glyph-y: -36px;
+  animation-delay: 0.5s;
+}
+
+.agent-stage-fx-glyph-3 {
+  --glyph-x: 2px;
+  --glyph-y: -48px;
+  animation-delay: 1s;
+}
+
+.agent-stage-fx-orbit {
+  top: 54%;
+  left: 50%;
+  width: 156px;
+  height: 156px;
+  margin: -78px 0 0 -78px;
+  transform: scaleY(0.36);
+}
+
+.agent-stage-fx-orbit > span {
+  position: absolute;
+  inset: 0;
+  border: 1px dashed color-mix(in srgb, var(--stage-accent) 45%, transparent);
+  border-radius: var(--buildersbot-radius-pill);
+  animation: agent-stage-spin 1.8s linear infinite;
+}
+
+.agent-stage-fx-orbit i {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px;
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--stage-accent);
+}
+
+.agent-stage-fx-orbit i:nth-child(1) {
+  top: 0;
+  left: 50%;
+}
+
+.agent-stage-fx-orbit i:nth-child(2) {
+  top: 75%;
+  left: 93%;
+}
+
+.agent-stage-fx-orbit i:nth-child(3) {
+  top: 75%;
+  left: 7%;
+}
+
+.agent-stage-fx-terminal {
+  top: 60px;
+  right: -30px;
+  padding: 4px 6px;
+  border: 1px solid color-mix(in srgb, var(--stage-accent) 45%, transparent);
+  border-radius: var(--buildersbot-radius-sm);
+  background: var(--buildersbot-bg-frame);
+  color: var(--stage-accent);
+  font: 700 10px / 1 var(--buildersbot-font-mono);
+}
+
+.agent-stage-fx-terminal::before {
+  content: ">_";
+}
+
+.agent-stage-fx-terminal u {
+  display: inline-block;
+  width: 5px;
+  height: 9px;
+  margin-left: 2px;
+  background: currentcolor;
+  text-decoration: none;
+  vertical-align: -1px;
+  animation: agent-stage-blink 0.9s steps(2) infinite;
+}
+
+.agent-stage-fx-sheet {
+  top: 30px;
+  left: -30px;
+  width: 25px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: var(--buildersbot-radius-sm);
+  background: var(--buildersbot-text-primary);
+  rotate: -9deg;
+  animation: agent-stage-levitate 2.4s ease-in-out infinite;
+}
+
+.agent-stage-fx-sheet i {
+  position: absolute;
+  right: 5px;
+  left: 4px;
+  height: 2px;
+  border-radius: var(--buildersbot-radius-sm);
+  background: var(--buildersbot-text-muted);
+}
+
+.agent-stage-fx-sheet i:nth-child(1) {
+  top: 7px;
+}
+
+.agent-stage-fx-sheet i:nth-child(2) {
+  top: 13px;
+  right: 9px;
+}
+
+.agent-stage-fx-sheet i:nth-child(3) {
+  top: 19px;
+}
+
+.agent-stage-fx-sheet s {
+  position: absolute;
+  top: 3px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: var(--stage-accent);
+  animation: agent-stage-sheet-scan 1.4s ease-in-out infinite alternate;
+}
+
+.agent-stage-fx-spark {
+  width: 14px;
+  height: 14px;
+  background: var(--stage-accent);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  opacity: 0;
+  animation: agent-stage-spark 0.9s var(--buildersbot-ease-out) both;
+}
+
+.agent-stage-fx-spark-1 {
+  top: 14px;
+  left: -8px;
+}
+
+.agent-stage-fx-spark-2 {
+  top: 6px;
+  left: 96px;
+  animation-delay: 0.08s;
+}
+
+.agent-stage-fx-spark-3 {
+  top: -16px;
+  left: 8px;
+  background: var(--buildersbot-text-primary);
+  animation-delay: 0.16s;
+}
+
+.agent-stage-fx-spark-4 {
+  top: -22px;
+  left: 80px;
+  background: var(--buildersbot-text-primary);
+  animation-delay: 0.24s;
+}
+
+.agent-stage-fx-question::before {
+  content: "?";
+}
+
+.agent-stage-fx-question {
+  top: -14px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-accent);
+  color: var(--buildersbot-text-on-accent);
+  font: 700 13px / 22px var(--buildersbot-font-sans, inherit);
+  text-align: center;
+  animation: agent-stage-levitate 1.4s ease-in-out infinite;
+}
+
+@keyframes agent-stage-puff {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(6px);
+  }
+
+  30%,
+  70% {
+    opacity: 0.9;
+    transform: none;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes agent-stage-glyph {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6);
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(var(--glyph-x), var(--glyph-y)) scale(1.05);
+  }
+}
+
+@keyframes agent-stage-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes agent-stage-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes agent-stage-levitate {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes agent-stage-sheet-scan {
+  to {
+    transform: translateY(24px);
+  }
+}
+
+@keyframes agent-stage-spark {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(0);
+  }
+
+  40% {
+    opacity: 1;
+    transform: scale(1.2) rotate(40deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.4) rotate(90deg);
+  }
+}
+
 /* One attribute pauses every loop while the stage is off screen or the window is hidden. */
-.agent-stage-board[data-paused] .agent-stage-actor[data-activity] .agent-stage-body {
+.agent-stage-board[data-paused] .agent-stage-actor[data-activity] .agent-stage-body,
+.agent-stage-board[data-paused] .agent-stage-fx * {
   animation-play-state: paused;
 }
 
@@ -377,6 +709,10 @@
 @media (prefers-reduced-motion: reduce) {
   .agent-stage-actor[data-activity] .agent-stage-body {
     animation: none;
+  }
+
+  .agent-stage-fx {
+    display: none;
   }
 }
 
