@@ -230,6 +230,14 @@ export function channelStageModel(input: StageInput): StageModel {
     links.push({ key: task.id, from: parentOwner, to: task.ownerAgentId });
     linkTargets.set(parentOwner, task.ownerAgentId);
   }
+  // An agent that gave work away and waits for it ends its own turn, so no task of it runs. It stays
+  // on the stage as long as a hand-off from it is open, or the line of that hand-off has no start.
+  const handingOff = new Set<string>();
+  for (const link of links) {
+    if (ids.has(link.from) || !inChannel(link.from)) continue;
+    ids.add(link.from);
+    handingOff.add(link.from);
+  }
 
   const actors: StageActor[] = [];
   for (const id of ids) {
@@ -242,7 +250,7 @@ export function channelStageModel(input: StageInput): StageModel {
     if (input.waitingAgentIds.has(id)) activity = "waiting";
     else if (hold?.activity === "failed") activity = "failed";
     else if (hold?.activity === "done") activity = "done";
-    else if (hold?.activity === "delegating") activity = "delegating";
+    else if (hold?.activity === "delegating" || handingOff.has(id)) activity = "delegating";
     else if (last) {
       const age = now - last.at;
       if (age < STAGE_THINK_AFTER_MS) {
