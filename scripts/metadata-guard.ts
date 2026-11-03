@@ -34,6 +34,16 @@ const ROOT = resolve(import.meta.dirname, "..");
 const REPORT_PATH = resolve(ROOT, ".buildersbot-build/metadata-guard/report.json");
 
 const IDENTITY = "Cultura Builder <dev@culturabuilder.com>";
+/**
+ * Identities that are also ours. `Cultura Builder Community` is the account that opened the first
+ * pull requests, and `GitHub` is the committer that a merge made in the web interface records. Both
+ * predate the canonical identity and rewriting them would rewrite every hash and tag.
+ */
+const ALLOWED_IDENTITIES: ReadonlySet<string> = new Set([
+  IDENTITY,
+  "Cultura Builder Community <arielvdl10@gmail.com>",
+  "GitHub <noreply@github.com>",
+]);
 const ORIGIN_URL = "https://github.com/nextlevelcommunity/buildersbot.git";
 const REPOSITORY_URL = `git+${ORIGIN_URL}`;
 const BUGS_URL = "https://github.com/nextlevelcommunity/buildersbot/issues";
@@ -104,8 +114,8 @@ await check("the clone is complete, so every commit is checked", () => {
 await check("every commit has our author and our committer", () => {
   const wrong = commits().flatMap((commit) =>
     [
-      commit.author === IDENTITY ? null : `  ${commit.hash.slice(0, 12)} author ${commit.author}`,
-      commit.committer === IDENTITY ? null : `  ${commit.hash.slice(0, 12)} committer ${commit.committer}`,
+      ALLOWED_IDENTITIES.has(commit.author) ? null : `  ${commit.hash.slice(0, 12)} author ${commit.author}`,
+      ALLOWED_IDENTITIES.has(commit.committer) ? null : `  ${commit.hash.slice(0, 12)} committer ${commit.committer}`,
     ].filter((line): line is string => line !== null),
   );
   if (wrong.length > 0) {

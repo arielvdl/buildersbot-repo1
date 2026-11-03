@@ -78,13 +78,6 @@ const COMPATIBILITY: readonly Allowance[] = [
   {
     file: /.*/u,
     tokens: ["openbot"],
-    line: /openbot\\?\.(?:run|site)\b/iu,
-    reason:
-      "compatibility host: an invitation link, a published site, the deploy smoke check and a fixture still read it",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
     line: /app\.openbot\.desktop/iu,
     reason:
       "the relaunch agent label of an install made before the rename, which the host preinstall boots out and removes",

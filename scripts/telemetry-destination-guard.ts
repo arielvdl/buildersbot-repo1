@@ -62,8 +62,8 @@ const ALLOWED_MENTIONS: ReadonlyArray<{ file: string | RegExp; line: RegExp; rea
     reason: "the list of blocked destinations and texts that the guard and the package checks read",
   },
   {
-    file: /^(?:ANALYTICS|PRIVACY)\.md$|^docs\/architecture\/analytics\.md$|^apps\/mobile\/README\.md$/u,
-    line: /analytics\.buildersbot\.culturabuilder\.com/u,
+    file: /^(?:ANALYTICS|PRIVACY)\.md$|^docs\/architecture\/analytics\.md$|^apps\/mobile\/README\.md$|^plans\/legal\/purga-de-autoria\.md$|^apps\/auth-api\/src\/content\/privacy-policy\.tsx$/u,
+    line: /bb-analytics\.culturabuilder\.com/u,
     reason: "documentation of the analytics service that runs at that address",
   },
   {
@@ -249,7 +249,7 @@ await check("no interface text or served page promises an analytics service or s
 await check("the matcher ignores case and refuses a Markdown paragraph that does not name the upstream project", () => {
   const capitals = findMentionsInText(
     "src/sample.ts",
-    'const url = "https://ANALYTICS.BUILDERSBOT.CULTURABUILDER.COM/api";',
+    'const url = "https://BB-ANALYTICS.CULTURABUILDER.COM/api";',
     BLOCKED_ANALYTICS_STRINGS,
   );
   if (capitals.length !== 1 || capitals[0]?.allowed !== null) fail("A host in capital letters was not refused.");
