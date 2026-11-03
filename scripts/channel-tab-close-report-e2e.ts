@@ -324,7 +324,12 @@ try {
   const readsOnOpen = (await reads()) - readsBeforeOpen;
   await showSection();
   await shot("a5-profile-30-days");
-  const tile = (key: Parameters<typeof t>[0]) =>
+  const tile = (
+    key:
+      | "settings.profile.tabReports.total.done"
+      | "settings.profile.tabReports.total.notDone"
+      | "settings.profile.tabReports.total.other",
+  ) =>
     page
       .locator(".profile-tiles")
       .filter({ hasText: t("settings.profile.tabReports.total.notDone") })
