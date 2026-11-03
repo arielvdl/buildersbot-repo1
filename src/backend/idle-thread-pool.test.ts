@@ -26,12 +26,20 @@ describe("IdleThreadPool", () => {
     return { id, activeTurn: null, idleRelease: null, idleSince: 0, released: false, reopened: 0, background: 0 };
   }
 
-  function makePool(overrides: { idleLimit?: number } = {}) {
+  function makePool(overrides: { idleLimit?: number; separate?: { ids: string[]; limit: number } } = {}) {
     scope = Scope.makeUnsafe();
     pool = new IdleThreadPool<FakeThread, { id: string }>({
       releaseAfterMs: RELEASE_AFTER,
       forceReleaseAfterMs: FORCE_AFTER,
       idleLimit: overrides.idleLimit ?? 5,
+      ...(overrides.separate
+        ? {
+            separateLimit: {
+              applies: (candidate: FakeThread) => overrides.separate?.ids.includes(candidate.id) === true,
+              limit: overrides.separate.limit,
+            },
+          }
+        : {}),
       scope: () => scope,
       canRelease: (candidate) => releasable.has(candidate.id) && candidate.background === 0,
       snapshot: (candidate) => ({ id: candidate.id }),
@@ -114,5 +122,32 @@ describe("IdleThreadPool", () => {
     await Effect.runPromise(made.wake("a"));
     expect(made.isReleased("a")).toBe(false);
     expect(made.get("a")?.reopened).toBe(1);
+  });
+
+  it("counts the threads of a separate group apart, and keeps the other limit for the rest", async () => {
+    for (const id of ["a", "b", "c", "q1", "q2", "q3"]) releasable.add(id);
+    const made = makePool({ idleLimit: 1, separate: { ids: ["q1", "q2", "q3"], limit: 2 } });
+    for (const id of ["a", "b", "c", "q1", "q2", "q3"]) {
+      const candidate = thread(id);
+      made.add(candidate);
+      await vi.advanceTimersByTimeAsync(10);
+      await Effect.runPromise(made.markIdle(candidate));
+    }
+    // One of the others stays, two of the group stay: the oldest of each go.
+    expect(disposed.sort()).toEqual(["a", "b", "q1"]);
+  });
+
+  it("closes the threads of a separate group too when the limit is 0", async () => {
+    for (const id of ["a", "q1"]) releasable.add(id);
+    const made = makePool({ idleLimit: 5, separate: { ids: ["q1"], limit: 5 } });
+    for (const id of ["a", "q1"]) {
+      const candidate = thread(id);
+      made.add(candidate);
+      await vi.advanceTimersByTimeAsync(10);
+      await Effect.runPromise(made.markIdle(candidate));
+    }
+    expect(disposed).toEqual([]);
+    await Effect.runPromise(made.releaseIdle());
+    expect(disposed.sort()).toEqual(["a", "q1"]);
   });
 });

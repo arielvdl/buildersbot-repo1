@@ -1,3 +1,4 @@
+import { providerSteersTurns } from "@buildersbot/contracts/agent-providers";
 import { supportedAttachmentExtensions } from "@buildersbot/contracts/attachment-files";
 import { canPreviewAttachment } from "@buildersbot/contracts/ipc";
 import type { AppTextKey } from "@buildersbot/i18n";
@@ -232,6 +233,25 @@ export function ConversationThread() {
     const focus = threads.focusMessage;
     return focus && focus.taskId === threads.open?.id ? focus : undefined;
   };
+  /**
+   * The queue of the open thread: a message steers the running turn when the provider can, is deleted, or moves
+   * to set its priority. A thread of a host that cannot has no actions. A new thread has no queue.
+   */
+  const queueActions = (threads: ConversationThreads, provider: Parameters<typeof providerSteersTurns>[0]) => {
+    const queue = threads.queue;
+    const open = threads.open;
+    if (!queue || !open) return undefined;
+    return {
+      onSteer: providerSteersTurns(provider)
+        ? (deliveryId: string) => {
+            // The turn that the person saw: a turn that started since is not steered.
+            if (open.activeTurnId) queue.onSteer(deliveryId, open.activeTurnId);
+          }
+        : undefined,
+      onCancel: queue.onCancel,
+      onReorder: queue.onReorder,
+    };
+  };
   /** The cards that the thread waits for: its browser takeover, and its question as a form. */
   const attention = () => {
     if (!hasAttention()) return undefined;
@@ -309,6 +329,7 @@ export function ConversationThread() {
                 )}
               </Show>
             }
+            queue={queueActions(current().threads, current().agent.provider)}
             focusRequest={focusRequest()}
             onSend={(text) => threadComposer.send(current().threads, text)}
             onStop={() => current().threads.onStop()}

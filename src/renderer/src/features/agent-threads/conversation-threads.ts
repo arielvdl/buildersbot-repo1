@@ -176,6 +176,13 @@ export function conversationThreads(input: ConversationThreadsInput): Conversati
       return open ? input.contextStates?.()[open.threadId] : undefined;
     },
     onCompactContext: open && onCompactContext ? () => onCompactContext(open.id) : undefined,
+    queue: tasks.queueActions()
+      ? {
+          onSteer: (deliveryId, turnId) => tasks.steerQueuedMessage(agentId, deliveryId, turnId),
+          onCancel: (deliveryId) => tasks.cancelQueuedMessage(agentId, deliveryId),
+          onReorder: (deliveryIds) => tasks.reorderQueue(agentId, deliveryIds),
+        }
+      : undefined,
     // Only this computer moves a queued message to a new thread.
     onRunQueuedMessage: tasks.local() ? (deliveryId) => void tabs.runQueuedMessage(agentId, deliveryId) : undefined,
     onBranch: tasks.canBranch()

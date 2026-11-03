@@ -434,6 +434,12 @@ export interface ProviderClientContext {
    */
   readonly promptCacheTtl?: () => PromptCacheTtl;
   /**
+   * Whether the agent is the one of the quick chat, read when a Claude process starts. Its messages
+   * come at long gaps, so its process asks for the 1 hour prompt cache and keeps more idle threads.
+   * Optional for the same reason as `reportMcpDrops`: without it no agent is one.
+   */
+  readonly quickChatAgent?: (agentId: string) => boolean;
+  /**
    * True when the person chose the full context window of the Cultura Builder gateway, read at each
    * Cultura Builder spawn. Optional for the same reason as `reportMcpDrops`: without it each model
    * declares the smaller window (`culturaBuilderConfigEnv`).
@@ -770,6 +776,7 @@ export const BUILT_IN_PROVIDER_DRIVERS: readonly BuiltInProviderDriver[] = [
         claudeAgentEnvironment(context),
         undefined,
         claudeFallbackApiKey(context),
+        context.quickChatAgent,
       ),
     authState: (account) => ({ kind: "claude", email: account?.email ?? null }),
     validateAccount: () => undefined,

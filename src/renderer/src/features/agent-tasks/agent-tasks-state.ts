@@ -331,6 +331,32 @@ export function createAgentTasks(options: AgentTasksOptions) {
     return receipt !== null;
   }
 
+  /** The queue actions of a thread: only a port that has them. The queue panel of the thread follows it. */
+  function queueActions(): boolean {
+    const { steerQueuedMessage, cancelQueuedMessage, reorderQueue } = port();
+    return Boolean(steerQueuedMessage && cancelQueuedMessage && reorderQueue);
+  }
+
+  /** Gives a queued message of the thread to the turn that runs now. `turnId` is the turn the person saw. */
+  function steerQueuedMessage(agentId: string, deliveryId: string, turnId: string): void {
+    const steer = port().steerQueuedMessage;
+    if (!steer) return;
+    void runAction(() => steer({ agentId, deliveryId, expectedTurnId: turnId }), "app.errorStatus.steer");
+  }
+
+  function cancelQueuedMessage(agentId: string, deliveryId: string): void {
+    const cancel = port().cancelQueuedMessage;
+    if (!cancel) return;
+    void runAction(() => cancel({ agentId, deliveryId }), "app.errorStatus.cancel");
+  }
+
+  /** `deliveryIds` is the whole queue of the thread in its new order. */
+  function reorderQueue(agentId: string, deliveryIds: string[]): void {
+    const reorder = port().reorderQueue;
+    if (!reorder) return;
+    void runAction(() => reorder({ agentId, deliveryIds }), "app.errorStatus.reorder");
+  }
+
   function stopTask(agentId: string, taskId: string): void {
     void runAction(() => port().stopTask({ agentId, taskId }), "conversation.threads.error.stop");
   }
@@ -425,6 +451,10 @@ export function createAgentTasks(options: AgentTasksOptions) {
     canBranch,
     branchTask,
     sendToTask,
+    queueActions,
+    steerQueuedMessage,
+    cancelQueuedMessage,
+    reorderQueue,
     stopTask,
     closeTask,
     reopenTask,

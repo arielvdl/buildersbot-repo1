@@ -5,6 +5,7 @@ import type {
   AttachmentSummary,
   DraftAttachment,
   InstalledSkill,
+  QueueDelivery,
 } from "@buildersbot/contracts/ipc";
 import type { AppTextKey } from "@buildersbot/i18n";
 import { isAgentTaskActive } from "@buildersbot/team-client/agent-tasks";
@@ -33,7 +34,18 @@ import type { SendShortcut } from "@buildersbot/ui/features/conversation/send-sh
 import { ComposerVoiceControls, type VoicePhase } from "@buildersbot/ui/features/conversation/VoiceRecordingMorph";
 import { type TextValue, useText } from "@buildersbot/ui/text";
 import type { JSX } from "@solidjs/web";
-import { children, createEffect, createMemo, createSignal, For, onSettled, Show, untrack } from "solid-js";
+import {
+  children,
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  Loading,
+  lazy,
+  onSettled,
+  Show,
+  untrack,
+} from "solid-js";
 import { type AgentThreadBranchSource, BranchDivider } from "./BranchDivider";
 
 const HOLD_TEXT = {
@@ -71,6 +83,37 @@ export function agentThreadHoldText(task: AgentTask, limit: number, t: TextValue
   if (task.hold === "task-limit" || task.hold === null)
     return t("conversation.threads.hold.threadLimit", { count: limit });
   return t(HOLD_TEXT[task.hold]);
+}
+
+/** What a person does with the messages that wait in a thread. */
+export interface AgentThreadQueueActions {
+  /** Absent where the thread's provider cannot steer a running turn. */
+  onSteer?: ((deliveryId: string) => void) | undefined;
+  onCancel: (deliveryId: string) => void;
+  /** `deliveryIds` is the whole queue of the thread in its new order. */
+  onReorder: (deliveryIds: string[]) => void;
+}
+
+const QueuePanel = lazy(() =>
+  import("@buildersbot/ui/features/conversation/QueuePanel").then((module) => ({ default: module.QueuePanel })),
+);
+
+/** A queued message of a thread as the queue panel reads it: the thread's own order is its position. */
+function queueDeliveries(task: AgentTask, agentId: string): QueueDelivery[] {
+  return task.queuedMessages.map((message, index) => ({
+    id: message.deliveryId,
+    messageId: message.deliveryId,
+    recipientAgentId: agentId,
+    sender: { kind: "user" },
+    text: message.text,
+    attachments: [],
+    replyToMessageId: null,
+    status: "queued",
+    position: index + 1,
+    turnId: null,
+    error: null,
+    createdAt: message.createdAt,
+  }));
 }
 
 /** Dictation into the thread's message box, as in the agent's own chat. */
@@ -172,6 +215,12 @@ export interface AgentThreadViewProps {
   onBranch?: ((messageId: string) => void) | undefined;
   /** Where the thread came from, when it is a branch. A line shows after the copied messages. */
   branchSource?: AgentThreadBranchSource | undefined;
+  /**
+   * The actions of the messages that wait in this thread. With it, they show as the queue of the agent's own
+   * chat does: a person steers one into the running turn, deletes it, or drags it up or down to set its
+   * priority. Without it, the thread only lists them.
+   */
+  queue?: AgentThreadQueueActions | undefined;
   /** A message to scroll to and mark once, when it shows. Each new request has a new nonce. */
   focusMessage?: { messageId: string; nonce: number } | undefined;
 }
@@ -444,7 +493,7 @@ export function AgentThreadView(props: AgentThreadViewProps) {
               </div>
             )}
           </Show>
-          <Show when={queued()}>
+          <Show when={props.queue ? undefined : queued()}>
             {(task) => (
               <section class="agent-thread-queued" aria-label={t("conversation.threads.view.queued")}>
                 <For each={task().queuedMessages} keyed={(message) => message.deliveryId}>
@@ -464,6 +513,25 @@ export function AgentThreadView(props: AgentThreadViewProps) {
               title={t("conversation.threads.view.failed")}
               body={task().error || t("conversation.threads.view.failedBody")}
             />
+          )}
+        </Show>
+        <Show when={props.queue ? queued() : undefined}>
+          {(task) => (
+            <div class="composer-stack">
+              <div class="agent-queue-slot" data-open="true">
+                <div class="agent-queue-slot-inner">
+                  <Loading>
+                    <QueuePanel
+                      deliveries={queueDeliveries(task(), props.agent.id)}
+                      canSteer={task().activeTurnId !== null}
+                      onSteer={props.queue?.onSteer}
+                      onCancel={(deliveryId) => props.queue?.onCancel(deliveryId)}
+                      onReorder={(deliveryIds) => props.queue?.onReorder(deliveryIds)}
+                    />
+                  </Loading>
+                </div>
+              </div>
+            </div>
           )}
         </Show>
         <form
