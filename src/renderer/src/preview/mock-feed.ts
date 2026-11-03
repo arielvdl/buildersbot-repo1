@@ -135,7 +135,7 @@ function iso(time: number): string {
 }
 
 /** One card of the fixtures. `index` 0 is the oldest. */
-function mockFeedItem(
+export function mockFeedItem(
   index: number,
   total: number,
   now = MOCK_FEED_NOW,
