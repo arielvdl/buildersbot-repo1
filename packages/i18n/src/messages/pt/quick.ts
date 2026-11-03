@@ -49,4 +49,13 @@ export const messages = {
   "quick.folder.empty": "Arraste conversas para cá",
   "quick.folder.moveTo": "Mover para {name}",
   "quick.folder.remove": "Tirar da pasta",
+  "quick.tag.menu": "Tag",
+  "quick.tag.new": "Nova tag…",
+  "quick.tag.edit": "Editar tag…",
+  "quick.tag.remove": "Tirar a tag",
+  "quick.tag.delete": "Excluir tag",
+  "quick.tag.name": "Nome da tag",
+  "quick.tag.color": "Cor da tag",
+  "quick.tag.dialog.new": "Nova tag",
+  "quick.tag.dialog.edit": "Editar tag",
 } as const satisfies PartialTranslation<typeof source>;

@@ -50,4 +50,13 @@ export const messages = defineMessages("quick", {
   "quick.folder.empty": "Drag conversations here",
   "quick.folder.moveTo": "Move to {name}",
   "quick.folder.remove": "Remove from folder",
+  "quick.tag.menu": "Tag",
+  "quick.tag.new": "New tag…",
+  "quick.tag.edit": "Edit tag…",
+  "quick.tag.remove": "Remove tag",
+  "quick.tag.delete": "Delete tag",
+  "quick.tag.name": "Tag name",
+  "quick.tag.color": "Tag color",
+  "quick.tag.dialog.new": "New tag",
+  "quick.tag.dialog.edit": "Edit tag",
 });

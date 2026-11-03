@@ -36,6 +36,13 @@ import {
 import { quickChatPort } from "./quick-chat-port";
 import { createQuickChatRuntime, type QuickChatAgentUpdate, touchesQuickChatRuntime } from "./quick-chat-runtime";
 import { createQuickChat } from "./quick-chat-state";
+import {
+  addQuickChatTag,
+  editQuickChatTag,
+  readQuickChatTags,
+  removeQuickChatTag,
+  setQuickChatRowTag,
+} from "./quick-chat-tags";
 
 /** What owns the focus while it is open: a popover, a menu, a dialog, or the header with the model picker. */
 const FOCUS_OWNER = "[role=dialog], [role=menu], [role=listbox], [data-popper-positioner], .conversation-header";
@@ -106,6 +113,7 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   const [called, setCalled] = createSignal<QuickChatPointer | null>(null);
   const [pointers, setPointers] = createSignal<QuickChatPointer[]>(readQuickChatPointers(activeServerId()));
   const [folderState, setFolderState] = createSignal(readQuickChatFolders(activeServerId()));
+  const [tagState, setTagState] = createSignal(readQuickChatTags(activeServerId()));
   /** The agent that owns the open conversation. */
   const owner = createMemo(() => {
     const open = called();
@@ -383,6 +391,12 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
             onRenameFolder={(folder, name) => setFolderState(renameQuickChatFolder(activeServerId(), folder.id, name))}
             onDeleteFolder={(folder) => setFolderState(removeQuickChatFolder(activeServerId(), folder.id))}
             onMove={(item, folderId) => setFolderState(moveQuickChatRow(activeServerId(), item.key, folderId))}
+            tags={tagState().tags}
+            tagAssignments={tagState().assignments}
+            onCreateTag={(item, name, color) => setTagState(addQuickChatTag(activeServerId(), item.key, name, color))}
+            onEditTag={(tag, name, color) => setTagState(editQuickChatTag(activeServerId(), tag.id, name, color))}
+            onDeleteTag={(tag) => setTagState(removeQuickChatTag(activeServerId(), tag.id))}
+            onSetTag={(item, tagId) => setTagState(setQuickChatRowTag(activeServerId(), item.key, tagId))}
             onDelete={tasks.editable() ? (item) => void tabs.remove(item.agentId, item.taskId) : undefined}
           />
           <div
