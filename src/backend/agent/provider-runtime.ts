@@ -1082,6 +1082,11 @@ export class ProviderRuntime implements ProviderPort {
       if (client.releaseIdleThreads) yield* client.releaseIdleThreads(minIdleMs);
   }).bind(this);
 
+  /** Whether the models of `provider` come from its CLI and not from the built-in list. See `ModelCatalog.isRead`. */
+  catalogRead(provider: AgentProvider): boolean {
+    return this.#modelCatalog.isRead(provider);
+  }
+
   listModels(): AgentModelOption[] {
     return this.#modelCatalog
       .list()

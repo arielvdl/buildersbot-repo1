@@ -153,13 +153,17 @@ const CLAUDE_MODEL = model("claude", "claude-sonnet-5-5", ["medium", "high"]);
 
 let catalog: AgentModelOption[] = [];
 let available = new Set<AgentProviderId>();
+/** The providers whose list a CLI gave. `null` means all of them: the checks that do not care. */
+let readProviders: Set<AgentProviderId> | null = null;
 const providerCalls: string[] = [];
 
 // The runtime of the providers is stood in at two doors: the catalog it lists, and the one call that
 // would reach a model (`createProfileClient`, which the quick chat must never make).
 const realListModels = ProviderRuntime.prototype.listModels;
 const realCreateProfileClient = ProviderRuntime.prototype.createProfileClient;
+const realCatalogRead = ProviderRuntime.prototype.catalogRead;
 ProviderRuntime.prototype.listModels = () => catalog;
+ProviderRuntime.prototype.catalogRead = (provider) => readProviders === null || readProviders.has(provider);
 ProviderRuntime.prototype.createProfileClient = (provider) => {
   providerCalls.push(`createProfileClient:${provider}`);
   throw new Error("The quick chat must not call a model.");
@@ -712,6 +716,7 @@ async function runWarmPart(): Promise<void> {
   // The catalog and the status are the test's until the provider runs: the agent is made with the provider cold.
   catalog = [BUILDER_AUTO];
   ProviderRuntime.prototype.listModels = () => catalog;
+  ProviderRuntime.prototype.catalogRead = () => true;
   const status = agents.getStatus();
   agents.getStatus = (): AgentStatus => ({
     ...status,
@@ -759,6 +764,7 @@ async function runWarmPart(): Promise<void> {
     );
   } finally {
     ProviderRuntime.prototype.listModels = realListModels;
+    ProviderRuntime.prototype.catalogRead = realCatalogRead;
     await runCauseEffect(agents.stop()).catch(() => undefined);
     database.close();
   }
@@ -949,6 +955,34 @@ try {
     return { model: moved.agent.model, effort: moved.agent.reasoningEffort };
   });
 
+  await step("a restart with the list still the built-in one keeps the model the person chose", async () => {
+    const current = host();
+    catalog = [BUILDER_AUTO, BUILDER_CODE, CODEX_MODEL, CLAUDE_MODEL];
+    available = new Set<AgentProviderId>(["cultura-builder", "codex", "claude"]);
+    const chosen = await runCauseEffect(
+      current.agents.updateAgent({ agentId: made.id, provider: "cultura-builder", model: BUILDER_CODE.id }),
+    );
+    assert.equal(chosen.model, BUILDER_CODE.id);
+    await stopHost(current);
+    running = null;
+    running = await startHost();
+    // The CLI has not answered yet: the list is the built-in one, which holds none of the Cultura Builder models.
+    readProviders = new Set();
+    catalog = [CODEX_MODEL, CLAUDE_MODEL];
+    const cold = await ensure(host());
+    assert.equal(cold.changed, false, "A built-in list moved the agent.");
+    assert.equal(cold.agent.model, BUILDER_CODE.id, "A built-in list took the chosen model away.");
+    assert.equal(cold.agent.provider, "cultura-builder");
+    // The CLI answered with a list that does not hold the model: now it falls back to the rule.
+    readProviders = new Set<AgentProviderId>(["cultura-builder", "codex", "claude"]);
+    catalog = [BUILDER_AUTO, CODEX_MODEL, CLAUDE_MODEL];
+    const real = await ensure(host());
+    assert.equal(real.changed, true, "A list that the CLI gave, without the model, did not move the agent.");
+    assert.equal(real.agent.model, BUILDER_AUTO.id);
+    readProviders = null;
+    return { kept: cold.agent.model, afterRealList: real.agent.model };
+  });
+
   await step("nothing can run: an existing agent stays, and a first call makes no agent", async () => {
     const current = host();
     catalog = [];
@@ -963,6 +997,16 @@ try {
     running = await startHost();
     await assert.rejects(() => ensure(host()), "A first call made an agent with nothing that can run.");
     assert.equal(quickChatRows(host()).length, 0);
+    return { agentsMade: 0 };
+  });
+
+  await step("a first call with only built-in lists makes no agent, and waits for the real one", async () => {
+    catalog = [BUILDER_FAST, CODEX_MODEL, CLAUDE_MODEL];
+    available = new Set<AgentProviderId>(["cultura-builder", "codex", "claude"]);
+    readProviders = new Set();
+    await assert.rejects(() => ensure(host()), "A first call chose a model from a built-in list.");
+    assert.equal(quickChatRows(host()).length, 0, "An agent was made on a built-in list.");
+    readProviders = null;
     return { agentsMade: 0 };
   });
 
@@ -981,6 +1025,7 @@ try {
   // ---- Part 2: the way in and the ways that stay closed, on a fake bundled Builders CLI.
   ProviderRuntime.prototype.listModels = realListModels;
   ProviderRuntime.prototype.createProfileClient = realCreateProfileClient;
+  ProviderRuntime.prototype.catalogRead = realCatalogRead;
   await stopHost(host());
   running = null;
   await runPart2();
@@ -990,6 +1035,7 @@ try {
 } finally {
   globalThis.fetch = realFetch;
   ProviderRuntime.prototype.listModels = realListModels;
+  ProviderRuntime.prototype.catalogRead = realCatalogRead;
   if (running) await stopHost(running);
   await rm(root, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });

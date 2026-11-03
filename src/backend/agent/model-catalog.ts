@@ -37,6 +37,11 @@ export interface ModelCatalogOptions {
 export class ModelCatalog {
   readonly #options: ModelCatalogOptions;
   #models = structuredClone(FALLBACK_MODELS);
+  /**
+   * The providers whose list was read from a running CLI since this app started. Until then a provider
+   * answers with its built-in list, which says nothing about what the account serves.
+   */
+  readonly #read = new Set<AgentProvider>();
 
   constructor(options: ModelCatalogOptions) {
     this.#options = options;
@@ -44,6 +49,14 @@ export class ModelCatalog {
 
   list(): AgentModelOption[] {
     return structuredClone(this.#models);
+  }
+
+  /**
+   * Whether the list of `provider` is one that its CLI gave, not the built-in list that stands in before
+   * the first read. A caller that would act on a model missing from the list must ask this first.
+   */
+  isRead(provider: AgentProvider): boolean {
+    return this.#read.has(provider);
   }
 
   /**
@@ -187,6 +200,11 @@ export class ModelCatalog {
       { concurrency: "unbounded" },
     );
     this.#models = discovered.flatMap((entry) => entry.models);
+    // A read stays a read: a later pass with no client keeps the models it had. An empty list (signed out) is not one.
+    for (const entry of discovered) {
+      if (entry.fresh) this.#read.add(entry.provider);
+      else if (entry.models.length === 0) this.#read.delete(entry.provider);
+    }
     return new Set(discovered.filter((entry) => entry.fresh).map((entry) => entry.provider));
   });
 }

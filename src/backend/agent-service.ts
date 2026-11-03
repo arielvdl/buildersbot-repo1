@@ -3169,9 +3169,11 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     this: AgentService,
   ): Effect.fn.Return<QuickChatEnsureResult, AgentLifecycleFailed> {
     const models = this.#endpoints.available();
+    // Only a list that the provider's CLI gave counts. Just after a start the list is the built-in one, which
+    // does not hold the model that the person chose, so it must neither pick a model nor take one away.
     const choice = quickChatDefaultModel({
       models,
-      providerAvailable: (provider) => this.#providerAvailable(provider),
+      providerAvailable: (provider) => this.#providerAvailable(provider) && this.#providers.catalogRead(provider),
     });
     const modelOf = (agent: Pick<AgentSummary, "provider" | "model">) =>
       models.find((model) => model.provider === agent.provider && model.id === agent.model);
@@ -3213,7 +3215,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       }
       return { agent: made.agent, changed: made.created };
     }
-    if (choice && !quickChatChoiceListed(held, models)) {
+    if (choice && this.#providers.catalogRead(providerForAgent(held)) && !quickChatChoiceListed(held, models)) {
       const target = modelOf({ provider: choice.provider, model: choice.model });
       // A change that cannot apply now leaves the agent as it is: the page opens, and the send says why.
       const moved = yield* Effect.result(
