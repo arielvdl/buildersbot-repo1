@@ -11,6 +11,7 @@ import {
 } from "@buildersbot/ui/features/sidebar/SidebarAgentIndicator";
 import { useText } from "@buildersbot/ui/text";
 import { createEffect, createMemo, createSignal, createStore, For, flush, Show } from "solid-js";
+import { useCloseTabShortcut } from "../../close-tab-shortcut";
 import { useNewTabShortcut } from "../../new-tab-shortcut";
 import { channelTabAgeLabel } from "./channel-tab-age-label";
 import {
@@ -63,6 +64,9 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
   }>({ topicId: null, outcome: null, note: "" });
   const [confirmOpen, setConfirmOpen] = createSignal(false);
   const [closeError, setCloseError] = createSignal<string | null>(null);
+  /** The close dialog opened by the close key: its focus starts on the close button, so Enter closes too. */
+  const [closeByKey, setCloseByKey] = createSignal(false);
+  let confirming = false;
   /** The tab whose details show in a dialog. */
   const [detailsId, setDetailsId] = createSignal<string | null>(null);
   let strip: HTMLFieldSetElement | undefined;
@@ -187,13 +191,26 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
     return gap === topics().length && index === topics().length - 1 ? "after" : undefined;
   }
 
-  function close(topic: ChannelTopic): void {
+  // The key that closes a tab in other browsers. A tab that asks first shows its dialog with the close
+  // button focused and Done chosen; the key again closes the tab.
+  useCloseTabShortcut({
+    onClose: () => {
+      const topic = topics().find(isOpen);
+      if (topic) close(topic, true);
+    },
+    enabled: () => !props.archived && topics().length > 1 && topics().some(isOpen),
+    confirming: () => confirmOpen() && closingTopic() !== undefined,
+    onConfirm: () => void confirmClose(),
+  });
+
+  function close(topic: ChannelTopic, byKey = false): void {
     const kind = channelTabClose(topic);
     if (kind === "now") {
       void closeNow(topic.id);
       return;
     }
     setCloseError(null);
+    setCloseByKey(byKey);
     setClosing((state) => {
       Object.assign(state, { topicId: topic.id, outcome: "done", note: "" });
     });
@@ -214,16 +231,21 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
   /** The dialog stays open on a failure, with the failure, so the user can try again or cancel. */
   async function confirmClose(): Promise<void> {
     const { topicId, outcome, note } = closing;
-    if (!topicId || !outcome || !closeAnswered()) return;
-    setCloseError(null);
-    const text = note.trim();
-    if (await channels.deleteTopic(topicId, { outcome, ...(text ? { note: text } : {}) })) {
-      flush();
-      setConfirmOpen(false);
-      return;
+    if (!topicId || !outcome || !closeAnswered() || confirming) return;
+    confirming = true;
+    try {
+      setCloseError(null);
+      const text = note.trim();
+      if (await channels.deleteTopic(topicId, { outcome, ...(text ? { note: text } : {}) })) {
+        flush();
+        setConfirmOpen(false);
+        return;
+      }
+      // A command that another one held back sets no error, but it did not close the tab either.
+      setCloseError(channels.state.error ?? t("channel.error.update"));
+    } finally {
+      confirming = false;
     }
-    // A command that another one held back sets no error, but it did not close the tab either.
-    setCloseError(channels.state.error ?? t("channel.error.update"));
   }
 
   return (
@@ -401,7 +423,7 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
       <ThreadDetailsDialog details={shownDetails()} onClose={() => setDetailsId(null)} returnFocus={openTabButton} />
       <ConfirmDialog
         open={confirmOpen() && closingTopic() !== undefined}
-        initialFocus="cancel"
+        initialFocus={closeByKey() ? "confirm" : "cancel"}
         title={closingWork() ? t("channel.topic.closeBusyTitle") : t("channel.topic.closeTitle")}
         description={closingWork() ? t("channel.topic.closeBusyDescription") : t("channel.topic.closeDescription")}
         confirmLabel={t("channel.topic.delete")}

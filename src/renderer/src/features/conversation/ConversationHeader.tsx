@@ -13,6 +13,7 @@ import { ConversationHeader as SharedConversationHeader } from "@buildersbot/ui/
 import { ThreadHeader } from "@buildersbot/ui/features/conversation/threads/ThreadHeader";
 import { MAIN_THREAD_ID, threadBusy } from "@buildersbot/ui/features/conversation/threads/thread-types";
 import { createMemo, Show, untrack } from "solid-js";
+import { useCloseTabShortcut } from "../../close-tab-shortcut";
 import { useConversationViewScope } from "./conversation-scope";
 
 const loadAgentSettingsPanel = () => import("./AgentSettingsPanel");
@@ -51,6 +52,17 @@ export function ConversationHeader() {
     moveThreadToPanel,
   } = useConversationViewScope();
   const runningThreads = () => props.threads?.running ?? 0;
+  // The key that closes a tab in other browsers closes the open thread tab. The agent's own chat has no tab.
+  useCloseTabShortcut({
+    onClose: () => {
+      const header = props.threads?.header;
+      if (header) header.onClose(header.activeId);
+    },
+    enabled: () => {
+      const header = props.threads?.header;
+      return !props.quickChat && header !== undefined && header.tabs.some((tab) => tab.id === header.activeId);
+    },
+  });
   /** While a side thread is open, the agent's name goes back to the agent's own chat. */
   const openMainChat = () => {
     const header = props.threads?.header;

@@ -160,4 +160,25 @@ describe("the tabs of a channel", () => {
     expect(await screen.findByText("Close this tab?")).toBeTruthy();
     expect(channels.state.closeRequest).toBeNull();
   });
+
+  it("closes the open tab with the close key: the dialog has Done chosen, and the key again closes", async () => {
+    const command = vi.spyOn(port.agent, "channelCommand");
+    await mount();
+
+    // jsdom is not a Mac, so the key is Ctrl+W.
+    await fireEvent.keyDown(window, { key: "w", ctrlKey: true });
+
+    const dialog = await screen.findByRole("alertdialog");
+    const close = within(dialog).getByRole("button", { name: "Close tab" });
+    await vi.waitFor(() => expect(close).toHaveFocus());
+
+    await fireEvent.keyDown(close, { key: "w", ctrlKey: true });
+
+    await vi.waitFor(() =>
+      expect(command).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "topic-delete", topicId: "new", report: { outcome: "done" } }),
+      ),
+    );
+    command.mockRestore();
+  });
 });

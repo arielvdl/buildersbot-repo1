@@ -941,8 +941,19 @@ export function configureApplicationMenu(
       // Windows and Linux: the default Close item takes Ctrl+W. With "Keep Builders Bot running in the
       // background" off, closing the main window quits Builders Bot, so a Ctrl+W that no browser tab took
       // ended the app with no question (#2675). The item keeps the key the system closes with.
+      // macOS: ⌘W closes a tab, as in other browsers, so the page gets it; the default Close item would take
+      // it first. Close window keeps ⇧⌘W, as in other browsers.
       process.platform === "darwin"
-        ? { role: "windowMenu" }
+        ? {
+            role: "windowMenu",
+            submenu: [
+              { role: "minimize" },
+              { role: "zoom" },
+              { role: "close", accelerator: "Shift+Command+W" },
+              { type: "separator" },
+              { role: "front" },
+            ],
+          }
         : { role: "windowMenu", submenu: [{ role: "minimize" }, { role: "close", accelerator: "Alt+F4" }] },
     ]),
   );
