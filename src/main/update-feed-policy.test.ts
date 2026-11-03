@@ -12,7 +12,7 @@ import { type UpdateAdapter, UpdateService } from "./update-service";
 
 // The app-update.yml that an upstream Builders Bot build carries.
 const UPSTREAM_METADATA = [
-  "owner: nightly-labs",
+  "owner: nextlevelcommunity",
   "repo: buildersbot",
   "provider: github",
   "updaterCacheDirName: buildersbot-updater",
@@ -37,7 +37,7 @@ describe("decideUpdateFeed", () => {
     expect(decideUpdateFeed(null)).toEqual({ allowed: false, reason: "no-feed" });
   });
 
-  it("refuses the upstream GitHub feed, also when its origin is in the list", () => {
+  it("refuses the GitHub feed of another repository, also when its origin is in the list", () => {
     expect(decideUpdateFeed(UPSTREAM_METADATA)).toEqual({ allowed: false, reason: "provider-not-allowed" });
     expect(decideUpdateFeed(UPSTREAM_METADATA, ["https://github.com"])).toEqual({
       allowed: false,
@@ -101,7 +101,7 @@ describe("decideReleaseFeed", () => {
     expect(decideReleaseFeed()).toEqual({ allowed: false, reason: "no-feed" });
   });
 
-  it("refuses the upstream release feed, and allows only a listed HTTPS origin", () => {
+  it("refuses the release feed of another repository, and allows only a listed HTTPS origin", () => {
     expect(decideReleaseFeed("https://github.com/nextlevelcommunity/buildersbot/releases/latest/download")).toEqual({
       allowed: false,
       reason: "origin-not-allowed",
