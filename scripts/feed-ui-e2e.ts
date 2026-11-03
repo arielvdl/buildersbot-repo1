@@ -2,7 +2,7 @@
 // of the IPC, in a headless browser (Edge or Chromium). It checks that:
 // - with 5,000 cards, only the cards on screen are in the DOM, each card says it is one of 5,000, and
 //   scrolling through the whole timeline keeps frames short;
-// - choosing an agent in the Team list shows only its runs, and choosing it again shows all;
+// - choosing an agent in the agent filter shows only its runs, and choosing all agents shows all;
 // - the counters go to the next card that needs the person, and the arrow keys move between cards;
 // - "/" goes to the search, and a search keeps only the matching runs;
 // - with new runs coming, scrolling up pauses the timeline and counts "N new", and the button goes
@@ -182,7 +182,7 @@ async function domCounts(page: Page) {
   }));
 }
 
-/** 5,000 cards, dark, Portuguese: the DOM, the scroll, the Team filter, the counters, the keys, the search. */
+/** 5,000 cards, dark, Portuguese: the DOM, the scroll, the agent filter, the counters, the keys, the search. */
 async function checkFiveThousand(browser: Browser): Promise<void> {
   const { context, page } = await open(browser, "five-thousand", "pt", "dark");
   const text = TEXT.pt;
@@ -206,19 +206,25 @@ async function checkFiveThousand(browser: Browser): Promise<void> {
     await page.getByText(text.paused, { exact: false }).first().waitFor({ timeout: 5_000 });
     report.steps.push("120 wheel turns up: frames timed, timeline paused");
 
-    // The Team filter: Líder Opus only, then every agent again.
-    const member = page.locator(".feed-team-member", { hasText: "Líder Opus" }).first();
-    await member.click();
+    // The agent filter: Líder Opus only, then every agent again.
+    const agentFilter = page.locator("select.feed-select[aria-label='Agente']");
+    // Each option carries the number of runs: "Líder Opus (12)".
+    const leaderValue = await agentFilter.evaluate(
+      (select) =>
+        [...select.querySelectorAll("option")].find((option) => option.textContent?.startsWith("Líder Opus"))?.value ??
+        "",
+    );
+    assert.notEqual(leaderValue, "", "The agent filter lists Líder Opus.");
+    await agentFilter.selectOption(leaderValue);
     await page.waitForFunction(() => {
       const names = [...document.querySelectorAll(".feed-card-agent")].map((element) => element.textContent?.trim());
       return names.length > 0 && names.every((name) => name === "Líder Opus");
     });
-    assert.equal(await member.getAttribute("aria-pressed"), "true", "The chosen agent is pressed.");
     const shownText = await page.locator(".feed-showing").textContent();
     assert.ok(shownText && !shownText.includes(text.showing(5_000, 5_000)), "The filter shows fewer runs.");
-    await member.click();
+    await agentFilter.selectOption("");
     await page.getByText(text.showing(5_000, 5_000)).waitFor({ timeout: 5_000 });
-    report.steps.push("Team filter on and off");
+    report.steps.push("agent filter on and off");
 
     // The counter goes to the next card that needs the person.
     await page.locator(".feed-counter[data-state='needs-you']").click();
@@ -336,7 +342,10 @@ async function checkInApp(browser: Browser): Promise<void> {
       const rail = page.getByRole("navigation", { name: "Páginas" });
       await rail.getByRole("button", { name: "Feed", exact: true }).click({ timeout: 240_000 });
       await page.locator(".feed-card").first().waitFor({ timeout: 30_000 });
-      await page.locator(".feed-team-member").first().waitFor({ timeout: 10_000 });
+      // The Team is gone from the page and from the rail; the tables of the projects take its place.
+      await page.locator(".feed-tables").waitFor({ timeout: 10_000 });
+      assert.equal(await page.locator(".feed-team-member").count(), 0, "The feed has no Team list.");
+      assert.equal(await rail.getByRole("button", { name: "Equipe", exact: true }).count(), 0, "The rail has no Team.");
       assert.equal(
         await rail.getByRole("button", { name: "Feed", exact: true }).getAttribute("aria-current"),
         "page",
