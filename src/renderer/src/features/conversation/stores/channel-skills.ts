@@ -1,5 +1,5 @@
-import type { InstalledSkill, ServerSummary } from "@buildersbot/contracts/ipc";
 import { chatTagReferences } from "@buildersbot/contracts/chat-tag-references";
+import type { InstalledSkill, ServerSummary } from "@buildersbot/contracts/ipc";
 import { createEffect, createMemo, createSignal } from "solid-js";
 import { conversationRuntime } from "../conversation-runtime";
 import type { ConversationProps } from "../conversation-types";
@@ -35,9 +35,7 @@ export interface ChannelSkillsDeps {
 
 /** The skills of the agents that the draft of a channel message addresses. */
 export function createChannelSkills(deps: ChannelSkillsDeps) {
-  const agentIds = createMemo(
-    () => channelSkillAgentIds(deps.draftText(), deps.members()).join("\0"),
-  );
+  const agentIds = createMemo(() => channelSkillAgentIds(deps.draftText(), deps.members()).join("\0"));
   const [skills, setSkills] = createSignal<InstalledSkill[]>([]);
   const [loadFailed, setLoadFailed] = createSignal(false);
   const [retry, setRetry] = createSignal(0);
