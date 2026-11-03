@@ -728,20 +728,32 @@ export function ConversationComposer() {
                   const chip = () => (attachment.kind === "image" && attachment.previewUrl ? "image" : "file");
                   return (
                     <div class="composer-attachment ui-removable-image" data-kind={chip()}>
-                      <span
-                        class="composer-attachment-preview"
-                        data-file-tone={chip() === "file" ? attachmentReferenceTone(attachment.name) : undefined}
+                      <Button
+                        variant="unstyled"
+                        type="button"
+                        class="composer-attachment-open"
+                        aria-label={t("attachment.open", { name: attachment.name })}
+                        onClick={() =>
+                          canPreviewAttachment(attachment)
+                            ? void previewAttachment(attachment)
+                            : attachmentAction(attachment, "open")
+                        }
                       >
-                        <Show when={chip() === "image"} fallback={fileBadge(attachment)}>
-                          <img src={attachment.previewUrl ?? ""} alt="" />
-                        </Show>
-                      </span>
-                      <Show when={chip() === "file"}>
-                        <span class="composer-attachment-copy">
-                          <strong title={attachment.name}>{attachment.name}</strong>
-                          <small>{format.fileSize(attachment.size)}</small>
+                        <span
+                          class="composer-attachment-preview"
+                          data-file-tone={chip() === "file" ? attachmentReferenceTone(attachment.name) : undefined}
+                        >
+                          <Show when={chip() === "image"} fallback={fileBadge(attachment)}>
+                            <img src={attachment.previewUrl ?? ""} alt="" />
+                          </Show>
                         </span>
-                      </Show>
+                        <Show when={chip() === "file"}>
+                          <span class="composer-attachment-copy">
+                            <strong title={attachment.name}>{attachment.name}</strong>
+                            <small>{format.fileSize(attachment.size)}</small>
+                          </span>
+                        </Show>
+                      </Button>
                       <ImageRemoveButton
                         label={t("composer.attachment.remove", { name: attachment.name })}
                         disabled={voicePhase() === "transcribing" || savePending()}

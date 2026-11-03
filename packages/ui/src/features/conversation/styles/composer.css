@@ -917,6 +917,24 @@
   padding: 7px 12px 7px 8px;
 }
 
+.composer-attachment-open {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .composer-attachment-copy {
   display: block;
   min-width: 0;
