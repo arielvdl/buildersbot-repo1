@@ -20,7 +20,7 @@ export interface ChannelTabCloseStat {
 
 export interface ChannelTabCloseOutcomeProps {
   /** The tab's name and figures, shown above the question so the person sees what goes away. */
-  summary?: { name: string; stats: readonly ChannelTabCloseStat[] };
+  summary?: { name: string; stats: readonly ChannelTabCloseStat[] } | undefined;
   /** The answer, or null while the person has not chosen: no option starts selected. */
   outcome: ChannelTabOutcome | null;
   note: string;
