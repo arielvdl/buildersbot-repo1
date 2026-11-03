@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { agentProviderDescriptor } from "@buildersbot/contracts/agent-providers";
 import { expandAttachmentReferences } from "@buildersbot/contracts/attachment-references";
+import { sortConversationMessages } from "@buildersbot/contracts/conversation-order";
 import { INPUT_LIMITS } from "@buildersbot/contracts/input-limits";
 import {
   AGENT_TASK_QUEUED_PREVIEW,
@@ -15,6 +16,7 @@ import {
   type BranchAgentTaskInput,
   type ConversationMessage,
   type ConversationSnapshot,
+  type QuickChatRuntime,
 } from "@buildersbot/contracts/ipc";
 import { sourceText } from "@buildersbot/i18n/source";
 import { createBuildersBotLogger } from "@buildersbot/logging";
@@ -50,6 +52,8 @@ export interface AgentTasksHooks {
   emit(event: AgentEvent): void;
   /** The agent, for its provider and its task limit. */
   agent(agentId: string): AgentSummary | undefined;
+  /** The most conversations of the quick chat that run a turn at the same time, as the person set it. Read at each use. */
+  quickChatThreadLimit(): number;
   /** Why the drain holds the next message of this task, as the drain names it, or null. Read late. */
   hold(agentId: string, taskId: string): string | null;
   /** A message is queued in a task: the queue and the drain take it. */
@@ -109,6 +113,14 @@ export class AgentTasks implements TaskLanes {
   readonly #turnEndWaiters = new Map<string, Set<Deferred.Deferred<void>>>();
   /** One branch is made at a time, so a retry that arrives during the first call finds its branch. */
   readonly #branches = Semaphore.makeUnsafe(1);
+  /** What the last event gave a Quick chat conversation of the questions that it sent, by task id. */
+  readonly #outgoingSignatures = new Map<string, string>();
+  /**
+   * The Quick chat tasks that sent a question to each agent, by the agent that got it. A queue change of any
+   * agent asks this first, so it costs a lookup and not a read of the mailbox. A task that is closed leaves it when
+   * its agent next changes. It starts empty: reading a conversation (`#withOutgoing`) fills it from the mailbox.
+   */
+  readonly #outgoingTo = new Map<string, Set<string>>();
 
   constructor(options: AgentTasksOptions) {
     this.#store = options.store;
@@ -128,7 +140,12 @@ export class AgentTasks implements TaskLanes {
 
   limit(agentId: string): number {
     const agent = this.#hooks.agent(agentId);
-    return agent ? agentTaskLimit(agent) : 1;
+    if (!agent) return 1;
+    // The quick chat has no setting on its record: its limit is the one the person sets in Settings > Load. A
+    // provider that runs one turn at a time still runs one.
+    if (agent.quickChat === true)
+      return agentProviderDescriptor(agent.provider).concurrentTurns ? this.#hooks.quickChatThreadLimit() : 1;
+    return agentTaskLimit(agent);
   }
 
   /** Whether the agent's provider runs one turn at a time, across its own chat and its tasks. */
@@ -158,7 +175,77 @@ export class AgentTasks implements TaskLanes {
     const task = this.#store.task(taskId);
     if (!task || task.agentId !== agentId) throw new Error(sourceText("error.backend.threadNotFound"));
     this.#conversation.registerTaskThread(agentId, task.threadId);
-    return this.#conversation.ensureSnapshot(agentId, task.threadId);
+    return this.#withOutgoing(task, this.#conversation.ensureSnapshot(agentId, task.threadId));
+  }
+
+  /**
+   * The conversation of a Quick chat task with the rows of the questions that it sent to other agents. A request
+   * that an agent sends from a side thread stays out of its own chat, and the thread keeps no row of it, so the
+   * agent strip of the Quick chat had nothing to read. The rows come from the mailbox each time and are never
+   * stored, so a restart cannot leave one that says an agent still works. Any other task is returned as it is.
+   */
+  #withOutgoing(task: AgentThreadRecord, snapshot: ConversationSnapshot): ConversationSnapshot {
+    if (this.#hooks.agent(task.agentId)?.quickChat !== true) return snapshot;
+    const rows = this.#mailbox.taskOutgoingMessages(task.agentId, task.taskId);
+    this.#outgoingSignatures.set(task.taskId, JSON.stringify(rows.map((row) => row.exchange)));
+    for (const row of rows)
+      for (const recipientId of row.exchange?.recipientAgentIds ?? []) this.#noteOutgoing(recipientId, task.taskId);
+    if (rows.length === 0) return snapshot;
+    const messages = [...snapshot.messages, ...rows];
+    sortConversationMessages(messages);
+    return { ...snapshot, messages };
+  }
+
+  #noteOutgoing(recipientId: string, taskId: string): void {
+    const tasks = this.#outgoingTo.get(recipientId) ?? new Set<string>();
+    tasks.add(taskId);
+    this.#outgoingTo.set(recipientId, tasks);
+  }
+
+  /**
+   * A task of `agentId` sent a message to `recipientIds`. For a Quick chat task, the question is a row of its
+   * conversation from now on, and the conversation goes out with it. Any other task is left as it is.
+   */
+  outgoingSent(agentId: string, taskId: string, recipientIds: readonly string[]): void {
+    if (this.#hooks.agent(agentId)?.quickChat !== true) return;
+    for (const recipientId of recipientIds) this.#noteOutgoing(recipientId, taskId);
+    this.#sendOutgoing(agentId, taskId);
+  }
+
+  /**
+   * The queue of `recipientId` changed: a delivery of a question that a Quick chat task sent to it may have
+   * changed, so that task's conversation goes out again with the new rows. It is a lookup for an agent that no
+   * Quick chat task asked, which is almost every agent.
+   */
+  outgoingTouched(recipientId: string): void {
+    const tasks = this.#outgoingTo.get(recipientId);
+    if (!tasks) return;
+    for (const taskId of [...tasks]) {
+      const task = this.#store.task(taskId);
+      if (!task || task.closedAt !== null) {
+        tasks.delete(taskId);
+        this.#outgoingSignatures.delete(taskId);
+        continue;
+      }
+      this.#sendOutgoing(task.agentId, taskId);
+    }
+    if (tasks.size === 0) this.#outgoingTo.delete(recipientId);
+  }
+
+  /** The conversation of a Quick chat task goes out again, when the rows of its questions are not the ones it last got. */
+  #sendOutgoing(agentId: string, taskId: string): void {
+    const task = this.#store.task(taskId);
+    if (!task || task.agentId !== agentId || task.closedAt !== null) return;
+    const snapshot = this.#conversation.loadedExecutionSnapshot(task.threadId);
+    if (!snapshot) return;
+    const rows = this.#mailbox.taskOutgoingMessages(agentId, taskId);
+    const signature = JSON.stringify(rows.map((row) => row.exchange));
+    if (
+      this.#outgoingSignatures.get(taskId) === signature ||
+      (rows.length === 0 && !this.#outgoingSignatures.has(taskId))
+    )
+      return;
+    this.#hooks.emit({ type: "agent-task-conversation", taskId, snapshot: this.#withOutgoing(task, snapshot) });
   }
 
   /** The open task of this agent, ready for a message. */
@@ -182,7 +269,13 @@ export class AgentTasks implements TaskLanes {
    * which the task keeps as its first message: the brief of a task that the agent starts, the text
    * of the person (empty for a start with only files), else `text`.
    */
-  create(agentId: string, text: string, origin: AgentThreadOrigin, opening = text): AgentThreadRecord {
+  create(
+    agentId: string,
+    text: string,
+    origin: AgentThreadOrigin,
+    opening = text,
+    runtime?: QuickChatRuntime,
+  ): AgentThreadRecord {
     const title = taskTitle(text);
     if (!title) throw new Error(sourceText("error.backend.threadTitleRequired"));
     this.#requireRoom(agentId);
@@ -192,9 +285,37 @@ export class AgentTasks implements TaskLanes {
       text: opening,
       title,
       titleSource: origin === "agent" ? "agent" : "auto",
+      ...(runtime ? { runtime } : {}),
     });
     this.#conversation.registerTaskThread(agentId, task.threadId);
     return task;
+  }
+
+  /** The model of a quick chat conversation, or null when it runs on the model of its agent. */
+  runtimeOf(taskId: string): QuickChatRuntime | null {
+    return this.#store.runtimeOf(taskId);
+  }
+
+  /** The model of the side thread with this public thread id, or null. */
+  runtimeOfThread(threadId: string): QuickChatRuntime | null {
+    return this.#store.taskForThread(threadId)?.runtime ?? null;
+  }
+
+  /** The models of the open conversations of the agent that have one. */
+  openRuntimes(agentId: string): QuickChatRuntime[] {
+    return this.#store.list(agentId).flatMap((task) => (task.closedAt === null && task.runtime ? [task.runtime] : []));
+  }
+
+  /** Gives `runtime` to each conversation of the agent that has none (`AgentThreadStore.fillMissingRuntimes`). */
+  fillMissingRuntimes(agentId: string, runtime: QuickChatRuntime): number {
+    return this.#store.fillMissingRuntimes(agentId, runtime);
+  }
+
+  /** Sets the model of a conversation of the agent. The caller checked the model. */
+  setRuntime(agentId: string, taskId: string, runtime: QuickChatRuntime | null): AgentThreadRecord {
+    this.require(agentId, taskId);
+    this.#store.setRuntime(taskId, runtime);
+    return this.require(agentId, taskId);
   }
 
   /**
@@ -525,7 +646,11 @@ export class AgentTasks implements TaskLanes {
       case "conversation": {
         const task = this.#taskOf(event.snapshot.threadId);
         if (!task) return false;
-        this.#hooks.emit({ type: "agent-task-conversation", taskId: task.taskId, snapshot: event.snapshot });
+        this.#hooks.emit({
+          type: "agent-task-conversation",
+          taskId: task.taskId,
+          snapshot: this.#withOutgoing(task, event.snapshot),
+        });
         return true;
       }
       case "conversation-delta": {
@@ -614,6 +739,7 @@ export class AgentTasks implements TaskLanes {
       updatedAt: task.updatedAt,
       closedAt: task.closedAt,
       branch: this.#publicBranch(task),
+      ...(task.runtime ? { runtime: task.runtime } : {}),
     };
   }
 

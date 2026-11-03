@@ -354,6 +354,10 @@ export const messages = {
   "error.backend.taskNotFound": "Esta tarefa não está disponível.",
   "error.backend.taskClosed": "Esta tarefa está fechada. Abra-a de novo para enviar uma mensagem.",
   "error.backend.taskStillRunning": "Esta tarefa ainda está em execução. Aguarde até ela parar e depois feche-a.",
+  "error.backend.quickChatModelUnavailable": "{model} não está disponível em {provider} agora. Escolha outro modelo.",
+  "error.backend.quickChatRuntimeByConversation":
+    "O Chat rápido define o modelo de cada conversa. Escolha o modelo na própria conversa.",
+  "error.backend.quickChatRuntimeOnly": "Só o Chat rápido aceita um modelo para uma conversa.",
   "error.backend.threadNotFound": "Este tópico não está disponível.",
   "error.backend.threadStillRunning": "Este tópico ainda está em execução. Interrompa-o e tente de novo.",
   "error.backend.threadArchived": "Este tópico está arquivado. Restaure-o para enviar uma mensagem.",

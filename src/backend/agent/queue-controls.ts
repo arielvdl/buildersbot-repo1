@@ -26,6 +26,13 @@ import type { ProviderRuntime } from "./provider-runtime";
 import { type LaneTurn, QueueForce, QueueForceRefused } from "./queue-force";
 import type { RoutineScheduler } from "./routine-scheduler";
 import { providerForAgent } from "./thread-items";
+import type { ThreadRuntimes } from "./thread-runtime";
+
+/**
+ * Whose force it is. `chat` is the released wire: the agent's own chat. `threads` is the local app, which also
+ * forces the messages that wait in a side thread.
+ */
+export type ForceScope = "chat" | "threads";
 
 export interface QueueControlsHooks {
   /** The channel task that owns a delivery. Read late: the channel service is built after this. */
@@ -35,6 +42,8 @@ export interface QueueControlsHooks {
    * deleted task.
    */
   taskThreadId(deliveryId: string): string | null;
+  /** The thread of an open task, or null when the task is closed or gone. */
+  taskThreadIdOf(taskId: string): string | null;
   /** The prompt-injection block of a steered message, or null; see `DrainScheduler`'s hook. */
   scanPrompt(agentId: string, input: readonly DeliveryInputItem[]): Effect.Effect<PromptGuardScan | null>;
   /**
@@ -58,6 +67,8 @@ export interface QueueControlsOptions {
   endpoints: CustomEndpoints;
   drain: DrainScheduler;
   routines: RoutineScheduler;
+  /** The model of each quick chat conversation (`thread-runtime.ts`). Identity for every other agent. */
+  runtimes: ThreadRuntimes;
   hooks: QueueControlsHooks;
 }
 
@@ -77,6 +88,7 @@ export class QueueControls {
   readonly #endpoints: CustomEndpoints;
   readonly #drain: DrainScheduler;
   readonly #routines: RoutineScheduler;
+  readonly #runtimes: ThreadRuntimes;
   readonly #hooks: QueueControlsHooks;
   readonly #force: QueueForce;
 
@@ -89,15 +101,20 @@ export class QueueControls {
     this.#endpoints = options.endpoints;
     this.#drain = options.drain;
     this.#routines = options.routines;
+    this.#runtimes = options.runtimes;
     this.#hooks = options.hooks;
     this.#force = new QueueForce({
+      taskOf: (deliveryId) => this.#mailbox.taskIdForDelivery(deliveryId),
       requireForceable: (agentId, deliveryId) => this.#requireForceable(agentId, deliveryId),
-      moveToHead: (agentId, deliveryId) => this.#mailbox.moveToQueueHead(agentId, deliveryId),
+      moveToHead: (agentId, deliveryId, taskId) =>
+        taskId === null
+          ? this.#mailbox.moveToQueueHead(agentId, deliveryId)
+          : this.#mailbox.moveToTaskHead(agentId, deliveryId, taskId),
       restoreOrder: (agentId, previous) => this.#mailbox.restoreQueueOrder(agentId, previous),
       isQueued: (deliveryId) => this.#mailbox.getDelivery(deliveryId)?.delivery.status === "queued",
-      settleStarts: (agentId) => this.#settleStarts(agentId),
-      laneTurn: (agentId) => this.#laneTurn(agentId),
-      holdAfterStop: (agentId, turn) => this.#drain.holdAfterStop(agentId, turn?.turnId ?? null),
+      settleStarts: (agentId, taskId) => this.#settleStarts(agentId, taskId),
+      laneTurn: (agentId, taskId) => this.#laneTurn(agentId, taskId),
+      holdAfterStop: (agentId, turn, taskId) => this.#drain.holdAfterStop(agentId, turn?.turnId ?? null, taskId),
       stop: (agentId, turn) =>
         this.#hooks.stopTurn(agentId, turn.turnId, turn.ownChat ? undefined : (turn.threadId ?? undefined)),
       startAlone: (deliveryId) => this.#drain.startAlone(deliveryId),
@@ -111,17 +128,42 @@ export class QueueControls {
    * Stops the turn that holds the agent's own chat and starts this queued message next, alone. See
    * `QueueForce` for the order of the steps.
    */
-  force(input: ForceQueuedMessageInput): Effect.Effect<ForceQueuedMessageResult, QueueOperationFailed> {
+  force(
+    input: ForceQueuedMessageInput,
+    scope: ForceScope = "chat",
+  ): Effect.Effect<ForceQueuedMessageResult, QueueOperationFailed> {
+    // The released `queue-force-v1` wire forces a message of the agent's own chat only, and task work keeps its own
+    // controls. A message of a thread is forced only by the local app (`threads`): a joined server's client, which
+    // reaches the host through the Team API, gets the refusal it always got for it.
+    if (scope === "chat" && this.#mailbox.taskIdForDelivery(input.deliveryId) !== null)
+      return Effect.fail(
+        new QueueOperationFailed({ cause: new QueueForceRefused(sourceText("error.backend.forceQueuedOnly")) }),
+      );
     return this.#force.force(input).pipe(toQueueOperationFailed);
   }
 
-  /** Only a message of the agent's own chat that waits, and that no other editor holds, can be forced. */
+  /**
+   * Only a message of the agent's own chat or of one of its side threads that waits, and that no other editor
+   * holds, can be forced.
+   */
   #requireForceable(agentId: string, deliveryId: string): void {
     if (this.#hooks.channelAssignment(deliveryId))
       throw new QueueForceRefused(sourceText("error.backend.useChannelTaskControls"));
     const context = this.#mailbox.getDelivery(deliveryId);
-    // The queue the person reads: the agent's own chat, without channel, messaging and task work.
-    const listed = this.#mailbox.listQueue(agentId).deliveries.find((delivery) => delivery.id === deliveryId);
+    const taskId = this.#mailbox.taskIdForDelivery(deliveryId);
+    // A thread that was deleted or closed has no lane to start in.
+    if (taskId !== null && this.#hooks.taskThreadId(deliveryId) === null)
+      throw new QueueForceRefused(sourceText("error.backend.forceQueuedOnly"));
+    // The queue the person reads: the agent's own chat (without channel, messaging and task work), or the
+    // panel of the thread, which lists the messages of the person and no teammate answers.
+    const listed =
+      taskId === null
+        ? this.#mailbox.listQueue(agentId).deliveries.find((delivery) => delivery.id === deliveryId)
+        : this.#mailbox
+            .queuedTaskMessages(agentId, taskId, { teammateAnswers: false })
+            .find((message) => message.deliveryId === deliveryId) && {
+            editing: this.#mailbox.isQueueEditing(deliveryId),
+          };
     if (
       !context ||
       !listed ||
@@ -138,16 +180,28 @@ export class QueueControls {
    * to a turn has no turn id, so this waits for the drain that starts it, as `interrupt_agent` does. A
    * start that fails is the drain's to report; the force reads the lane again either way.
    */
-  #settleStarts(agentId: string): Effect.Effect<readonly string[]> {
+  #settleStarts(agentId: string, taskId: string | null): Effect.Effect<readonly string[]> {
     return Effect.suspend(() => {
-      const starting = this.#mailbox.startingDeliveriesForAgent(agentId, null).map(({ delivery }) => delivery.id);
+      const starting = this.#mailbox.startingDeliveriesForAgent(agentId, taskId).map(({ delivery }) => delivery.id);
       const drain = starting.length > 0 ? this.#drain.taskFor(agentId) : undefined;
       return (drain ? drain.pipe(Effect.ignore) : Effect.void).pipe(Effect.as(starting));
     });
   }
 
   /** The turn of the line of the agent's own chat: of the chat itself, or of a messaging thread. Never a tab's. */
-  #laneTurn(agentId: string): LaneTurn | null {
+  #laneTurn(agentId: string, taskId: string | null): LaneTurn | null {
+    if (taskId !== null) {
+      const threadId = this.#hooks.taskThreadIdOf(taskId);
+      const turnId = threadId ? this.#conversation.loadedExecutionSnapshot(threadId)?.activeTurnId : null;
+      if (!threadId || !turnId) return null;
+      return {
+        turnId,
+        threadId,
+        ownChat: false,
+        sideThread: true,
+        deliveryIds: this.#mailbox.findDeliveriesByTurn(agentId, turnId).map(({ delivery }) => delivery.id),
+      };
+    }
     const snapshot = this.#conversation.mainLaneSnapshot(agentId);
     if (!snapshot?.activeTurnId) return null;
     const ownThreadId = this.#store.list().find((agent) => agent.id === agentId)?.threadId ?? null;
@@ -314,11 +368,13 @@ export class QueueControls {
   }, Effect.uninterruptible);
 
   readonly steer = Effect.fn("QueueControls.steer")(function* (this: QueueControls, input: SteerQueuedMessageInput) {
-    const agent = yield* this.#store.existing(input.agentId).pipe(toQueueOperationFailed);
-    const { client, session, snapshot, context, turnId, taskThreadId } = yield* queueStep(() => {
+    const stored = yield* this.#store.existing(input.agentId).pipe(toQueueOperationFailed);
+    // A task message steers the task's turn, in the task's own provider session. A quick chat conversation
+    // runs that turn on the session that is open on it, which a later choice of model does not change yet.
+    const taskThreadId = yield* queueStep(() => this.#hooks.taskThreadId(input.deliveryId));
+    const agent = this.#runtimes.runningAs(stored, taskThreadId);
+    const { client, session, snapshot, context, turnId } = yield* queueStep(() => {
       const client = this.#providers.requireReadyClientForAgent(agent);
-      // A task message steers the task's turn, in the task's own provider session.
-      const taskThreadId = this.#hooks.taskThreadId(input.deliveryId);
       const session = taskThreadId
         ? this.#store.database.activeProviderSession(taskThreadId, agent.provider)?.externalSessionId
         : this.#store.activeProviderSession(agent.id)?.externalSessionId;
@@ -334,7 +390,7 @@ export class QueueControls {
       // Steering uses the running turn's endpoint even when the saved model has changed.
       if (!this.#endpoints.serves(this.#drain.modelForTurn(agent.id, turnId) ?? agent.model, client.provider))
         throw new Error(REMOVED_ENDPOINT_MESSAGE);
-      return { client, session, snapshot, context, turnId, taskThreadId };
+      return { client, session, snapshot, context, turnId };
     });
     // A routine run in the agent's chat has its own session, which ends with the run. A message
     // steered into it would not stay in the chat's session, so it waits for the next turn.

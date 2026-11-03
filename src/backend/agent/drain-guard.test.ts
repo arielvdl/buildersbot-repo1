@@ -28,6 +28,7 @@ import type { ProfileSave } from "./profile-save";
 import type { ProviderRuntime } from "./provider-runtime";
 import type { RoutineScheduler } from "./routine-scheduler";
 import type { ThreadLifecycle } from "./thread-lifecycle";
+import { ThreadRuntimes } from "./thread-runtime";
 import type { UsageLimitGate } from "./usage-limit-gate";
 
 const roots: string[] = [];
@@ -178,6 +179,15 @@ async function startChannelTurn(options: { review: string | null }): Promise<Run
     managedAttachments: [],
   };
   const drain = new DrainScheduler({
+    // No quick chat conversation has a model of its own here.
+    runtimes: new ThreadRuntimes({
+      runtimeOfTask: () => null,
+      runtimeOfThread: () => null,
+      runtimesOf: () => [],
+      threadIdOfTask: () => null,
+      activeSessionOf: () => null,
+    }),
+    reconcile: () => Effect.void,
     store,
     mailbox: stub<MailboxStore>({
       taskIdForDelivery: () => null,

@@ -502,6 +502,42 @@ export class MailboxStore {
   }
 
   /**
+   * The side thread that a question came from, when it is a question that `requesterAgentId` sent to
+   * `answererAgentId` and the answerer has not answered: the message exists, its sender is the requester,
+   * it wants an answer, the answerer received it, and it was sent from a side thread. Null for any other
+   * message, so a caller cannot answer what it was not asked, or answer twice. A repeat of the same tool
+   * call (`idempotencyKey`) is not a second answer.
+   */
+  openRequestThread(
+    requesterAgentId: string,
+    answererAgentId: string,
+    requestMessageId: string,
+    idempotencyKey?: string,
+  ): string | null {
+    const request = this.#state.messages.find((message) => message.id === requestMessageId);
+    if (
+      !request?.senderTaskId ||
+      request.sender.kind !== "agent" ||
+      request.sender.agentId !== requesterAgentId ||
+      request.expectsReply === false
+    )
+      return null;
+    const received = this.#state.deliveries.some(
+      (delivery) => delivery.messageId === request.id && delivery.recipientAgentId === answererAgentId,
+    );
+    if (!received) return null;
+    const repeated = idempotencyKey === undefined ? undefined : this.#state.idempotency[idempotencyKey];
+    const answered = this.#state.messages.some(
+      (message) =>
+        message.id !== repeated &&
+        message.sender.kind === "agent" &&
+        message.sender.agentId === answererAgentId &&
+        message.replyToMessageId === request.id,
+    );
+    return answered ? null : request.senderTaskId;
+  }
+
+  /**
    * The deliveries of requests that an agent sent from one messaging link, whose answer goes back to
    * it, and that have not ended.
    */
@@ -1404,38 +1440,8 @@ export class MailboxStore {
     const turnIds = this.#sourceTurnIds();
     for (const message of selectedStoredMessages) {
       const deliveries = deliveriesByMessage.get(message.id) ?? [];
-      if (message.sender.kind === "agent" && message.sender.agentId === agentId) {
-        messages.push({
-          id: `outbox-${message.id}`,
-          turnId: turnIds.get(message.id),
-          author: "system",
-          source: "system",
-          text: message.text,
-          attachments: message.attachments.map(toAttachmentSummary),
-          replyToMessageId: message.replyToMessageId,
-          exchange: {
-            direction: "outgoing",
-            messageId: message.id,
-            senderAgentId: agentId,
-            recipientAgentIds: deliveries.map((item) => item.recipientAgentId),
-            replyToMessageId: message.replyToMessageId,
-            ...(message.expectsReply === false ? { expectsReply: false } : {}),
-            deliveries: deliveries.map((item) => {
-              const delivery = this.#publicDelivery(item, positions, message);
-              return {
-                id: delivery.id,
-                recipientAgentId: delivery.recipientAgentId,
-                status: delivery.status,
-                position: delivery.position,
-                error: delivery.error,
-              };
-            }),
-          },
-          createdAt: message.createdAt,
-          status: "completed",
-          itemType: AGENT_EXCHANGE_ITEM_TYPE,
-        });
-      }
+      if (message.sender.kind === "agent" && message.sender.agentId === agentId)
+        messages.push(this.#outgoingRow(message, deliveries, agentId, positions, turnIds));
 
       for (const storedDelivery of deliveries) {
         if (storedDelivery.recipientAgentId !== agentId) continue;
@@ -1501,6 +1507,77 @@ export class MailboxStore {
       }
     }
     return messages;
+  }
+
+  /** The row of a message that `agentId` sent: who got it and where each delivery is. */
+  #outgoingRow(
+    message: StoredMessage,
+    deliveries: readonly StoredDelivery[],
+    agentId: string,
+    positions: ReadonlyMap<string, number>,
+    turnIds: ReadonlyMap<string, string | undefined>,
+  ): ConversationMessage {
+    return {
+      id: `outbox-${message.id}`,
+      turnId: turnIds.get(message.id),
+      author: "system",
+      source: "system",
+      text: message.text,
+      attachments: message.attachments.map(toAttachmentSummary),
+      replyToMessageId: message.replyToMessageId,
+      exchange: {
+        direction: "outgoing",
+        messageId: message.id,
+        senderAgentId: agentId,
+        recipientAgentIds: deliveries.map((item) => item.recipientAgentId),
+        replyToMessageId: message.replyToMessageId,
+        ...(message.expectsReply === false ? { expectsReply: false } : {}),
+        deliveries: deliveries.map((item) => {
+          const delivery = this.#publicDelivery(item, positions, message);
+          return {
+            id: delivery.id,
+            recipientAgentId: delivery.recipientAgentId,
+            status: delivery.status,
+            position: delivery.position,
+            error: delivery.error,
+          };
+        }),
+      },
+      createdAt: message.createdAt,
+      status: "completed",
+      itemType: AGENT_EXCHANGE_ITEM_TYPE,
+    };
+  }
+
+  /**
+   * The rows of the messages that `agentId` sent from one side thread, newest `limit`. A request from a side thread
+   * stays out of the agent's own chat (`conversationMessages`), so no other read gives the thread these rows.
+   */
+  taskOutgoingMessages(agentId: string, taskId: string, limit = 50): ConversationMessage[] {
+    const sent = this.#state.messages
+      .filter(
+        (message) =>
+          message.senderTaskId === taskId &&
+          message.sender.kind === "agent" &&
+          message.sender.agentId === agentId &&
+          !message.channelId &&
+          !message.messaging,
+      )
+      .slice(-limit);
+    if (sent.length === 0) return [];
+    const ids = new Set(sent.map((message) => message.id));
+    const deliveriesByMessage = new Map<string, StoredDelivery[]>();
+    for (const delivery of this.#state.deliveries) {
+      if (!ids.has(delivery.messageId)) continue;
+      const deliveries = deliveriesByMessage.get(delivery.messageId) ?? [];
+      deliveries.push(delivery);
+      deliveriesByMessage.set(delivery.messageId, deliveries);
+    }
+    const positions = this.#queuedPositions();
+    const turnIds = this.#sourceTurnIds();
+    return sent.map((message) =>
+      this.#outgoingRow(message, deliveriesByMessage.get(message.id) ?? [], agentId, positions, turnIds),
+    );
   }
 
   reactionFor(
@@ -2200,6 +2277,11 @@ export class MailboxStore {
     if (!this.#database.connection.isTransaction) this.#clearChanges();
   }
 
+  /** Whether an editor holds this delivery, so a force must leave it. */
+  isQueueEditing(deliveryId: string): boolean {
+    return Boolean(this.#state.deliveries.find((item) => item.id === deliveryId)?.editId);
+  }
+
   #assertQueueNotEditing(deliveryId: string): void {
     this.#assertQueueNotUpdating(deliveryId);
     if (this.#state.deliveries.find((item) => item.id === deliveryId)?.editId)
@@ -2637,6 +2719,43 @@ export class MailboxStore {
       for (const [index, delivery] of [...execution, forced, ...others].entries()) {
         if (delivery.queueOrder === index) continue;
         delivery.queueOrder = index;
+        this.#changes.deliveryIds.add(delivery.id);
+      }
+      this.#persist("queue.reordered");
+      return previous;
+    } catch (cause) {
+      return yield* new StoredStateFailure({ cause });
+    }
+  }, Effect.uninterruptible).bind(this);
+
+  /**
+   * Puts one queued message of a task first among the queued messages of that task, for a force: before the
+   * others of the thread, also before one that another editor holds. The other lanes keep their places, and
+   * the task's messages take the places that they held. Returns the order before the change, for
+   * `restoreQueueOrder`.
+   */
+  moveToTaskHead = Effect.fn("MailboxStore.moveToTaskHead")(function* (
+    this: MailboxStore,
+    agentId: string,
+    deliveryId: string,
+    taskId: string,
+  ): Effect.fn.Return<ReadonlyMap<string, number>, StoredStateFailure> {
+    try {
+      const messages = this.#messagesById();
+      const allQueued = this.#state.deliveries
+        .filter((delivery) => delivery.recipientAgentId === agentId && delivery.status === "queued")
+        .sort(compareQueueOrder);
+      const mine = allQueued.filter((delivery) => this.#taskIdOf(delivery, messages) === taskId);
+      const forced = mine.find((delivery) => delivery.id === deliveryId);
+      if (!forced || forced.editId || waitsForPlanContinuation(forced)) {
+        throw new Error(sourceText("error.backend.forceQueuedOnly"));
+      }
+      const previous = new Map(allQueued.map((delivery) => [delivery.id, delivery.queueOrder]));
+      const places = mine.map((delivery) => delivery.queueOrder);
+      for (const [index, delivery] of [forced, ...mine.filter((delivery) => delivery !== forced)].entries()) {
+        const order = places[index];
+        if (order === undefined || delivery.queueOrder === order) continue;
+        delivery.queueOrder = order;
         this.#changes.deliveryIds.add(delivery.id);
       }
       this.#persist("queue.reordered");

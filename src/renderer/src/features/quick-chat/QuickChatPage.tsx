@@ -1,4 +1,4 @@
-import type { CentralAuthUser, UpdateAgentInput } from "@buildersbot/contracts/ipc";
+import type { CentralAuthUser } from "@buildersbot/contracts/ipc";
 import { Button, Skeleton, toast, Zap } from "@buildersbot/ui";
 import type { AgentProfile } from "@buildersbot/ui/data";
 import { MAIN_THREAD_ID, type ThreadItem } from "@buildersbot/ui/features/conversation/threads/thread-types";
@@ -20,17 +20,38 @@ import { useServerSettings } from "../servers/server-settings";
 import { useServers } from "../servers/servers-context";
 import { calledAgent } from "./quick-chat-address";
 import {
+  addQuickChatFolder,
+  moveQuickChatRow,
+  readQuickChatFolders,
+  removeQuickChatFolder,
+  renameQuickChatFolder,
+} from "./quick-chat-folders";
+import {
   addQuickChatPointer,
   pruneQuickChatPointers,
   type QuickChatPointer,
   readQuickChatPointers,
 } from "./quick-chat-pointers";
 import { quickChatPort } from "./quick-chat-port";
+import { createQuickChatRuntime, type QuickChatAgentUpdate, touchesQuickChatRuntime } from "./quick-chat-runtime";
 import { createQuickChat } from "./quick-chat-state";
 
-/** The message box of the open conversation. A new conversation has the focus, so the person types at once. */
+/** What owns the focus while it is open: a popover, a menu, a dialog, or the header with the model picker. */
+const FOCUS_OWNER = "[role=dialog], [role=menu], [role=listbox], [data-popper-positioner], .conversation-header";
+
+/**
+ * The message box of the open conversation. A new conversation has the focus, so the person types at once.
+ * The focus never leaves a popover, a dialog, the header or another field: the list of conversations
+ * redraws while another conversation runs, and a stolen focus closes the model picker.
+ */
 function focusComposer(root: HTMLElement | undefined): void {
-  root?.querySelector<HTMLElement>('.composer-editor-surface[role="textbox"]')?.focus();
+  const composer = root?.querySelector<HTMLElement>('.composer-editor-surface[role="textbox"]');
+  const active = document.activeElement;
+  if (active instanceof HTMLElement && active !== composer) {
+    const typing = active.matches('input, textarea, [contenteditable="true"]');
+    if (typing || active.closest(FOCUS_OWNER)) return;
+  }
+  composer?.focus();
 }
 
 /**
@@ -82,6 +103,7 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   /** The conversation of an agent that a message called, when one is open. Absent: the Quick chat agent's. */
   const [called, setCalled] = createSignal<QuickChatPointer | null>(null);
   const [pointers, setPointers] = createSignal<QuickChatPointer[]>(readQuickChatPointers(activeServerId()));
+  const [folderState, setFolderState] = createSignal(readQuickChatFolders(activeServerId()));
   /** The agent that owns the open conversation. */
   const owner = createMemo(() => {
     const open = called();
@@ -93,7 +115,13 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
     const id = agentId();
     if (!id) return false;
     const call = calledAgent(text);
-    if (!call) return tabs.sendDraft(id, text, files);
+    if (!call) {
+      const chosen = runtime.draftRuntime();
+      const sent = await tabs.sendDraft(id, text, files, chosen);
+      if (sent) runtime.started(chosen);
+      else runtime.startFailed();
+      return sent;
+    }
     const agent = mentionable().find((candidate) => candidate.id === call.agentId);
     if (!agent) {
       actionToast.error(t("quick.error.agentGone"));
@@ -122,6 +150,7 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
         title: item.title,
         firstMessage: item.firstMessage,
         preview: item.preview,
+        createdAt: item.createdAt,
         updatedAt: item.updatedAt,
         status: item.status,
         owner: agent.id === agentId() ? quickOwner : { name: agent.name, quick: false, agent },
@@ -151,11 +180,24 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   });
   const ownerThreads = createMemo(() => buildThreads(owner()));
   const open = () => ownerThreads()?.open;
-  const selectedKey = () => {
+  /** A memo: the key is the same string while another conversation runs, so the effects below stay quiet. */
+  const selectedKey = createMemo(() => {
     const item = open();
     const id = owner()?.id;
     return item && id ? quickChatRowKey(id, item.id) : null;
-  };
+  });
+  /** The model of the open conversation, or of the draft. A conversation of a called agent has none: that agent's own model stands. */
+  const runtime = createQuickChatRuntime({
+    port: quickChatPort,
+    agent: quick.agent,
+    open: () => (called() ? undefined : open()),
+    adopt: quick.adopt,
+    refreshTasks: (id) => void tasks.loadTasks(id),
+  });
+  const conversationAgent = createMemo(() => runtime.profile(owner()));
+  const ready = createMemo(() => quick.phase() === "ready");
+  const conversationGone = createMemo(() => called() !== null && owner() === undefined);
+  const activeThreadId = createMemo(() => ownerThreads()?.header.activeId);
 
   // A model changed during a turn applies before the next one, with no event for this agent: read it
   // again each time the open conversation starts or ends a turn, so the pickers show the model it runs on.
@@ -169,14 +211,9 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   // The Quick chat has no chat of its own for an agent, so a closed or deleted conversation, or one of an
   // agent that is gone, opens a new conversation, and the page never shows an empty pane.
   createEffect(
-    () => ({
-      id: agentId(),
-      ready: quick.phase() === "ready",
-      gone: called() !== null && owner() === undefined,
-      active: ownerThreads()?.header.activeId,
-    }),
-    ({ id, ready, gone, active }) => {
-      if (!ready || !id) return;
+    () => ({ id: agentId(), ready: ready(), gone: conversationGone(), active: activeThreadId() }),
+    ({ id, ready: isReady, gone, active }) => {
+      if (!isReady || !id) return;
       if (gone || active === MAIN_THREAD_ID) {
         setCalled(null);
         tabs.startNew(id);
@@ -219,19 +256,40 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   );
   // Each conversation that opens has the focus in its message box.
   createEffect(
-    () => ({ key: selectedKey(), ready: quick.phase() === "ready" }),
-    ({ ready }) => {
-      if (ready) requestAnimationFrame(() => focusComposer(chat));
+    () => ({ key: selectedKey(), ready: ready() }),
+    ({ ready: isReady }) => {
+      if (isReady) requestAnimationFrame(() => focusComposer(chat));
     },
   );
 
+  // A new conversation starts with the model of the last one, so a choice that was never sent ends here.
+  createEffect(selectedKey, () => runtime.resetDraft());
+
+  /** The model goes to the open conversation. Any other field of the agent is saved on the agent. */
+  async function updateQuickChatAgent(id: string, updates: QuickChatAgentUpdate): Promise<void> {
+    if (!touchesQuickChatRuntime(updates)) return quick.updateAgent(id, updates);
+    const { provider, model, reasoningEffort, fastMode, providerAccountId, ...rest } = updates;
+    await runtime.change({
+      ...(provider === undefined ? {} : { provider }),
+      ...(model === undefined ? {} : { model }),
+      ...(reasoningEffort === undefined ? {} : { reasoningEffort }),
+      ...(fastMode === undefined ? {} : { fastMode }),
+      ...(providerAccountId === undefined ? {} : { providerAccountId }),
+    });
+    if (Object.keys(rest).length > 0) await quick.updateAgent(id, rest);
+  }
+
   const subject = {
-    agent: owner,
+    agent: conversationAgent,
     // The Quick chat agent is in no roster, so its changes go through the page. Another agent's go the usual way.
-    updateAgent: (id: string, updates: Omit<UpdateAgentInput, "agentId">) =>
-      id === agentId() ? quick.updateAgent(id, updates) : updateRosterAgent(id, updates),
+    updateAgent: (id: string, updates: QuickChatAgentUpdate) =>
+      id === agentId() ? updateQuickChatAgent(id, updates) : updateRosterAgent(id, updates),
     sendDraft,
     quickChat: {
+      /** The conversation of a called agent keeps that agent's model, so its picker is locked and says why. */
+      get modelLocked() {
+        return called() ? owner()?.name : undefined;
+      },
       title: (
         <span class="quick-header-title">
           <Zap class="quick-header-bolt" aria-hidden="true" />
@@ -283,10 +341,17 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
               const id = agentId();
               if (!id) return;
               setCalled(null);
+              runtime.resetDraft();
               tabs.startNew(id);
             }}
             onArchive={(item) => void tabs.archive(item.agentId, item.taskId)}
             onRestore={(item) => void tabs.restore(item.agentId, item.taskId)}
+            folders={folderState().folders}
+            assignments={folderState().assignments}
+            onCreateFolder={(name) => setFolderState(addQuickChatFolder(activeServerId(), name))}
+            onRenameFolder={(folder, name) => setFolderState(renameQuickChatFolder(activeServerId(), folder.id, name))}
+            onDeleteFolder={(folder) => setFolderState(removeQuickChatFolder(activeServerId(), folder.id))}
+            onMove={(item, folderId) => setFolderState(moveQuickChatRow(activeServerId(), item.key, folderId))}
             onDelete={tasks.editable() ? (item) => void tabs.remove(item.agentId, item.taskId) : undefined}
           />
           <div

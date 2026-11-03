@@ -80,7 +80,9 @@ import type {
   ProviderUsageResets,
   QueuedMessageReceipt,
   QueueSnapshot,
+  QuickChatConversationRuntimeResult,
   QuickChatEnsureResult,
+  QuickChatRuntime,
   RemoveMcpServerInput,
   ReorderQueueInput,
   ResetAgentSessionSettingInput,
@@ -100,6 +102,7 @@ import type {
   SetAgentSessionSettingInput,
   SetMcpServerEnabledInput,
   SetMessageReactionInput,
+  SetQuickChatConversationRuntimeInput,
   SharedTable,
   SidebarLayoutSnapshot,
   SidebarSection,
@@ -134,6 +137,7 @@ import {
   DEFAULT_CUSTOM_PROVIDER_HARNESS,
   DEFAULT_GUARD_PREFERENCE,
   DEFAULT_PROVIDER_ACCOUNT_ID,
+  DEFAULT_QUICK_CHAT_THREADS,
   DEFAULT_SECURITY_GUARD_PREFERENCE,
   type GuardPreference,
   isContextResetMarker,
@@ -237,7 +241,7 @@ import {
   ProviderRuntime,
   toProviderOperationFailed,
 } from "./agent/provider-runtime";
-import { QueueControls } from "./agent/queue-controls";
+import { type ForceScope, QueueControls } from "./agent/queue-controls";
 import { cleanQuickChatTitle, quickChatTitlePrompt } from "./agent/quick-chat-title";
 import { quietRoutineRun } from "./agent/routine-quiet-runs";
 import { type RoutineMutationOptions, RoutineScheduler, toRoutineOperationFailed } from "./agent/routine-scheduler";
@@ -259,6 +263,7 @@ import {
   type ToolUsageSignal,
 } from "./agent/thread-items";
 import { ThreadLifecycle } from "./agent/thread-lifecycle";
+import { reconcileThreadRuntime, ThreadRuntimes } from "./agent/thread-runtime";
 import { toToolOperationFailed } from "./agent/tool-operation";
 import { type AgentBrowserHost, type RunningTurn, TurnLifecycle } from "./agent/turn-lifecycle";
 import { TURN_RESUME_DELAYS_SECONDS } from "./agent/turn-resume";
@@ -566,6 +571,11 @@ export interface AgentServiceOptions {
    * Omitted: `DEFAULT_AGENTS_PER_TAB`.
    */
   channelParallelLimit?: () => number;
+  /**
+   * The most conversations of the quick chat that run a turn at the same time, as the person set it.
+   * Omitted: `DEFAULT_QUICK_CHAT_THREADS`. The record of the quick chat agent has no limit of its own.
+   */
+  quickChatThreadLimit?: () => number;
 }
 
 /** How long a user send's `clientMessageId` answers a retry. A retry follows a lost reply, not a day. */
@@ -607,6 +617,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   readonly #memoryReview: MemoryReview;
   readonly #waits: AgentWaits;
   readonly #tasks: AgentTasks;
+  readonly #threadRuntimes: ThreadRuntimes;
   readonly #tables: AgentTables | null;
   readonly #routines: RoutineScheduler;
   readonly #routineTimer: RoutineTimer;
@@ -768,6 +779,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       hooks: {
         emit: (event) => this.#emit(event),
         agent: (agentId) => store.list().find((agent) => agent.id === agentId),
+        quickChatThreadLimit: () => options.quickChatThreadLimit?.() ?? DEFAULT_QUICK_CHAT_THREADS,
         // Read late: the drain is built further down this constructor.
         hold: (agentId, taskId) => this.#drain.taskHold(agentId, taskId),
         queued: (agentId) => {
@@ -777,6 +789,17 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         completedFirstTurn: (task) => {
           if (this.#store.isQuickChat(task.agentId)) Effect.runFork(this.#titleQuickChatThread(task));
         },
+      },
+    });
+    // The model of each quick chat conversation: one place that every reader in the path of a turn asks.
+    this.#threadRuntimes = new ThreadRuntimes({
+      runtimeOfTask: (taskId) => this.#tasks.runtimeOf(taskId),
+      runtimeOfThread: (threadId) => this.#tasks.runtimeOfThread(threadId),
+      runtimesOf: (agentId) => this.#tasks.openRuntimes(agentId),
+      threadIdOfTask: (taskId) => this.#tasks.threadId(taskId),
+      activeSessionOf: (threadId) => {
+        const session = store.database.listProviderSessions(threadId).findLast((one) => one.state === "active");
+        return session ? { provider: session.provider, model: session.model } : null;
       },
     });
     this.#tables = options.tables ?? null;
@@ -1109,6 +1132,11 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       rotateSession: (agentId, client, threadId) => this.#threads.rotateProviderSession(agentId, client, threadId),
       rotatesSession: (agentId, threadId) => this.#threads.rotatesSession(agentId, threadId),
       isStopping: () => this.#stopping,
+      agentOfThread: (agent, threadId, kind) =>
+        this.#threadRuntimes.runningAs(
+          agent,
+          kind === "public" ? threadId : this.#conversation.publicThreadId(agent.id, threadId),
+        ),
       compacted: (threadId) => {
         this.channels.contextCompacted(threadId);
         this.messaging.contextCompacted(threadId);
@@ -1201,6 +1229,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         // Read late: `channels` is built after this.
         // Only a provider that runs one turn at a time makes the chat wait for channel work.
         queueHold: (agentId) => (this.#tasks.oneTurnAtATime(agentId) ? this.channels.queueHold(agentId) : null),
+        taskOutgoingChanged: (agentId) => this.#tasks.outgoingTouched(agentId),
       },
     });
     this.#reader = new ConversationReader({
@@ -1229,6 +1258,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     });
     this.#threads = new ThreadLifecycle({
       store,
+      runtimes: this.#threadRuntimes,
       mailbox,
       conversation: this.#conversation,
       memories: this.#memories,
@@ -1263,6 +1293,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     });
     this.#boot = new BootRecovery({
       store,
+      runtimes: this.#threadRuntimes,
       mailbox,
       providers: this.#providers,
       conversation: this.#conversation,
@@ -1480,6 +1511,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     });
     this.#usageLimits = new UsageLimitGate({
       store,
+      runtimes: this.#threadRuntimes,
       hooks: {
         emit: (event) => this.#emit(event),
         emitRuntimeSnapshot: () => this.#emitRuntimeSnapshot(),
@@ -1526,6 +1558,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       emitError: (code, error, agentId) => this.#emitError(code, error, agentId),
     });
     this.#drain = new DrainScheduler({
+      runtimes: this.#threadRuntimes,
+      reconcile: (agent, taskId) => this.#reconcileThreadRuntime(agent, taskId),
       channels: this.channels,
       messaging: this.messaging,
       store,
@@ -1636,6 +1670,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     });
     this.#queue = new QueueControls({
       store,
+      runtimes: this.#threadRuntimes,
       mailbox,
       mailboxSync: this.#mailboxSync,
       conversation: this.#conversation,
@@ -1645,6 +1680,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       routines: this.#routines,
       hooks: {
         channelAssignment: (deliveryId) => this.channels.store.assignmentForDelivery(deliveryId),
+        taskThreadIdOf: (taskId) => this.#tasks.threadId(taskId),
         taskThreadId: (deliveryId) => {
           // A steer must not reach the agent's own chat for a message of a deleted task.
           if (this.#tasks.deliveryTaskGone(deliveryId)) throw new Error(sourceText("error.backend.threadNotFound"));
@@ -1656,6 +1692,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     });
     this.#turn = new TurnLifecycle({
       store,
+      runtimes: this.#threadRuntimes,
       mailbox,
       mailboxSync: this.#mailboxSync,
       conversation: this.#conversation,
@@ -3246,26 +3283,186 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       }
       return { agent: made.agent, changed: made.created };
     }
-    if (choice && this.#providers.catalogRead(providerForAgent(held)) && !quickChatChoiceListed(held, models)) {
-      const target = modelOf({ provider: choice.provider, model: choice.model });
-      // A change that cannot apply now leaves the agent as it is: the page opens, and the send says why.
-      const moved = yield* Effect.result(
-        this.updateAgent(
-          {
-            agentId: held.id,
-            provider: choice.provider,
-            model: choice.model,
-            reasoningEffort: choice.reasoningEffort ?? target?.defaultReasoningEffort ?? held.reasoningEffort,
-            fastMode: choice.fastMode === true,
-          },
-          undefined,
-          true,
+    // A quick chat from before the model of each conversation can hold a queued change of the agent, which
+    // waited for the whole agent to rest. It becomes the default of the next conversation now, and the
+    // conversations keep the model that they ran on. No session moves: the agent runs no conversation itself.
+    let current = held;
+    let changed = false;
+    if (held.pendingRuntime) {
+      const queued = held.pendingRuntime;
+      const applied = yield* Effect.result(
+        Effect.sync(() => this.#pinQuickChatConversations(held)).pipe(
+          Effect.andThen(
+            this.#store.updateAgent({
+              agentId: held.id,
+              provider: queued.provider,
+              model: queued.model,
+              reasoningEffort: queued.reasoningEffort,
+              providerAccountId: queued.providerAccountId ?? null,
+              pendingRuntime: null,
+            }),
+          ),
         ),
+      );
+      if (Result.isSuccess(applied)) {
+        current = applied.success;
+        changed = true;
+      } else logger.warn("The quick chat agent kept a queued change.", { error: applied.failure.cause });
+    }
+    // Every conversation has a model of its own from here on, so the model of the agent only seeds a new one.
+    // The same call at each open: a conversation that has a model keeps it.
+    yield* lifecycleStep("pin quick chat conversations", () => this.#pinQuickChatConversations(current));
+    if (choice && this.#providers.catalogRead(providerForAgent(current)) && !quickChatChoiceListed(current, models)) {
+      const target = modelOf({ provider: choice.provider, model: choice.model });
+      // The default of the next conversation moves to a listed model. The conversations keep theirs (they were
+      // pinned above): one on a model that left the catalog fails at its next message, with the reason shown.
+      // The record changes in the store alone, so nothing waits for a conversation to rest.
+      const moved = yield* Effect.result(
+        this.#store.updateAgent({
+          agentId: current.id,
+          provider: choice.provider,
+          model: choice.model,
+          reasoningEffort: choice.reasoningEffort ?? target?.defaultReasoningEffort ?? current.reasoningEffort,
+          fastMode: choice.fastMode === true,
+        }),
       );
       if (Result.isSuccess(moved)) return { agent: this.#store.quickChatAgent() ?? moved.success, changed: true };
       logger.warn("The quick chat agent stayed on a model that left the catalog.", { error: moved.failure.cause });
     }
-    return { agent: held, changed: false };
+    return { agent: this.#store.quickChatAgent() ?? current, changed };
+  }).bind(this);
+
+  /**
+   * Checks a model that a person chose for a quick chat conversation, and answers it as the conversation
+   * will store it. The model must be in the list of its provider and the provider must be on. An effort
+   * that the model does not take becomes the model's default, and a model with no effort setting keeps
+   * none. Fast mode stays only for a model that has a fast tier. Nothing is written here, so a refusal
+   * leaves the conversation as it was.
+   */
+  #checkQuickChatRuntime(requested: QuickChatRuntime): Effect.Effect<QuickChatRuntime, AgentLifecycleFailed> {
+    return Effect.gen({ self: this }, function* () {
+      yield* this.#providers
+        .ensureProvider(requested.provider)
+        .pipe(
+          Effect.mapError(
+            (failure) => new AgentLifecycleFailed({ operation: "checkQuickChatModel", cause: failure.cause }),
+          ),
+        );
+      return yield* lifecycleStep("check quick chat model", () => {
+        const model = this.#endpoints
+          .available()
+          .find((candidate) => candidate.provider === requested.provider && candidate.id === requested.model);
+        if (!model)
+          throw new Error(
+            sourceText("error.backend.quickChatModelUnavailable", {
+              model: requested.model,
+              provider: providerLabel(requested.provider),
+            }),
+          );
+        this.#providers.requireProviderOn(requested.provider);
+        const reasoningEffort =
+          model.reasoningEffortConfigurable === false
+            ? undefined
+            : requested.reasoningEffort && model.supportedReasoningEfforts.includes(requested.reasoningEffort)
+              ? requested.reasoningEffort
+              : model.defaultReasoningEffort;
+        return {
+          provider: model.provider,
+          model: model.id,
+          ...(reasoningEffort === undefined ? {} : { reasoningEffort }),
+          ...(requested.fastMode === true && model.fastServiceTier !== undefined ? { fastMode: true } : {}),
+        };
+      });
+    });
+  }
+
+  /**
+   * Makes the provider sessions of one quick chat conversation match its model (`reconcileThreadRuntime`).
+   * A failure is logged and does not stop the turn: the sessions are as they were, and the turn asks the
+   * provider, which names what is wrong.
+   */
+  #reconcileThreadRuntime(agent: AgentSummary, taskId: string): Effect.Effect<void> {
+    return reconcileThreadRuntime(
+      {
+        runtimes: this.#threadRuntimes,
+        database: this.#store.database,
+        threads: this.#threads,
+      },
+      agent,
+      taskId,
+    ).pipe(
+      Effect.catchCause((cause) =>
+        Effect.sync(() => logger.warn("Could not match a conversation's sessions to its model.", { taskId, cause })),
+      ),
+    );
+  }
+
+  /**
+   * Makes the model of a conversation the default of the next new one. It writes the quick chat agent's
+   * record in the store, with no `#applyAgentUpdate`: nothing is delivered, no session is retired and no
+   * `pendingRuntime` is made. The agent runs no conversation of its own, so its record is only the default.
+   */
+  #rememberQuickChatDefault(agentId: string, runtime: QuickChatRuntime): Effect.Effect<void, AgentLifecycleFailed> {
+    const agent = this.#store.quickChatAgent();
+    if (!agent || agent.id !== agentId) return Effect.void;
+    const same =
+      agent.provider === runtime.provider &&
+      agent.model === runtime.model &&
+      agent.reasoningEffort === (runtime.reasoningEffort ?? agent.reasoningEffort) &&
+      (agent.fastMode === true) === (runtime.fastMode === true);
+    if (same) return Effect.void;
+    // A conversation with no model of its own runs on the model of the agent. Pin each one to it first, so
+    // that none of them changes model because the default of the next conversation did.
+    return Effect.sync(() => this.#pinQuickChatConversations(agent)).pipe(
+      Effect.andThen(
+        this.#store.updateAgent({
+          agentId,
+          provider: runtime.provider,
+          model: runtime.model,
+          reasoningEffort: runtime.reasoningEffort ?? agent.reasoningEffort,
+          fastMode: runtime.fastMode === true,
+        }),
+      ),
+      Effect.asVoid,
+      Effect.mapError((failure) => new AgentLifecycleFailed({ operation: "quickChatDefault", cause: failure.cause })),
+    );
+  }
+
+  /**
+   * Gives the model that the agent record names to each conversation that has none (and answers how many).
+   * Idempotent: a conversation with a model keeps it. This is what makes the record only a default.
+   */
+  #pinQuickChatConversations(agent: AgentSummary): number {
+    return this.#tasks.fillMissingRuntimes(agent.id, quickChatRuntimeOf(agent));
+  }
+
+  /**
+   * Sets the model of one quick chat conversation. The model is checked first (`#checkQuickChatRuntime`); a
+   * refusal changes nothing. The new model starts with the next message of that conversation: a turn that
+   * runs now ends on the model it began with. The model also becomes the default of the next new
+   * conversation. A task of any other agent, and an archived one, is refused.
+   */
+  readonly setQuickChatConversationRuntime = Effect.fn("AgentService.setQuickChatConversationRuntime")(function* (
+    this: AgentService,
+    input: SetQuickChatConversationRuntimeInput,
+  ): Effect.fn.Return<QuickChatConversationRuntimeResult, AgentLifecycleFailed> {
+    if (!this.#store.isQuickChat(input.agentId))
+      return yield* this.#unknownAgentFailure("setQuickChatConversationRuntime", input.agentId);
+    yield* lifecycleStep("find quick chat conversation", () => this.#tasks.requireOpen(input.agentId, input.taskId));
+    const runtime = yield* this.#checkQuickChatRuntime(input.runtime);
+    const task = yield* lifecycleStep("set quick chat model", () =>
+      this.#tasks.setRuntime(input.agentId, input.taskId, runtime),
+    );
+    yield* this.#rememberQuickChatDefault(input.agentId, runtime);
+    // A conversation that is at rest changes provider now, so a provider that fails shows here, in the
+    // picker, and the next message does not pay for it. One that runs or waits does it when its next turn starts.
+    const stored = this.#store.quickChatAgent();
+    if (stored && this.#tasks.publicTask(task).state === "idle")
+      yield* this.#reconcileThreadRuntime(stored, input.taskId);
+    this.#tasks.changed(input.agentId);
+    const agent = this.#store.quickChatAgent();
+    if (!agent) return yield* this.#unknownAgentFailure("setQuickChatConversationRuntime", input.agentId);
+    return { task: this.#tasks.publicTask(task), agent };
   }).bind(this);
 
   committedAgentDuplication(operationId: string, sourceAgentId: string): DuplicateAgentResult | null {
@@ -3429,6 +3626,22 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     initiatingAgentId?: string,
     queueWhileBusy = true,
   ): Effect.Effect<AgentSummary, AgentLifecycleFailed> {
+    // The model of the quick chat belongs to each conversation (`setQuickChatConversationRuntime`). A change of
+    // the record here would make a `pendingRuntime` and wait for all the conversations at once.
+    if (
+      this.#store.isQuickChat(input.agentId) &&
+      (input.provider !== undefined ||
+        input.model !== undefined ||
+        input.reasoningEffort !== undefined ||
+        input.providerAccountId !== undefined ||
+        input.fastMode !== undefined)
+    )
+      return Effect.fail(
+        new AgentLifecycleFailed({
+          operation: "updateAgent",
+          cause: new Error(sourceText("error.backend.quickChatRuntimeByConversation")),
+        }),
+      );
     return this.#endpoints
       .runExclusive(() => this.#applyAgentUpdate(input, initiatingAgentId, null, queueWhileBusy))
       .pipe(Effect.mapError((failure) => new AgentLifecycleFailed({ operation: "updateAgent", cause: failure.cause })));
@@ -4182,7 +4395,10 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     const externalThreadId = yield* lifecycleStep("compact task context", () => {
       const agent = this.#conversation.requireKnownAgent(input.agentId);
       const task = this.#tasks.requireOpen(input.agentId, input.taskId);
-      const session = this.#store.database.activeProviderSession(task.threadId, agent.provider);
+      const session = this.#store.database.activeProviderSession(
+        task.threadId,
+        this.#threadRuntimes.runningAs(agent, task.threadId).provider,
+      );
       // A compaction that still runs, or a start that the provider refused, holds the session too.
       if (
         this.#conversation.loadedExecutionSnapshot(task.threadId)?.activeTurnId ||
@@ -5178,6 +5394,20 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   ): Effect.fn.Return<AgentTask, AgentLifecycleFailed> {
     // The quick chat has no list of tasks to tidy by hand, so a new conversation at the limit makes room.
     if (this.#store.isQuickChat(input.agentId)) yield* this.#makeRoomInQuickChat(input.agentId);
+    // Only the quick chat keeps a model for one conversation. A model that fails the check starts no conversation.
+    if (input.runtime && !this.#store.isQuickChat(input.agentId))
+      return yield* new AgentLifecycleFailed({
+        operation: "start task",
+        cause: new Error(sourceText("error.backend.quickChatRuntimeOnly")),
+      });
+    // A conversation with no choice made starts on the model that the record of the agent names now (the last
+    // one used), and keeps it: its model is stored when it is made, so a later default does not move it.
+    const quickChat = this.#store.quickChatAgent();
+    const runtime = input.runtime
+      ? yield* this.#checkQuickChatRuntime(input.runtime)
+      : quickChat?.id === input.agentId
+        ? quickChatRuntimeOf(quickChat)
+        : undefined;
     const task = yield* lifecycleStep("start task", () => {
       if (!this.#roster().some((agent) => agent.id === input.agentId))
         throw new Error(sourceText("error.agent.unknown", { id: input.agentId }));
@@ -5186,7 +5416,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       const firstDraft = input.attachmentDraftIds?.[0];
       const titleText = input.text.trim() || (firstDraft ? (this.#mailbox.draftName(firstDraft) ?? "") : "");
       // The thread keeps the text as written as its first message, not the file name of the title.
-      return this.#tasks.create(input.agentId, titleText, "user", input.text);
+      return this.#tasks.create(input.agentId, titleText, "user", input.text, runtime);
     });
     this.#tasks.changed(task.agentId);
     yield* this.sendMessage(
@@ -5209,6 +5439,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         }),
       ),
     );
+    // The model of the last conversation that a message started is the default of the next one.
+    if (runtime) yield* this.#rememberQuickChatDefault(task.agentId, runtime);
     return this.#tasks.publicTask(task);
   }).bind(this);
 
@@ -5516,6 +5748,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   forceQueuedMessage(
     input: ForceQueuedMessageInput,
     via?: HiddenAgentAccess,
+    scope: ForceScope = "chat",
   ): Effect.Effect<ForceQueuedMessageResult, AgentLifecycleFailed> {
     // As for a steer: the queue of a hidden agent waits.
     if (this.#store.isHidden(input.agentId) && !this.#quickChatAccess(input.agentId, via))
@@ -5526,7 +5759,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         }),
       );
     return this.#queue
-      .force(input)
+      .force(input, scope)
       .pipe(
         Effect.mapError(
           (failure) => new AgentLifecycleFailed({ operation: "forceQueuedMessage", cause: failure.cause }),
@@ -5913,8 +6146,9 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         }
       }
     }
+    // A quick chat conversation stops on the provider session that runs it, not on the model it has now.
     const client = yield* lifecycleStep("find interrupt provider", () =>
-      this.#providers.requireReadyClientForAgent(agent),
+      this.#providers.requireReadyClientForAgent(this.#threadRuntimes.runningAs(agent, executionThreadId)),
     );
     const snapshot = [...this.#conversation.activeSnapshots()].find(
       ([id, snapshot]) => id === agentId && snapshot.activeTurnId === turnId,
@@ -5944,7 +6178,10 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     if (!publicThreadId) return undefined;
     return (
       (publicThreadId === agent.threadId ? this.#conversation.routineSession(agent.id) : undefined) ??
-      this.#store.database.activeProviderSession(publicThreadId, agent.provider)?.externalSessionId
+      this.#store.database.activeProviderSession(
+        publicThreadId,
+        this.#threadRuntimes.runningAs(agent, publicThreadId).provider,
+      )?.externalSessionId
     );
   }
 
@@ -5955,7 +6192,9 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       const turnId = snapshot.activeTurnId;
       if (!snapshot.threadId || !turnId) continue;
       const agent = this.#store.list().find((candidate) => candidate.id === agentId);
-      const client = agent ? this.#providers.clientForAgent(agent) : null;
+      const client = agent
+        ? this.#providers.clientForAgent(this.#threadRuntimes.runningAs(agent, snapshot.threadId))
+        : null;
       const session = agent ? this.#runningSession(agent, snapshot.threadId) : undefined;
       if (!client || !session) continue;
       this.#images.interrupt(agentId, session, turnId);
@@ -6210,6 +6449,16 @@ function usageLimitOf(choice: AgentModelChoice): UsageLimitKey {
 function sameUsageLimit(choice: AgentModelChoice, limit: UsageLimitKey): boolean {
   const own = usageLimitOf(choice);
   return own.provider === limit.provider && own.accountId === limit.accountId && own.model === limit.model;
+}
+
+/** The model that the record of the quick chat agent names, as the model of a conversation. */
+function quickChatRuntimeOf(agent: AgentSummary): QuickChatRuntime {
+  return {
+    provider: agent.provider,
+    model: agent.model,
+    reasoningEffort: agent.reasoningEffort,
+    ...(agent.fastMode === undefined ? {} : { fastMode: agent.fastMode }),
+  };
 }
 
 function lifecycleStep<A>(operation: string, run: () => A): Effect.Effect<A, AgentLifecycleFailed> {

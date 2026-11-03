@@ -23,6 +23,8 @@ export const messages = {
   "quick.list.queued": "В очереди",
   "quick.list.rowActions": "Действия для «{title}»",
   "quick.header.new": "Новый диалог",
+  "quick.model.ownedByAgent": "Этот диалог использует модель {name}. Измените её в этом агенте.",
+  "quick.model.changeFailed": "Не удалось сменить модель. Диалог сохраняет прежнюю модель.",
   "quick.notice.modelChanged": "Модель быстрого чата больше недоступна. Она заменена моделью по умолчанию.",
   "quick.signIn.title": "Подключите провайдера, чтобы использовать быстрый чат",
   "quick.signIn.action": "Открыть провайдеров",

@@ -29,6 +29,11 @@ import type { DatabaseSync } from "node:sqlite";
 // in the branch. They have no foreign key, because the branch outlives its source. All three are null
 // for a thread that is not a branch, or all three are set; the store keeps that rule. They are at the
 // end of the column list, where migration 50 adds them, so a new database and an upgraded one match.
+//
+// `runtime_json` (migration 52) is the model of a quick chat conversation: `{"v":1,"provider","model",
+// "reasoningEffort"?,"fastMode"?}`. Null means the conversation runs on the model of its agent, which is
+// every thread of every other agent. The store reads a value of another shape as null, so no row stops the
+// database from opening. It comes after the branch columns, where migration 52 adds it.
 
 // The table as migration 47 created it. Frozen: migration 47 runs it, and a change here would change
 // what that shipped migration does.
@@ -74,7 +79,8 @@ export const AGENT_THREAD_SCHEMA_SQL = `
     preview TEXT NOT NULL DEFAULT '',
     branch_source_thread_id TEXT,
     branch_source_message_id TEXT,
-    branch_through_message_id TEXT
+    branch_through_message_id TEXT,
+    runtime_json TEXT
   );
   ${AGENT_THREAD_INDEX_SQL}
 `;
@@ -206,3 +212,15 @@ export const V48_AGENT_THREAD_BRANCH_COLUMNS_SQL = [
   "branch_source_message_id TEXT",
   "branch_through_message_id TEXT",
 ] as const;
+
+/**
+ * Migration 52. Adds the model of a quick chat conversation: one column with no default, no CHECK and no
+ * rebuild, so no foreign-key pause and no vacuum. Every existing thread gets null, which runs on the model
+ * of its agent, as before. A development profile that ran this version before it shipped has the column
+ * already, with its values: it is added only when it is missing.
+ */
+export function addAgentThreadRuntime(db: DatabaseSync): void {
+  const columns = db.prepare("PRAGMA table_info(projection_agent_threads)").all();
+  if (columns.some((column) => column.name === "runtime_json")) return;
+  db.exec("ALTER TABLE projection_agent_threads ADD COLUMN runtime_json TEXT");
+}

@@ -62,6 +62,7 @@ import {
   providerForAgent,
 } from "./thread-items";
 import type { ThreadLifecycle } from "./thread-lifecycle";
+import type { ThreadRuntimes } from "./thread-runtime";
 import { JOURNAL_LIMIT, type OwnToolCall, type TurnEffect } from "./turn-effects";
 import {
   nextTurnResumeMarker,
@@ -221,6 +222,13 @@ export interface DrainSchedulerOptions {
   /** The most agents that run turns at the same time, as the person set it, or null for no cap. */
   agentLimit?: () => number | null;
   usageLimits: UsageLimitGate;
+  /** The model of each quick chat conversation (`thread-runtime.ts`). Identity for every other agent. */
+  runtimes: ThreadRuntimes;
+  /**
+   * Makes the provider sessions of one conversation match its model before its turn starts (`reconcileThreadRuntime`).
+   * It does nothing for a conversation that has no model of its own.
+   */
+  reconcile: (agent: AgentSummary, taskId: string) => Effect.Effect<void>;
   planContinuation: PlanContinuation;
   tasks: TaskLanes;
   /** The security reviewer of the user messages of a turn. Omitted, no message is reviewed. */
@@ -262,6 +270,8 @@ export class DrainScheduler {
   readonly #threads: ThreadLifecycle;
   readonly #memory: MemoryHold;
   readonly #usageLimits: UsageLimitGate;
+  readonly #runtimes: ThreadRuntimes;
+  readonly #reconcile: DrainSchedulerOptions["reconcile"];
   readonly #planContinuation: PlanContinuation;
   readonly #tasks: TaskLanes;
   readonly #security: Pick<PromptInjectionGuard, "review"> | undefined;
@@ -342,6 +352,8 @@ export class DrainScheduler {
     this.#threads = options.threads;
     this.#memory = options.memory;
     this.#usageLimits = options.usageLimits;
+    this.#runtimes = options.runtimes;
+    this.#reconcile = options.reconcile;
     this.#planContinuation = options.planContinuation;
     this.#tasks = options.tasks;
     this.#security = options.security;
@@ -489,7 +501,8 @@ export class DrainScheduler {
     // the other. A provider that runs one turn at a time holds them above (`one-turn`).
     // The agent's own process restarts when its access or account changed. A turn of another lane
     // runs on it, so this lane waits for that turn to end.
-    const agent = this.#store.list().find((candidate) => candidate.id === agentId);
+    const storedAgent = this.#store.list().find((candidate) => candidate.id === agentId);
+    const agent = storedAgent && this.#runtimes.forTask(storedAgent, taskId);
     if (
       agent &&
       !this.#providers.agentClientCurrent(agent) &&
@@ -515,8 +528,9 @@ export class DrainScheduler {
     if (!this.#duplication.mayDrain(agentId)) return "duplication";
     if (this.#compactionHolds(lane)) return "compaction";
     if (!this.#routines.mayDrain(agentId)) return "routine";
-    if (!this.#usageLimits.mayDrain(agentId) && !this.#usageLimits.mayTry(agentId)) return "usage-limit";
-    if (agent && this.#waitsForStartFallback(agent, lane)) return "start-fallback";
+    if (!this.#usageLimits.mayDrain(agentId, taskId) && !this.#usageLimits.mayTry(agentId, taskId))
+      return "usage-limit";
+    if (agent && this.#waitsForStartFallback(this.#runtimes.forTask(agent, taskId), lane)) return "start-fallback";
     return null;
   }
 
@@ -609,7 +623,11 @@ export class DrainScheduler {
   taskHold(agentId: string, taskId: string): string | null {
     const lane = taskLane(agentId, taskId);
     if (!this.#mailbox.nextQueued(agentId, taskId)) return null;
-    return this.#heldBy(lane) ?? (this.#slotWaiters.has(laneKey(lane)) ? "machine" : null);
+    // The memory of the computer holds every new turn, whatever the limit of threads is. `#heldBy` does not read
+    // it (`#heldByMachine` does), so without this line a thread that waits for memory has no named wait.
+    return (
+      this.#heldBy(lane) ?? (!this.#memory.mayDrain(agentId) || this.#slotWaiters.has(laneKey(lane)) ? "machine" : null)
+    );
   }
 
   /** The agents with a lane that waits for a free turn slot, for the load panel. */
@@ -717,13 +735,17 @@ export class DrainScheduler {
    * null when its next queued message starts then. `turnId` is null when no turn runs. A force asks
    * this before it stops the turn: a Stop that lets other work start first does not help the message.
    */
-  holdAfterStop(agentId: string, turnId: string | null): string | null {
-    // Channel and messaging work that waits in the chat stays first in the queue: it reserved the agent.
-    if (this.#mailbox.queuedExecutionDeliveryIds(agentId).some((id) => this.#mailbox.taskIdForDelivery(id) === null))
+  holdAfterStop(agentId: string, turnId: string | null, taskId: string | null = null): string | null {
+    // Channel and messaging work that waits in the chat stays first in the queue: it reserved the agent. A
+    // side thread is a lane of its own, so that work does not stand before its messages.
+    if (
+      taskId === null &&
+      this.#mailbox.queuedExecutionDeliveryIds(agentId).some((id) => this.#mailbox.taskIdForDelivery(id) === null)
+    )
       return "execution-work";
     // A start with no turn id yet, such as one whose `turn/start` timed out. Its turn can still run.
-    if (turnId === null && this.#mailbox.laneActive(agentId, null)) return "starting";
-    return this.#heldBy(mainLane(agentId), { turnId });
+    if (turnId === null && this.#mailbox.laneActive(agentId, taskId)) return "starting";
+    return this.#heldBy(taskId === null ? mainLane(agentId) : taskLane(agentId, taskId), { turnId });
   }
 
   holdSessionSettings(agentId: string): () => void {
@@ -849,7 +871,10 @@ export class DrainScheduler {
           ? this.#tasks.threadId(lane.taskId)
           : this.#chatThreadFor(agent, deliveryId);
     if (!publicThreadId) return false;
-    const session = this.#store.database.activeProviderSession(publicThreadId, agent.provider);
+    const session = this.#store.database.activeProviderSession(
+      publicThreadId,
+      this.#runtimes.forThread(agent, publicThreadId).provider,
+    );
     if (!session) return false;
     const client = this.#conversation.loadedClientFor(session.externalSessionId);
     return client !== undefined && (client.threadOpen?.(session.externalSessionId) ?? true);
@@ -878,7 +903,9 @@ export class DrainScheduler {
       !this.#hooks.isStopping() &&
       !this.#drainingLanes.has(laneKey(lane)) &&
       this.#providers.isReady() &&
-      !this.#deliveryProviders(lane.agentId).some((provider) => this.#providers.isReplacingCli(provider)) &&
+      !this.#deliveryProviders(lane.agentId, lane.taskId).some((provider) =>
+        this.#providers.isReplacingCli(provider),
+      ) &&
       this.#heldBy(lane) === null
     );
   }
@@ -898,7 +925,7 @@ export class DrainScheduler {
       (!this.#providers.isReady() && "providers-not-ready") ||
       // Before the try, so the delivery is not rescheduled in a loop while the CLI is replaced.
       // ProviderRuntime schedules this agent again once the new client is ready.
-      (this.#deliveryProviders(agentId).some((provider) => this.#providers.isReplacingCli(provider)) &&
+      (this.#deliveryProviders(agentId, taskId).some((provider) => this.#providers.isReplacingCli(provider)) &&
         "provider-cli-replaced") ||
       // Last, because it records the lane as waiting. Another drain can take the last slot
       // between the schedule and this start.
@@ -1038,7 +1065,7 @@ export class DrainScheduler {
     let confirmedTurnId: string | null = null;
     // The session of a routine run in its own session. Closed here when no turn starts on it.
     let routineThreadId: string | null = null;
-    const claimed = this.#deliveryProviders(delivery.recipientAgentId);
+    const claimed = this.#deliveryProviders(delivery.recipientAgentId, taskId);
     for (const provider of claimed) this.#startingDeliveries.set(provider, this.#starting(provider) + 1);
     // Held from the refresh below until this start ends, because everything between them awaits the
     // provider: the session is resumed or started, and then the turn is sent on it. A refresh that
@@ -1079,7 +1106,12 @@ export class DrainScheduler {
         batch = batch.filter((item) => !failedCompanions.has(item.delivery.id));
         this.#mailboxSync.emitQueue(delivery.recipientAgentId);
       }
-      const agent = yield* this.#store.getOrCreate(delivery.recipientAgentId).pipe(toDeliveryStartFailed);
+      // The agent as this conversation runs it: for a quick chat conversation with a model of its own, its
+      // provider, model and effort; the same object for every other lane. Everything below reads this one.
+      const agent = this.#runtimes.forTask(
+        yield* this.#store.getOrCreate(delivery.recipientAgentId).pipe(toDeliveryStartFailed),
+        taskId,
+      );
       // Once for the turn: its process, its session and its sandbox roots read the result.
       yield* checkAgentFolders(agent);
       requestedModel = agent.model;
@@ -1114,6 +1146,9 @@ export class DrainScheduler {
       const clientAt = performance.now();
       const client = yield* this.#providers.ensureAgentClient(agent).pipe(toDeliveryStartFailed);
       this.#timing("client", clientAt, "ok");
+      // A model that the person chose for this conversation since its last turn, on another provider,
+      // retires the sessions of the old one now, before `ensureThread` looks for a session.
+      if (taskId !== null) yield* this.#reconcile(agent, taskId);
       const messaging = this.#messaging;
       const channels = this.#channels;
       const taskThreadId = taskId === null ? null : this.#tasks.threadId(taskId);
@@ -1333,7 +1368,10 @@ export class DrainScheduler {
                 sandboxPolicy: codexSandboxPolicy(agent, this.#store.sharedRoot),
                 ...(client.provider === "codex"
                   ? codexServiceTier(
-                      this.#store.list().find((current) => current.id === agent.id) ?? agent,
+                      this.#runtimes.forTask(
+                        this.#store.list().find((current) => current.id === agent.id) ?? agent,
+                        taskId,
+                      ),
                       this.#providers.listModels(),
                     )
                   : {}),
@@ -1504,11 +1542,11 @@ export class DrainScheduler {
                 yield* this.#mailbox.restoreQueued(item.delivery.id).pipe(toDeliveryStartFailed);
               this.#mailboxSync.emitQueue(delivery.recipientAgentId);
               // After the restore, so a routine set to skip finds its run back in the queue.
-              yield* this.#usageLimits.reached(delivery.recipientAgentId, null, requestedModel);
+              yield* this.#usageLimits.reached(delivery.recipientAgentId, null, requestedModel, taskId);
               return;
             }
             // Before the requeue, so the channel does not assign the task to this agent again at once.
-            yield* this.#usageLimits.reached(delivery.recipientAgentId, null, requestedModel);
+            yield* this.#usageLimits.reached(delivery.recipientAgentId, null, requestedModel, taskId);
             // A ready backup continues earlier work in the same assignment, so the work is not lost.
             if (
               context.resumeAfterUsageLimit &&
@@ -1690,6 +1728,8 @@ export class DrainScheduler {
   readonly retryLimitedTurn = <E>(
     input: {
       agentId: string;
+      /** The task of the lane, or null for the agent's own chat. */
+      taskId: string | null;
       /** The model the turn ran on. */
       model: string | null;
       deliveries: readonly DeliveryContext[];
@@ -1705,8 +1745,9 @@ export class DrainScheduler {
       const started = head ? this.#startedRetries.get(head.delivery.id) : undefined;
       for (const { delivery } of input.deliveries) this.#startedRetries.delete(delivery.id);
       if (!settings || !this.#breakers || !head || this.#hooks.isStopping()) return null;
-      const agent = this.#store.list().find((candidate) => candidate.id === input.agentId);
-      if (!agent) return null;
+      const storedAgent = this.#store.list().find((candidate) => candidate.id === input.agentId);
+      if (!storedAgent) return null;
+      const agent = this.#runtimes.forTask(storedAgent, input.taskId);
       const primary = started?.choice ?? { ...agentChoice(agent), model: input.model ?? agent.model };
       const now = this.#now();
       const failure: StartFailure = {
@@ -1998,9 +2039,9 @@ export class DrainScheduler {
    * The providers a delivery to this agent can reach. One for an agent that exists; an agent
    * startDelivery has still to create can land on any of them, so all of them are claimed.
    */
-  #deliveryProviders(agentId: string): AgentProvider[] {
+  #deliveryProviders(agentId: string, taskId: string | null = null): AgentProvider[] {
     const agent = this.#store.list().find((candidate) => candidate.id === agentId);
-    return agent ? [providerForAgent(agent)] : [...AGENT_PROVIDERS];
+    return agent ? [providerForAgent(this.#runtimes.forTask(agent, taskId))] : [...AGENT_PROVIDERS];
   }
 }
 

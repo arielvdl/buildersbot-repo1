@@ -2,10 +2,11 @@
 
 import type { AgentService } from "../../backend/agent-service";
 import { runCauseEffect } from "../../backend/effect-boundary";
-import { handler, type IpcGroupHandlers } from "./define-ipc-group";
+import { handler, type IpcGroupHandlers, payloadHandler } from "./define-ipc-group";
+import { parseSetQuickChatConversationRuntime } from "./quick-chat-inputs";
 
 export interface QuickChatIpcDependencies {
-  service: Pick<AgentService, "ensureQuickChat" | "warmQuickChat">;
+  service: Pick<AgentService, "ensureQuickChat" | "setQuickChatConversationRuntime" | "warmQuickChat">;
 }
 
 export function quickChatIpcHandlers({ service }: QuickChatIpcDependencies): Pick<IpcGroupHandlers, "quickChat"> {
@@ -15,6 +16,10 @@ export function quickChatIpcHandlers({ service }: QuickChatIpcDependencies): Pic
     quickChat: {
       ensure: handler(() => runCauseEffect(service.ensureQuickChat())),
       warm: handler(() => runCauseEffect(service.warmQuickChat())),
+      // The payload is decoded here; the service refuses a task of any other agent.
+      setConversationRuntime: payloadHandler(parseSetQuickChatConversationRuntime, (input) =>
+        runCauseEffect(service.setQuickChatConversationRuntime(input)),
+      ),
     },
   };
 }

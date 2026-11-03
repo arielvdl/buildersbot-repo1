@@ -15,6 +15,7 @@ import type { ProviderRuntime } from "./provider-runtime";
 import { stopRunningSubagents } from "./subagent-updates";
 import { isCodexMissingRollout, isCodexRolloutPending, providerForAgent } from "./thread-items";
 import type { ThreadLifecycle } from "./thread-lifecycle";
+import type { ThreadRuntimes } from "./thread-runtime";
 
 type UnresolvedDelivery = DeliveryContext["delivery"];
 
@@ -35,6 +36,8 @@ export interface BootRecoveryHooks {
 
 export interface BootRecoveryOptions {
   store: AgentStore;
+  /** The model of each quick chat conversation (`thread-runtime.ts`). Identity for every other agent. */
+  runtimes: ThreadRuntimes;
   mailbox: MailboxStore;
   providers: ProviderRuntime;
   conversation: ConversationRuntime;
@@ -64,6 +67,7 @@ export interface BootRecoveryOptions {
  */
 export class BootRecovery {
   readonly #store: AgentStore;
+  readonly #runtimes: ThreadRuntimes;
   readonly #mailbox: MailboxStore;
   readonly #providers: ProviderRuntime;
   readonly #conversation: ConversationRuntime;
@@ -85,6 +89,7 @@ export class BootRecovery {
 
   constructor(options: BootRecoveryOptions) {
     this.#store = options.store;
+    this.#runtimes = options.runtimes;
     this.#mailbox = options.mailbox;
     this.#providers = options.providers;
     this.#conversation = options.conversation;
@@ -108,7 +113,8 @@ export class BootRecovery {
         const agent = agents.find((item) => item.id === context.id);
         if (!agent || agent.threadId === context.threadId) return [];
         this.#conversation.registerTaskThread(agent.id, context.threadId);
-        return [{ ...agent, threadId: context.threadId }];
+        // A quick chat conversation is read through the provider session that is open on it.
+        return [this.#runtimes.runningAs({ ...agent, threadId: context.threadId }, context.threadId)];
       }),
     ];
   }
@@ -120,7 +126,9 @@ export class BootRecovery {
   orphanDeliveriesOf(provider: AgentProvider, runsOnOwnProcess: (agentId: string) => boolean): void {
     const agents = this.#store.list();
     for (const { delivery } of this.#mailbox.unresolvedDeliveries()) {
-      const agent = agents.find((candidate) => candidate.id === delivery.recipientAgentId);
+      const stored = agents.find((candidate) => candidate.id === delivery.recipientAgentId);
+      // The provider of the lane: a quick chat conversation runs on the provider of its own model.
+      const agent = stored && this.#runtimes.forTask(stored, this.#mailbox.taskIdForDelivery(delivery.id));
       if (agent && providerForAgent(agent) === provider && !runsOnOwnProcess(agent.id)) {
         this.#orphanedDeliveryIds.add(delivery.id);
       }
@@ -184,9 +192,11 @@ export class BootRecovery {
     };
     const { terminal, reason } = yield* Effect.gen({ self: this }, function* () {
       const { agent, client, session } = yield* recoveryStep(() => {
-        const agent = this.#store.list().find((candidate) => candidate.id === delivery.recipientAgentId);
+        const stored = this.#store.list().find((candidate) => candidate.id === delivery.recipientAgentId);
+        const threadId = this.#hooks.deliveryThreadId?.(delivery.id) ?? stored?.threadId;
+        // The provider session that ran the turn decides the client, not the model the conversation has now.
+        const agent = stored && this.#runtimes.runningAs(stored, threadId);
         const client = agent ? this.#providers.clientForAgent(agent) : null;
-        const threadId = this.#hooks.deliveryThreadId?.(delivery.id) ?? agent?.threadId;
         const session = agent && threadId ? this.#store.database.activeProviderSession(threadId, agent.provider) : null;
         return { agent, client, session };
       });

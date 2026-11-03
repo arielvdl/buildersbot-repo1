@@ -4,6 +4,8 @@ import type {
   AgentTaskBranch,
   AgentTasksSnapshot,
   ConversationSnapshot,
+  ForceQueuedMessageOutcome,
+  QuickChatRuntime,
 } from "@buildersbot/contracts/ipc";
 import type { AppTextKey } from "@buildersbot/i18n";
 import { currentText } from "@buildersbot/ui/text";
@@ -263,6 +265,7 @@ export function createAgentTasks(options: AgentTasksOptions) {
     agentId: string,
     text: string,
     attachmentDraftIds: string[] = [],
+    runtime?: QuickChatRuntime,
   ): Promise<AgentTask | null> {
     const task = await runAction(
       () =>
@@ -270,6 +273,7 @@ export function createAgentTasks(options: AgentTasksOptions) {
           agentId,
           text,
           ...(attachmentDraftIds.length ? { attachmentDraftIds } : {}),
+          ...(runtime ? { runtime } : {}),
           clientMessageId: crypto.randomUUID(),
         }),
       "conversation.threads.error.start",
@@ -342,6 +346,33 @@ export function createAgentTasks(options: AgentTasksOptions) {
     const steer = port().steerQueuedMessage;
     if (!steer) return;
     void runAction(() => steer({ agentId, deliveryId, expectedTurnId: turnId }), "app.errorStatus.steer");
+  }
+
+  /**
+   * Whether a queued message of a thread can start now. Only this computer does it: a host of an older build
+   * forces the messages of the agent's own chat only.
+   */
+  function canForce(): boolean {
+    return Boolean(port().forceQueuedMessage) && local();
+  }
+
+  /**
+   * Stops the turn that runs in the thread and starts this queued message next, alone. `turnId` is the turn
+   * the person saw, so a turn that started since is not stopped. It answers what the host did, or null when
+   * the force did not go through: the message stays in the queue, and the error shows.
+   */
+  async function forceQueuedMessage(
+    agentId: string,
+    deliveryId: string,
+    turnId: string | null,
+  ): Promise<ForceQueuedMessageOutcome | null> {
+    const force = port().forceQueuedMessage;
+    if (!force) return null;
+    const result = await runAction(
+      () => force({ agentId, deliveryId, expectedTurnId: turnId }),
+      "app.errorStatus.force",
+    );
+    return result?.outcome ?? null;
   }
 
   function cancelQueuedMessage(agentId: string, deliveryId: string): void {
@@ -452,6 +483,8 @@ export function createAgentTasks(options: AgentTasksOptions) {
     branchTask,
     sendToTask,
     queueActions,
+    canForce,
+    forceQueuedMessage,
     steerQueuedMessage,
     cancelQueuedMessage,
     reorderQueue,

@@ -12,7 +12,7 @@ import {
   type StageHold,
   type StageModel,
 } from "./channel-stage-model";
-import { channelStageSettingsFor } from "./channel-stage-preference";
+import { channelStageSettingsFor, updateChannelStage, withChannelStageFolded } from "./channel-stage-preference";
 import { useChannels } from "./channels-context";
 
 const EMPTY: StageModel = { actors: [], overflow: 0, request: null, links: [], deadline: null };
@@ -93,7 +93,14 @@ export function ChannelStageHost(props: { channelId: string; workingTurns: () =>
     assignStageSeats(seats, current.actors);
     return current.actors.map((actor) => ({ ...actor, seat: seats.get(actor.id) ?? 0 }));
   });
-  const collapse = () => channelStageSettingsFor(activeServerId(), props.channelId).collapse;
+  const settings = () => channelStageSettingsFor(activeServerId(), props.channelId);
+  const folded = () => settings().folded;
+  // A memo: the stage plays its fold when this changes, not on each change of the model.
+  const hidden = createMemo(() => !folded() && settings().collapse && model().actors.length === 0);
+  const toggleFold = () =>
+    updateChannelStage(activeServerId(), (preference) =>
+      withChannelStageFolded(preference, props.channelId, !folded()),
+    );
 
   return (
     <ChannelStage
@@ -101,7 +108,9 @@ export function ChannelStageHost(props: { channelId: string; workingTurns: () =>
       overflow={model().overflow}
       request={model().request}
       links={model().links}
-      collapsed={collapse() && model().actors.length === 0}
+      folded={folded()}
+      hidden={hidden()}
+      onToggleFold={toggleFold}
     />
   );
 }

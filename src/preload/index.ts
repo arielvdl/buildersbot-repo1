@@ -283,7 +283,7 @@ import {
   decodeTelegramOverviewReply,
 } from "./messaging-decoding";
 import { decodeProviderRuntimeSnapshot } from "./provider-runtime";
-import { decodeQuickChatEnsure } from "./quick-chat-decoding";
+import { decodeQuickChatConversationRuntime, decodeQuickChatEnsure } from "./quick-chat-decoding";
 import { decodeRoutineFlowCanvas, decodeRoutineFlowLink } from "./routine-flow-decoding";
 import {
   decodeRoutineResultDeliveries,
@@ -821,7 +821,11 @@ const buildersbotApi: BuildersBotDesktopApi = {
     finishTest: decodeLidAwakeStatus,
     status: decodeLidAwakeStatus,
   }),
-  quickChat: bridgeGroup(IPC_ENDPOINTS.quickChat, { ensure: decodeQuickChatEnsure, warm: decodeVoid }),
+  quickChat: bridgeGroup(IPC_ENDPOINTS.quickChat, {
+    ensure: decodeQuickChatEnsure,
+    warm: decodeVoid,
+    setConversationRuntime: decodeQuickChatConversationRuntime,
+  }),
   backgroundProcesses: bridgeGroup(IPC_ENDPOINTS.backgroundProcesses, {
     list: decodeBackgroundProcesses,
     stop: decodeVoid,

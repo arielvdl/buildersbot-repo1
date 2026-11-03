@@ -4,6 +4,8 @@
  */
 
 .channel-stage-frame {
+  --stage-fold-duration: 0.75s;
+  --stage-figures-duration: 0.3s;
   position: relative;
   z-index: 2;
   flex: 0 0 auto;
@@ -21,6 +23,12 @@
   pointer-events: none;
 }
 
+/* A hidden stage leaves no fade over the messages once it has folded away. */
+.channel-stage-frame[data-gone]::after {
+  visibility: hidden;
+  transition: visibility 0s linear var(--stage-fold-duration);
+}
+
 .channel-stage {
   position: relative;
   height: clamp(300px, 50vh, 460px);
@@ -29,10 +37,30 @@
     radial-gradient(46% 58% at 50% 56%, color-mix(in srgb, var(--buildersbot-success) 5%, transparent), transparent 70%),
     var(--buildersbot-bg-canvas);
   contain: layout paint;
+  transition: height var(--stage-fold-duration) var(--buildersbot-ease-in-out);
 }
 
 .channel-stage[data-collapsed] {
   height: var(--buildersbot-control-xl);
+}
+
+/*
+ * Nobody works and the reader hides the stage then: the panel folds to nothing, and at the end it
+ * leaves the accessibility tree. It opens from nothing when an agent starts to work.
+ */
+.channel-stage[data-gone] {
+  height: 0;
+  visibility: hidden;
+  transition:
+    height var(--stage-fold-duration) var(--buildersbot-ease-in-out),
+    visibility 0s linear var(--stage-fold-duration);
+}
+
+/* Folding: the figures fade out first (the component then folds the panel); nothing shrinks with it. */
+.channel-stage[data-closing] > :not(.channel-stage-strip, .channel-stage-fold),
+.channel-stage[data-closing="gone"] > .channel-stage-fold {
+  opacity: 0;
+  transition: opacity var(--stage-figures-duration) var(--buildersbot-ease-in-out);
 }
 
 .channel-stage-strip {
@@ -43,7 +71,19 @@
   justify-content: center;
   color: var(--buildersbot-text-dim);
   font-size: var(--buildersbot-text-sm);
-  animation: agent-stage-fade var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
+  animation: agent-stage-fade var(--buildersbot-duration-normal) var(--buildersbot-ease-out) 0.45s backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .channel-stage,
+  .channel-stage[data-gone],
+  .channel-stage-frame[data-gone]::after {
+    transition: none;
+  }
+
+  .channel-stage-strip {
+    animation: none;
+  }
 }
 
 /* The request on the table */
@@ -121,6 +161,46 @@
 
 @media (prefers-reduced-motion: reduce) {
   .channel-stage-request-bars i {
+    transition: none;
+  }
+}
+
+/* The fold button: small and quiet in the corner of the stage, above the board. */
+.channel-stage-fold {
+  position: absolute;
+  top: var(--buildersbot-space-2, 8px);
+  right: var(--buildersbot-space-2, 8px);
+  z-index: 2;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 0;
+  border-radius: var(--buildersbot-radius-sm, 6px);
+  background: transparent;
+  color: var(--buildersbot-text-dim);
+  cursor: pointer;
+}
+
+.channel-stage-fold:hover {
+  background: var(--buildersbot-bg-surface-raised);
+  color: var(--buildersbot-text);
+}
+
+.channel-stage-fold:focus-visible {
+  outline: 2px solid var(--buildersbot-focus-ring, currentColor);
+}
+
+.channel-stage-fold svg {
+  transition: transform var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
+}
+
+.channel-stage-fold svg[data-folded] {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .channel-stage-fold svg {
     transition: none;
   }
 }

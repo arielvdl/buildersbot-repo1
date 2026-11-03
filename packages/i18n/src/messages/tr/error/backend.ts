@@ -322,6 +322,11 @@ export const messages = {
   "error.backend.taskNotFound": "Bu görev kullanılamıyor.",
   "error.backend.taskClosed": "Bu görev kapalı. Mesaj göndermek için yeniden açın.",
   "error.backend.taskStillRunning": "Bu görev hâlâ çalışıyor. Durmasını bekleyin, ardından kapatın.",
+  "error.backend.quickChatModelUnavailable":
+    "{model} şu anda {provider} üzerinde kullanılamıyor. Başka bir model seçin.",
+  "error.backend.quickChatRuntimeByConversation":
+    "Hızlı sohbet her konuşma için modelini ayrı belirler. Modeli konuşmanın içinde seçin.",
+  "error.backend.quickChatRuntimeOnly": "Yalnızca hızlı sohbet, tek bir konuşma için model kabul eder.",
   "error.backend.threadNotFound": "Bu mesaj dizisi kullanılamıyor.",
   "error.backend.threadStillRunning": "Bu mesaj dizisi hâlâ çalışıyor. Durdurun, ardından yeniden deneyin.",
   "error.backend.threadArchived": "Bu mesaj dizisi arşivlendi. Mesaj göndermek için geri yükleyin.",

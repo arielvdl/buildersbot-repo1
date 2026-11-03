@@ -2173,6 +2173,33 @@ export class BuildersBotToolRouter {
     Effect.uninterruptible,
   );
 
+  /**
+   * Whether this `send_message` is the answer that the quick chat agent waits for. That agent is in no list,
+   * so no agent can name it, with one exception: it took a question from a conversation that is still open,
+   * the caller got it, and the caller names it in `replyToMessageId` and has not answered it. The answer has one
+   * recipient. Any other message to it is unknown, as for any agent that is not listed. Nothing here comes from
+   * the renderer: the question is read from the mailbox.
+   */
+  #isAnswerToQuickChat(
+    params: DynamicToolCallParams,
+    senderAgentId: string,
+    recipientAgentIds: readonly string[],
+  ): boolean {
+    const [recipient] = recipientAgentIds;
+    if (recipientAgentIds.length !== 1 || !recipient || !isRecord(params.arguments)) return false;
+    if (this.#hooks.findAgent(recipient)?.quickChat !== true) return false;
+    const replyTo = replyTarget(params.arguments.replyToMessageId);
+    if (!replyTo) return false;
+    const threadTask = this.#mailbox.openRequestThread(
+      recipient,
+      senderAgentId,
+      replyTo,
+      toolCallIdempotencyKey(params),
+    );
+    // A conversation that was closed or deleted takes no answer: its own chat shows nothing of the quick chat.
+    return threadTask !== null && this.#tasks.threadId(threadTask) !== null;
+  }
+
   readonly #sendMessage = Effect.fn("BuildersBotToolRouter.sendMessage")(
     function* (
       this: BuildersBotToolRouter,
@@ -2193,7 +2220,10 @@ export class BuildersBotToolRouter {
       const known = new Map(this.#hooks.listAgents().map((agent) => [agent.id, agent]));
       for (const recipient of recipientValues) {
         const agent = known.get(recipient);
-        if (!agent) throw new Error(`Unknown Builders Bot agent: ${recipient}`);
+        if (!agent) {
+          if (this.#isAnswerToQuickChat(params, senderAgentId, recipientValues)) continue;
+          throw new Error(`Unknown Builders Bot agent: ${recipient}`);
+        }
         // A hidden agent receives no new messages until the user restores it.
         if (agent.hiddenAt !== undefined)
           throw new Error(`${recipient}: ${sourceText("error.backend.recipientHidden")}`);
@@ -2227,11 +2257,7 @@ export class BuildersBotToolRouter {
         .find((taskId) => taskId !== null);
       // An agent can send "" for no reply. Every reader rejects an empty id. A model can also copy the
       // quotes around the id in the delivery prompt; such an id refers to no message.
-      const replyTo =
-        replyToMessageId
-          ?.trim()
-          .replace(/^"(.*)"$/s, "$1")
-          .trim() || null;
+      const replyTo = replyTarget(replyToMessageId);
       // An answer to a request from a side thread runs in that thread. When the thread is archived, the
       // answer goes to the recipient's own chat, so it is not lost.
       const answerTaskId = replyTo ? this.#mailbox.answerTaskId(senderAgentId, replyTo, recipientValues) : null;
@@ -2253,6 +2279,8 @@ export class BuildersBotToolRouter {
           idempotencyKey: toolCallIdempotencyKey(params),
         })
         .pipe(toToolOperationFailed);
+      // A request from a Quick chat conversation is a row of that conversation, which the agent strip reads.
+      if (senderTaskId) this.#tasks.outgoingSent(senderAgentId, senderTaskId, recipientValues);
       for (const delivery of receipt.deliveries) {
         yield* this.#hooks.steerAgentMessage(delivery.recipientAgentId, delivery.id);
         this.#mailboxSync.emitQueue(delivery.recipientAgentId);
@@ -2268,6 +2296,20 @@ export class BuildersBotToolRouter {
     },
     Effect.catchDefect((cause) => Effect.fail(new ToolOperationFailed({ cause }))),
     Effect.uninterruptible,
+  );
+}
+
+/**
+ * The id of the message that an answer names. An agent can send "" for no reply, and a model can copy the
+ * quotes around the id in the delivery prompt; such an id refers to no message.
+ */
+function replyTarget(value: unknown): string | null {
+  if (!isString(value)) return null;
+  return (
+    value
+      .trim()
+      .replace(/^"(.*)"$/s, "$1")
+      .trim() || null
   );
 }
 

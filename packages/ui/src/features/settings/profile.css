@@ -92,7 +92,7 @@
   align-items: flex-start;
 }
 
-/* Closed tabs: a badge and the name on one line, the note on at most two, the details and the last result on one. */
+/* Closed tabs: a badge and the name on one line. The name opens the note and the last result, at most four lines each. */
 .profile-tab-report-title {
   display: flex;
   align-items: center;
@@ -105,12 +105,40 @@
   text-overflow: ellipsis;
 }
 
-.profile-tab-report .profile-tab-report-note {
+.profile-tab-report-toggle {
+  display: flex;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--buildersbot-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.profile-tab-report-toggle:hover .profile-tab-report-name {
+  text-decoration: underline;
+}
+
+.profile-tab-report-toggle:focus-visible {
+  outline: 0;
+  box-shadow: var(--buildersbot-focus-ring);
+}
+
+.profile-tab-report-body {
+  display: grid;
+  gap: var(--buildersbot-space-0-5);
+}
+
+.profile-tab-report .profile-tab-report-clamp {
   display: -webkit-box;
+  overflow: hidden;
   color: var(--buildersbot-text-secondary);
   white-space: normal;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 4;
 }
 
 .profile-tab-report .profile-tab-report-failed {

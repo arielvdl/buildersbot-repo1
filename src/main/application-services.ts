@@ -2108,6 +2108,7 @@ export async function createApplicationServices({
     channelTabLimit: () => agentLimit.tabsPerAgent(),
     channelParallelLimit: () => agentLimit.agentsPerTab(),
     channelTabsMode: () => agentLimit.tabsMode(),
+    quickChatThreadLimit: () => agentLimit.quickChatThreads(),
     laneBudget: macMemory ? new LaneBudget({ memory: macMemory, lowBelowPercent: LOW_BELOW }) : null,
     requestTimeoutMs: 30_000,
     offProviders: providerUse.off(),

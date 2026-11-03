@@ -15,8 +15,10 @@ import { createEffect, createMemo, createProjection, createSignal, onCleanup, Sh
 import { actionToast } from "../../action-toast";
 import { useShowAgentSteps } from "../../agent-steps-preference";
 import { toAgentMessages } from "../../app-message-projection";
+import { setAskBeforeForce, useAskBeforeForce } from "../../force-send-preference";
 import { usePlatform } from "../../platform";
 import { deviceSendShortcut } from "../../send-shortcut-preference";
+import { QuickChatAgentStripHost } from "../quick-chat/QuickChatAgentStripHost";
 import { offerSpeechModelDownload, speechModelOffersDownload, speechModelReady } from "../speech/speech-model";
 import { speechReading } from "../speech/speech-playback";
 import { dropThreadDictations, stopSpokenReply, toggleReadAloud } from "../speech/speech-replies";
@@ -34,6 +36,7 @@ const THREAD_ATTACHMENT_ACCEPT = supportedAttachmentExtensions({ eml: true, medi
 
 /** The open side thread of the agent, in the place of the agent's own chat and its message box. */
 export function ConversationThread() {
+  const askBeforeForce = useAskBeforeForce();
   const {
     props,
     openExternalMessageUrl,
@@ -250,6 +253,14 @@ export function ConversationThread() {
         : undefined,
       onCancel: queue.onCancel,
       onReorder: queue.onReorder,
+      // The same action, dialog and preference as the queue of the chat. It stops the running turn of the thread.
+      onForce: queue.onForce
+        ? (deliveryId: string) => queue.onForce?.(deliveryId, open.activeTurnId ?? null) ?? Promise.resolve(null)
+        : undefined,
+      get askBeforeForce() {
+        return askBeforeForce();
+      },
+      onStopAskingBeforeForce: () => setAskBeforeForce(false),
     };
   };
   /** The cards that the thread waits for: its browser takeover, and its question as a form. */
@@ -292,6 +303,10 @@ export function ConversationThread() {
               onNext={() => threadSearch.moveChatSearch(1)}
               onClose={threadSearch.closeChatSearch}
             />
+          </Show>
+          {/* The agents that a Quick chat conversation called, above its messages. */}
+          <Show when={props.quickChat}>
+            <QuickChatAgentStripHost conversation={props} messages={messages} />
           </Show>
           <AgentThreadView
             scrollRef={setThreadScrollElement}

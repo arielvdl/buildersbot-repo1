@@ -12,6 +12,9 @@
 //     records, "Show more" brings the next ones with no repeat. No read runs while the Profile is closed.
 // A20. "Continue in new tab" makes a new tab in the channel and fills its message box. Nothing is sent.
 // A6. After the channel is deleted, the records stay with the saved names, and Continue is off with the reason.
+// A21. Each record starts closed: no note and no last result show. The name is a button with
+//     `aria-expanded`; a click, Enter or Space opens and closes it, with a visible focus ring after a key.
+//     A long note shows at most four lines and is cut.
 // It counts the reads of the Profile with a conditional breakpoint (CDP) on the two calls in
 // `profile-tab-reports-store.ts`. It deletes its channel and the records it made at the end.
 // Writes .buildersbot-build/tab-close-report/ui-e2e.json and screenshots.
@@ -256,7 +259,9 @@ try {
   const offEmpty = await confirmButton().isDisabled();
   await dialog().getByRole("textbox").fill("   ");
   const offBlank = await confirmButton().isDisabled();
-  const otherNote = `Blocked by review ${stamp}`;
+  // Longer than four lines at any width of the Profile, so A21 can see the cut.
+  const otherNote =
+    `Blocked by review ${stamp}. ${"The owner waits for the legal check of the new terms before the launch. ".repeat(6)}`.trim();
   await dialog().getByRole("textbox").fill(otherNote);
   const onText = await confirmButton().isEnabled();
   await shot("a2-dialog-other");
@@ -378,6 +383,44 @@ try {
   }, LOCAL_SERVER_ID);
   const doneItem = page.locator(".profile-tab-report").filter({ hasText: `${doneTab.name} · ${name}` });
   const otherItem = page.locator(".profile-tab-report").filter({ hasText: `${otherTab.name} · ${name}` });
+  // A21: the records start closed, and the name opens and closes the note and the last result.
+  step("A21");
+  const lastResultPrefix = t("settings.profile.tabReports.lastResult", { result: "" }).trim();
+  const otherToggle = otherItem.getByRole("button", { name: `${otherTab.name} · ${name}`, exact: true });
+  const noteText = otherItem.getByText(otherNote);
+  const expandedState = async () => (await otherToggle.getAttribute("aria-expanded")) === "true";
+  const a21Closed = {
+    openAtStart: await page.locator('.profile-tab-report [aria-expanded="true"]').count(),
+    lastResultShown: await page.locator(".profile-tab-report").getByText(lastResultPrefix).count(),
+    notesShown: await page.locator(".profile-tab-report").getByText(`Shipped ${stamp}`).count(),
+    otherClosed: !(await expandedState()),
+    otherNoteShown: await noteText.count(),
+  };
+  await otherToggle.click();
+  await noteText.waitFor({ timeout: UI_WAIT_MS });
+  const openOnClick = await expandedState();
+  const clamp = await noteText.evaluate((node) => {
+    const lineHeight = Number.parseFloat(getComputedStyle(node).lineHeight);
+    return { lines: Math.round(node.clientHeight / lineHeight), cut: node.scrollHeight > node.clientHeight + 1 };
+  });
+  await otherItem.scrollIntoViewIfNeeded();
+  await shot("a21-expanded");
+  await otherToggle.click();
+  await noteText.waitFor({ state: "detached", timeout: UI_WAIT_MS });
+  const closedOnSecondClick = !(await expandedState());
+  await otherToggle.focus();
+  await page.keyboard.press("Enter");
+  await noteText.waitFor({ timeout: UI_WAIT_MS });
+  const openOnEnter = await expandedState();
+  const focusVisible = await otherToggle.evaluate((node) => node.matches(":focus-visible"));
+  await shot("a21-keyboard-focus");
+  await page.keyboard.press("Space");
+  await noteText.waitFor({ state: "detached", timeout: UI_WAIT_MS });
+  const closedOnSpace = !(await expandedState());
+  await page.keyboard.press("Space");
+  await noteText.waitFor({ timeout: UI_WAIT_MS });
+  const a21Facts = { ...a21Closed, openOnClick, clamp, closedOnSecondClick, openOnEnter, focusVisible, closedOnSpace };
+  report.facts.a21 = a21Facts;
   const profileItemsFacts = {
     done:
       (await doneItem.count()) === 1 &&
@@ -526,6 +569,19 @@ try {
   assert.ok(profileItemsFacts.done, "A1 record in the Profile");
   assert.ok(offEmpty && offBlank && onText, "A2 Confirm rule");
   assert.ok(profileItemsFacts.otherNote, "A2 note in the Profile");
+  assert.equal(a21Facts.openAtStart, 0, "A21 every record starts closed");
+  assert.equal(
+    a21Facts.lastResultShown + a21Facts.notesShown + a21Facts.otherNoteShown,
+    0,
+    "A21 closed hides the text",
+  );
+  assert.ok(
+    a21Facts.otherClosed && a21Facts.openOnClick && a21Facts.closedOnSecondClick,
+    "A21 a click opens and closes",
+  );
+  assert.ok(a21Facts.openOnEnter && a21Facts.closedOnSpace, "A21 Enter and Space open and close");
+  assert.ok(a21Facts.focusVisible, "A21 the focus shows after a key");
+  assert.deepEqual(a21Facts.clamp, { lines: 4, cut: true }, "A21 a long note shows four lines and is cut");
   assert.ok(keptVisible && a3Facts.newRecords === 0 && a3Facts.reopenedClean, "A3");
   assert.ok(!dialogShown && a4Facts.newRecords === 0, "A4");
   assert.ok(profileItemsFacts.cancelledAbsent && profileItemsFacts.emptyAbsent, "A3 and A4 add no item to the Profile");

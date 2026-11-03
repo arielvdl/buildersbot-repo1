@@ -21,6 +21,7 @@ function row(
     title,
     firstMessage: preview,
     preview,
+    createdAt: new Date(Date.now() - ageMs - HOUR).toISOString(),
     updatedAt: new Date(Date.now() - ageMs).toISOString(),
     status,
     owner: quick,

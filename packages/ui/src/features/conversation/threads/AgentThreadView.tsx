@@ -4,6 +4,7 @@ import type {
   AgentTaskHold,
   AttachmentSummary,
   DraftAttachment,
+  ForceQueuedMessageOutcome,
   InstalledSkill,
   QueueDelivery,
 } from "@buildersbot/contracts/ipc";
@@ -65,6 +66,8 @@ const STICK_DISTANCE = 48;
  */
 function shownInThread(message: AgentMessage): boolean {
   if (message.kind === "thinking" || message.kind === "memory-changes") return false;
+  // The question that the Quick chat sent to another agent is a row for its agent strip, not a message to read.
+  if (message.exchange?.direction === "outgoing") return false;
   return (
     message.author === "you" ||
     message.streaming === true ||
@@ -80,8 +83,9 @@ function shownInThread(message: AgentMessage): boolean {
 /** Why the next message of a queued thread waits. */
 export function agentThreadHoldText(task: AgentTask, limit: number, t: TextValue["t"]): string | null {
   if (task.state !== "queued") return null;
-  if (task.hold === "task-limit" || task.hold === null)
-    return t("conversation.threads.hold.threadLimit", { count: limit });
+  // A queued thread with no named wait has no text: the limit of threads is named only when it is the reason.
+  if (task.hold === null) return null;
+  if (task.hold === "task-limit") return t("conversation.threads.hold.threadLimit", { count: limit });
   return t(HOLD_TEXT[task.hold]);
 }
 
@@ -92,6 +96,11 @@ export interface AgentThreadQueueActions {
   onCancel: (deliveryId: string) => void;
   /** `deliveryIds` is the whole queue of the thread in its new order. */
   onReorder: (deliveryIds: string[]) => void;
+  /** Stops the running turn of the thread and starts this message next. Absent where the host cannot. */
+  onForce?: ((deliveryId: string) => Promise<ForceQueuedMessageOutcome | null>) | undefined;
+  /** Whether the force asks first. The page keeps the person's choice. */
+  askBeforeForce?: boolean | undefined;
+  onStopAskingBeforeForce?: (() => void) | undefined;
 }
 
 const QueuePanel = lazy(() =>
@@ -527,6 +536,9 @@ export function AgentThreadView(props: AgentThreadViewProps) {
                       onSteer={props.queue?.onSteer}
                       onCancel={(deliveryId) => props.queue?.onCancel(deliveryId)}
                       onReorder={(deliveryIds) => props.queue?.onReorder(deliveryIds)}
+                      onForce={props.queue?.onForce}
+                      askBeforeForce={props.queue?.askBeforeForce}
+                      onStopAskingBeforeForce={props.queue?.onStopAskingBeforeForce}
                     />
                   </Loading>
                 </div>

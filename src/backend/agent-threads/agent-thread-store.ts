@@ -5,6 +5,7 @@ import {
   type AgentTaskOutcome,
   type AttachmentSummary,
   type ConversationMessage,
+  type QuickChatRuntime,
 } from "@buildersbot/contracts/ipc";
 import { type DynamicRecord, isDynamicRecord, isOneOf, isString } from "@buildersbot/contracts/runtime-values";
 import type { BuildersBotDatabase } from "../buildersbot-database";
@@ -19,6 +20,7 @@ import {
 } from "../database/database-rows";
 import { refreshThreadOrder } from "../database/thread-message-order";
 import { messageExcerpt } from "../message-excerpt";
+import { decodeThreadRuntime, encodeThreadRuntime } from "./thread-runtime-json";
 
 const AGENT_THREAD_ORIGINS = ["user", "agent"] as const;
 export type AgentThreadOrigin = (typeof AGENT_THREAD_ORIGINS)[number];
@@ -58,6 +60,11 @@ export interface AgentThreadRecord {
   closedAt: string | null;
   /** Where a branch was copied from. Null for a thread that is not a branch. */
   branch: AgentThreadBranch | null;
+  /**
+   * The model of a quick chat conversation. Null runs on the model of the agent, which is every thread of
+   * every other agent and a quick chat thread that no one has given a model.
+   */
+  runtime: QuickChatRuntime | null;
 }
 
 /** The `branch_*` columns: all three are set, or the thread is not a branch. */
@@ -93,6 +100,8 @@ export interface AgentThreadInput {
   text?: string;
   title: string;
   titleSource: Exclude<AgentThreadTitleSource, "user">;
+  /** The model of the new thread, written in the same transaction that makes it. */
+  runtime?: QuickChatRuntime;
 }
 
 const SELECT_THREAD = "SELECT *, COALESCE(legacy_task_id, thread_id) AS task_id FROM projection_agent_threads";
@@ -383,8 +392,8 @@ export class AgentThreadStore {
         db.prepare(
           `INSERT INTO projection_agent_threads
              (thread_id, agent_id, legacy_task_id, origin, title, title_source, first_message, preview, outcome,
-              error, created_at, updated_at, archived_at, last_event_sequence)
-           VALUES (?, ?, NULL, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, NULL, ?)`,
+              error, created_at, updated_at, archived_at, last_event_sequence, runtime_json)
+           VALUES (?, ?, NULL, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, NULL, ?, ?)`,
         ).run(
           threadId,
           input.agentId,
@@ -396,6 +405,7 @@ export class AgentThreadStore {
           now,
           now,
           sequence,
+          input.runtime ? encodeThreadRuntime(input.runtime) : null,
         );
         return null;
       },
@@ -448,6 +458,40 @@ export class AgentThreadStore {
     this.#database.connection
       .prepare(`UPDATE projection_agent_threads SET outcome = ?, updated_at = ? WHERE ${BY_TASK_ID}`)
       .run(outcome, new Date().toISOString(), taskId, taskId);
+  }
+
+  /** The model of the thread, or null when it runs on the model of its agent or the thread is unknown. */
+  runtimeOf(taskId: string): QuickChatRuntime | null {
+    const row = databaseRow(
+      this.#database.connection
+        .prepare(`SELECT runtime_json FROM projection_agent_threads WHERE ${BY_TASK_ID}`)
+        .get(taskId, taskId),
+    );
+    return row ? decodeThreadRuntime(row.runtime_json) : null;
+  }
+
+  /**
+   * Sets the model of the thread, or clears it with null. The write does not touch `updated_at`: a
+   * change of model is not new activity, so the tab does not move. It answers whether a thread changed.
+   */
+  setRuntime(taskId: string, runtime: QuickChatRuntime | null): boolean {
+    const result = this.#database.connection
+      .prepare(`UPDATE projection_agent_threads SET runtime_json = ? WHERE ${BY_TASK_ID}`)
+      .run(runtime ? encodeThreadRuntime(runtime) : null, taskId, taskId);
+    return Number(result.changes) > 0;
+  }
+
+  /**
+   * Gives `runtime` to every thread of the agent that has none, open or archived, and answers how many it
+   * changed. A thread with a model keeps it, so a second call changes nothing. It does not touch
+   * `updated_at`. The quick chat pins its conversations with it before the default model of the agent
+   * moves, so that no conversation changes model because the default did.
+   */
+  fillMissingRuntimes(agentId: string, runtime: QuickChatRuntime): number {
+    const result = this.#database.connection
+      .prepare("UPDATE projection_agent_threads SET runtime_json = ? WHERE agent_id = ? AND runtime_json IS NULL")
+      .run(encodeThreadRuntime(runtime), agentId);
+    return Number(result.changes);
   }
 
   /** Keeps the error of the thread's last turn, or clears it when a turn starts. */
@@ -630,5 +674,6 @@ function decodeThread(row: DynamicRecord): AgentThreadRecord {
       sourceThreadId !== null && sourceMessageId !== null && throughMessageId !== null
         ? { sourceThreadId, sourceMessageId, throughMessageId }
         : null,
+    runtime: decodeThreadRuntime(row.runtime_json),
   };
 }

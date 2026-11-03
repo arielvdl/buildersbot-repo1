@@ -6,6 +6,8 @@ export interface QuickChatPort {
   updateAgent: BuildersBotDesktopApi["agent"]["updateAgent"];
   /** Starts the provider of the agent before the first message, so the answer starts sooner. */
   warm: BuildersBotDesktopApi["quickChat"]["warm"];
+  /** Sets the model of one conversation. It takes effect with the next message of that conversation. */
+  setConversationRuntime: BuildersBotDesktopApi["quickChat"]["setConversationRuntime"];
 }
 
 /** Read on each call: tests and stories replace `window.buildersbot` per case. */
@@ -15,5 +17,6 @@ export function quickChatPort(): QuickChatPort {
     ensure: () => quickChat.ensure(),
     updateAgent: (input) => agent.updateAgent(input),
     warm: () => quickChat.warm(),
+    setConversationRuntime: (input) => quickChat.setConversationRuntime(input),
   };
 }

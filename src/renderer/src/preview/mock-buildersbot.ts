@@ -37,6 +37,7 @@ import {
   type AgentRuntimeSnapshot,
   type AgentStatus,
   type AgentSubmission,
+  type AgentSummary,
   type AgentTask,
   type AgentTasksSnapshot,
   type AgentTemplatePublication,
@@ -95,6 +96,7 @@ import {
   DEFAULT_PROMPT_CACHE_TTL,
   DEFAULT_PROVIDER_ACCOUNT_ID,
   DEFAULT_PROVIDER_DETECTION_SETTINGS,
+  DEFAULT_QUICK_CHAT_THREADS,
   DEFAULT_REMOTE_NETWORK_ROUTE,
   DEFAULT_REMOTE_SESSION_REUSE_PREFERENCE,
   DEFAULT_SECURITY_GUARD_PREFERENCE,
@@ -147,6 +149,7 @@ import {
   type QueueDelivery,
   type QueuedMessageReceipt,
   type QueueSnapshot,
+  type QuickChatRuntime,
   type RemoteDesktopSession,
   type RemoteNetworkRouteState,
   type RemoteSessionReusePreference,
@@ -914,6 +917,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
   function agentTaskLimitOf(agentId: string): number {
     const agent = agents.find((candidate) => candidate.id === agentId);
     // Tasks run on this computer, so an agent on a provider that this build does not know has none.
+    if (agent?.quickChat === true) return previewAgentLimit.quickChatThreads ?? DEFAULT_QUICK_CHAT_THREADS;
     return agent && isAgentSummary(agent) ? agentTaskLimit(agent) : 1;
   }
 
@@ -940,6 +944,57 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
     const task = tasks.get(agentId)?.find((candidate) => candidate.id === taskId);
     if (!task) throw new Error(sourceText("error.backend.threadNotFound"));
     return task;
+  }
+
+  /** As the host checks a model for a quick chat conversation: listed, provider on, effort and fast mode kept only if the model has them. */
+  function checkQuickChatRuntime(requested: QuickChatRuntime): QuickChatRuntime {
+    const model = models
+      .filter(isAgentModelOption)
+      .find((candidate) => candidate.provider === requested.provider && candidate.id === requested.model);
+    const providerOn = agentStatus.providers?.some((row) => row.id === requested.provider && row.state === "available");
+    if (!model || providerOn === false)
+      throw new Error(
+        sourceText("error.backend.quickChatModelUnavailable", { model: requested.model, provider: requested.provider }),
+      );
+    const reasoningEffort =
+      model.reasoningEffortConfigurable === false
+        ? undefined
+        : requested.reasoningEffort && model.supportedReasoningEfforts.includes(requested.reasoningEffort)
+          ? requested.reasoningEffort
+          : model.defaultReasoningEffort;
+    return {
+      provider: model.provider,
+      model: model.id,
+      ...(reasoningEffort === undefined ? {} : { reasoningEffort }),
+      ...(requested.fastMode === true && model.fastServiceTier !== undefined ? { fastMode: true } : {}),
+    };
+  }
+
+  function quickChatRuntimeOfAgent(agent: AgentSummary): QuickChatRuntime {
+    return {
+      provider: agent.provider,
+      model: agent.model,
+      reasoningEffort: agent.reasoningEffort,
+      ...(agent.fastMode === undefined ? {} : { fastMode: agent.fastMode }),
+    };
+  }
+
+  /** The model of the last conversation is the default of the next one: the record of the quick chat agent. */
+  function rememberQuickChatDefault(runtime: QuickChatRuntime): AgentSummary {
+    const held = agents.find((agent) => agent.quickChat === true);
+    if (!held || !isAgentSummary(held)) throw new Error(sourceText("error.provider.noneReady"));
+    // A conversation with no model of its own keeps the model of the record, before the default moves.
+    for (const task of tasks.get(held.id) ?? []) task.runtime ??= quickChatRuntimeOfAgent(held);
+    const next = {
+      ...held,
+      provider: runtime.provider,
+      model: runtime.model,
+      reasoningEffort: runtime.reasoningEffort ?? held.reasoningEffort,
+      fastMode: runtime.fastMode === true,
+    };
+    if (!isAgentSummary(next)) throw new Error(sourceText("error.provider.noneReady"));
+    agents = agents.map((agent) => (agent.id === held.id ? next : agent));
+    return next;
   }
 
   function taskConversation(task: AgentTask): ConversationSnapshot {
@@ -1400,6 +1455,18 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
     quickChat: {
       // The preview has no provider process to start.
       warm: async () => undefined,
+      // As the host does: checks the model, stores it on the conversation and makes it the default of the next one.
+      setConversationRuntime: async (input) => {
+        const held = agents.find((agent) => agent.id === input.agentId);
+        if (held?.quickChat !== true) throw new Error(sourceText("error.agent.unknown", { id: input.agentId }));
+        const task = findTask(input.agentId, input.taskId);
+        if (task.closedAt !== null) throw new Error(sourceText("error.backend.threadArchived"));
+        const runtime = checkQuickChatRuntime(input.runtime);
+        task.runtime = runtime;
+        const agent = rememberQuickChatDefault(runtime);
+        emitTasks(input.agentId);
+        return clone({ task, agent });
+      },
       // As the host does: makes the hidden agent on the first call, and moves it to a listed model when its own left.
       ensure: async () => {
         const providerAvailable = (provider: AgentProviderId) =>
@@ -3084,7 +3151,21 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
       listTasks: async (agentId) => taskList(agentId),
       readTask: async (input) => clone(taskConversation(findTask(input.agentId, input.taskId))),
       startTask: async (input) => {
+        // As the host does: only the quick chat agent takes a model for one conversation.
+        const held = agents.find((agent) => agent.id === input.agentId);
+        if (input.runtime && held?.quickChat !== true)
+          throw new Error(sourceText("error.backend.quickChatRuntimeOnly"));
+        // As the host does: no choice made starts on the model of the agent record, stored on the conversation.
+        const runtime = input.runtime
+          ? checkQuickChatRuntime(input.runtime)
+          : held?.quickChat === true && isAgentSummary(held)
+            ? quickChatRuntimeOfAgent(held)
+            : undefined;
         const task = createTask(input.agentId, input.text);
+        if (runtime) {
+          task.runtime = runtime;
+          rememberQuickChatDefault(runtime);
+        }
         runTaskTurn(task, input.text);
         return clone(task);
       },
@@ -3218,6 +3299,17 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
       },
       // The preview has no provider turn to stop: the forced message goes first in the queue.
       forceQueuedMessage: async (input: ForceQueuedMessageInput) => {
+        // A message that waits in a thread goes first among the messages of that thread.
+        const thread = (tasks.get(input.agentId) ?? []).find((task) =>
+          task.queuedMessages.some((message) => message.deliveryId === input.deliveryId),
+        );
+        if (thread) {
+          const forced = thread.queuedMessages.find((message) => message.deliveryId === input.deliveryId);
+          if (forced)
+            thread.queuedMessages = [forced, ...thread.queuedMessages.filter((message) => message !== forced)];
+          emitTasks(input.agentId);
+          return { outcome: input.expectedTurnId ? "interrupted" : "started" };
+        }
         const queue = queues.get(input.agentId) ?? emptyQueue(input.agentId);
         const forced = queue.deliveries.find((item) => item.id === input.deliveryId && item.status === "queued");
         if (!forced) throw new Error(sourceText("error.backend.forceQueuedOnly"));

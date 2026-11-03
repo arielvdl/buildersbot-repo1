@@ -12,6 +12,8 @@ export interface ChannelStagePreference {
   all: boolean;
   collapse: boolean;
   channels: Readonly<Record<string, boolean>>;
+  /** The channels whose stage the reader folded by hand, whoever works. Missing means not folded. */
+  folded: Readonly<Record<string, boolean>>;
 }
 
 export type ChannelStageScope = "channel" | "all";
@@ -20,13 +22,15 @@ export type ChannelStageScope = "channel" | "all";
 export interface ChannelStageSettings {
   enabled: boolean;
   collapse: boolean;
+  /** The reader folded this channel's stage by hand. */
+  folded: boolean;
   scope: ChannelStageScope;
 }
 
 type ChannelStageByScope = Record<string, ChannelStagePreference>;
 
 const STORAGE_KEY = "buildersbot:channel-stage:v1";
-const DEFAULT_PREFERENCE: ChannelStagePreference = { all: false, collapse: true, channels: {} };
+const DEFAULT_PREFERENCE: ChannelStagePreference = { all: false, collapse: true, channels: {}, folded: {} };
 
 type ChannelStageStorage = Pick<Storage, "getItem" | "setItem">;
 
@@ -34,6 +38,7 @@ const preferenceSchema = z.object({
   all: z.boolean().catch(false),
   collapse: z.boolean().catch(true),
   channels: z.record(z.string().min(1).max(INPUT_LIMITS.identifier), z.boolean()).catch({}),
+  folded: z.record(z.string().min(1).max(INPUT_LIMITS.identifier), z.boolean()).catch({}),
 });
 const storedSchema = z.record(z.string(), z.unknown());
 
@@ -73,6 +78,7 @@ function channelStageSettings(
   return {
     enabled: exception ?? current.all,
     collapse: current.collapse,
+    folded: channelId === null ? false : (current.folded[channelId] ?? false),
     scope: exception === undefined ? "all" : "channel",
   };
 }
@@ -105,6 +111,17 @@ export function withChannelStageCollapse(
   collapse: boolean,
 ): ChannelStagePreference {
   return { ...(preference ?? DEFAULT_PREFERENCE), collapse };
+}
+
+/** The reader folds or unfolds the stage of one channel by hand. An unfolded channel keeps no entry. */
+export function withChannelStageFolded(
+  preference: ChannelStagePreference | undefined,
+  channelId: string,
+  folded: boolean,
+): ChannelStagePreference {
+  const current = preference ?? DEFAULT_PREFERENCE;
+  const { [channelId]: _gone, ...rest } = current.folded;
+  return { ...current, folded: folded ? { ...rest, [channelId]: true } : rest };
 }
 
 const [preferences, setPreferences] = createSignal<ChannelStageByScope>(readChannelStagePreferences());

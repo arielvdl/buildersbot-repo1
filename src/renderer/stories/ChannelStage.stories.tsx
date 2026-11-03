@@ -53,7 +53,9 @@ export const AtWork: Story = {
     <StoryChannelConversation
       stage={
         <ChannelStage
-          collapsed={false}
+          folded={false}
+          hidden={false}
+          onToggleFold={() => {}}
           overflow={0}
           request={REQUEST}
           links={[{ key: "t1", from: "lead", to: "back" }]}
@@ -83,7 +85,9 @@ export const Behaviors: Story = {
     <StoryChannelConversation
       stage={
         <ChannelStage
-          collapsed={false}
+          folded={false}
+          hidden={false}
+          onToggleFold={() => {}}
           overflow={2}
           request={{ ...REQUEST, done: 2 }}
           links={[]}
@@ -103,18 +107,40 @@ export const Behaviors: Story = {
   ),
 };
 
-/** Nobody works and the reader chose to fold the stage: a strip, and nothing runs in it. */
+/** The reader folded the stage of this channel: a strip with the button that unfolds it, and nothing runs in it. */
 export const Folded: Story = {
   render: () => (
-    <StoryChannelConversation stage={<ChannelStage collapsed overflow={0} request={null} links={[]} actors={[]} />} />
+    <StoryChannelConversation
+      stage={
+        <ChannelStage
+          folded
+          hidden={false}
+          onToggleFold={() => {}}
+          overflow={0}
+          request={null}
+          links={[]}
+          actors={[]}
+        />
+      }
+    />
   ),
 };
 
-/** Nobody works and the stage stays open. */
+/** Nobody works and the reader keeps the stage open then: the empty table. */
 export const Empty: Story = {
   render: () => (
     <StoryChannelConversation
-      stage={<ChannelStage collapsed={false} overflow={0} request={null} links={[]} actors={[]} />}
+      stage={
+        <ChannelStage
+          folded={false}
+          hidden={false}
+          onToggleFold={() => {}}
+          overflow={0}
+          request={null}
+          links={[]}
+          actors={[]}
+        />
+      }
     />
   ),
 };
@@ -194,7 +220,9 @@ function Scripted() {
     <StoryChannelConversation
       stage={
         <ChannelStage
-          collapsed={step().actors.length === 0}
+          folded={false}
+          hidden={step().actors.length === 0}
+          onToggleFold={() => {}}
           overflow={0}
           request={
             step().parts > 0
@@ -213,5 +241,8 @@ function Scripted() {
   );
 }
 
-/** Agents arrive, hand work on, wait, finish and leave. Plays once. */
+/**
+ * Agents arrive, hand work on, wait, finish and leave. Plays once. The stage opens from nothing when
+ * the first agent comes, and folds away when the last one leaves: figures first, then the panel.
+ */
 export const Run: Story = { render: () => <Scripted /> };

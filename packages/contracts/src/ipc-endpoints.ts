@@ -444,7 +444,11 @@ import type {
   SteerQueuedMessageInput,
   UpdateQueuedMessageInput,
 } from "./ipc-queue";
-import type { QuickChatEnsureResult } from "./ipc-quick-chat";
+import type {
+  QuickChatConversationRuntimeResult,
+  QuickChatEnsureResult,
+  SetQuickChatConversationRuntimeInput,
+} from "./ipc-quick-chat";
 import type {
   RemoteDesktopSetupAction,
   RemoteDesktopSetupStatus,
@@ -1105,6 +1109,11 @@ export const IPC_ENDPOINTS = {
     // Starts the process of the agent's provider when it is stopped, so the first message finds it up. It opens no
     // session and no conversation and calls no model. It does nothing while the memory is low.
     warm: request<undefined, void>()("quick-chat:warm"),
+    // Sets the model of one conversation. It takes effect with the next message of that conversation and
+    // becomes the model of the next new conversation. It refuses a task of any other agent.
+    setConversationRuntime: request<SetQuickChatConversationRuntimeInput, QuickChatConversationRuntimeResult>()(
+      "quick-chat:set-conversation-runtime",
+    ),
   },
   // The programs that agents left running on this computer. `list` answers null where Builders Bot cannot
   // find them (Windows). `stop` takes the id of one, and ends it with its children.

@@ -33,7 +33,7 @@ import {
   X,
 } from "@buildersbot/ui";
 import { AgentPicker } from "@buildersbot/ui/features/agents/AgentPicker";
-import { AgentLinesSettings } from "@buildersbot/ui/features/window/AgentLinesSettings";
+import { AgentLinesSettings, QuickChatThreadsSettings } from "@buildersbot/ui/features/window/AgentLinesSettings";
 import { LoadOverview, StoppedState, WorkRequest, WorkTab } from "@buildersbot/ui/features/window/LoadRing";
 import { stoppedPlanText, toggledKey } from "@buildersbot/ui/features/window/load-view";
 import { useText } from "@buildersbot/ui/text";
@@ -513,6 +513,23 @@ export function SettingsLoadTab(props: {
           {(snapshot) => (
             <div class="window-load-page">
               <AgentLinesSettings
+                limit={snapshot().agentLimit}
+                onChange={(preference) => void props.load.setAgentLimit(preference)}
+              />
+            </div>
+          )}
+        </Show>
+      </SettingsSection>
+
+      <SettingsSection
+        data-settings-row="settings.load.quickChat.title"
+        title={t("settings.load.quickChat.title")}
+        description={t("settings.load.quickChat.description")}
+      >
+        <Show when={props.load.snapshot()}>
+          {(snapshot) => (
+            <div class="window-load-page">
+              <QuickChatThreadsSettings
                 limit={snapshot().agentLimit}
                 onChange={(preference) => void props.load.setAgentLimit(preference)}
               />

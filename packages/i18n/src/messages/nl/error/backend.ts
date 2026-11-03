@@ -341,6 +341,10 @@ export const messages = {
   "error.backend.taskNotFound": "Deze taak is niet beschikbaar.",
   "error.backend.taskClosed": "Deze taak is gesloten. Open de taak opnieuw om een bericht te sturen.",
   "error.backend.taskStillRunning": "Deze taak draait nog. Wacht tot de taak stopt en sluit hem dan.",
+  "error.backend.quickChatModelUnavailable": "{model} is nu niet beschikbaar bij {provider}. Kies een ander model.",
+  "error.backend.quickChatRuntimeByConversation":
+    "De snelchat stelt het model per gesprek in. Kies het model in het gesprek.",
+  "error.backend.quickChatRuntimeOnly": "Alleen de snelchat accepteert een model voor één gesprek.",
   "error.backend.threadNotFound": "Deze thread is niet beschikbaar.",
   "error.backend.threadStillRunning": "Deze thread draait nog. Stop de thread en probeer het opnieuw.",
   "error.backend.threadArchived": "Deze thread is gearchiveerd. Herstel de thread om een bericht te sturen.",

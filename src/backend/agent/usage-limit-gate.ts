@@ -5,6 +5,7 @@ import type { AgentProvider } from "../agent-client";
 import type { AgentStore } from "../agent-store";
 import { causeHelpers } from "../effect-boundary";
 import { agentProviderAccount as accountOf, providerForAgent } from "./thread-items";
+import { effectiveRuntime, type ThreadRuntimes } from "./thread-runtime";
 
 /** A provider client's report that the plan refused this turn, with the reset in epoch seconds when it gave one. */
 export const USAGE_LIMIT_METHOD = "buildersbot/usageLimit";
@@ -45,6 +46,11 @@ export interface UsageLimitHooks {
 
 export interface UsageLimitGateOptions {
   store: AgentStore;
+  /**
+   * The model of each quick chat conversation. A limit belongs to the provider account and model that the
+   * conversation runs on, not to the model of the agent record, so a lane names its task where it has one.
+   */
+  runtimes?: ThreadRuntimes;
   hooks: UsageLimitHooks;
 }
 
@@ -90,6 +96,7 @@ interface UsageLimit extends UsageLimitKey {
 export class UsageLimitGate {
   readonly #store: AgentStore;
   readonly #hooks: UsageLimitHooks;
+  readonly #runtimes: ThreadRuntimes | undefined;
   readonly #limits = new Map<string, UsageLimit>();
   /** Owns the usage reads and the timer runs, so `dispose` stops them. */
   #scope = Scope.makeUnsafe();
@@ -102,10 +109,12 @@ export class UsageLimitGate {
   constructor(options: UsageLimitGateOptions) {
     this.#store = options.store;
     this.#hooks = options.hooks;
+    this.#runtimes = options.runtimes;
   }
 
-  mayDrain(agentId: string): boolean {
-    const agent = this.#agent(agentId);
+  /** `taskId` names the lane of a task, which can run on a model of its own (a quick chat conversation). */
+  mayDrain(agentId: string, taskId: string | null = null): boolean {
+    const agent = this.#agent(agentId, taskId);
     return !agent || !this.#limits.has(limitKey(providerForAgent(agent), accountOf(agent), agent.model));
   }
 
@@ -114,16 +123,16 @@ export class UsageLimitGate {
    * try ends when that turn starts: a refused turn queues its messages again, and a completed one
    * ends the limit.
    */
-  retry(agentId: string): void {
-    const agent = this.#agent(agentId);
+  retry(agentId: string, taskId: string | null = null): void {
+    const agent = this.#agent(agentId, taskId);
     if (!agent) return;
     const key = limitKey(providerForAgent(agent), accountOf(agent), agent.model);
     if (this.#limits.has(key)) this.#tries.set(agentId, key);
   }
 
   /** Whether the agent may start a turn that its limit holds, because the user sent it a message. */
-  mayTry(agentId: string): boolean {
-    const agent = this.#agent(agentId);
+  mayTry(agentId: string, taskId: string | null = null): boolean {
+    const agent = this.#agent(agentId, taskId);
     return (
       agent !== undefined &&
       this.#tries.get(agentId) === limitKey(providerForAgent(agent), accountOf(agent), agent.model)
@@ -144,8 +153,8 @@ export class UsageLimitGate {
    * The provider account and model that `failed` would hold for this agent's turn on `model`, as one
    * key. Null when the agent no longer exists.
    */
-  failureKey(agentId: string, model: string | null = null): string | null {
-    const agent = this.#agent(agentId);
+  failureKey(agentId: string, model: string | null = null, taskId: string | null = null): string | null {
+    const agent = this.#agent(agentId, taskId);
     return agent ? limitKey(providerForAgent(agent), accountOf(agent), model ?? agent.model) : null;
   }
 
@@ -159,8 +168,8 @@ export class UsageLimitGate {
    * The model is passed over until the hold ends or a turn on it completes. Then the agents that
    * left it go back.
    */
-  failed(agentId: string, model: string | null = null): void {
-    const agent = this.#agent(agentId);
+  failed(agentId: string, model: string | null = null, taskId: string | null = null): void {
+    const agent = this.#agent(agentId, taskId);
     if (!agent) return;
     const provider = providerForAgent(agent);
     const accountId = accountOf(agent);
@@ -205,8 +214,9 @@ export class UsageLimitGate {
     agentId: string,
     resetsAt: number | null,
     model: string | null = null,
+    taskId: string | null = null,
   ) {
-    const agent = this.#agent(agentId);
+    const agent = this.#agent(agentId, taskId);
     if (!agent) return;
     const provider = providerForAgent(agent);
     const turnModel = model ?? agent.model;
@@ -249,8 +259,9 @@ export class UsageLimitGate {
     this: UsageLimitGate,
     agentId: string,
     model: string | null = null,
+    taskId: string | null = null,
   ) {
-    const agent = this.#agent(agentId);
+    const agent = this.#agent(agentId, taskId);
     if (!agent) return;
     const provider = providerForAgent(agent);
     const key = limitKey(provider, accountOf(agent), model ?? agent.model);
@@ -283,8 +294,10 @@ export class UsageLimitGate {
     this.#scope = Scope.makeUnsafe();
   }).bind(this);
 
-  #agent(agentId: string) {
-    return this.#store.list().find((candidate) => candidate.id === agentId);
+  /** The agent as the lane runs it: with the model of its conversation when `taskId` names one that has its own. */
+  #agent(agentId: string, taskId: string | null = null) {
+    const agent = this.#store.list().find((candidate) => candidate.id === agentId);
+    return agent && this.#runtimes ? this.#runtimes.forTask(agent, taskId) : agent;
   }
 
   #announce(agentId: string, limit: UsageLimit): void {
@@ -383,14 +396,19 @@ export class UsageLimitGate {
     yield* this.#hooks.released({ provider: failure.provider, accountId: failure.accountId, model: failure.model });
   });
 
+  /**
+   * The agents whose queue a limit holds: those that run on its provider account and model, and the quick chat
+   * agent when one of its conversations does. A drain of the agent covers each lane, so the agent is enough.
+   */
   #heldAgents(limit: UsageLimit) {
+    const holds = (agent: { provider: AgentProvider; model: string; providerAccountId?: string | undefined }) =>
+      providerForAgent(agent) === limit.provider && accountOf(agent) === limit.accountId && agent.model === limit.model;
     return this.#store
       .list()
       .filter(
         (agent) =>
-          providerForAgent(agent) === limit.provider &&
-          accountOf(agent) === limit.accountId &&
-          agent.model === limit.model,
+          holds(agent) ||
+          (this.#runtimes?.runtimesOf(agent).some((runtime) => holds(effectiveRuntime(agent, runtime))) ?? false),
       );
   }
 }

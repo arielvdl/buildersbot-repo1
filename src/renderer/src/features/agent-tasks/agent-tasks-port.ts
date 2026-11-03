@@ -24,6 +24,8 @@ export interface AgentTasksPort
   steerQueuedMessage?: BuildersBotDesktopApi["agent"]["steerQueuedMessage"];
   cancelQueuedMessage?: BuildersBotDesktopApi["agent"]["cancelQueuedMessage"];
   reorderQueue?: BuildersBotDesktopApi["agent"]["reorderQueue"];
+  /** Missing where the host cannot start a queued message of a thread now. The queue then has no force action. */
+  forceQueuedMessage?: BuildersBotDesktopApi["agent"]["forceQueuedMessage"];
   /** Missing where the server cannot branch a conversation. The branch actions then do not show. */
   branchTask?: BuildersBotDesktopApi["agent"]["branchTask"];
 }
@@ -45,6 +47,7 @@ export function agentTasksPort(): AgentTasksPort {
     steerQueuedMessage: (input) => agent.steerQueuedMessage(input),
     cancelQueuedMessage: (input) => agent.cancelQueuedMessage(input),
     reorderQueue: (input) => agent.reorderQueue(input),
+    forceQueuedMessage: (input) => agent.forceQueuedMessage(input),
     stopTask: (input) => agent.stopTask(input),
     closeTask: (input, serverId) => agent.closeTask(input, serverId),
     reopenTask: (input, serverId) => agent.reopenTask(input, serverId),

@@ -28,6 +28,12 @@ export interface AgentAwaitingInput {
   self: AgentProfile | undefined;
   /** What stops each agent in its own chat. An agent that was asked and waits shows the wait. */
   waits?: Record<string, SidebarAgentWait> | undefined;
+  /**
+   * A delivery that ended is a row "replied" while it is in a question that came after the person's last message,
+   * and the queue has no answer to show for it. The Quick chat strip counts the agents that are done with it: a
+   * conversation of a side thread has no queue to carry the answers, so an ended delivery is its answer.
+   */
+  keepEnded?: boolean | undefined;
 }
 
 export function agentAwaitingReplies(input: AgentAwaitingInput): AwaitingReplyItem[] {
@@ -66,6 +72,10 @@ export function agentAwaitingReplies(input: AgentAwaitingInput): AwaitingReplyIt
         continue;
       }
       const state = deliveryState(delivery.status);
+      if (!state && input.keepEnded && delivery.status === "completed" && index > lastUserIndex) {
+        rows.push(rowFor(delivery.recipientAgentId, "replied", id));
+        continue;
+      }
       if (!state || (state === "failed" && index < lastUserIndex)) continue;
       const wait = state === "failed" ? undefined : input.waits?.[delivery.recipientAgentId];
       rows.push({ ...rowFor(delivery.recipientAgentId, state, id), ...(wait ? { wait } : {}) });

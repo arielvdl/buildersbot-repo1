@@ -12,8 +12,7 @@ export const messages = {
   "channel.task.onBackup": "{name} roda no modelo de reserva {model}",
   "channel.task.resuming":
     "{name} parou numa falha curta do provedor. Continua de onde parou ({attempt}/{max}), em {seconds} s",
-  "channel.task.wait.summary": "Na fila ({count})",
-  "channel.task.wait.tab": "Aguardando - {name} responde antes a mensagem anterior desta aba",
+  "channel.task.wait.summary": { one: "{count} mensagem aguardando", other: "{count} mensagens aguardando" },
   "channel.task.wait.agentTabs": {
     one: "Aguardando - {name} já trabalha em {count} aba, o máximo ao mesmo tempo. Esta mensagem começa quando ela terminar",
     other:
@@ -107,7 +106,8 @@ export const messages = {
   "channel.topic.age.hour": { one: "há {count} h", other: "há {count} h" },
   "channel.topic.age.day": { one: "há {count} dia", other: "há {count} dias" },
   "channel.stage.label": "Palco dos agentes",
-  "channel.stage.empty": "Ninguém está trabalhando",
+  "channel.stage.fold": "Recolher o palco dos agentes",
+  "channel.stage.unfold": "Expandir o palco dos agentes",
   "channel.stage.more": "+{count}",
   "channel.stage.moreLabel": {
     one: "Mais {count} agente está trabalhando",
@@ -136,8 +136,9 @@ export const messages = {
   "channel.stage.flag.title": "Palco dos agentes",
   "channel.stage.flag.enable": "Mostrar o palco dos agentes",
   "channel.stage.flag.enableHint": "Os agentes que trabalham aparecem acima da conversa.",
-  "channel.stage.flag.collapse": "Recolher quando ninguém trabalha",
-  "channel.stage.flag.collapseHint": "O palco vira uma faixa fina enquanto os agentes descansam.",
+  "channel.stage.flag.collapse": "Esconder quando ninguém trabalha",
+  "channel.stage.flag.collapseHint":
+    "O palco sai da tela enquanto os agentes descansam e volta quando um começa a trabalhar.",
   "channel.stage.flag.scope": "Vale para",
   "channel.stage.flag.scopeChannel": "Este canal",
   "channel.stage.flag.scopeAll": "Todos os canais",

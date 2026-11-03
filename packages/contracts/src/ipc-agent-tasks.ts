@@ -2,6 +2,7 @@ import { type AgentProviderId, agentProviderDescriptor } from "./agent-providers
 import { INPUT_LIMITS } from "./input-limits";
 import { integerInRange, isBoundedString, isIdentifier, isNullableBoundedString } from "./ipc-bounded-values";
 import { type ConversationReadState, isConversationReadState } from "./ipc-conversations";
+import { isQuickChatRuntime, type QuickChatRuntime } from "./ipc-quick-chat-runtime";
 import { isDynamicRecord, isOneOf } from "./runtime-values";
 
 /** The most tasks of one agent that run a turn at the same time, next to the agent's own chat. */
@@ -11,6 +12,19 @@ export const AGENT_TASK_LIMIT_DEFAULT = 2;
 
 export function isAgentTaskLimit(value: unknown): value is number {
   return integerInRange(value, 1, AGENT_TASK_LIMIT_MAX);
+}
+
+/**
+ * The quick chat keeps its own limit of parallel conversations, which the person sets in Settings > Load
+ * (`AgentLimitPreference.quickChatThreads`): from 1 to this number, 8 when nothing is saved. An ordinary agent
+ * keeps `AGENT_TASK_LIMIT_MAX`, which the released `agent-task-limit-v1` wire freezes.
+ */
+export const QUICK_CHAT_THREADS_MAX = 16;
+export const QUICK_CHAT_THREADS_MIN = 1;
+export const DEFAULT_QUICK_CHAT_THREADS = 8;
+
+export function isQuickChatThreadsLimit(value: unknown): value is number {
+  return integerInRange(value, QUICK_CHAT_THREADS_MIN, QUICK_CHAT_THREADS_MAX);
 }
 
 /**
@@ -94,6 +108,11 @@ export interface AgentTask {
    * Absent from a server that cannot branch, and never sent on the frozen `agent-tasks-v1` routes.
    */
   branch?: AgentTaskBranch | null;
+  /**
+   * The model of a quick chat conversation. Absent for the task of any other agent, and for a conversation
+   * that runs on the model of the agent. Never sent on the frozen `agent-tasks-v1` routes.
+   */
+  runtime?: QuickChatRuntime;
 }
 
 /** Where a branch was copied from. */
@@ -124,6 +143,8 @@ export interface StartAgentTaskInput {
   text: string;
   attachmentDraftIds?: string[];
   clientMessageId?: string;
+  /** The model of the new conversation. Only the quick chat agent takes it. Never sent to a joined server. */
+  runtime?: QuickChatRuntime;
 }
 
 /** Moves a queued message of the agent's own chat into a new task. */
@@ -209,7 +230,8 @@ export function isAgentTask(value: unknown): value is AgentTask {
     isBoundedString(value.createdAt, 160) &&
     isBoundedString(value.updatedAt, 160) &&
     (value.closedAt === null || isBoundedString(value.closedAt, 160)) &&
-    (value.branch === undefined || value.branch === null || isAgentTaskBranch(value.branch))
+    (value.branch === undefined || value.branch === null || isAgentTaskBranch(value.branch)) &&
+    (value.runtime === undefined || isQuickChatRuntime(value.runtime))
   );
 }
 
@@ -230,6 +252,7 @@ export function isAgentTasksSnapshot(value: unknown): value is AgentTasksSnapsho
     Array.isArray(value.tasks) &&
     value.tasks.length <= INPUT_LIMITS.agentTasks &&
     value.tasks.every(isAgentTask) &&
-    isAgentTaskLimit(value.limit)
+    // The limit that a snapshot reports is the one of the agent: the quick chat reports its own, up to 16.
+    isQuickChatThreadsLimit(value.limit)
   );
 }

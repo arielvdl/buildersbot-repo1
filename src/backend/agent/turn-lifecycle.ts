@@ -83,6 +83,7 @@ import {
   toolUsage,
   toThreadItem,
 } from "./thread-items";
+import type { ThreadRuntimes } from "./thread-runtime";
 import { type OwnToolCall, OwnToolCalls, type TurnEffect, TurnEffects } from "./turn-effects";
 import { TURN_RESUME_CAUSES, type TurnResumeMarker } from "./turn-resume";
 import { TurnTraces, traceMessage } from "./turn-traces";
@@ -175,6 +176,8 @@ export interface TurnHooks {
   retryLimitedTurn?<E>(
     input: {
       agentId: string;
+      /** The task of the lane, or null for the agent's own chat. */
+      taskId: string | null;
       model: string | null;
       deliveries: readonly DeliveryContext[];
       resetsAt: number | null;
@@ -271,6 +274,8 @@ export interface TurnHooks {
 
 export interface TurnLifecycleOptions {
   store: AgentStore;
+  /** The model of each quick chat conversation (`thread-runtime.ts`). Identity for every other agent. */
+  runtimes: ThreadRuntimes;
   mailbox: MailboxStore;
   mailboxSync: MailboxSync;
   conversation: ConversationRuntime;
@@ -310,6 +315,7 @@ export class TurnLifecycle {
   readonly #images: ImageGenRuntime;
   readonly #deltas: DeltaBuffer;
   readonly #usageLimits: UsageLimitGate;
+  readonly #runtimes: ThreadRuntimes;
   readonly #planContinuation: PlanContinuation;
   readonly #hooks: TurnHooks;
   readonly fileHistory = new ThreadFileHistory();
@@ -402,6 +408,7 @@ export class TurnLifecycle {
     this.#images = options.images;
     this.#deltas = options.deltas;
     this.#usageLimits = options.usageLimits;
+    this.#runtimes = options.runtimes;
     this.#planContinuation = options.planContinuation;
     this.#hooks = options.hooks;
   }
@@ -648,7 +655,9 @@ export class TurnLifecycle {
       agentId &&
       ["turn/started", "thread/tokenUsage/updated", "buildersbot/usage", "model/rerouted"].includes(notification.method)
     ) {
-      const agent = this.#store.list().find((entry) => entry.id === agentId);
+      const stored = this.#store.list().find((entry) => entry.id === agentId);
+      // A quick chat conversation counts its usage under the model that it runs on, not the agent's.
+      const agent = stored && this.#runtimes.forThread(stored, this.#conversation.publicThreadId(agentId, threadId));
       // A task or other side thread keeps its provider sessions under its own thread, not the agent's.
       // A routine run's own session is not saved, so its usage has its own session id.
       const session = agent
@@ -1156,7 +1165,8 @@ export class TurnLifecycle {
       // chat moves it: a task or a channel task fails as before. A message runs again once for each
       // provider account and model that failed it, so a move that does not happen cannot run it on
       // the same one again.
-      const failedKey = this.#usageLimits.failureKey(agentId, model);
+      const limitTaskId = taskTurn ? this.#taskForThread(agentId, threadId) : null;
+      const failedKey = this.#usageLimits.failureKey(agentId, model, limitTaskId);
       const failedOver =
         mayRunAgain &&
         failedKey !== null &&
@@ -1229,12 +1239,12 @@ export class TurnLifecycle {
       // keeps the path below.
       if (repeatable && !continuing && !carriesWork && this.#hooks.retryLimitedTurn) {
         const step = yield* this.#hooks.retryLimitedTurn(
-          { agentId, model, deliveries, resetsAt, channelTurn },
+          { agentId, taskId: limitTaskId, model, deliveries, resetsAt, channelTurn },
           (marker) => this.#requeueTurn(agentId, threadId, turnId, snapshot, deliveries, undefined, marker),
         );
         if (step === "retry" || step === "fallback") {
           // The account is spent: the gate holds the model, and the agent moves to the backup.
-          if (step === "fallback") yield* this.#usageLimits.reached(agentId, resetsAt, model);
+          if (step === "fallback") yield* this.#usageLimits.reached(agentId, resetsAt, model, limitTaskId);
           this.#hooks.scheduleDrain(agentId);
           return;
         }
@@ -1282,7 +1292,7 @@ export class TurnLifecycle {
             : undefined,
         );
         // After the requeue, so a routine set to skip finds its run back in the queue.
-        yield* this.#usageLimits.reached(agentId, resetsAt, model);
+        yield* this.#usageLimits.reached(agentId, resetsAt, model, limitTaskId);
         this.#hooks.scheduleDrain(agentId);
         return;
       }
@@ -1293,14 +1303,14 @@ export class TurnLifecycle {
           this.#failoverRetries.set(delivery.id, failed.add(failedKey));
         }
         yield* this.#requeueTurn(agentId, threadId, turnId, snapshot, deliveries);
-        this.#usageLimits.failed(agentId, model);
+        this.#usageLimits.failed(agentId, model, limitTaskId);
         this.#hooks.scheduleDrain(agentId);
         return;
       }
       // The turn did work, or nothing waits to run again: the error shows as it does with no backup.
       if (failover) this.#showFailoverError(agentId, threadId, failover);
-      if (limited) yield* this.#usageLimits.reached(agentId, resetsAt, model);
-      else if (status === "completed") yield* this.#usageLimits.completed(agentId, model);
+      if (limited) yield* this.#usageLimits.reached(agentId, resetsAt, model, limitTaskId);
+      else if (status === "completed") yield* this.#usageLimits.completed(agentId, model, limitTaskId);
       // After the limit is recorded, so the channel does not assign the task to this agent again
       // before the reset. A channel that took the task back ends this turn as interrupted.
       let requeued = repeatable && channelTurn;

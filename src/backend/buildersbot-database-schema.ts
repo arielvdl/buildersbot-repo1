@@ -9,6 +9,7 @@ import { AGENT_TASK_SCHEMA_SQL } from "./agent-tasks/agent-task-schema";
 import {
   AGENT_THREAD_MIGRATION_SQL,
   AGENT_THREAD_SCHEMA_SQL,
+  addAgentThreadRuntime,
   migrateAgentThreadPreviews,
   V48_AGENT_THREAD_BRANCH_COLUMNS_SQL,
 } from "./agent-threads/agent-thread-schema";
@@ -908,6 +909,12 @@ const MIGRATIONS: readonly BuildersBotMigration[] = [
     // Only creates a table, so no foreign-key pause and no vacuum. No tab has a close record yet, and
     // channels, tabs and their messages stay as they were.
     up: (db) => db.exec(CHANNEL_TAB_REPORT_SCHEMA_SQL),
+  },
+  {
+    version: 52,
+    // Adds one nullable column, so no rebuild, no foreign-key pause and no vacuum. Every existing thread gets
+    // null, which runs on the model of its agent, as before. No statement changes a stored value.
+    up: addAgentThreadRuntime,
   },
 ];
 

@@ -23,6 +23,8 @@ export const messages = {
   "quick.list.queued": "待機中",
   "quick.list.rowActions": "{title} の操作",
   "quick.header.new": "新しい会話",
+  "quick.model.ownedByAgent": "この会話は{name}のモデルを使っています。そのエージェントで変更してください。",
+  "quick.model.changeFailed": "モデルを変更できませんでした。この会話は今のモデルのままです。",
   "quick.notice.modelChanged": "クイックチャットのモデルは使えなくなりました。標準のモデルに戻りました。",
   "quick.signIn.title": "クイックチャットを使うにはプロバイダーを接続してください",
   "quick.signIn.action": "プロバイダーを開く",

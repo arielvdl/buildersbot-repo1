@@ -11,8 +11,8 @@ import { reasoningLabel } from "@buildersbot/ui/components/ProviderModelPicker";
 import { providerAccountName } from "@buildersbot/ui/components/provider-accounts";
 import { ConversationHeader as SharedConversationHeader } from "@buildersbot/ui/features/conversation/ConversationHeader";
 import { ThreadHeader } from "@buildersbot/ui/features/conversation/threads/ThreadHeader";
-import { MAIN_THREAD_ID } from "@buildersbot/ui/features/conversation/threads/thread-types";
-import { Show } from "solid-js";
+import { MAIN_THREAD_ID, threadBusy } from "@buildersbot/ui/features/conversation/threads/thread-types";
+import { createMemo, Show, untrack } from "solid-js";
 import { useConversationViewScope } from "./conversation-scope";
 
 const loadAgentSettingsPanel = () => import("./AgentSettingsPanel");
@@ -79,11 +79,37 @@ export function ConversationHeader() {
     if (runtime.reasoningEffort !== other.reasoningEffort) parts.push(reasoningLabel(runtime.reasoningEffort, t));
     return parts.join(" · ");
   };
+  /** A turn of the open side thread runs. Absent from the Quick chat, where each thread has its own model. */
+  const openThreadWorking = () => {
+    const openId = props.threads?.open?.id;
+    const item = props.threads?.header.threads.find((thread) => thread.id === openId);
+    return item ? threadBusy(item.status) : false;
+  };
+  /**
+   * The model that the open Quick chat conversation runs now: the one that the header showed when its turn
+   * started. The host sends no runtime of a turn, and the agent of this header already holds the model that
+   * the person chose, so without this the running model and the chosen one always look the same.
+   */
+  const quickTurnRuntime = createMemo<{ threadId: string; runtime: BadgeRuntime } | null>((previous) => {
+    const threadId = props.threads?.open?.id;
+    if (!props.quickChat || !threadId || !openThreadWorking()) return null;
+    if (previous?.threadId === threadId) return previous;
+    const agent = untrack(() => props.agent);
+    if (!agent) return null;
+    const { provider, model, reasoningEffort, providerAccountId } = agent;
+    return { threadId, runtime: { provider, model, reasoningEffort, providerAccountId } };
+  });
+  /**
+   * A turn runs that a model change waits for. In the Quick chat only the open conversation counts: another
+   * conversation that runs has its own model, so it must not add the badge and move the picker.
+   */
+  const modelChangeWaits = () => (props.quickChat ? openThreadWorking() : working() || runningThreads() > 0);
   /** A change chosen during a turn, in any thread. It applies from the next turn. */
   const pendingModel = () => {
     const agent = props.agent;
-    if (!agent || !(working() || runningThreads() > 0)) return undefined;
-    const running: BadgeRuntime = (working() ? runningTurnRuntime() : null) ?? agent;
+    if (!agent || !modelChangeWaits()) return undefined;
+    const running: BadgeRuntime =
+      (props.quickChat ? quickTurnRuntime()?.runtime : working() ? runningTurnRuntime() : null) ?? agent;
     const next: BadgeRuntime = agent.pendingRuntime ?? {
       provider: settingsProvider(),
       model: settingsModel(),
@@ -126,7 +152,11 @@ export function ConversationHeader() {
         canConnectProvider: props.canConnectProvider,
         onManageProviders: props.onManageProviders,
         // A model, effort, provider or account chosen during a turn applies from the next turn.
-        disabledReason: t("conversation.header.modelsUnavailable"),
+        disabled: props.quickChat?.modelLocked !== undefined,
+        disabledReason:
+          props.quickChat?.modelLocked !== undefined
+            ? t("quick.model.ownedByAgent", { name: props.quickChat.modelLocked })
+            : t("conversation.header.modelsUnavailable"),
         accountChoice: true,
         providerAccountId: props.agent ? agentNextProviderAccountId(props.agent) : undefined,
         onChange: (model, provider, accountId) => void selectAndConfirmModel(model, provider, accountId),

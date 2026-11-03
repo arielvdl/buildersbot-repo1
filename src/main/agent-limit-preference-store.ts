@@ -4,6 +4,7 @@ import {
   DEFAULT_AGENT_LIMIT_PREFERENCE,
   DEFAULT_AGENT_TABS_MODE,
   DEFAULT_AGENTS_PER_TAB,
+  DEFAULT_QUICK_CHAT_THREADS,
   defaultAgentTabs,
   isAgentLimitPreference,
 } from "@buildersbot/contracts/ipc";
@@ -47,6 +48,7 @@ export class AgentLimitPreferenceStore {
                 ...(parsed.tabsPerAgent === undefined ? {} : { tabsPerAgent: parsed.tabsPerAgent }),
                 ...(parsed.tabsMode === undefined ? {} : { tabsMode: parsed.tabsMode }),
                 ...(parsed.agentsPerTab === undefined ? {} : { agentsPerTab: parsed.agentsPerTab }),
+                ...(parsed.quickChatThreads === undefined ? {} : { quickChatThreads: parsed.quickChatThreads }),
               }
             : null,
         ),
@@ -85,6 +87,11 @@ export class AgentLimitPreferenceStore {
     return this.#preference.agentsPerTab ?? DEFAULT_AGENTS_PER_TAB;
   }
 
+  /** The most conversations of the quick chat that run a turn at the same time. 8 until the person sets another. */
+  quickChatThreads(): number {
+    return this.#preference.quickChatThreads ?? DEFAULT_QUICK_CHAT_THREADS;
+  }
+
   readonly set = Effect.fn("AgentLimitPreference.set")(function* (
     this: AgentLimitPreferenceStore,
     preference: AgentLimitPreference,
@@ -95,12 +102,14 @@ export class AgentLimitPreferenceStore {
     const tabsPerAgent = preference.tabsPerAgent ?? this.#preference.tabsPerAgent;
     const tabsMode = preference.tabsMode ?? this.#preference.tabsMode;
     const agentsPerTab = preference.agentsPerTab ?? this.#preference.agentsPerTab;
+    const quickChatThreads = preference.quickChatThreads ?? this.#preference.quickChatThreads;
     const next: AgentLimitPreference = {
       enabled: preference.enabled,
       max: preference.max,
       ...(tabsPerAgent === undefined ? {} : { tabsPerAgent }),
       ...(tabsMode === undefined ? {} : { tabsMode }),
       ...(agentsPerTab === undefined ? {} : { agentsPerTab }),
+      ...(quickChatThreads === undefined ? {} : { quickChatThreads }),
     };
     yield* this.#writes.withPermit(
       Effect.uninterruptible(

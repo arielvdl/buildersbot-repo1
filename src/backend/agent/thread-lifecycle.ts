@@ -70,6 +70,7 @@ import { decodeCapturedSteps, readCapturedSteps } from "./handoff-tool-steps";
 import { isProviderTimeout } from "./provider-status";
 import { sessionSettingsIdentity } from "./session-settings";
 import { isArchivedThreadError, isMissingProviderSessionError, providerLabel } from "./thread-items";
+import type { ThreadRuntimes } from "./thread-runtime";
 import { VISIBLE_DYNAMIC_TOOLS } from "./tool-catalog";
 import {
   AGENT_INSTRUCTIONS_FILE_BYTES,
@@ -159,6 +160,8 @@ export interface ThreadLifecycleHooks {
 
 export interface ThreadLifecycleOptions {
   store: AgentStore;
+  /** The model of each quick chat conversation (`thread-runtime.ts`). Identity for every other agent. */
+  runtimes: ThreadRuntimes;
   mailbox: MailboxStore;
   conversation: ConversationRuntime;
   memories: AgentMemories;
@@ -209,6 +212,7 @@ export interface ThreadLifecycleOptions {
 export class ThreadLifecycle {
   readonly #sessionStarts = new Map<string, number>();
   readonly #store: AgentStore;
+  readonly #runtimes: ThreadRuntimes;
   readonly #mailbox: MailboxStore;
   readonly #conversation: ConversationRuntime;
   readonly #memories: AgentMemories;
@@ -245,6 +249,7 @@ export class ThreadLifecycle {
 
   constructor(options: ThreadLifecycleOptions) {
     this.#store = options.store;
+    this.#runtimes = options.runtimes;
     this.#mailbox = options.mailbox;
     this.#conversation = options.conversation;
     this.#memories = options.memories;
@@ -425,8 +430,14 @@ export class ThreadLifecycle {
       executionThreadId ?? (yield* this.#store.ensureThreadId(agent.id).pipe(toThreadOperationFailed));
     if (executionThreadId) this.#conversation.registerExecutionThread(agent.id, executionThreadId);
     const { currentAgent, session } = yield* threadStep(() => ({
-      currentAgent: this.#store.list().find((candidate) => candidate.id === agent.id) ?? agent,
-      session: this.#store.database.activeProviderSession(publicThreadId, agent.provider),
+      currentAgent: this.#runtimes.forThread(
+        this.#store.list().find((candidate) => candidate.id === agent.id) ?? agent,
+        publicThreadId,
+      ),
+      session: this.#store.database.activeProviderSession(
+        publicThreadId,
+        this.#runtimes.forThread(agent, publicThreadId).provider,
+      ),
     }));
     if (session) {
       this.#conversation.bindThread(session.externalSessionId, agent.id, publicThreadId);
@@ -1023,7 +1034,10 @@ export class ThreadLifecycle {
    * drive it at the same time.
    */
   #sessionAgent(agent: AgentSummary, publicThreadId: string): AgentSummary {
-    return this.#computerUseInOwnChat(agent, publicThreadId) ? { ...agent, computerUse: false } : agent;
+    // The model of the conversation first: a quick chat conversation starts and resumes its session on the
+    // provider, model and effort that it runs on, and gets the instructions of that provider.
+    const runs = this.#runtimes.forThread(agent, publicThreadId);
+    return this.#computerUseInOwnChat(runs, publicThreadId) ? { ...runs, computerUse: false } : runs;
   }
 
   #computerUseInOwnChat(agent: AgentSummary, publicThreadId: string): boolean {
@@ -1333,7 +1347,10 @@ export class ThreadLifecycle {
 
   retireProviderSession(agent: AgentSummary, externalThreadId: string): void {
     const publicThreadId = this.#conversation.publicThreadId(agent.id, externalThreadId);
-    const session = this.#store.database.activeProviderSession(publicThreadId, agent.provider);
+    const session = this.#store.database.activeProviderSession(
+      publicThreadId,
+      this.#runtimes.forThread(agent, publicThreadId).provider,
+    );
     if (session?.externalSessionId !== externalThreadId) return;
     this.#store.database.deactivateProviderSessions(publicThreadId);
     this.#conversation.unbindThread(externalThreadId);
@@ -1496,6 +1513,13 @@ export class ThreadLifecycle {
       this.#pendingHandoffs.delete(session.externalSessionId);
     }
   }, Effect.uninterruptible);
+
+  /**
+   * Ends every provider session of one thread and keeps the thread and its messages: the clients close the
+   * sessions, the routing goes, and the next turn starts a new session from the history handoff. It is the
+   * retirement that a change of provider for one quick chat conversation needs (`reconcileThreadRuntime`).
+   */
+  readonly retireThreadSessions = (threadId: string) => this.#refreshThreadRuntime(threadId);
 
   /**
    * Tells the client to close one provider session, and does not wait for it. The callers are the

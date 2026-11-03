@@ -434,6 +434,8 @@ export function ConversationComposer() {
                 <AwaitingReplies
                   items={awaitingReplies()}
                   title={channel ? t("chat.awaiting.subtasks") : undefined}
+                  // A channel's sub-tasks start folded, so the conversation keeps the room. The reader opens them.
+                  defaultOpen={!channel}
                   onDismiss={dismissAwaitingReplies}
                   onOpenAgent={props.onSelectAgent}
                   // A channel's rows are its sub-tasks, not queued replies.

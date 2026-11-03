@@ -23,6 +23,8 @@ export const messages = {
   "quick.list.queued": "In Warteschlange",
   "quick.list.rowActions": "Aktionen für {title}",
   "quick.header.new": "Neue Unterhaltung",
+  "quick.model.ownedByAgent": "Diese Unterhaltung verwendet das Modell von {name}. Ändere es in diesem Agenten.",
+  "quick.model.changeFailed": "Das Modell konnte nicht geändert werden. Die Unterhaltung behält ihr Modell.",
   "quick.notice.modelChanged":
     "Das Modell für den Schnellchat ist nicht mehr verfügbar. Es wurde auf den Standard umgestellt.",
   "quick.signIn.title": "Verbinde einen Anbieter, um den Schnellchat zu nutzen",

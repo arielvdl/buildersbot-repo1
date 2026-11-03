@@ -601,6 +601,9 @@ at once and shows an Undo toast; when the toast ends, `AgentService.deleteTask` 
 messages and deletes the thread with its conversation, attachments, event history and provider
 session. It refuses a thread with a running turn. The main thread has no archive, rename or delete.
 
+A side thread of the quick chat agent has its own model in `runtime_json`. A null value means the
+thread uses the agent's model. See [quick-chat.md](quick-chat.md#model-per-conversation).
+
 ### Thread preview and details
 
 So that the person does not lose what a thread is for, also after a rename, each side thread keeps

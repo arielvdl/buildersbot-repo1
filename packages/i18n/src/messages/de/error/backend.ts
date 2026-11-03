@@ -354,6 +354,11 @@ export const messages = {
   "error.backend.taskNotFound": "Diese Aufgabe ist nicht verfügbar.",
   "error.backend.taskClosed": "Diese Aufgabe ist geschlossen. Öffne sie wieder, um eine Nachricht zu senden.",
   "error.backend.taskStillRunning": "Diese Aufgabe läuft noch. Warte, bis sie stoppt, und schließe sie dann.",
+  "error.backend.quickChatModelUnavailable":
+    "{model} ist bei {provider} gerade nicht verfügbar. Wähle ein anderes Modell.",
+  "error.backend.quickChatRuntimeByConversation":
+    "Der Schnellchat legt sein Modell für jede Unterhaltung fest. Wähle das Modell in der Unterhaltung.",
+  "error.backend.quickChatRuntimeOnly": "Nur der Schnellchat nimmt ein Modell für eine einzelne Unterhaltung an.",
   "error.backend.threadNotFound": "Dieser Thread ist nicht verfügbar.",
   "error.backend.threadStillRunning": "Dieser Thread läuft noch. Stoppe ihn und versuche es dann erneut.",
   "error.backend.threadArchived": "Dieser Thread ist archiviert. Stelle ihn wieder her, um eine Nachricht zu senden.",

@@ -172,10 +172,17 @@ export function stoppedChannelTasks(page: ChannelPage): ChannelTask[] {
   return [...roots.values()];
 }
 
-/** The queued tasks that wait for a reason the person should know (`ChannelTask.wait`), for a quiet line each. */
+/**
+ * The queued tasks that wait for a reason the person should know (`ChannelTask.wait`) and does not see
+ * elsewhere, for the one quiet line above the message field. A task that waits for the earlier request
+ * of its tab (`tab`) is left out: that request's work already shows in the activity line, the stage,
+ * the sub-task block or a question card.
+ */
 export function waitingChannelTasks(page: ChannelPage): ChannelTask[] {
   if (page.channel.archived) return [];
-  return page.tasks.filter((task) => task.state === "queued" && task.wait !== undefined && !task.startRetry);
+  return page.tasks.filter(
+    (task) => task.state === "queued" && task.wait !== undefined && task.wait.reason !== "tab" && !task.startRetry,
+  );
 }
 
 /** The tasks whose start the app tries again, for the quiet line in place of the card. */
