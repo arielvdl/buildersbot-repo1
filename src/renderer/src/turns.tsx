@@ -23,6 +23,7 @@ import type { PromptAnswerOptions } from "./features/conversation/conversation-t
 import type { TurnStepLines } from "./features/conversation/turn-step-lines";
 import { useDynamicIsland } from "./features/dynamic-island/dynamic-island-context";
 import { useServers } from "./features/servers/servers-context";
+import { answeringAgent, type PromptSubject, promptKeyOf } from "./prompt-target";
 import { createScopeGuard } from "./scope-lifetime";
 import { createSimpleContext } from "./simple-context";
 import { turnsPort } from "./turns-port";
@@ -233,14 +234,19 @@ const Turns = createSimpleContext({
       },
     );
 
-    /** Answers the prompt of the agent's chat, or of its side thread `threadId`. */
+    /**
+     * Answers the prompt of the agent's chat, or of its side thread `threadId`. A page that shows an
+     * agent that is not the active one, such as the Quick chat, names it in `subject`: the active
+     * agent is the roster's, and the Quick chat agent is in no roster.
+     */
     async function answerPrompt(
       answers: Record<string, string[]>,
       options?: PromptAnswerOptions,
       threadId?: string,
+      subject?: PromptSubject,
     ): Promise<boolean> {
-      const agent = activeAgent();
-      const prompt = agent ? pendingPrompts()[attentionKey(agent.id, threadId ?? agent.threadId)] : undefined;
+      const agent = answeringAgent(subject, activeAgent());
+      const prompt = agent ? pendingPrompts()[promptKeyOf(agent, threadId)] : undefined;
       if (!agent || prompt?.type !== "prompt") return false;
       // A side thread marks its answer by its own key: the agent id marks the agent's own chat.
       const mark = threadId === undefined ? agent.id : attentionKey(agent.id, threadId);
@@ -318,8 +324,8 @@ const Turns = createSimpleContext({
       }
     }
 
-    async function respondToApproval(decision: "accept" | "decline"): Promise<boolean> {
-      const agent = activeAgent();
+    async function respondToApproval(decision: "accept" | "decline", subject?: PromptSubject): Promise<boolean> {
+      const agent = answeringAgent(subject, activeAgent());
       const approval = agent ? approvalOfThread(agent.id, agent.threadId) : undefined;
       if (!agent || !approval) return false;
       return respondToApprovalRequest(agent.id, approval.requestId, decision);
@@ -330,9 +336,10 @@ const Turns = createSimpleContext({
       decision: "complete" | "cancel",
       threadId?: string,
       options?: PromptAnswerOptions,
+      subject?: PromptSubject,
     ): Promise<boolean> {
-      const agent = activeAgent();
-      const key = agent ? attentionKey(agent.id, threadId ?? agent.threadId) : undefined;
+      const agent = answeringAgent(subject, activeAgent());
+      const key = agent ? promptKeyOf(agent, threadId) : undefined;
       const event = key ? pendingPrompts()[key] : undefined;
       if (!agent || !key || event?.type !== "browser-takeover-requested") return false;
       const serverId = activeServerId();
