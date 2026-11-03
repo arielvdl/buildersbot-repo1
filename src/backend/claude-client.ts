@@ -258,6 +258,12 @@ const CLAUDE_THREAD_IDLE_RELEASE_MS = 10 * 60_000;
  */
 const CLAUDE_IDLE_THREAD_LIMIT = 2;
 
+/**
+ * How many idle quick chat threads keep their process, on top of the limit above. A person goes back
+ * and forth between a few conversations, and each return to a closed thread starts its process again.
+ */
+const CLAUDE_IDLE_QUICK_CHAT_LIMIT = 6;
+
 interface ClaudeStreamMessage {
   type: string;
   parent_tool_use_id?: string | null;
@@ -328,6 +334,8 @@ export class ClaudeAgentClient extends EventEmitter<ClientEvents> {
    * account: the key then serves the agents that the user did not move to another account.
    */
   readonly #fallbackApiKey: (() => string | null) | undefined;
+  /** Whether an agent is the one of the quick chat: its processes ask for the 1 hour prompt cache. */
+  readonly #quickChatAgent: ((agentId: string) => boolean) | undefined;
   /** Whether the last account read found no claude.ai account and signed in with the key. */
   #onApiKey = false;
   readonly readHistory: ReadProviderHistory;
@@ -338,6 +346,11 @@ export class ClaudeAgentClient extends EventEmitter<ClientEvents> {
     scope: () => this.#scope,
     releaseAfterMs: () => this.#idlePolicy()?.releaseAfterMs ?? CLAUDE_THREAD_IDLE_RELEASE_MS,
     idleLimit: () => this.#idlePolicy()?.idleLimit ?? CLAUDE_IDLE_THREAD_LIMIT,
+    // The quick chat threads count apart, so a few of them do not push the other agents' out, or the other way round.
+    separateLimit: {
+      applies: (runtime) => this.#isQuickChatThread(runtime.config.agentId),
+      limit: () => this.#idlePolicy()?.idleLimit ?? CLAUDE_IDLE_QUICK_CHAT_LIMIT,
+    },
     // A session that is not persisted has nothing on disk to resume from.
     canRelease: (runtime) => runtime.config.persistSession && runtime.backgroundTasks === 0,
     snapshot: (runtime) => runtime.config,
@@ -379,6 +392,7 @@ export class ClaudeAgentClient extends EventEmitter<ClientEvents> {
     agentEnvironment?: (inherited?: NodeJS.ProcessEnv) => Readonly<Record<string, string>>,
     historyIndexDirectory?: string,
     fallbackApiKey?: () => string | null,
+    quickChatAgent?: (agentId: string) => boolean,
   ) {
     super();
     this.#cli = cli;
@@ -393,6 +407,7 @@ export class ClaudeAgentClient extends EventEmitter<ClientEvents> {
     this.#stateDirectory = stateDirectory;
     this.#agentEnvironment = agentEnvironment;
     this.#fallbackApiKey = fallbackApiKey;
+    this.#quickChatAgent = quickChatAgent;
     const historyEnvironment = agentEnvironment?.();
     const resolvedHistoryIndexDirectory = historyIndexDirectory ?? stateDirectory;
     const historyOptions: ClaudeHistoryOptions = {
@@ -758,6 +773,10 @@ export class ClaudeAgentClient extends EventEmitter<ClientEvents> {
     return yield* providerFailure(failure ?? new Error("Claude returned an unreadable sign-in status."));
   });
 
+  #isQuickChatThread(agentId: string | null): boolean {
+    return agentId !== null && this.#quickChatAgent?.(agentId) === true;
+  }
+
   /** The agent environment, with the saved key when `withApiKey`. */
   #environment(withApiKey: boolean): Readonly<Record<string, string>> {
     const key = withApiKey ? this.#fallbackApiKey?.() : null;
@@ -944,6 +963,8 @@ export class ClaudeAgentClient extends EventEmitter<ClientEvents> {
             // The login shell's `PATH`, so the Bash tool and hooks find Homebrew and `~/.local/bin`
             // tools when Finder starts Builders Bot. An `env.PATH` in the Claude settings still wins.
             ...(launchPath ? { PATH: launchPath } : {}),
+            // Before the agent environment, so a setting of the server or the account still wins.
+            ...(this.#isQuickChatThread(config.agentId) ? { ENABLE_PROMPT_CACHING_1H: "1" } : {}),
             ...this.#environment(this.#onApiKey),
             CLAUDE_AGENT_SDK_CLIENT_APP: "buildersbot/0.1.0",
             // Without a terminal, the CLI gives the newer models no TodoWrite or task tools, so the

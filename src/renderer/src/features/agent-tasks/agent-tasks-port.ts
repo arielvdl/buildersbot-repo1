@@ -20,6 +20,10 @@ export interface AgentTasksPort
   ): Promise<unknown>;
   /** Missing where the server cannot move a queued message of the agent's own chat to a new thread. */
   runQueuedMessageAsTask?: BuildersBotDesktopApi["agent"]["runQueuedMessageAsTask"];
+  /** Missing where the server cannot steer, cancel or reorder the queued messages of a thread. The queue then has no actions. */
+  steerQueuedMessage?: BuildersBotDesktopApi["agent"]["steerQueuedMessage"];
+  cancelQueuedMessage?: BuildersBotDesktopApi["agent"]["cancelQueuedMessage"];
+  reorderQueue?: BuildersBotDesktopApi["agent"]["reorderQueue"];
   /** Missing where the server cannot branch a conversation. The branch actions then do not show. */
   branchTask?: BuildersBotDesktopApi["agent"]["branchTask"];
 }
@@ -38,6 +42,9 @@ export function agentTasksPort(): AgentTasksPort {
     sendToTask: (input) => agent.sendMessage(input),
     runQueuedMessageAsTask: (input) => agent.runQueuedMessageAsTask(input),
     branchTask: (input) => agent.branchTask(input),
+    steerQueuedMessage: (input) => agent.steerQueuedMessage(input),
+    cancelQueuedMessage: (input) => agent.cancelQueuedMessage(input),
+    reorderQueue: (input) => agent.reorderQueue(input),
     stopTask: (input) => agent.stopTask(input),
     closeTask: (input, serverId) => agent.closeTask(input, serverId),
     reopenTask: (input, serverId) => agent.reopenTask(input, serverId),

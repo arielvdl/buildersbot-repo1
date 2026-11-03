@@ -41,7 +41,8 @@ interface QueuePanelProps {
   /** The person checked "Do not ask me again" and confirmed a force. */
   onStopAskingBeforeForce?: (() => void) | undefined;
   onCancel: (deliveryId: string) => void;
-  onEdit: (delivery: QueueDelivery) => void;
+  /** Absent where a queued message cannot be edited, such as in a side thread: the row has no Edit action. */
+  onEdit?: ((delivery: QueueDelivery) => void) | undefined;
   onReorder: (deliveryIds: string[]) => void;
   /** `floating` is the glass queue over a browser page, with quiet glass row actions. */
   variant?: "docked" | "floating";
@@ -673,19 +674,23 @@ export function QueuePanel(props: QueuePanelProps) {
                           <TrashIcon />
                         </LabelTooltipTrigger>
                       </LabelTooltip>
-                      <LabelTooltip content={t("queue.item.editTooltip")}>
-                        <LabelTooltipTrigger
-                          as={Button}
-                          variant="ghost"
-                          type="button"
-                          class="agent-queue-icon-button agent-queue-edit"
-                          disabled={!actionable}
-                          aria-label={t("queue.item.editLabel", { position: delivery.position ?? "" })}
-                          onClick={() => props.onEdit(delivery)}
-                        >
-                          <EditIcon />
-                        </LabelTooltipTrigger>
-                      </LabelTooltip>
+                      <Show when={props.onEdit}>
+                        {(edit) => (
+                          <LabelTooltip content={t("queue.item.editTooltip")}>
+                            <LabelTooltipTrigger
+                              as={Button}
+                              variant="ghost"
+                              type="button"
+                              class="agent-queue-icon-button agent-queue-edit"
+                              disabled={!actionable}
+                              aria-label={t("queue.item.editLabel", { position: delivery.position ?? "" })}
+                              onClick={() => edit()(delivery)}
+                            >
+                              <EditIcon />
+                            </LabelTooltipTrigger>
+                          </LabelTooltip>
+                        )}
+                      </Show>
                     </div>
                   </fieldset>
                 );

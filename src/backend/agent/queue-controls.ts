@@ -296,6 +296,13 @@ export class QueueControls {
       return yield* new QueueOperationFailed({
         cause: new Error(sourceText("error.backend.useChannelTaskControlsWork")),
       });
+    // A task panel sends only the messages of its task. The rest of the queue keeps its places.
+    const taskId = this.#mailbox.commonTaskIdOf(input.deliveryIds);
+    if (taskId) {
+      yield* this.#mailbox.reorderTaskQueue(input.agentId, taskId, input.deliveryIds).pipe(toQueueOperationFailed);
+      this.#mailboxSync.emitQueue(input.agentId);
+      return;
+    }
     // The queue the user reads holds no channel or messaging work, so the order it sends names the
     // normal messages alone, and the mailbox reads the whole queued order. That work stays at the
     // head: it reserved the agent before these messages arrived.

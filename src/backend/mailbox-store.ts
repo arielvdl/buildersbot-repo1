@@ -2555,6 +2555,61 @@ export class MailboxStore {
   }, Effect.uninterruptible).bind(this);
 
   /**
+   * The task that all of these deliveries belong to, or null when one is not a task delivery or they
+   * name different tasks. A task panel reorders only its own messages, so the queue controls ask first.
+   */
+  commonTaskIdOf(deliveryIds: readonly string[]): string | null {
+    let common: string | null = null;
+    for (const deliveryId of deliveryIds) {
+      const taskId = this.taskIdForDelivery(deliveryId);
+      if (!taskId || (common !== null && common !== taskId)) return null;
+      common = taskId;
+    }
+    return common;
+  }
+
+  /**
+   * Puts the queued messages of one task in a new order. The other queued work keeps its places: the
+   * task's messages take the places that they held, in the order that the person chose. A held message
+   * keeps its place, and both a list with it and one without it are accepted.
+   */
+  reorderTaskQueue = Effect.fn("MailboxStore.reorderTaskQueue")(function* (
+    this: MailboxStore,
+    agentId: string,
+    taskId: string,
+    deliveryIds: string[],
+  ): Effect.fn.Return<void, StoredStateFailure> {
+    try {
+      const messages = this.#messagesById();
+      const allQueued = this.#state.deliveries
+        .filter((delivery) => delivery.recipientAgentId === agentId && delivery.status === "queued")
+        .sort(compareQueueOrder);
+      const held = (delivery: StoredDelivery) => Boolean(delivery.editId) || waitsForPlanContinuation(delivery);
+      const mine = allQueued.filter((delivery) => !held(delivery) && this.#taskIdOf(delivery, messages) === taskId);
+      const heldIds = new Set(allQueued.filter(held).map((delivery) => delivery.id));
+      const requested = deliveryIds.filter((deliveryId) => !heldIds.has(deliveryId));
+      const expected = new Set(mine.map((delivery) => delivery.id));
+      if (
+        requested.length !== mine.length ||
+        new Set(requested).size !== requested.length ||
+        requested.some((deliveryId) => !expected.has(deliveryId))
+      ) {
+        throw new Error(sourceText("error.backend.queueOrderStale"));
+      }
+      let next = 0;
+      const orderedIds = allQueued.map((delivery) => (expected.has(delivery.id) ? requested[next++] : delivery.id));
+      const orders = new Map(orderedIds.map((deliveryId, index) => [deliveryId, index]));
+      for (const delivery of allQueued) {
+        delivery.queueOrder = orders.get(delivery.id) ?? delivery.queueOrder;
+        this.#changes.deliveryIds.add(delivery.id);
+      }
+      this.#persist("queue.reordered");
+    } catch (cause) {
+      return yield* new StoredStateFailure({ cause });
+    }
+  }, Effect.uninterruptible).bind(this);
+
+  /**
    * Puts one queued message of the agent's own chat first, for a force: before the other messages
    * that the person sees, also before one that another editor holds. Channel, messaging and task work
    * stays at the head, because it reserved the agent before. The other messages keep their order.

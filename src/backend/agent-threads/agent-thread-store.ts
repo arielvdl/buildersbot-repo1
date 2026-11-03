@@ -420,6 +420,29 @@ export class AgentThreadStore {
     );
   }
 
+  /**
+   * A title that a model wrote from the conversation. It replaces only a title that still follows the first
+   * message: a rename by a person, or a title that an agent chose, stays. Returns whether the title changed.
+   */
+  setGeneratedTitle(threadId: string, title: string): boolean {
+    let changed = false;
+    this.#database.dispatch(
+      `agent-thread-titled:${threadId}:${randomUUID()}`,
+      [{ aggregateType: "agent-thread", aggregateId: threadId, eventType: "agent-thread.retitled", payload: {} }],
+      (db, sequences) => {
+        const result = db
+          .prepare(
+            `UPDATE projection_agent_threads SET title = ?, title_source = 'agent', last_event_sequence = ?
+             WHERE thread_id = ? AND title_source = 'auto'`,
+          )
+          .run(title, sequences[0] ?? 0, threadId);
+        changed = Number(result.changes) > 0;
+        return null;
+      },
+    );
+    return changed;
+  }
+
   /** Records the end of the thread's last turn. */
   setOutcome(taskId: string, outcome: AgentTaskOutcome): void {
     this.#database.connection

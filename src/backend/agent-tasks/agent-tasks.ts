@@ -54,6 +54,11 @@ export interface AgentTasksHooks {
   hold(agentId: string, taskId: string): string | null;
   /** A message is queued in a task: the queue and the drain take it. */
   queued(agentId: string): void;
+  /**
+   * A turn of a task ended well and its title still follows the first message. The host may write a better
+   * one with `setGeneratedTitle`. It runs in the background: a failure leaves the title as it is.
+   */
+  completedFirstTurn?(task: AgentThreadRecord): void;
 }
 
 /** Where `start_task` was called, as the tool router knows it. */
@@ -306,6 +311,13 @@ export class AgentTasks implements TaskLanes {
     this.#store.delete(task.taskId);
   }
 
+  /** A title that a model wrote. It never replaces a title that a person or an agent chose. */
+  setGeneratedTitle(task: AgentThreadRecord, title: string): void {
+    const trimmed = title.trim();
+    if (!trimmed || trimmed.length > INPUT_LIMITS.agentTaskTitle || /[\p{Cc}\p{Zl}\p{Zp}]/u.test(trimmed)) return;
+    if (this.#store.setGeneratedTitle(task.threadId, trimmed)) this.changed(task.agentId);
+  }
+
   /** A rename by a person: trimmed, and kept when later messages arrive. */
   rename(task: AgentThreadRecord, title: string): void {
     const trimmed = title.trim();
@@ -547,6 +559,7 @@ export class AgentTasks implements TaskLanes {
           event.status === "completed" ? "completed" : event.status === "failed" ? "failed" : "interrupted",
         );
         this.changed(task.agentId);
+        if (event.status === "completed" && task.titleSource === "auto") this.#hooks.completedFirstTurn?.(task);
         // The waiters leave the map here, so a wait that a failed Stop never runs does not stay.
         const waiters = this.#turnEndWaiters.get(task.taskId);
         this.#turnEndWaiters.delete(task.taskId);

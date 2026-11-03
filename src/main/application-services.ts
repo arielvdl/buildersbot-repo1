@@ -2165,6 +2165,8 @@ export async function createApplicationServices({
         ),
       // Read at each Claude spawn, so a change from Server settings applies to the next process.
       promptCacheTtl: () => promptCacheTtl.get().ttl,
+      // Read when a Claude process starts. The service owns the store, as for `mcpServers` below.
+      quickChatAgent: (agentId) => service.quickChatAgentId() === agentId,
       // Read at each Cultura Builder spawn. A change starts its process again (below).
       culturaBuilderFullContext: () => appBehavior.culturaBuilderFullContext,
       // Only with a model policy: the Cultura Builder models then come from the gateway catalog of the

@@ -238,6 +238,7 @@ import {
   toProviderOperationFailed,
 } from "./agent/provider-runtime";
 import { QueueControls } from "./agent/queue-controls";
+import { cleanQuickChatTitle, quickChatTitlePrompt } from "./agent/quick-chat-title";
 import { quietRoutineRun } from "./agent/routine-quiet-runs";
 import { type RoutineMutationOptions, RoutineScheduler, toRoutineOperationFailed } from "./agent/routine-scheduler";
 import { localTimezone } from "./agent/routine-tools";
@@ -772,6 +773,9 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         queued: (agentId) => {
           this.#mailboxSync.emitQueue(agentId);
           this.#drain.scheduleDrain(agentId);
+        },
+        completedFirstTurn: (task) => {
+          if (this.#store.isQuickChat(task.agentId)) Effect.runFork(this.#titleQuickChatThread(task));
         },
       },
     });
@@ -1947,6 +1951,33 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   listAgents(): AgentSummary[] {
     return this.#roster().filter((agent) => agent.quickChat !== true);
   }
+
+  /**
+   * Names a quick chat conversation from what was said, once its first turn has ended: a short title in the
+   * language of the person, from the first message and the first answer. It uses the agent's own fast model,
+   * with no tools and no thread, in the background. A busy or failed generation leaves the title as the first
+   * message gave it, and a title that a person set meanwhile stays.
+   */
+  readonly #titleQuickChatThread = Effect.fn("AgentService.titleQuickChatThread")(
+    function* (this: AgentService, task: AgentThreadRecord) {
+      const agent = this.#store.quickChatAgent();
+      if (!agent || agent.id !== task.agentId || this.#stopping) return;
+      const messages = this.#conversation.ensureSnapshot(task.agentId, task.threadId).messages;
+      const asked = messages.find((message) => message.author === "user" && message.text.trim())?.text.trim();
+      const answered = messages.find((message) => message.author === "assistant" && message.text.trim())?.text.trim();
+      if (!asked || !answered) return;
+      const title = yield* this.generateWorkflowText({
+        provider: agent.provider,
+        model: agent.model,
+        effort: agent.reasoningEffort,
+        prompt: quickChatTitlePrompt(asked, answered),
+      }).pipe(Effect.map(cleanQuickChatTitle));
+      if (title) this.#tasks.setGeneratedTitle(task, title);
+    },
+    Effect.catch((failure) =>
+      Effect.sync(() => logger.info("The quick chat title was not written.", { error: failure })),
+    ),
+  );
 
   /** The id of the quick chat agent, or null before the first `ensure`. The Team API closes it to every client. */
   quickChatAgentId(): string | null {

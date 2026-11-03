@@ -42,6 +42,11 @@ export interface IdleThreadPoolOptions<Thread extends IdleThread, Released> {
    * is long enough for a real background task and short enough to bound the leak.
    */
   forceReleaseAfterMs?: number;
+  /**
+   * A group of threads with a limit of its own. Over `idleLimit` the threads of the group count apart
+   * from the others, and a computer short of memory (`releaseIdle`) still closes them all.
+   */
+  separateLimit?: { applies(thread: Thread): boolean; limit: Dynamic };
   /** Whether the thread can be closed and opened again. One that cannot would lose its session. */
   canRelease(thread: Thread): boolean;
   /** What opening the thread again needs, kept while it is closed. */
@@ -163,7 +168,7 @@ export class IdleThreadPool<Thread extends IdleThread, Released> {
   ) {
     thread.idleSince = Date.now();
     this.#arm(thread);
-    yield* this.#releaseIdleOver(this.#idleLimit());
+    yield* this.#releaseIdleOver(this.#idleLimit(), 0, this.#separateLimit());
   });
 
   /** Opens a released thread again. One reopen per thread, however many callers ask for it. */
@@ -210,6 +215,11 @@ export class IdleThreadPool<Thread extends IdleThread, Released> {
   #releaseAfterMs(): number {
     const { releaseAfterMs } = this.#options;
     return typeof releaseAfterMs === "function" ? releaseAfterMs() : releaseAfterMs;
+  }
+
+  #separateLimit(): number | undefined {
+    const limit = this.#options.separateLimit?.limit;
+    return typeof limit === "function" ? limit() : limit;
   }
 
   #idleLimit(): number {
@@ -266,6 +276,7 @@ export class IdleThreadPool<Thread extends IdleThread, Released> {
     this: IdleThreadPool<Thread, Released>,
     limit: number,
     minIdleMs = 0,
+    separateLimit?: number,
   ) {
     const now = Date.now();
     const idle = [...this.#threads.values()]
@@ -277,7 +288,13 @@ export class IdleThreadPool<Thread extends IdleThread, Released> {
           this.#isIdle(thread),
       )
       .sort((left, right) => left.idleSince - right.idleSince);
-    for (const thread of idle.slice(0, Math.max(0, idle.length - limit))) {
+    const separate = this.#options.separateLimit;
+    const apart = separate && separateLimit !== undefined ? idle.filter((thread) => separate.applies(thread)) : [];
+    const rest = apart.length ? idle.filter((thread) => !apart.includes(thread)) : idle;
+    for (const thread of rest.slice(0, Math.max(0, rest.length - limit))) {
+      yield* this.#release(thread);
+    }
+    for (const thread of apart.slice(0, Math.max(0, apart.length - (separateLimit ?? limit)))) {
       yield* this.#release(thread);
     }
   });

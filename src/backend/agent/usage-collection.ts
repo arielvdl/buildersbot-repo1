@@ -8,6 +8,18 @@ import { getRecord, getString } from "../protocol";
 
 const logger = createBuildersBotLogger("usage-collection");
 
+/**
+ * The share of a session's prompt tokens that the provider's cache served, or `null` when a count is
+ * unknown or no prompt token was counted. Cache reads over every prompt token: new input, cache reads
+ * and cache writes.
+ */
+export function cacheHitRate(tokens: UsageTokens): number | null {
+  const { uncachedInput, cachedInput, cacheCreation } = tokens;
+  if (uncachedInput === null || cachedInput === null || cacheCreation === null) return null;
+  const prompt = uncachedInput + cachedInput + cacheCreation;
+  return prompt > 0 ? cachedInput / prompt : null;
+}
+
 function count(value: unknown): number | null {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
@@ -15,7 +27,7 @@ function count(value: unknown): number | null {
 /** Translates provider counters at the process boundary, without retaining provider payloads. */
 export function collectProviderUsage(
   usage: AgentUsage,
-  agent: Pick<AgentSummary, "id" | "model">,
+  agent: Pick<AgentSummary, "id" | "model" | "quickChat">,
   session: Pick<ProviderSession, "id" | "provider" | "createdAt">,
   method: string,
   params: unknown,
@@ -71,6 +83,19 @@ export function collectProviderUsage(
         cacheCreation: count(value.cacheCreationInputTokens),
         output: count(value.outputTokens),
       };
+      // The quick chat is where the cache matters most: each message may come after the 5 minute time
+      // of the cache. The rate is of the whole session, which `modelUsage` counts.
+      if (agent.quickChat === true) {
+        const rate = cacheHitRate(tokens);
+        if (rate !== null)
+          logger.info("Quick chat prompt cache.", {
+            model,
+            cacheHitPercent: Math.round(rate * 100),
+            cacheReadTokens: tokens.cachedInput,
+            cacheWriteTokens: tokens.cacheCreation,
+            uncachedInputTokens: tokens.uncachedInput,
+          });
+      }
       usage.record({
         agentId: agent.id,
         sessionId: session.id,

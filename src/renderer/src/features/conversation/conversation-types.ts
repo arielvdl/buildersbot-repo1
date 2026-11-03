@@ -464,6 +464,18 @@ export interface ConversationThreads {
   contextState: AgentContextState | undefined;
   /** Missing when the host cannot compact a side thread. */
   onCompactContext?: (() => Promise<void>) | undefined;
+  /**
+   * The actions of the messages that wait in the open side thread. Missing when the host cannot steer, cancel
+   * or reorder them: the thread then only lists them. `deliveryIds` of a reorder are the whole queue of the thread.
+   */
+  queue?:
+    | {
+        /** Steers a queued message into the turn that runs now. `turnId` is the turn the person saw. */
+        onSteer: (deliveryId: string, turnId: string) => void;
+        onCancel: (deliveryId: string) => void;
+        onReorder: (deliveryIds: string[]) => void;
+      }
+    | undefined;
   /** Missing when the host cannot move a queued message to a new thread. */
   onRunQueuedMessage?: ((deliveryId: string) => void) | undefined;
   /**
