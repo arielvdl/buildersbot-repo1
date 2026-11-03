@@ -32,7 +32,7 @@ export const messages = {
   "quick.agents.label": "Agentes trabalhando",
   "quick.agents.calling": "Chamando os agentes…",
   "quick.agents.finished": { one: "O agente terminou", other: "Os agentes terminaram" },
-  "quick.agents.count": "{done}/{total}",
+  "quick.agents.count": "{done} de {total} prontos",
   "quick.agents.fold": "Recolher o palco",
   "quick.agents.unfold": "Ver o palco",
 } as const satisfies PartialTranslation<typeof source>;
