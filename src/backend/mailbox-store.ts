@@ -1440,38 +1440,8 @@ export class MailboxStore {
     const turnIds = this.#sourceTurnIds();
     for (const message of selectedStoredMessages) {
       const deliveries = deliveriesByMessage.get(message.id) ?? [];
-      if (message.sender.kind === "agent" && message.sender.agentId === agentId) {
-        messages.push({
-          id: `outbox-${message.id}`,
-          turnId: turnIds.get(message.id),
-          author: "system",
-          source: "system",
-          text: message.text,
-          attachments: message.attachments.map(toAttachmentSummary),
-          replyToMessageId: message.replyToMessageId,
-          exchange: {
-            direction: "outgoing",
-            messageId: message.id,
-            senderAgentId: agentId,
-            recipientAgentIds: deliveries.map((item) => item.recipientAgentId),
-            replyToMessageId: message.replyToMessageId,
-            ...(message.expectsReply === false ? { expectsReply: false } : {}),
-            deliveries: deliveries.map((item) => {
-              const delivery = this.#publicDelivery(item, positions, message);
-              return {
-                id: delivery.id,
-                recipientAgentId: delivery.recipientAgentId,
-                status: delivery.status,
-                position: delivery.position,
-                error: delivery.error,
-              };
-            }),
-          },
-          createdAt: message.createdAt,
-          status: "completed",
-          itemType: AGENT_EXCHANGE_ITEM_TYPE,
-        });
-      }
+      if (message.sender.kind === "agent" && message.sender.agentId === agentId)
+        messages.push(this.#outgoingRow(message, deliveries, agentId, positions, turnIds));
 
       for (const storedDelivery of deliveries) {
         if (storedDelivery.recipientAgentId !== agentId) continue;
@@ -1537,6 +1507,93 @@ export class MailboxStore {
       }
     }
     return messages;
+  }
+
+  /** The row of a message that `agentId` sent: who got it and where each delivery is. */
+  #outgoingRow(
+    message: StoredMessage,
+    deliveries: readonly StoredDelivery[],
+    agentId: string,
+    positions: ReadonlyMap<string, number>,
+    turnIds: ReadonlyMap<string, string | undefined>,
+  ): ConversationMessage {
+    return {
+      id: `outbox-${message.id}`,
+      turnId: turnIds.get(message.id),
+      author: "system",
+      source: "system",
+      text: message.text,
+      attachments: message.attachments.map(toAttachmentSummary),
+      replyToMessageId: message.replyToMessageId,
+      exchange: {
+        direction: "outgoing",
+        messageId: message.id,
+        senderAgentId: agentId,
+        recipientAgentIds: deliveries.map((item) => item.recipientAgentId),
+        replyToMessageId: message.replyToMessageId,
+        ...(message.expectsReply === false ? { expectsReply: false } : {}),
+        deliveries: deliveries.map((item) => {
+          const delivery = this.#publicDelivery(item, positions, message);
+          return {
+            id: delivery.id,
+            recipientAgentId: delivery.recipientAgentId,
+            status: delivery.status,
+            position: delivery.position,
+            error: delivery.error,
+          };
+        }),
+      },
+      createdAt: message.createdAt,
+      status: "completed",
+      itemType: AGENT_EXCHANGE_ITEM_TYPE,
+    };
+  }
+
+  /**
+   * The rows of the messages that `agentId` sent from one side thread, newest `limit`. A request from a side thread
+   * stays out of the agent's own chat (`conversationMessages`), so no other read gives the thread these rows.
+   */
+  taskOutgoingMessages(agentId: string, taskId: string, limit = 50): ConversationMessage[] {
+    const sent = this.#state.messages
+      .filter(
+        (message) =>
+          message.senderTaskId === taskId &&
+          message.sender.kind === "agent" &&
+          message.sender.agentId === agentId &&
+          !message.channelId &&
+          !message.messaging,
+      )
+      .slice(-limit);
+    if (sent.length === 0) return [];
+    const ids = new Set(sent.map((message) => message.id));
+    const deliveriesByMessage = new Map<string, StoredDelivery[]>();
+    for (const delivery of this.#state.deliveries) {
+      if (!ids.has(delivery.messageId)) continue;
+      const deliveries = deliveriesByMessage.get(delivery.messageId) ?? [];
+      deliveries.push(delivery);
+      deliveriesByMessage.set(delivery.messageId, deliveries);
+    }
+    const positions = this.#queuedPositions();
+    const turnIds = this.#sourceTurnIds();
+    return sent.map((message) =>
+      this.#outgoingRow(message, deliveriesByMessage.get(message.id) ?? [], agentId, positions, turnIds),
+    );
+  }
+
+  /** The side threads whose messages `agentId` received: one entry for each agent and thread that sent one. */
+  senderTasksForRecipient(agentId: string): Array<{ agentId: string; taskId: string }> {
+    const found = new Map<string, { agentId: string; taskId: string }>();
+    const messages = this.#messagesById();
+    for (const delivery of this.#state.deliveries) {
+      if (delivery.recipientAgentId !== agentId) continue;
+      const message = this.#requireMessage(delivery.messageId, messages);
+      if (message.sender.kind !== "agent" || !message.senderTaskId) continue;
+      found.set(`${message.sender.agentId}:${message.senderTaskId}`, {
+        agentId: message.sender.agentId,
+        taskId: message.senderTaskId,
+      });
+    }
+    return [...found.values()];
   }
 
   reactionFor(

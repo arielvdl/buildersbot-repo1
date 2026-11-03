@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { agentProviderDescriptor } from "@buildersbot/contracts/agent-providers";
 import { expandAttachmentReferences } from "@buildersbot/contracts/attachment-references";
+import { sortConversationMessages } from "@buildersbot/contracts/conversation-order";
 import { INPUT_LIMITS } from "@buildersbot/contracts/input-limits";
 import {
   AGENT_TASK_QUEUED_PREVIEW,
@@ -110,6 +111,8 @@ export class AgentTasks implements TaskLanes {
   readonly #turnEndWaiters = new Map<string, Set<Deferred.Deferred<void>>>();
   /** One branch is made at a time, so a retry that arrives during the first call finds its branch. */
   readonly #branches = Semaphore.makeUnsafe(1);
+  /** What the last event gave a Quick chat conversation of the questions that it sent, by task id. */
+  readonly #outgoingSignatures = new Map<string, string>();
 
   constructor(options: AgentTasksOptions) {
     this.#store = options.store;
@@ -159,7 +162,43 @@ export class AgentTasks implements TaskLanes {
     const task = this.#store.task(taskId);
     if (!task || task.agentId !== agentId) throw new Error(sourceText("error.backend.threadNotFound"));
     this.#conversation.registerTaskThread(agentId, task.threadId);
-    return this.#conversation.ensureSnapshot(agentId, task.threadId);
+    return this.#withOutgoing(task, this.#conversation.ensureSnapshot(agentId, task.threadId));
+  }
+
+  /**
+   * The conversation of a Quick chat task with the rows of the questions that it sent to other agents. A request
+   * that an agent sends from a side thread stays out of its own chat, and the thread keeps no row of it, so the
+   * agent strip of the Quick chat had nothing to read. The rows come from the mailbox each time and are never
+   * stored, so a restart cannot leave one that says an agent still works. Any other task is returned as it is.
+   */
+  #withOutgoing(task: AgentThreadRecord, snapshot: ConversationSnapshot): ConversationSnapshot {
+    if (this.#hooks.agent(task.agentId)?.quickChat !== true) return snapshot;
+    const rows = this.#mailbox.taskOutgoingMessages(task.agentId, task.taskId);
+    this.#outgoingSignatures.set(task.taskId, JSON.stringify(rows.map((row) => row.exchange)));
+    if (rows.length === 0) return snapshot;
+    const messages = [...snapshot.messages, ...rows];
+    sortConversationMessages(messages);
+    return { ...snapshot, messages };
+  }
+
+  /**
+   * A delivery of a question that a Quick chat task sent changed: the task's conversation goes out again with the
+   * new rows. It does nothing for any other task, and when the rows did not change.
+   */
+  outgoingChanged(agentId: string, taskId: string): void {
+    if (this.#hooks.agent(agentId)?.quickChat !== true) return;
+    const task = this.#store.task(taskId);
+    if (!task || task.agentId !== agentId || task.closedAt !== null) return;
+    const snapshot = this.#conversation.loadedExecutionSnapshot(task.threadId);
+    if (!snapshot) return;
+    const rows = this.#mailbox.taskOutgoingMessages(agentId, taskId);
+    const signature = JSON.stringify(rows.map((row) => row.exchange));
+    if (
+      this.#outgoingSignatures.get(taskId) === signature ||
+      (rows.length === 0 && !this.#outgoingSignatures.has(taskId))
+    )
+      return;
+    this.#hooks.emit({ type: "agent-task-conversation", taskId, snapshot: this.#withOutgoing(task, snapshot) });
   }
 
   /** The open task of this agent, ready for a message. */
@@ -560,7 +599,11 @@ export class AgentTasks implements TaskLanes {
       case "conversation": {
         const task = this.#taskOf(event.snapshot.threadId);
         if (!task) return false;
-        this.#hooks.emit({ type: "agent-task-conversation", taskId: task.taskId, snapshot: event.snapshot });
+        this.#hooks.emit({
+          type: "agent-task-conversation",
+          taskId: task.taskId,
+          snapshot: this.#withOutgoing(task, event.snapshot),
+        });
         return true;
       }
       case "conversation-delta": {

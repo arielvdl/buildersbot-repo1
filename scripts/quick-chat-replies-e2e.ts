@@ -15,6 +15,8 @@
 //      answer with a second recipient, and an answer to a conversation that was closed.
 //   4. `list_agents` and `interrupt_agent` of another agent do not find it, and the agent list has no row for it.
 //   5. The mailbox rule: a repeat of the same tool call is not a second answer.
+//   5b. The conversation of the quick chat agent holds the rows of the questions that it sent to two agents, which go
+//      out again as each delivery changes, are never stored, and are not added to the thread of any other agent.
 //   6. The Team API, on loopback, never carried the quick chat agent: not in its list, not in an event frame,
 //      and its id routes answer 404, also after the answers.
 // `bun run test:quick-chat-replies`. Writes .buildersbot-build/quick-chat-replies-e2e/report.json.
@@ -23,7 +25,12 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { AGENT_PROVIDERS, type AgentEvent, type QueuedMessageReceipt } from "@buildersbot/contracts/ipc";
+import {
+  AGENT_PROVIDERS,
+  type AgentEvent,
+  type ConversationSnapshot,
+  type QueuedMessageReceipt,
+} from "@buildersbot/contracts/ipc";
 import { TEAM_API_ROUTES } from "@buildersbot/contracts/team-api-routes";
 import {
   TEAM_APP_VERSION_HEADER,
@@ -643,6 +650,69 @@ async function steps(host: Host): Promise<void> {
     assert.equal(mailbox.openRequestThread(quickId, helperId, questionId), null);
     return { checked: 3 };
   });
+
+  // ---- 5b. the rows of the strip ---------------------------------------------------------------------
+  await step(
+    "5b. the conversation holds the rows of the questions that it sent, and they close with the answers",
+    async () => {
+      const conversations: ConversationSnapshot[] = [];
+      const watch = (event: AgentEvent) => {
+        if (event.type === "agent-task-conversation") conversations.push(event.snapshot);
+      };
+      agents.on("event", watch);
+      // One message to two agents, each of which answers by the reply protocol of its prompt.
+      const task = await converse(
+        quickId,
+        toolLine("send_message", {
+          recipientAgentIds: [helperId, strangerId],
+          text: "@@answer Result: both done.",
+          expectsReply: true,
+        }),
+      );
+      const outgoing = (snapshot: ConversationSnapshot) =>
+        snapshot.messages.flatMap((message) =>
+          message.exchange?.direction === "outgoing" && message.exchange.expectsReply !== false
+            ? [message.exchange]
+            : [],
+        );
+      const settled = await until("both answers are read", () => {
+        const row = outgoing(agents.readTask(quickId, task.id))[0];
+        const [first, second] = [helperId, strangerId].map((id) =>
+          row?.deliveries.find((delivery) => delivery.recipientAgentId === id),
+        );
+        return first?.status === "completed" && second?.status === "completed" ? row : null;
+      });
+      agents.off("event", watch);
+      assert.equal(settled.deliveries.length, 2);
+      // The thread told its panel about the question while the agents worked, and again when they ended.
+      const seen = conversations.map((snapshot) => outgoing(snapshot)[0]?.deliveries.map((d) => d.status) ?? []);
+      assert.ok(
+        seen.some((statuses) => statuses.length === 2 && statuses.some((status) => status !== "completed")),
+        `No event showed an agent at work: ${JSON.stringify(seen)}`,
+      );
+      assert.deepEqual(
+        seen.at(-1),
+        ["completed", "completed"],
+        `The last event is not the end: ${JSON.stringify(seen)}`,
+      );
+      // The rows are never stored: they come from the mailbox each time the conversation is read.
+      const threadId = agents.listTasks(quickId).tasks.find((candidate) => candidate.id === task.id)?.threadId ?? "";
+      const stored = store.database.connection
+        .prepare(
+          "SELECT COUNT(*) AS count FROM projection_thread_messages WHERE thread_id = ? AND message_id LIKE 'outbox-%'",
+        )
+        .get(threadId);
+      assert.equal(Number(stored && "count" in stored ? stored.count : -1), 0, "A row of a question was stored.");
+      // Another agent's task has no such row: an ordinary agent keeps the thread that it had.
+      const ordinary = await runCauseEffect(agents.startTask({ agentId: strangerId, text: "A thread of its own" }));
+      await turnEnded(ordinary.id);
+      assert.equal(
+        agents.readTask(strangerId, ordinary.id).messages.filter((message) => message.id.startsWith("outbox-")).length,
+        0,
+      );
+      return { events: seen.length, statuses: seen };
+    },
+  );
 
   // ---- 6. the Team API ----------------------------------------------------------------------------------
   await step("6. the Team API never carried the quick chat agent, during or after the answers", async () => {

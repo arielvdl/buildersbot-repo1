@@ -65,6 +65,8 @@ const STICK_DISTANCE = 48;
  */
 function shownInThread(message: AgentMessage): boolean {
   if (message.kind === "thinking" || message.kind === "memory-changes") return false;
+  // The question that the Quick chat sent to another agent is a row for its agent strip, not a message to read.
+  if (message.exchange?.direction === "outgoing") return false;
   return (
     message.author === "you" ||
     message.streaming === true ||

@@ -126,6 +126,24 @@ every conversation on the agent's model.
   `quick.model.changeFailed` when there is no text, and the picker goes back to the real model. The model
   never changes by itself.
 
+## The agent strip
+
+The strip above a conversation shows the agents that the conversation called (`QuickChatAgentStripHost`). It reads
+the rows of the waiting block (`agentAwaitingReplies`), which come from the outgoing exchange rows of the
+conversation: one row for each message that the quick chat agent sent, with the state of each delivery.
+
+A request that an agent sends from a side thread stays out of its own chat, and the thread keeps no row of it. For
+the quick chat agent only, `AgentTasks.#withOutgoing` adds these rows when the conversation is read and when it is
+sent to the renderer (`MailboxStore.taskOutgoingMessages`). The rows are never stored, so a restart cannot leave one
+that says an agent still works. `MailboxSync.emitQueue` calls `AgentTasks.outgoingChanged` when a delivery of such a
+message changes, and the conversation goes out again only when its rows changed. The tasks of every other agent are
+returned as they were.
+
+The conversation does not draw these rows (`AgentThreadView` leaves them out). The strip counts an ended delivery as
+an agent that answered (`keepEnded`), for the questions that came after the last message of the person, because the
+conversation of a side thread has no queue that carries the answers. It shows while an agent has the request, says that
+all are done for a moment, and goes.
+
 ## Warm-up
 
 `quickChat.warm` (`quick-chat:warm`) starts the provider process of the agent when it is stopped,

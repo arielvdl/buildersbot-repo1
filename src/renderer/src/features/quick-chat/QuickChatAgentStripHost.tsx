@@ -28,15 +28,19 @@ export function QuickChatAgentStripHost(props: { conversation: ConversationProps
       agents: conversation.agents,
       self,
       waits: conversation.agentWaits,
+      keepEnded: true,
     });
     return quickChatStripModel({ rows, self, activeTurns: activeTurns(), stepLines: turnStepLines() });
   });
 
-  // When the last agent is done, the strip stays a moment with the result, then goes up.
+  /** A memo, so the effect below runs when the strip goes live or stops, not each time a message of the conversation changes. */
+  const live = createMemo(() => model().live);
+  // When the last agent is done, the strip stays a moment with the result, then goes up. An effect that ran again
+  // for each change of the model would clear the timer of that moment, and the strip would never close.
   createEffect(
-    () => model().live,
-    (live, wasLive) => {
-      if (live) {
+    () => live(),
+    (isLive, wasLive) => {
+      if (isLive) {
         setLingering(false);
         return;
       }
