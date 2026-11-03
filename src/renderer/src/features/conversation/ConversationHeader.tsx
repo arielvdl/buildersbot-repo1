@@ -11,7 +11,7 @@ import { reasoningLabel } from "@buildersbot/ui/components/ProviderModelPicker";
 import { providerAccountName } from "@buildersbot/ui/components/provider-accounts";
 import { ConversationHeader as SharedConversationHeader } from "@buildersbot/ui/features/conversation/ConversationHeader";
 import { ThreadHeader } from "@buildersbot/ui/features/conversation/threads/ThreadHeader";
-import { MAIN_THREAD_ID } from "@buildersbot/ui/features/conversation/threads/thread-types";
+import { MAIN_THREAD_ID, threadBusy } from "@buildersbot/ui/features/conversation/threads/thread-types";
 import { Show } from "solid-js";
 import { useConversationViewScope } from "./conversation-scope";
 
@@ -79,11 +79,22 @@ export function ConversationHeader() {
     if (runtime.reasoningEffort !== other.reasoningEffort) parts.push(reasoningLabel(runtime.reasoningEffort, t));
     return parts.join(" · ");
   };
+  /** A turn of the open side thread runs. Absent from the Quick chat, where each thread has its own model. */
+  const openThreadWorking = () => {
+    const openId = props.threads?.open?.id;
+    const item = props.threads?.header.threads.find((thread) => thread.id === openId);
+    return item ? threadBusy(item.status) : false;
+  };
+  /**
+   * A turn runs that a model change waits for. In the Quick chat only the open conversation counts: another
+   * conversation that runs has its own model, so it must not add the badge and move the picker.
+   */
+  const modelChangeWaits = () => (props.quickChat ? openThreadWorking() : working() || runningThreads() > 0);
   /** A change chosen during a turn, in any thread. It applies from the next turn. */
   const pendingModel = () => {
     const agent = props.agent;
-    if (!agent || !(working() || runningThreads() > 0)) return undefined;
-    const running: BadgeRuntime = (working() ? runningTurnRuntime() : null) ?? agent;
+    if (!agent || !modelChangeWaits()) return undefined;
+    const running: BadgeRuntime = (props.quickChat || working() ? runningTurnRuntime() : null) ?? agent;
     const next: BadgeRuntime = agent.pendingRuntime ?? {
       provider: settingsProvider(),
       model: settingsModel(),

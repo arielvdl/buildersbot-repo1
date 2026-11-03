@@ -35,9 +35,22 @@ import {
 import { quickChatPort } from "./quick-chat-port";
 import { createQuickChat } from "./quick-chat-state";
 
-/** The message box of the open conversation. A new conversation has the focus, so the person types at once. */
+/** What owns the focus while it is open: a popover, a menu, a dialog, or the header with the model picker. */
+const FOCUS_OWNER = "[role=dialog], [role=menu], [role=listbox], [data-popper-positioner], .conversation-header";
+
+/**
+ * The message box of the open conversation. A new conversation has the focus, so the person types at once.
+ * The focus never leaves a popover, a dialog, the header or another field: the list of conversations
+ * redraws while another conversation runs, and a stolen focus closes the model picker.
+ */
 function focusComposer(root: HTMLElement | undefined): void {
-  root?.querySelector<HTMLElement>('.composer-editor-surface[role="textbox"]')?.focus();
+  const composer = root?.querySelector<HTMLElement>('.composer-editor-surface[role="textbox"]');
+  const active = document.activeElement;
+  if (active instanceof HTMLElement && active !== composer) {
+    const typing = active.matches('input, textarea, [contenteditable="true"]');
+    if (typing || active.closest(FOCUS_OWNER)) return;
+  }
+  composer?.focus();
 }
 
 /**
@@ -160,23 +173,22 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   });
   const ownerThreads = createMemo(() => buildThreads(owner()));
   const open = () => ownerThreads()?.open;
-  const selectedKey = () => {
+  /** A memo: the key is the same string while another conversation runs, so the effects below stay quiet. */
+  const selectedKey = createMemo(() => {
     const item = open();
     const id = owner()?.id;
     return item && id ? quickChatRowKey(id, item.id) : null;
-  };
+  });
+  const ready = createMemo(() => quick.phase() === "ready");
+  const conversationGone = createMemo(() => called() !== null && owner() === undefined);
+  const activeThreadId = createMemo(() => ownerThreads()?.header.activeId);
 
   // The Quick chat has no chat of its own for an agent, so a closed or deleted conversation, or one of an
   // agent that is gone, opens a new conversation, and the page never shows an empty pane.
   createEffect(
-    () => ({
-      id: agentId(),
-      ready: quick.phase() === "ready",
-      gone: called() !== null && owner() === undefined,
-      active: ownerThreads()?.header.activeId,
-    }),
-    ({ id, ready, gone, active }) => {
-      if (!ready || !id) return;
+    () => ({ id: agentId(), ready: ready(), gone: conversationGone(), active: activeThreadId() }),
+    ({ id, ready: isReady, gone, active }) => {
+      if (!isReady || !id) return;
       if (gone || active === MAIN_THREAD_ID) {
         setCalled(null);
         tabs.startNew(id);
@@ -219,9 +231,9 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   );
   // Each conversation that opens has the focus in its message box.
   createEffect(
-    () => ({ key: selectedKey(), ready: quick.phase() === "ready" }),
-    ({ ready }) => {
-      if (ready) requestAnimationFrame(() => focusComposer(chat));
+    () => ({ key: selectedKey(), ready: ready() }),
+    ({ ready: isReady }) => {
+      if (isReady) requestAnimationFrame(() => focusComposer(chat));
     },
   );
 
