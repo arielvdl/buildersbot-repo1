@@ -306,4 +306,14 @@ export const messages = {
   "sidebar.community.joinDiscord": "Entrar no Discord",
   "sidebar.community.followX": "Seguir o Builders Bot no X",
   "sidebar.community.dismiss": "Dispensar o convite para a comunidade",
+  "sidebar.selection.label": "Chats selecionados",
+  "sidebar.selection.count": { one: "{count} selecionado", other: "{count} selecionados" },
+  "sidebar.selection.moveCount": { one: "Mover {count} chat para", other: "Mover {count} chats para" },
+  "sidebar.selection.newSection": "Nova seção com eles",
+  "sidebar.selection.hide": "Ocultar agentes",
+  "sidebar.selection.clear": "Limpar seleção",
+  "sidebar.announce.movedManyTo": {
+    one: "{count} chat movido para {section}.",
+    other: "{count} chats movidos para {section}.",
+  },
 } as const satisfies PartialTranslation<typeof source>;
