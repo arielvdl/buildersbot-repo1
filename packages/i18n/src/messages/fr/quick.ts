@@ -1,4 +1,32 @@
 import type { PartialTranslation } from "../../message";
 import type { messages as source } from "../en/quick";
 
-export const messages = {} as const satisfies PartialTranslation<typeof source>;
+export const messages = {
+  "quick.agentName": "Chat rapide",
+  "quick.rail.label": "Chat rapide",
+  "quick.page.label": "Chat rapide",
+  "quick.page.loading": "Chargement du chat rapide",
+  "quick.owner.name": "Rapide",
+  "quick.empty.title": "Que voulez-vous résoudre ?",
+  "quick.list.label": "Conversations du chat rapide",
+  "quick.list.title": "Chat rapide",
+  "quick.list.new": "Nouvelle",
+  "quick.list.search": "Rechercher des conversations",
+  "quick.list.loading": "Chargement des conversations",
+  "quick.list.empty": "Aucune conversation pour l'instant",
+  "quick.list.noResults": "Aucune conversation trouvée",
+  "quick.list.group.today": "Aujourd'hui",
+  "quick.list.group.yesterday": "Hier",
+  "quick.list.group.week": "7 derniers jours",
+  "quick.list.group.older": "Plus anciennes",
+  "quick.list.archived": "Archivées",
+  "quick.list.queued": "En attente",
+  "quick.list.rowActions": "Actions pour {title}",
+  "quick.header.new": "Nouvelle conversation",
+  "quick.notice.modelChanged": "Le modèle du chat rapide n'est plus disponible. Il est repassé à celui par défaut.",
+  "quick.signIn.title": "Connectez un fournisseur pour utiliser le chat rapide",
+  "quick.signIn.action": "Ouvrir les fournisseurs",
+  "quick.error.agentGone": "Cet agent n'est plus disponible.",
+  "quick.error.title": "Le chat rapide ne s'est pas ouvert",
+  "quick.error.retry": "Réessayer",
+} as const satisfies PartialTranslation<typeof source>;

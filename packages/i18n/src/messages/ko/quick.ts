@@ -1,4 +1,32 @@
 import type { PartialTranslation } from "../../message";
 import type { messages as source } from "../en/quick";
 
-export const messages = {} as const satisfies PartialTranslation<typeof source>;
+export const messages = {
+  "quick.agentName": "빠른 채팅",
+  "quick.rail.label": "빠른 채팅",
+  "quick.page.label": "빠른 채팅",
+  "quick.page.loading": "빠른 채팅을 불러오는 중",
+  "quick.owner.name": "빠른",
+  "quick.empty.title": "무엇을 해결하고 싶으세요?",
+  "quick.list.label": "빠른 채팅 대화",
+  "quick.list.title": "빠른 채팅",
+  "quick.list.new": "새로 만들기",
+  "quick.list.search": "대화 검색",
+  "quick.list.loading": "대화를 불러오는 중",
+  "quick.list.empty": "아직 대화가 없어요",
+  "quick.list.noResults": "대화를 찾을 수 없어요",
+  "quick.list.group.today": "오늘",
+  "quick.list.group.yesterday": "어제",
+  "quick.list.group.week": "최근 7일",
+  "quick.list.group.older": "이전",
+  "quick.list.archived": "보관됨",
+  "quick.list.queued": "대기 중",
+  "quick.list.rowActions": "{title} 작업",
+  "quick.header.new": "새 대화",
+  "quick.notice.modelChanged": "빠른 채팅의 모델을 더 이상 사용할 수 없어요. 기본 모델로 바뀌었어요.",
+  "quick.signIn.title": "빠른 채팅을 쓰려면 제공자를 연결하세요",
+  "quick.signIn.action": "제공자 열기",
+  "quick.error.agentGone": "그 에이전트는 더 이상 사용할 수 없어요.",
+  "quick.error.title": "빠른 채팅을 열지 못했어요",
+  "quick.error.retry": "다시 시도",
+} as const satisfies PartialTranslation<typeof source>;

@@ -1,4 +1,32 @@
 import type { PartialTranslation } from "../../message";
 import type { messages as source } from "../en/quick";
 
-export const messages = {} as const satisfies PartialTranslation<typeof source>;
+export const messages = {
+  "quick.agentName": "快速对话",
+  "quick.rail.label": "快速对话",
+  "quick.page.label": "快速对话",
+  "quick.page.loading": "正在加载快速对话",
+  "quick.owner.name": "快速",
+  "quick.empty.title": "你想解决什么问题？",
+  "quick.list.label": "快速对话列表",
+  "quick.list.title": "快速对话",
+  "quick.list.new": "新建",
+  "quick.list.search": "搜索对话",
+  "quick.list.loading": "正在加载对话",
+  "quick.list.empty": "还没有对话",
+  "quick.list.noResults": "没有找到对话",
+  "quick.list.group.today": "今天",
+  "quick.list.group.yesterday": "昨天",
+  "quick.list.group.week": "最近 7 天",
+  "quick.list.group.older": "更早",
+  "quick.list.archived": "已归档",
+  "quick.list.queued": "排队中",
+  "quick.list.rowActions": "{title} 的操作",
+  "quick.header.new": "新建对话",
+  "quick.notice.modelChanged": "快速对话的模型已不可用，已切换为默认模型。",
+  "quick.signIn.title": "连接服务商后即可使用快速对话",
+  "quick.signIn.action": "打开服务商",
+  "quick.error.agentGone": "该助手已不可用。",
+  "quick.error.title": "快速对话未能打开",
+  "quick.error.retry": "重试",
+} as const satisfies PartialTranslation<typeof source>;

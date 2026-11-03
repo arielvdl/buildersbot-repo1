@@ -1,4 +1,32 @@
 import type { PartialTranslation } from "../../message";
 import type { messages as source } from "../en/quick";
 
-export const messages = {} as const satisfies PartialTranslation<typeof source>;
+export const messages = {
+  "quick.agentName": "Szybki czat",
+  "quick.rail.label": "Szybki czat",
+  "quick.page.label": "Szybki czat",
+  "quick.page.loading": "Ładowanie szybkiego czatu",
+  "quick.owner.name": "Szybki",
+  "quick.empty.title": "Co chcesz rozwiązać?",
+  "quick.list.label": "Rozmowy szybkiego czatu",
+  "quick.list.title": "Szybki czat",
+  "quick.list.new": "Nowa",
+  "quick.list.search": "Szukaj rozmów",
+  "quick.list.loading": "Ładowanie rozmów",
+  "quick.list.empty": "Nie ma jeszcze rozmów",
+  "quick.list.noResults": "Nie znaleziono rozmowy",
+  "quick.list.group.today": "Dziś",
+  "quick.list.group.yesterday": "Wczoraj",
+  "quick.list.group.week": "Ostatnie 7 dni",
+  "quick.list.group.older": "Starsze",
+  "quick.list.archived": "Zarchiwizowane",
+  "quick.list.queued": "W kolejce",
+  "quick.list.rowActions": "Działania dla: {title}",
+  "quick.header.new": "Nowa rozmowa",
+  "quick.notice.modelChanged": "Model szybkiego czatu nie jest już dostępny. Wrócił do domyślnego.",
+  "quick.signIn.title": "Połącz dostawcę, aby używać szybkiego czatu",
+  "quick.signIn.action": "Otwórz dostawców",
+  "quick.error.agentGone": "Ten agent nie jest już dostępny.",
+  "quick.error.title": "Szybki czat się nie otworzył",
+  "quick.error.retry": "Spróbuj ponownie",
+} as const satisfies PartialTranslation<typeof source>;

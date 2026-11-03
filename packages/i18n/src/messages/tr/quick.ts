@@ -1,4 +1,32 @@
 import type { PartialTranslation } from "../../message";
 import type { messages as source } from "../en/quick";
 
-export const messages = {} as const satisfies PartialTranslation<typeof source>;
+export const messages = {
+  "quick.agentName": "Hızlı sohbet",
+  "quick.rail.label": "Hızlı sohbet",
+  "quick.page.label": "Hızlı sohbet",
+  "quick.page.loading": "Hızlı sohbet yükleniyor",
+  "quick.owner.name": "Hızlı",
+  "quick.empty.title": "Neyi çözmek istiyorsunuz?",
+  "quick.list.label": "Hızlı sohbet konuşmaları",
+  "quick.list.title": "Hızlı sohbet",
+  "quick.list.new": "Yeni",
+  "quick.list.search": "Konuşmalarda ara",
+  "quick.list.loading": "Konuşmalar yükleniyor",
+  "quick.list.empty": "Henüz konuşma yok",
+  "quick.list.noResults": "Konuşma bulunamadı",
+  "quick.list.group.today": "Bugün",
+  "quick.list.group.yesterday": "Dün",
+  "quick.list.group.week": "Son 7 gün",
+  "quick.list.group.older": "Daha eski",
+  "quick.list.archived": "Arşivlenmiş",
+  "quick.list.queued": "Sırada",
+  "quick.list.rowActions": "{title} için işlemler",
+  "quick.header.new": "Yeni konuşma",
+  "quick.notice.modelChanged": "Hızlı sohbetin modeli artık kullanılamıyor. Varsayılan modele geçti.",
+  "quick.signIn.title": "Hızlı sohbeti kullanmak için bir sağlayıcı bağlayın",
+  "quick.signIn.action": "Sağlayıcıları aç",
+  "quick.error.agentGone": "Bu ajan artık kullanılamıyor.",
+  "quick.error.title": "Hızlı sohbet açılamadı",
+  "quick.error.retry": "Yeniden dene",
+} as const satisfies PartialTranslation<typeof source>;

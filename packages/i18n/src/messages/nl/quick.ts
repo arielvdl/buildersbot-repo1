@@ -1,4 +1,32 @@
 import type { PartialTranslation } from "../../message";
 import type { messages as source } from "../en/quick";
 
-export const messages = {} as const satisfies PartialTranslation<typeof source>;
+export const messages = {
+  "quick.agentName": "Snelchat",
+  "quick.rail.label": "Snelchat",
+  "quick.page.label": "Snelchat",
+  "quick.page.loading": "Snelchat laden",
+  "quick.owner.name": "Snel",
+  "quick.empty.title": "Wat wil je oplossen?",
+  "quick.list.label": "Snelchatgesprekken",
+  "quick.list.title": "Snelchat",
+  "quick.list.new": "Nieuw",
+  "quick.list.search": "Gesprekken zoeken",
+  "quick.list.loading": "Gesprekken laden",
+  "quick.list.empty": "Nog geen gesprekken",
+  "quick.list.noResults": "Geen gesprek gevonden",
+  "quick.list.group.today": "Vandaag",
+  "quick.list.group.yesterday": "Gisteren",
+  "quick.list.group.week": "Laatste 7 dagen",
+  "quick.list.group.older": "Ouder",
+  "quick.list.archived": "Gearchiveerd",
+  "quick.list.queued": "In wachtrij",
+  "quick.list.rowActions": "Acties voor {title}",
+  "quick.header.new": "Nieuw gesprek",
+  "quick.notice.modelChanged": "Het model voor Snelchat is niet meer beschikbaar. Het is teruggezet naar de standaard.",
+  "quick.signIn.title": "Verbind een aanbieder om Snelchat te gebruiken",
+  "quick.signIn.action": "Aanbieders openen",
+  "quick.error.agentGone": "Die agent is niet meer beschikbaar.",
+  "quick.error.title": "Snelchat kon niet worden geopend",
+  "quick.error.retry": "Opnieuw proberen",
+} as const satisfies PartialTranslation<typeof source>;

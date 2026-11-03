@@ -1,4 +1,32 @@
 import type { PartialTranslation } from "../../message";
 import type { messages as source } from "../en/quick";
 
-export const messages = {} as const satisfies PartialTranslation<typeof source>;
+export const messages = {
+  "quick.agentName": "クイックチャット",
+  "quick.rail.label": "クイックチャット",
+  "quick.page.label": "クイックチャット",
+  "quick.page.loading": "クイックチャットを読み込んでいます",
+  "quick.owner.name": "クイック",
+  "quick.empty.title": "何を解決したいですか？",
+  "quick.list.label": "クイックチャットの会話",
+  "quick.list.title": "クイックチャット",
+  "quick.list.new": "新規",
+  "quick.list.search": "会話を検索",
+  "quick.list.loading": "会話を読み込んでいます",
+  "quick.list.empty": "まだ会話はありません",
+  "quick.list.noResults": "会話が見つかりません",
+  "quick.list.group.today": "今日",
+  "quick.list.group.yesterday": "昨日",
+  "quick.list.group.week": "過去7日間",
+  "quick.list.group.older": "それ以前",
+  "quick.list.archived": "アーカイブ済み",
+  "quick.list.queued": "待機中",
+  "quick.list.rowActions": "{title} の操作",
+  "quick.header.new": "新しい会話",
+  "quick.notice.modelChanged": "クイックチャットのモデルは使えなくなりました。標準のモデルに戻りました。",
+  "quick.signIn.title": "クイックチャットを使うにはプロバイダーを接続してください",
+  "quick.signIn.action": "プロバイダーを開く",
+  "quick.error.agentGone": "そのエージェントは使えなくなりました。",
+  "quick.error.title": "クイックチャットを開けませんでした",
+  "quick.error.retry": "再試行",
+} as const satisfies PartialTranslation<typeof source>;

@@ -1,4 +1,32 @@
 import type { PartialTranslation } from "../../message";
 import type { messages as source } from "../en/quick";
 
-export const messages = {} as const satisfies PartialTranslation<typeof source>;
+export const messages = {
+  "quick.agentName": "Быстрый чат",
+  "quick.rail.label": "Быстрый чат",
+  "quick.page.label": "Быстрый чат",
+  "quick.page.loading": "Загрузка быстрого чата",
+  "quick.owner.name": "Быстрый",
+  "quick.empty.title": "Что вы хотите решить?",
+  "quick.list.label": "Диалоги быстрого чата",
+  "quick.list.title": "Быстрый чат",
+  "quick.list.new": "Новый",
+  "quick.list.search": "Поиск диалогов",
+  "quick.list.loading": "Загрузка диалогов",
+  "quick.list.empty": "Диалогов пока нет",
+  "quick.list.noResults": "Диалог не найден",
+  "quick.list.group.today": "Сегодня",
+  "quick.list.group.yesterday": "Вчера",
+  "quick.list.group.week": "Последние 7 дней",
+  "quick.list.group.older": "Более ранние",
+  "quick.list.archived": "В архиве",
+  "quick.list.queued": "В очереди",
+  "quick.list.rowActions": "Действия для «{title}»",
+  "quick.header.new": "Новый диалог",
+  "quick.notice.modelChanged": "Модель быстрого чата больше недоступна. Она заменена моделью по умолчанию.",
+  "quick.signIn.title": "Подключите провайдера, чтобы использовать быстрый чат",
+  "quick.signIn.action": "Открыть провайдеров",
+  "quick.error.agentGone": "Этот агент больше недоступен.",
+  "quick.error.title": "Быстрый чат не открылся",
+  "quick.error.retry": "Повторить",
+} as const satisfies PartialTranslation<typeof source>;
