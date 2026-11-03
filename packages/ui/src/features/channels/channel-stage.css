@@ -97,7 +97,9 @@
   padding: var(--buildersbot-space-2) var(--buildersbot-space-3);
   border: 1px solid var(--buildersbot-border-strong);
   border-radius: var(--buildersbot-radius-lg);
-  background: var(--buildersbot-bg-surface-raised);
+  /* Frosted glass: the table and the scan blur behind the card instead of cutting through the text. */
+  background: color-mix(in srgb, var(--buildersbot-bg-surface-raised) 62%, transparent);
+  backdrop-filter: blur(14px) saturate(1.3);
   box-shadow: var(--buildersbot-shadow-card);
   translate: -50% -50%;
   animation: agent-stage-fade var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
