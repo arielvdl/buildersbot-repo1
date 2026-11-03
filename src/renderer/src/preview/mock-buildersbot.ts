@@ -3299,6 +3299,17 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
       },
       // The preview has no provider turn to stop: the forced message goes first in the queue.
       forceQueuedMessage: async (input: ForceQueuedMessageInput) => {
+        // A message that waits in a thread goes first among the messages of that thread.
+        const thread = (tasks.get(input.agentId) ?? []).find((task) =>
+          task.queuedMessages.some((message) => message.deliveryId === input.deliveryId),
+        );
+        if (thread) {
+          const forced = thread.queuedMessages.find((message) => message.deliveryId === input.deliveryId);
+          if (forced)
+            thread.queuedMessages = [forced, ...thread.queuedMessages.filter((message) => message !== forced)];
+          emitTasks(input.agentId);
+          return { outcome: input.expectedTurnId ? "interrupted" : "started" };
+        }
         const queue = queues.get(input.agentId) ?? emptyQueue(input.agentId);
         const forced = queue.deliveries.find((item) => item.id === input.deliveryId && item.status === "queued");
         if (!forced) throw new Error(sourceText("error.backend.forceQueuedOnly"));

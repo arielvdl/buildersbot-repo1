@@ -181,6 +181,10 @@ export function conversationThreads(input: ConversationThreadsInput): Conversati
           onSteer: (deliveryId, turnId) => tasks.steerQueuedMessage(agentId, deliveryId, turnId),
           onCancel: (deliveryId) => tasks.cancelQueuedMessage(agentId, deliveryId),
           onReorder: (deliveryIds) => tasks.reorderQueue(agentId, deliveryIds),
+          // The turn that the person saw is named by the caller, so a turn that started since is not stopped.
+          onForce: tasks.canForce()
+            ? (deliveryId, turnId) => tasks.forceQueuedMessage(agentId, deliveryId, turnId)
+            : undefined,
         }
       : undefined,
     // Only this computer moves a queued message to a new thread.

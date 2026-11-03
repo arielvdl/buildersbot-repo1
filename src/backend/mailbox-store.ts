@@ -2277,6 +2277,11 @@ export class MailboxStore {
     if (!this.#database.connection.isTransaction) this.#clearChanges();
   }
 
+  /** Whether an editor holds this delivery, so a force must leave it. */
+  isQueueEditing(deliveryId: string): boolean {
+    return Boolean(this.#state.deliveries.find((item) => item.id === deliveryId)?.editId);
+  }
+
   #assertQueueNotEditing(deliveryId: string): void {
     this.#assertQueueNotUpdating(deliveryId);
     if (this.#state.deliveries.find((item) => item.id === deliveryId)?.editId)
@@ -2714,6 +2719,43 @@ export class MailboxStore {
       for (const [index, delivery] of [...execution, forced, ...others].entries()) {
         if (delivery.queueOrder === index) continue;
         delivery.queueOrder = index;
+        this.#changes.deliveryIds.add(delivery.id);
+      }
+      this.#persist("queue.reordered");
+      return previous;
+    } catch (cause) {
+      return yield* new StoredStateFailure({ cause });
+    }
+  }, Effect.uninterruptible).bind(this);
+
+  /**
+   * Puts one queued message of a task first among the queued messages of that task, for a force: before the
+   * others of the thread, also before one that another editor holds. The other lanes keep their places, and
+   * the task's messages take the places that they held. Returns the order before the change, for
+   * `restoreQueueOrder`.
+   */
+  moveToTaskHead = Effect.fn("MailboxStore.moveToTaskHead")(function* (
+    this: MailboxStore,
+    agentId: string,
+    deliveryId: string,
+    taskId: string,
+  ): Effect.fn.Return<ReadonlyMap<string, number>, StoredStateFailure> {
+    try {
+      const messages = this.#messagesById();
+      const allQueued = this.#state.deliveries
+        .filter((delivery) => delivery.recipientAgentId === agentId && delivery.status === "queued")
+        .sort(compareQueueOrder);
+      const mine = allQueued.filter((delivery) => this.#taskIdOf(delivery, messages) === taskId);
+      const forced = mine.find((delivery) => delivery.id === deliveryId);
+      if (!forced || forced.editId || waitsForPlanContinuation(forced)) {
+        throw new Error(sourceText("error.backend.forceQueuedOnly"));
+      }
+      const previous = new Map(allQueued.map((delivery) => [delivery.id, delivery.queueOrder]));
+      const places = mine.map((delivery) => delivery.queueOrder);
+      for (const [index, delivery] of [forced, ...mine.filter((delivery) => delivery !== forced)].entries()) {
+        const order = places[index];
+        if (order === undefined || delivery.queueOrder === order) continue;
+        delivery.queueOrder = order;
         this.#changes.deliveryIds.add(delivery.id);
       }
       this.#persist("queue.reordered");

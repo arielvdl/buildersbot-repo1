@@ -735,13 +735,17 @@ export class DrainScheduler {
    * null when its next queued message starts then. `turnId` is null when no turn runs. A force asks
    * this before it stops the turn: a Stop that lets other work start first does not help the message.
    */
-  holdAfterStop(agentId: string, turnId: string | null): string | null {
-    // Channel and messaging work that waits in the chat stays first in the queue: it reserved the agent.
-    if (this.#mailbox.queuedExecutionDeliveryIds(agentId).some((id) => this.#mailbox.taskIdForDelivery(id) === null))
+  holdAfterStop(agentId: string, turnId: string | null, taskId: string | null = null): string | null {
+    // Channel and messaging work that waits in the chat stays first in the queue: it reserved the agent. A
+    // side thread is a lane of its own, so that work does not stand before its messages.
+    if (
+      taskId === null &&
+      this.#mailbox.queuedExecutionDeliveryIds(agentId).some((id) => this.#mailbox.taskIdForDelivery(id) === null)
+    )
       return "execution-work";
     // A start with no turn id yet, such as one whose `turn/start` timed out. Its turn can still run.
-    if (turnId === null && this.#mailbox.laneActive(agentId, null)) return "starting";
-    return this.#heldBy(mainLane(agentId), { turnId });
+    if (turnId === null && this.#mailbox.laneActive(agentId, taskId)) return "starting";
+    return this.#heldBy(taskId === null ? mainLane(agentId) : taskLane(agentId, taskId), { turnId });
   }
 
   holdSessionSettings(agentId: string): () => void {

@@ -1680,6 +1680,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       routines: this.#routines,
       hooks: {
         channelAssignment: (deliveryId) => this.channels.store.assignmentForDelivery(deliveryId),
+        taskThreadIdOf: (taskId) => this.#tasks.threadId(taskId),
         taskThreadId: (deliveryId) => {
           // A steer must not reach the agent's own chat for a message of a deleted task.
           if (this.#tasks.deliveryTaskGone(deliveryId)) throw new Error(sourceText("error.backend.threadNotFound"));

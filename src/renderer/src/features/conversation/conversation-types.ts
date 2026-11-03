@@ -480,6 +480,13 @@ export interface ConversationThreads {
         onSteer: (deliveryId: string, turnId: string) => void;
         onCancel: (deliveryId: string) => void;
         onReorder: (deliveryIds: string[]) => void;
+        /**
+         * Stops the turn that runs in the thread and starts this queued message next, alone. `turnId` is the turn the
+         * person saw, or null when none ran. Missing when the host cannot.
+         */
+        onForce?:
+          | ((deliveryId: string, turnId: string | null) => Promise<ForceQueuedMessageOutcome | null>)
+          | undefined;
       }
     | undefined;
   /** Missing when the host cannot move a queued message to a new thread. */

@@ -6,13 +6,15 @@ import { causeHelpers } from "../effect-boundary";
 /** A typed failure of the runtime, which carries the original cause. */
 type Failure = { readonly cause: unknown };
 
-/** The running turn that holds the agent's own chat lane. */
+/** The running turn that holds a lane: the agent's own chat, or one side thread (a task). */
 export interface LaneTurn {
   turnId: string;
-  /** The thread of the turn: the agent's own chat, or a messaging thread of the same agent. Never a channel tab. */
+  /** The thread of the turn: the agent's own chat, a messaging thread of the same agent, or a side thread. Never a channel tab. */
   threadId: string | null;
   /** True for a turn of the agent's own chat. A messaging turn shows there only as a hold. */
   ownChat: boolean;
+  /** True for a turn of a side thread. The person sees it in the panel of that thread, so it counts as seen. */
+  sideThread?: boolean;
   /** The deliveries that the turn runs. */
   deliveryIds: readonly string[];
 }
@@ -22,13 +24,22 @@ export interface LaneTurn {
  * gives a fake runtime.
  */
 export interface QueueForcePort {
+  /** The side thread (task) that runs the delivery, or null for the agent's own chat. Its lane is the one the force works in. */
+  taskOf(deliveryId: string): string | null;
   /**
    * Throws a `QueueForceRefused` when the delivery is not a message of the agent's own queue that
    * waits and that no other editor holds.
    */
   requireForceable(agentId: string, deliveryId: string): void;
-  /** Puts the delivery first among the person's queued messages. Returns the order before the change. */
-  moveToHead(agentId: string, deliveryId: string): Effect.Effect<ReadonlyMap<string, number>, Failure>;
+  /**
+   * Puts the delivery first among the person's queued messages of its lane (`taskId` null is the agent's
+   * own chat). Returns the order before the change.
+   */
+  moveToHead(
+    agentId: string,
+    deliveryId: string,
+    taskId: string | null,
+  ): Effect.Effect<ReadonlyMap<string, number>, Failure>;
   /** Gives the queue back the order that `moveToHead` returned. */
   restoreOrder(agentId: string, previous: ReadonlyMap<string, number>): Effect.Effect<void, Failure>;
   /** Whether the delivery still waits in the queue. */
@@ -38,14 +49,14 @@ export interface QueueForcePort {
    * there are some, it waits for the drain that starts them, so that their turn can be read. Empty
    * when no start was on its way.
    */
-  settleStarts(agentId: string): Effect.Effect<readonly string[]>;
-  /** The turn that holds the agent's own chat lane now, or null when none runs. */
-  laneTurn(agentId: string): LaneTurn | null;
+  settleStarts(agentId: string, taskId: string | null): Effect.Effect<readonly string[]>;
+  /** The turn that holds the lane now, or null when none runs. */
+  laneTurn(agentId: string, taskId: string | null): LaneTurn | null;
   /**
    * Why the agent's own chat lane still waits for other work when `turn` has ended, or null when the
    * head of its queue starts then. `turn` is null when no turn runs.
    */
-  holdAfterStop(agentId: string, turn: LaneTurn | null): string | null;
+  holdAfterStop(agentId: string, turn: LaneTurn | null, taskId: string | null): string | null;
   /** The Stop of that turn. False when no stop was sent, because the turn has ended already. */
   stop(agentId: string, turn: LaneTurn): Effect.Effect<boolean, Failure>;
   startAlone(deliveryId: string): void;
@@ -63,6 +74,9 @@ export class QueueForceFailed extends Schema.TaggedError<QueueForceFailed>()("Qu
 }) {}
 
 /**
+ * A side thread (a task: the quick chat, or the Tasks page) is forced in its own lane, with the same steps:
+ * its turn is the one that stops, and only the other messages of that thread wait behind the forced one.
+ *
  * Forces one queued message into the conversation: it stops the turn that holds the agent's own chat,
  * as the Stop button does, and starts the message next, alone, before the other queued messages.
  *
@@ -109,14 +123,15 @@ export class QueueForce {
     for (const id of [...this.#stopped.keys()]) if (!this.#port.isQueued(id)) this.#stopped.delete(id);
     yield* forceStep(() => this.#port.requireForceable(agentId, deliveryId));
     // The person saw the agent work on these deliveries, before their turn had an id.
-    const starting = yield* this.#port.settleStarts(agentId);
+    const taskId = this.#port.taskOf(deliveryId);
+    const starting = yield* this.#port.settleStarts(agentId, taskId);
     // The message can leave the queue, or another editor can take it, while that start ends.
     if (starting.length > 0) yield* forceStep(() => this.#port.requireForceable(agentId, deliveryId));
-    const previous = yield* this.#port.moveToHead(agentId, deliveryId).pipe(toForceFailed);
+    const previous = yield* this.#port.moveToHead(agentId, deliveryId, taskId).pipe(toForceFailed);
     this.#port.startAlone(deliveryId);
     this.#port.queueChanged(agentId);
-    const turn = this.#port.laneTurn(agentId);
-    const held = this.#port.holdAfterStop(agentId, turn) !== null;
+    const turn = this.#port.laneTurn(agentId, taskId);
+    const held = this.#port.holdAfterStop(agentId, turn, taskId) !== null;
     if (!turn || held || !mayStop(turn, expectedTurnId, starting)) {
       this.#port.scheduleDrain(agentId);
       return { outcome: !turn && !held ? "started" : "next" };
@@ -127,7 +142,7 @@ export class QueueForce {
     if (Result.isFailure(stopped)) {
       // The turn can end by itself while the Stop is in flight, and a provider then refuses the Stop.
       // The message is at the head, so it starts next, or the drain has started it already.
-      if (!this.#port.isQueued(deliveryId) || this.#port.laneTurn(agentId)?.turnId !== turn.turnId) {
+      if (!this.#port.isQueued(deliveryId) || this.#port.laneTurn(agentId, taskId)?.turnId !== turn.turnId) {
         this.#port.scheduleDrain(agentId);
         return { outcome: "started" };
       }
@@ -158,7 +173,7 @@ export class QueueForce {
 function mayStop(turn: LaneTurn, expectedTurnId: string | null, starting: readonly string[]): boolean {
   if (turn.turnId === expectedTurnId) return true;
   if (starting.some((deliveryId) => turn.deliveryIds.includes(deliveryId))) return true;
-  return !turn.ownChat && expectedTurnId === null;
+  return !turn.ownChat && !turn.sideThread && expectedTurnId === null;
 }
 
 const { sync: forceStep, rewrap: toForceFailed } = causeHelpers(QueueForceFailed);
