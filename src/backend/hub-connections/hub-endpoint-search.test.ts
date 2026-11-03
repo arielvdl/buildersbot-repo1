@@ -47,7 +47,7 @@ function catalogOf(access: HubConnectionAccess[]): HubConnectionCatalog {
         name: "Tool catalog",
         tagline: "",
         description: "",
-        operations: ["search", "describe", "call"],
+        operations: [],
         itemsCount: 1,
         dataPolicy: { vendor: "treg", region: "us", retentionDays: null },
         access,

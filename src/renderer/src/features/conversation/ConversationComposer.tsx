@@ -184,6 +184,14 @@ export function ConversationComposer() {
   /** A skill belongs to one agent, and a channel message goes to the agents it routes to. */
   const pickSkill = () => (channel ? undefined : () => setSkillPickerRequest((current) => current + 1));
   /**
+   * The store's tools after a `$`. Only a chat of this computer: a channel gets no connection tools (its
+   * turns come from a team member) and a joined server's agents do not use this computer's Hub session.
+   */
+  const storeSearch = () =>
+    channel || props.runtime || (props.server && props.server.kind !== "local")
+      ? undefined
+      : (query: string) => window.buildersbot.hubConnections.searchEndpoints({ connectionId: "tool-catalog", query });
+  /**
    * The draft goes to the side question, so that the chat gets nothing of it. A draft with attachments
    * stays: the side question cannot send files.
    */
@@ -759,6 +767,7 @@ export function ConversationComposer() {
               skills={installedSkills()}
               skillsLoadFailed={installedSkillsLoadFailed()}
               mcpServers={mcpServers()}
+              storeSearch={storeSearch()}
               attachments={currentDraft().attachments}
               value={currentDraft().text}
               disabled={submitting() || voicePhase() === "transcribing" || editorLocked() || savePending()}

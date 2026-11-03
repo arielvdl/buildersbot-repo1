@@ -266,6 +266,8 @@ export function createMockHubConnections(
       return structuredClone(view);
     },
     requestAccess: async () => ({ status: "sent", requestedAt: new Date().toISOString(), failure: null }),
+    // The preview has no Hub: a search finds nothing.
+    searchEndpoints: async () => ({ status: "off", results: [] }),
     // The preview has no Hub and no browser of the person: the page stays as it is.
     openConsent: async () => undefined,
   };

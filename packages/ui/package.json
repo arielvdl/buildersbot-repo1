@@ -157,6 +157,7 @@
     "./features/conversation/ComposerErrorBanner": "./src/features/conversation/ComposerErrorBanner.tsx",
     "./features/conversation/VoiceRecordingMorph": "./src/features/conversation/VoiceRecordingMorph.tsx",
     "./features/conversation/composer-presets": "./src/features/conversation/composer-presets.ts",
+    "./features/conversation/composer-store-tool": "./src/features/conversation/composer-store-tool.ts",
     "./features/conversation/send-shortcut": "./src/features/conversation/send-shortcut.ts",
     "./features/conversation/ComposerNotice": "./src/features/conversation/ComposerNotice.tsx",
     "./features/conversation/ContextUsage": "./src/features/conversation/ContextUsage.tsx",

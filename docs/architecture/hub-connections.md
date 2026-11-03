@@ -260,6 +260,20 @@ views (`hub-connection-views.ts`) from the catalog and `/session` answers that i
 | `requestAccess` | "Ask the admin" (`access`) and "Ask the admin for more" (`more`), through the Hub route of the contract (§10.1). Never for the personal plan or an organization that is not in the catalog. |
 | `openConsent` | Opens the connections page of the Hub (`https://hub.culturabuilder.com/builder-ai/conexoes`) in the default browser, where the person allows this app to spend an organization's connections. The URL is fixed in main; the renderer sends none. |
 
+### The message box picker
+
+`HubConnectionTools.searchEndpoints` (IPC `hub-connections:search-endpoints`) gives the tools of the
+tool catalog that fit the words after a `$` in the message box (`ComposerEditor`, prop `storeSearch`).
+It is read only and spends nothing from this app: it uses the organization that already pays the
+connection (`choosePayer`), never asks a card (`needs_payer` tells the person to choose on the
+connection's page), refuses an empty text or one that holds a key or a token (`valueRule`), and sends
+at most 40 searches a minute. The renderer sends a query only when it starts with a letter, has 3
+characters and waits 350 ms, so `$5` in a sentence goes nowhere. Choosing a result writes
+`[tool-catalog: <title> (<endpointId>)]` in the draft; the agent then runs `describe` and `call`, and
+the cost card and Hub approval do not change. Only a chat of this computer gets it (`storeSearch` is
+absent in a channel and on a joined server). The Hub may charge for a search: confirm before relying
+on it.
+
 ### Marketplace
 
 A connection is an app of the Apps tab (`kind: "connection"`), so the curated list decides if it
