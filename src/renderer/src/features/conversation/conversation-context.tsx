@@ -50,33 +50,15 @@ import {
   readStateForMessages,
   retainedAutoReadState,
 } from "./conversation-read-state";
+import { LATEST_PAGE_SIZE, trimConversationToLatestPage } from "./conversation-trim";
 import type { SendMessageResult } from "./conversation-types";
 import { useDirectMessages } from "./direct-messages-context";
 
-const LATEST_PAGE_SIZE = 50;
 /**
  * How much of a snapshot an agent that is not open converts. Commentary of one turn becomes one
  * message and queued messages none, so a page needs more than a page of the thread.
  */
 const INACTIVE_SNAPSHOT_TAIL = LATEST_PAGE_SIZE * 4;
-
-function trimToLatestPage(conversation: ConversationState): void {
-  if (conversation.messages.length <= LATEST_PAGE_SIZE) return;
-  const kept = conversation.messages.slice(-LATEST_PAGE_SIZE);
-  const removedById = new Map(
-    conversation.messages.slice(0, -LATEST_PAGE_SIZE).map((message) => [message.id, message]),
-  );
-  // A kept reply keeps the quote of an original that the trim removes, as a page from the host gives it.
-  const references: Record<string, AgentMessage> = {};
-  for (const message of kept) {
-    const originalId = message.replyToMessageId;
-    const original = originalId ? (removedById.get(originalId) ?? conversation.references?.[originalId]) : undefined;
-    if (originalId && original) references[originalId] = original;
-  }
-  conversation.messages = kept;
-  conversation.references = references;
-  conversation.page = { hasOlder: true, olderCursor: null };
-}
 
 interface ConversationState {
   messages: AgentMessage[];
@@ -291,7 +273,8 @@ const Conversation = createSimpleContext({
         for (const agentId of agentIds) {
           current[agentId] ??= { messages: [] };
           current[agentId].messages = next[agentId] ?? [];
-          if (agentId !== activeAgentId()) trimToLatestPage(current[agentId]);
+          if (agentId !== activeAgentId())
+            trimConversationToLatestPage(agentId, current[agentId], rawAgentMessageBodies);
         }
       });
     }
@@ -527,7 +510,8 @@ const Conversation = createSimpleContext({
         });
         appended = true;
         conversation.messages = [...messages, message];
-        if (event.agentId !== activeAgentId()) trimToLatestPage(conversation);
+        if (event.agentId !== activeAgentId())
+          trimConversationToLatestPage(event.agentId, conversation, rawAgentMessageBodies);
       });
       if (appended) {
         const readState = conversations[event.agentId]?.read;
@@ -585,7 +569,7 @@ const Conversation = createSimpleContext({
         }
         conversation.messages = next;
         if (!inactive) return;
-        trimToLatestPage(conversation);
+        trimConversationToLatestPage(agentId, conversation, rawAgentMessageBodies);
         if (sourceMessages !== snapshot.messages) conversation.page = { hasOlder: true, olderCursor: null };
       });
       const presentedRequestKey = presentedPromptResolutions()[agentId];
@@ -748,7 +732,9 @@ const Conversation = createSimpleContext({
     function pruneInactiveAgentHistory(agentId: string): void {
       const messages = conversations[agentId]?.messages;
       if (!messages || messages.length <= LATEST_PAGE_SIZE) return;
-      updateConversation(agentId, trimToLatestPage);
+      updateConversation(agentId, (conversation) =>
+        trimConversationToLatestPage(agentId, conversation, rawAgentMessageBodies),
+      );
     }
 
     async function loadLatestAgentMessages(agentId: string): Promise<void> {
