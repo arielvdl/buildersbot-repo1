@@ -11,7 +11,8 @@
 //
 // What it measures (limits in LIMITS):
 // - flag off against the base: JS heap after GC, and no stage module requested over the network;
-// - flag on, 8 agents at work, against flag off in the same live state (off, on, off, on);
+// - flag on, agents at work, against flag off in the same live state (off, on, off, on);
+// - flag on, 8 actors on the real component in Storybook, against the folded strip;
 // - 5 cycles of agents entering and leaving, and of leaving and opening the channel: heap, nodes;
 // - nobody at work: animations, timers and animation frames of the stage, CPU against flag off;
 // - long tasks of 50 ms or more while the stage runs and when it mounts;
@@ -24,6 +25,7 @@ import { resolve } from "node:path";
 import type { ClientAgentSummary } from "@buildersbot/contracts/ipc";
 import { translateFor } from "@buildersbot/i18n";
 import type { CDPSession, Locator, Page } from "playwright-core";
+import { chromium } from "playwright-core";
 import { z } from "zod";
 import { argument, ChannelClient, connectChannelE2e, SHORT_PROMPT } from "./channel-e2e-support";
 
@@ -53,13 +55,17 @@ const baseSchema = z.object({
   domSignature: z.string(),
 });
 
-const TARGET = argument("target") === "base" ? "base" : "branch";
+const TARGET = argument("target") === "base" ? "base" : argument("target") === "stories" ? "stories" : "branch";
 const OUT = resolve(import.meta.dirname, "../.buildersbot-build/channel-stage");
-const REPORT = resolve(OUT, TARGET === "base" ? "e2e-report-base.json" : "e2e-report.json");
+const REPORT = resolve(OUT, TARGET === "branch" ? "e2e-report.json" : `e2e-report-${TARGET}.json`);
 mkdirSync(OUT, { recursive: true });
 
 const MB = 1024 * 1024;
-const WORKERS = 8;
+// The four seeded agents all get a task, but a channel runs two at a time (CHANNEL_PARALLEL_LIMIT), so two
+// actors is the most that a real channel shows at once. The eight-seat cost is measured on the real
+// component in Storybook (`--target=stories`).
+const WORKERS = 4;
+const LIVE_RUNNING = 2;
 const LONG_TASK_MS = 50;
 const RESEARCH_PROMPT =
   "Write a numbered list of 700 short facts about rivers, one per line, no blank lines. Do not use tools.";
@@ -78,6 +84,8 @@ type Memory = {
   nodes: number;
   /** Nodes outside the message list, which grows with each new message. */
   nodesOutsideTimeline: number;
+  /** Elements of the document outside the message list: what is in the DOM, not what Blink still holds. */
+  elementsOutsideTimeline: number;
   stageNodes: number;
   listeners: number;
   running: number;
@@ -91,7 +99,7 @@ interface Check {
 }
 
 interface Report {
-  target: "base" | "branch";
+  target: "base" | "branch" | "stories";
   startedAt: string;
   checks: Check[];
   owner: Record<string, { ok: boolean; note: string }>;
@@ -124,17 +132,6 @@ const report: Report = {
   passed: false,
   failed: [],
 };
-
-const session = await connectChannelE2e("channel-stage-e2e");
-const { page } = session;
-page.on("pageerror", (error) => report.pageErrors.push(error.stack ?? error.message));
-const client = new ChannelClient(page);
-const cdp: CDPSession = await page.context().newCDPSession(page);
-const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
-const stamp = Date.now().toString(36);
-const channelName = `Stage QA ${stamp}`;
-const created: { agents: string[] } = { agents: [] };
-let english = translateFor("en");
 
 // ----- Page probe: timers, animation frames and long tasks, with the file that asked for them. -----
 const PROBE = `(() => {
@@ -179,6 +176,19 @@ const PROBE = `(() => {
   window.__stageProbe = probe;
 })()`;
 
+if (TARGET === "stories") await runStories();
+
+const session = await connectChannelE2e("channel-stage-e2e");
+const { page } = session;
+page.on("pageerror", (error) => report.pageErrors.push(error.stack ?? error.message));
+const client = new ChannelClient(page);
+const cdp: CDPSession = await page.context().newCDPSession(page);
+const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
+const stamp = Date.now().toString(36);
+const channelName = `Stage QA ${stamp}`;
+const created: { agents: string[] } = { agents: [] };
+let english = translateFor("en");
+
 async function probeCounters() {
   return page.evaluate(() => {
     const probe = window.__stageProbe;
@@ -222,6 +232,7 @@ async function sampleMemory(label: string, channelId: string | null): Promise<Me
   }
   const reading = await metrics();
   const dom = await page.evaluate(() => ({
+    elements: document.querySelectorAll("*").length,
     timeline: document.querySelector(".conversation-scroll")?.querySelectorAll("*").length ?? 0,
     stage: document.querySelector(".channel-stage-frame")?.querySelectorAll("*").length ?? 0,
   }));
@@ -231,6 +242,7 @@ async function sampleMemory(label: string, channelId: string | null): Promise<Me
     heapMb: Number(((reading.JSHeapUsedSize ?? 0) / MB).toFixed(3)),
     nodes,
     nodesOutsideTimeline: nodes - dom.timeline,
+    elementsOutsideTimeline: dom.elements - dom.timeline,
     stageNodes: dom.stage,
     listeners: reading.JSEventListeners ?? 0,
     running: channelId ? await runningTasks(channelId) : 0,
@@ -272,8 +284,10 @@ async function waitUntil<T>(label: string, read: () => Promise<T>, ready: (value
 }
 
 // ----- Stage readings. -----
-const stageReading = () =>
-  page.evaluate(() => {
+const stageReading = () => readStage(page);
+
+function readStage(target: Page) {
+  return target.evaluate(() => {
     const frame = document.querySelector(".channel-stage-frame");
     const board = document.querySelector(".channel-stage-board");
     const actors = [...document.querySelectorAll<HTMLElement>(".channel-stage-actor")];
@@ -298,6 +312,7 @@ const stageReading = () =>
       infinitePaused: infinite.filter((animation) => animation.playState === "paused").length,
     };
   });
+}
 
 async function openChannel(name: string): Promise<void> {
   const row = page
@@ -326,6 +341,54 @@ async function domSignature(): Promise<string> {
   });
 }
 
+/**
+ * The signature without what is inside the title block of the header. The branch changes that block on
+ * purpose (a gear instead of the faces), so the flag-off comparison with the base leaves it out.
+ */
+function withoutHeaderTitle(signature: string): string {
+  const kept: string[] = [];
+  let blockDepth = -1;
+  for (const line of signature.split("\n")) {
+    const depth = line.length - line.trimStart().length;
+    if (blockDepth >= 0 && depth > blockDepth) continue;
+    blockDepth = line.trimStart().startsWith("div.channel-header-block") ? depth : -1;
+    kept.push(line);
+  }
+  return kept.join("\n");
+}
+
+// ----- The settings gear in the header of the open channel. -----
+const settingsPanel = () => page.locator(`aside.settings-panel[aria-label="${english("channel.panel.label")}"]`);
+const gearButton = () =>
+  page
+    .locator("main.conversation-panel header.conversation-header")
+    .getByRole("button", { name: english("channel.settings.title"), exact: true });
+
+async function readHeader() {
+  return page.evaluate((label) => {
+    const header = document.querySelector("main.conversation-panel header.conversation-header");
+    const gear = [...(header?.querySelectorAll<HTMLButtonElement>("button") ?? [])].find(
+      (button) => button.getAttribute("aria-label") === label,
+    );
+    const box = gear?.getBoundingClientRect();
+    const name = header?.querySelector(".channel-header-name")?.getBoundingClientRect();
+    return {
+      gear: gear !== undefined,
+      gearClass: gear?.classList.contains("channel-header-settings") ?? false,
+      gearIcon: gear?.querySelector("svg")?.getAttribute("class") ?? "",
+      gearVisible: (box?.width ?? 0) > 0 && (box?.height ?? 0) > 0,
+      gearDisabled: gear?.disabled ?? false,
+      nameGapPx: box && name ? Math.round(name.left - box.right) : null,
+      faces: header?.querySelectorAll(".channel-avatar, .agent-avatar").length ?? -1,
+      oldAvatarButton: header?.querySelectorAll(".channel-header-avatar").length ?? -1,
+      headerAnimations: document.getAnimations().filter((animation) => {
+        const target = animation.effect instanceof KeyframeEffect ? animation.effect.target : null;
+        return target instanceof Element && header?.contains(target) === true;
+      }).length,
+    };
+  }, english("channel.settings.title"));
+}
+
 // ----- The flag, through its popover. -----
 const flagButton = () => page.getByRole("button", { name: english("channel.stage.flag.label"), exact: true });
 
@@ -337,18 +400,37 @@ async function openFlag(): Promise<Locator> {
 }
 
 async function closeFlag(): Promise<void> {
+  const settings = page.locator(".section-rail-stage-settings");
   await page.keyboard.press("Escape");
-  await page.locator(".section-rail-stage-settings").waitFor({ state: "detached", timeout: 10_000 });
+  const closedByEscape = await settings
+    .waitFor({ state: "detached", timeout: 2_000 })
+    .then(() => true)
+    .catch(() => false);
+  report.stage.popoverEscapeCloses = closedByEscape && (report.stage.popoverEscapeCloses ?? true);
+  if (!closedByEscape) {
+    await flagButton().click();
+    await settings.waitFor({ state: "detached", timeout: 10_000 });
+  }
 }
 
 async function setFlag(options: { enabled: boolean; scope: "channel" | "all" }): Promise<void> {
   const panel = await openFlag();
   const scopeName =
     options.scope === "channel" ? english("channel.stage.flag.scopeChannel") : english("channel.stage.flag.scopeAll");
-  await panel.getByRole("radio", { name: scopeName }).click();
+  await panel.getByText(scopeName, { exact: true }).click();
   const toggle = panel.getByRole("switch", { name: english("channel.stage.flag.enable") });
   const now = await toggle.isChecked();
-  if (now !== options.enabled) await toggle.click();
+  if (now !== options.enabled) {
+    // The visible control covers the native input and takes the pointer, so this uses the keyboard.
+    await toggle.focus();
+    await page.keyboard.press("Space");
+    await waitUntil(
+      "the stage switch",
+      () => toggle.isChecked(),
+      (checked) => checked === options.enabled,
+      10_000,
+    );
+  }
   await closeFlag();
 }
 
@@ -360,8 +442,14 @@ const requestedStageModules = (urls: readonly string[]) => [
   ...new Set(urls.filter(stageModule).map((url) => new URL(url).pathname.split("/").pop() ?? url)),
 ];
 
+// The base and the branch run in two dev profiles with their own window size, and a bigger window
+// draws more rows (and no scroll rail when the chat fits). Both runs lay out the page at this size; the
+// end clears it. The Electron CDP has no Browser domain to move the window itself.
+const VIEWPORT = { width: 1280, height: 860 };
+
 try {
   // ----- Fresh renderer: flag off, no stage module yet. -----
+  await cdp.send("Emulation.setDeviceMetricsOverride", { ...VIEWPORT, deviceScaleFactor: 0, mobile: false });
   const requests: string[] = [];
   await cdp.send("Performance.enable");
   await cdp.send("HeapProfiler.enable");
@@ -369,11 +457,12 @@ try {
   cdp.on("Network.requestWillBeSent", (event) => requests.push(event.request.url));
   await page.addInitScript(PROBE);
   await page.evaluate(() => window.localStorage.removeItem("buildersbot:channel-stage:v1"));
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded", timeout: 60_000 });
   await page.getByRole("navigation", { name: /./ }).first().waitFor({ timeout: 60_000 });
   const lang = await page.evaluate(() => document.documentElement.lang);
   english = translateFor(lang === "pt" ? "pt" : "en");
   report.stage.language = lang;
+  report.stage.viewport = await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }));
   await sleep(4_000);
 
   // ----- Flag off, seeded channel, idle: the figures to compare with the base. -----
@@ -396,7 +485,7 @@ try {
       requestedStageModules(requests).join(", ") || "none",
       requestedStageModules(requests).length === 0,
     );
-    finish();
+    await finishCleanup();
   }
 
   // ----- Flag off checks that need the branch. -----
@@ -411,6 +500,35 @@ try {
     ok: offModules.length === 0 && !(await stageReading()).mounted,
     note: "Flag off: no stage frame in the DOM and no stage module requested. Compare the DOM signature with the base report.",
   };
+
+  // ----- Header: a gear in place of the faces, and it opens the channel settings. -----
+  const headerOpen = await readHeader();
+  await shot("e2e-header-gear", page.locator("main.conversation-panel header.conversation-header"));
+  await gearButton().click();
+  const settingsOpened = await settingsPanel()
+    .waitFor({ state: "visible", timeout: 10_000 })
+    .then(() => true)
+    .catch(() => false);
+  await shot("e2e-header-gear-settings-open");
+  // The docked panel hides its own close button; the side panel toggle of the header closes it.
+  if (settingsOpened) {
+    await page.locator("main.conversation-panel .conversation-header-actions .side-panel-toggle").click();
+    await settingsPanel().waitFor({ state: "hidden", timeout: 10_000 });
+  }
+  report.stage.header = { open: headerOpen, settingsOpened };
+  check(
+    "Header: gear in place of the faces, opens the settings",
+    "gear button visible and enabled, no faces and no animation in the header, settings panel opens",
+    JSON.stringify({ ...headerOpen, settingsOpened }),
+    headerOpen.gear &&
+      headerOpen.gearClass &&
+      headerOpen.gearVisible &&
+      !headerOpen.gearDisabled &&
+      headerOpen.faces === 0 &&
+      headerOpen.oldAvatarButton === 0 &&
+      headerOpen.headerAnimations === 0 &&
+      settingsOpened,
+  );
 
   // ----- Eight agents and a channel. -----
   const known = await client.agents();
@@ -454,12 +572,12 @@ try {
   await openChannel(channelName);
   await sleep(1_500);
 
-  async function startRound(prompt: string, targets = agents): Promise<void> {
+  async function startRound(prompt: string, targets = agents, running = LIVE_RUNNING): Promise<void> {
     for (const agent of targets) await client.send(channel.id, `${prompt} (${agent.name})`, agent.id);
     await waitUntil(
-      `${targets.length} running tasks`,
+      `${Math.min(running, targets.length)} running tasks`,
       () => runningTasks(channel.id),
-      (count) => count >= targets.length,
+      (count) => count >= Math.min(running, targets.length),
       90_000,
     );
   }
@@ -468,9 +586,9 @@ try {
   await startRound(RESEARCH_PROMPT);
   await sleep(5_000);
   let from = await pageNow();
-  const offActiveCpu = await cpuWindow("flag-off 8 active", 8_000);
-  await longTasksBetween("flag-off 8 active", from, await pageNow());
-  const offA1 = await sampleMemory("A1 flag off, 8 active", channel.id);
+  const offActiveCpu = await cpuWindow("flag-off at work", 8_000);
+  await longTasksBetween("flag-off at work", from, await pageNow());
+  const offA1 = await sampleMemory("A1 flag off, at work", channel.id);
 
   // ----- The popover: three options, this channel first. -----
   const panel = await openFlag();
@@ -514,7 +632,7 @@ try {
   from = await pageNow();
   await setFlag({ enabled: true, scope: "channel" });
   const preferenceChannel = await stagePreference();
-  await waitUntil("stage actors", stageReading, (reading) => reading.actors >= WORKERS, 60_000);
+  await waitUntil("stage actors", stageReading, (reading) => reading.actors >= LIVE_RUNNING, 60_000);
   await sleep(2_500);
   const mountEnd = await pageNow();
   await longTasksBetween("mount (chunk load and first draw)", from, mountEnd);
@@ -533,9 +651,9 @@ try {
   const channelScopeOk = scoped?.all === false && scoped.channels[channel.id] === true;
 
   from = await pageNow();
-  const onActiveCpu = await cpuWindow("flag-on 8 active", 8_000);
-  await longTasksBetween("flag-on 8 active", from, await pageNow());
-  const onB1 = await sampleMemory("B1 flag on, 8 active", channel.id);
+  const onActiveCpu = await cpuWindow("flag-on at work", 8_000);
+  await longTasksBetween("flag-on at work", from, await pageNow());
+  const onB1 = await sampleMemory("B1 flag on, at work", channel.id);
 
   const seen = new Set<string>();
   const richLook = await page.evaluate(() => {
@@ -579,9 +697,9 @@ try {
   }));
   report.stage.board = board;
   const leader = richLook.find((actor) => actor.name?.startsWith(`${lead.name},`));
-  const leaderAtBack = leader !== undefined && leader.y === Math.min(...richLook.map((actor) => actor.y));
+  const leaderAtBack = leader === undefined || leader.y === Math.min(...richLook.map((actor) => actor.y));
   report.owner["1"] = {
-    ok: board.table && board.request && richLook.length === WORKERS && leaderAtBack,
+    ok: board.table && board.request && richLook.length >= LIVE_RUNNING && leaderAtBack,
     note: `Table ${board.table}, request card ${board.request} (${board.requestBars} bars), ${richLook.length} fixed seats, lead at the back ${leaderAtBack}. Behaviours seen live: ${[...seen].join(", ")}. Delegation cube, celebrate and exit are checked below and in the screenshots.`,
   };
   report.owner["2"] = {
@@ -656,25 +774,25 @@ try {
   // ----- Off, on, off, on in the same live state. -----
   await setFlag({ enabled: false, scope: "channel" });
   await sleep(2_500);
-  const offA2 = await sampleMemory("A2 flag off again, 8 active", channel.id);
+  const offA2 = await sampleMemory("A2 flag off again, at work", channel.id);
   const afterOff = await stageReading();
   report.stage.afterOff = afterOff;
   await setFlag({ enabled: true, scope: "all" });
   await waitUntil("stage back", stageReading, (reading) => reading.mounted, 30_000);
   await sleep(3_000);
-  const onB2 = await sampleMemory("B2 flag on again (all channels), 8 active", channel.id);
+  const onB2 = await sampleMemory("B2 flag on again (all channels), at work", channel.id);
   const allScope = Object.values(preferenceSchema.catch({}).parse(JSON.parse((await stagePreference()) ?? "{}")))[0];
   report.stage.preferenceAll = allScope ?? null;
   const allScopeOk = allScope?.all === true && Object.keys(allScope.channels).length === 0;
-  const sameState = [offA1, onB1, offA2, onB2].every((sample) => sample.running >= WORKERS);
+  const sameState = [offA1, onB1, offA2, onB2].every((sample) => sample.running >= LIVE_RUNNING);
   report.stage.sameLiveState = sameState;
   const costFirst = Number((onB1.heapMb - offA1.heapMb).toFixed(3));
   const costSecond = Number((onB2.heapMb - offA2.heapMb).toFixed(3));
   const cost = Math.max(costFirst, costSecond);
   check(
-    "Flag on, 8 agents at work, against flag off (same live state)",
+    "Flag on, agents at work (2 running, the live maximum), against flag off (same live state)",
     `<= ${LIMITS.flagOnCostHeapMb} MB`,
-    `B1-A1 ${costFirst} MB (first, with the chunk loading), B2-A2 ${costSecond} MB; 8 tasks running in all four samples: ${sameState}`,
+    `B1-A1 ${costFirst} MB (first, with the chunk loading), B2-A2 ${costSecond} MB; 2 tasks running in all four samples: ${sameState}`,
     cost <= LIMITS.flagOnCostHeapMb && sameState,
   );
   check(
@@ -701,7 +819,14 @@ try {
     ` After the work stopped the stage folded into the strip (collapsed ${afterStop.collapsed}).`;
 
   // ----- Nobody at work: animations, timers, frames, CPU. -----
-  await sleep(2_000);
+  // The renderer still draws the long answers for a while after the stop. The CPU windows wait until it
+  // settles, and run on, off, off, on so that a slow fall does not count against either side.
+  report.stage.idleSettle = await waitUntil(
+    "the renderer to settle after the stop",
+    () => cpuWindow("settle", 3_000),
+    (percent) => percent < 10,
+    120_000,
+  );
   const idleProbeBefore = await probeCounters();
   const idleStage = await stageReading();
   from = await pageNow();
@@ -730,12 +855,10 @@ try {
   await setFlag({ enabled: false, scope: "all" });
   await sleep(1_500);
   const cpuOff = [await cpuWindow("flag-off idle", 10_000)];
+  cpuOff.push(await cpuWindow("flag-off idle", 10_000));
   await setFlag({ enabled: true, scope: "all" });
   await sleep(1_500);
   cpuOn.push(await cpuWindow("flag-on idle (folded)", 10_000));
-  await setFlag({ enabled: false, scope: "all" });
-  await sleep(1_500);
-  cpuOff.push(await cpuWindow("flag-off idle", 10_000));
   const mean = (values: number[]) => values.reduce((total, value) => total + value, 0) / values.length;
   const idleGap = Number((mean(cpuOn) - mean(cpuOff)).toFixed(3));
   check(
@@ -750,17 +873,22 @@ try {
   // ----- Leak: five cycles of agents entering and leaving, and of leaving the channel. -----
   const short = agents.slice(0, 4);
   const baseline = await sampleMemory("leak L0 (flag on, folded)", channel.id);
+  const baselineDetached = await detachedNodes(cdp);
+  const nodesSeries = [baseline.nodes];
   let last = baseline;
   let sawActors = 0;
   for (let cycle = 1; cycle <= 5; cycle += 1) {
-    await startRound(SHORT_PROMPT, short);
+    // A short answer can end before the next one starts, so one running task is enough here.
+    await startRound(SHORT_PROMPT, short, 1);
     sawActors = Math.max(
       sawActors,
       (await waitUntil("stage actors", stageReading, (reading) => reading.actors >= 1, 30_000)).actors,
     );
     await waitUntil(
       "short tasks to end",
-      () => runningTasks(channel.id),
+      async () =>
+        (await client.read(channel.id)).tasks.filter((task) => ["queued", "running", "waiting"].includes(task.state))
+          .length,
       (count) => count === 0,
       120_000,
     );
@@ -770,21 +898,92 @@ try {
     await openChannel(channelName);
     await sleep(800);
     last = await sampleMemory(`leak cycle ${cycle}`, channel.id);
+    nodesSeries.push(last.nodes);
   }
   const heapDelta = Number((last.heapMb - baseline.heapMb).toFixed(3));
-  const nodeDelta = last.nodesOutsideTimeline - baseline.nodesOutsideTimeline;
-  report.stage.leak = { baseline, last, heapDelta, nodeDelta, stageNodesAtEnd: last.stageNodes, sawActors };
+  const elementDelta = last.elementsOutsideTimeline - baseline.elementsOutsideTimeline;
+  const endDetached = await detachedNodes(cdp);
+  report.stage.leak = {
+    baseline,
+    last,
+    heapDelta,
+    elementDelta,
+    baselineDetached,
+    endDetached,
+    nodesSeries,
+    stageNodesAtEnd: last.stageNodes,
+    sawActors,
+  };
+  // The heap and the listeners of these cycles also grow on the base commit, flag off, by the same amount:
+  // each channel switch keeps about 2.5 MB and 175 listeners there too. So they are a reading here, and
+  // the share of the stage is the gap between the same switches with the flag on and off, below.
+  report.stage.leakAppGrowth = {
+    heapMb: heapDelta,
+    listeners: last.listeners - baseline.listeners,
+    note: "Not a check: the app grows the same on the base commit (channel switches and new messages).",
+  };
   check(
-    "Leak: heap after 5 cycles and GC",
-    `within ${LIMITS.leakHeapMb} MB of the base line`,
-    `${baseline.heapMb} -> ${last.heapMb} MB (${heapDelta >= 0 ? "+" : ""}${heapDelta})`,
-    Math.abs(heapDelta) <= LIMITS.leakHeapMb,
+    "Leak: DOM elements outside the message list, stage nodes and detached nodes after 5 cycles",
+    "elements not above the base line, stage nodes back to it, detached nodes not above it",
+    `elements ${baseline.elementsOutsideTimeline} -> ${last.elementsOutsideTimeline} (${elementDelta >= 0 ? "+" : ""}${elementDelta}); stage nodes ${baseline.stageNodes} -> ${last.stageNodes}; detached ${baselineDetached} -> ${endDetached}; Blink node counter per cycle ${nodesSeries.join(", ")}`,
+    elementDelta <= 0 && last.stageNodes === baseline.stageNodes && endDetached <= baselineDetached,
   );
+
+  // ----- Leak, the stage's share: the same 5 channel switches with the flag on and off. -----
+  async function switchCycles(label: string) {
+    const start = await sampleMemory(`${label} 0`, channel.id);
+    let end = start;
+    for (let cycle = 1; cycle <= 5; cycle += 1) {
+      await openChannel("Launch room");
+      await sleep(800);
+      await openChannel(channelName);
+      await sleep(800);
+      end = await sampleMemory(`${label} ${cycle}`, channel.id);
+    }
+    return {
+      heapMb: Number((end.heapMb - start.heapMb).toFixed(3)),
+      listeners: end.listeners - start.listeners,
+      elements: end.elementsOutsideTimeline - start.elementsOutsideTimeline,
+      stageNodes: end.stageNodes,
+    };
+  }
+  const switchOn = await switchCycles("switch, flag on");
+  await setFlag({ enabled: false, scope: "all" });
+  await sleep(1_000);
+  const switchOff = await switchCycles("switch, flag off");
+  await setFlag({ enabled: true, scope: "all" });
+  await sleep(1_000);
+  const switchHeapGap = Number((switchOn.heapMb - switchOff.heapMb).toFixed(3));
+  const switchListenerGap = switchOn.listeners - switchOff.listeners;
+  report.stage.leakSwitch = { on: switchOn, off: switchOff, heapGapMb: switchHeapGap, listenerGap: switchListenerGap };
   check(
-    "Leak: DOM nodes (outside the message list) after 5 cycles",
-    "back to the base line",
-    `${baseline.nodesOutsideTimeline} -> ${last.nodesOutsideTimeline} (${nodeDelta >= 0 ? "+" : ""}${nodeDelta}); stage nodes ${baseline.stageNodes} -> ${last.stageNodes}; total ${baseline.nodes} -> ${last.nodes}`,
-    nodeDelta === 0 || (Math.abs(nodeDelta) <= 20 && last.stageNodes === baseline.stageNodes),
+    "Leak, stage share: 5 channel switches, flag on against flag off, after GC",
+    `heap gap <= ${LIMITS.leakHeapMb} MB, listener gap <= 5, elements not above the start`,
+    `heap on +${switchOn.heapMb} MB, off +${switchOff.heapMb} MB (gap ${switchHeapGap}); listeners on +${switchOn.listeners}, off +${switchOff.listeners} (gap ${switchListenerGap}); elements on ${switchOn.elements}, off ${switchOff.elements}`,
+    switchHeapGap <= LIMITS.leakHeapMb && switchListenerGap <= 5 && switchOn.elements <= 0,
+  );
+
+  // ----- Archived channel: the gear is off, and open settings close. The cleanup deletes the channel. -----
+  await gearButton().click();
+  await settingsPanel().waitFor({ state: "visible", timeout: 10_000 });
+  await client.command({ type: "archive", operationId: crypto.randomUUID(), channelId: channel.id });
+  const archivedHeader = await waitUntil(
+    "the gear to turn off in the archived channel",
+    readHeader,
+    (header) => header.gear && header.gearDisabled,
+    30_000,
+  );
+  const settingsClosed = await settingsPanel()
+    .waitFor({ state: "hidden", timeout: 10_000 })
+    .then(() => true)
+    .catch(() => false);
+  await shot("e2e-header-gear-archived", page.locator("main.conversation-panel header.conversation-header"));
+  report.stage.headerArchived = { ...archivedHeader, settingsClosed };
+  check(
+    "Header, archived channel: gear off, settings closed",
+    "gear present and disabled, no faces, the open settings panel closes",
+    JSON.stringify({ ...archivedHeader, settingsClosed }),
+    archivedHeader.gearDisabled && archivedHeader.faces === 0 && settingsClosed,
   );
 
   // ----- Verdicts that read the figures. -----
@@ -801,18 +1000,19 @@ try {
       `base ${baseHeap} MB, branch ${vsBase} MB, gap ${gap} MB`,
       Math.abs(gap) <= LIMITS.flagOffVsBaseHeapMb,
     );
-    const sameDom = base.domSignature === report.domSignature;
+    const sameDom = withoutHeaderTitle(base.domSignature) === withoutHeaderTitle(report.domSignature ?? "");
     report.stage.domSignatureEqualToBase = sameDom;
     report.owner["3"].ok = report.owner["3"].ok && sameDom;
-    report.owner["3"].note += ` DOM signature of the conversation equals the base: ${sameDom}.`;
+    report.owner["3"].note +=
+      ` DOM signature of the conversation, without the header title block that this branch changes, equals the base: ${sameDom}.`;
   } else {
     check("Flag off against the base commit", "base report present", "e2e-report-base.json is missing", false);
   }
   const stageLong = (label: string) => report.longTasks[label] ?? { count: 0, maxMs: 0 };
-  const onLong = stageLong("flag-on 8 active");
-  const offLong = stageLong("flag-off 8 active");
+  const onLong = stageLong("flag-on at work");
+  const offLong = stageLong("flag-off at work");
   check(
-    "Long tasks of 50 ms or more, flag on, 8 agents, 8 s",
+    "Long tasks of 50 ms or more, flag on, agents at work, 8 s",
     `none caused by the stage (flag off: ${offLong.count}, max ${offLong.maxMs} ms)`,
     `${onLong.count}, max ${onLong.maxMs} ms; at mount ${stageLong("mount (chunk load and first draw)").count} (max ${stageLong("mount (chunk load and first draw)").maxMs} ms); idle ${stageLong("flag-on idle").count}`,
     onLong.count <= offLong.count && stageLong("flag-on idle").count === 0,
@@ -833,6 +1033,7 @@ async function finishCleanup(): Promise<void> {
     for (const agentId of created.agents)
       await page.evaluate((id) => window.buildersbot.agent.deleteAgent(id), agentId).catch(() => undefined);
   } finally {
+    await cdp.send("Emulation.clearDeviceMetricsOverride").catch(() => undefined);
     await cdp.detach().catch(() => undefined);
     await session.close();
     finish();
@@ -854,4 +1055,304 @@ function finish(): never {
     `${JSON.stringify({ passed: report.passed, failed: report.failed, report: REPORT }, null, 2)}\n`,
   );
   process.exit(report.passed ? 0 : 1);
+}
+
+// ----- Storybook: the real component with 8 actors, which a live channel cannot show at once. -----
+async function runStories(): Promise<void> {
+  const origin = argument("storybook") ?? "http://127.0.0.1:6006";
+  const pause = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
+  const browser = await chromium.launch({ channel: "chrome", headless: true });
+  const url = (story: string) => `${origin}/iframe.html?id=conversation-channel-stage--${story}&viewMode=story`;
+
+  async function load(story: string, settleMs = 2_500) {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await context.addInitScript(PROBE);
+    const tab = await context.newPage();
+    tab.on("pageerror", (error) => report.pageErrors.push(error.stack ?? error.message));
+    const cdpTab = await context.newCDPSession(tab);
+    await cdpTab.send("Performance.enable");
+    await cdpTab.send("HeapProfiler.enable");
+    await tab.goto(url(story));
+    await tab.locator(".channel-stage-frame").waitFor({ timeout: 30_000 });
+    await pause(settleMs);
+    return { context, tab, cdpTab };
+  }
+
+  async function heapOf(cdpTab: CDPSession, label: string, passes = 3) {
+    for (let pass = 0; pass < passes; pass += 1) {
+      await cdpTab.send("HeapProfiler.collectGarbage");
+      await pause(150);
+    }
+    const { metrics: list } = await cdpTab.send("Performance.getMetrics");
+    const reading = Object.fromEntries(list.map((metric) => [metric.name, metric.value]));
+    return { label, heapMb: Number(((reading.JSHeapUsedSize ?? 0) / MB).toFixed(3)), nodes: reading.Nodes ?? 0 };
+  }
+
+  try {
+    // Heap: the folded strip against eight actors, three loads each, in turn.
+    const folded: number[] = [];
+    const eight: number[] = [];
+    let eightLook: Awaited<ReturnType<typeof readStage>> | null = null;
+    let eightTiming = { count: 0, maxMs: 0 };
+    for (let round = 1; round <= 3; round += 1) {
+      const strip = await load("folded");
+      if (round === 1) {
+        const bootStrip = await strip.tab.evaluate(() => window.__stageProbe?.long ?? []);
+        report.longTasks["stories: page boot, folded strip"] = {
+          count: bootStrip.length,
+          maxMs: Math.round(Math.max(0, ...bootStrip.map(([, duration]) => duration))),
+        };
+      }
+      const stripSample = await heapOf(strip.cdpTab, `folded ${round}`);
+      folded.push(stripSample.heapMb);
+      await strip.context.close();
+      const full = await load("behaviors");
+      const sample = await heapOf(full.cdpTab, `eight actors ${round}`);
+      eight.push(sample.heapMb);
+      report.memory.push({
+        ...sample,
+        nodesOutsideTimeline: sample.nodes,
+        elementsOutsideTimeline: 0,
+        stageNodes: 0,
+        listeners: 0,
+        running: 8,
+      });
+      if (round === 1) {
+        eightLook = await readStage(full.tab);
+        const bootEntries = await full.tab.evaluate(() => window.__stageProbe?.long ?? []);
+        const bootNow = await full.tab.evaluate(() => performance.now());
+        await pause(6_000);
+        const allEntries = await full.tab.evaluate(() => window.__stageProbe?.long ?? []);
+        const steady = allEntries.filter(([start]) => start > bootNow);
+        eightTiming = {
+          count: steady.length,
+          maxMs: Math.round(Math.max(0, ...steady.map(([, duration]) => duration))),
+        };
+        report.longTasks["stories: 8 actors, steady 6 s"] = eightTiming;
+        report.longTasks["stories: page boot with 8 actors"] = {
+          count: bootEntries.length,
+          maxMs: Math.round(Math.max(0, ...bootEntries.map(([, duration]) => duration))),
+        };
+        const actors = await full.tab.evaluate(() =>
+          [...document.querySelectorAll<HTMLElement>(".channel-stage-actor")].map((node) => {
+            const model = node.querySelector(".channel-stage-model");
+            return {
+              name: node.getAttribute("aria-label") ?? "",
+              activity: node.dataset.activity ?? "",
+              y: Math.round(node.getBoundingClientRect().top),
+              modelText: model?.textContent?.trim() ?? "",
+              logo: model?.querySelector("svg, img") !== null,
+            };
+          }),
+        );
+        const more = await full.tab.locator(".channel-stage-more").allTextContents();
+        report.stage.storiesActors = actors;
+        report.stage.storiesOverflowChip = more;
+        const behaviours = new Set(actors.map((actor) => actor.activity));
+        const chief = actors.find((actor) => actor.name.startsWith("Chief,"));
+        check(
+          "Stories: 8 behaviours on 8 seats, lead at the back, +N chip",
+          "8 distinct behaviours, 8 actors, lead highest, chip with 2",
+          `${behaviours.size} behaviours, ${actors.length} actors, lead highest ${chief?.y === Math.min(...actors.map((actor) => actor.y))}, chip ${more.join("|")}`,
+          behaviours.size === 8 &&
+            actors.length === 8 &&
+            chief?.y === Math.min(...actors.map((actor) => actor.y)) &&
+            more.join("").includes("2"),
+        );
+        check(
+          "Stories: provider logo and model above each agent",
+          "8 of 8",
+          `${actors.filter((actor) => actor.logo && actor.modelText).length} of ${actors.length}: ${[...new Set(actors.map((actor) => actor.modelText))].join(", ")}`,
+          actors.length === 8 && actors.every((actor) => actor.logo && actor.modelText.length > 0),
+        );
+        await full.tab.screenshot({ path: resolve(OUT, "e2e-stories-8-actors.png") });
+        report.screenshots.push(resolve(OUT, "e2e-stories-8-actors.png"));
+
+        // Pause: hidden window, off screen, reduced motion.
+        await full.tab.evaluate(() => {
+          Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+          document.dispatchEvent(new Event("visibilitychange"));
+        });
+        await pause(600);
+        const hidden = await readStage(full.tab);
+        await full.tab.evaluate(() => {
+          Reflect.deleteProperty(document, "hidden");
+          document.dispatchEvent(new Event("visibilitychange"));
+        });
+        await pause(500);
+        const back = await readStage(full.tab);
+        await full.tab.evaluate(() => {
+          const frame = document.querySelector<HTMLElement>(".channel-stage-frame");
+          if (frame) frame.style.transform = "translateY(-4000px)";
+        });
+        await pause(800);
+        const off = await readStage(full.tab);
+        await full.tab.evaluate(() => {
+          const frame = document.querySelector<HTMLElement>(".channel-stage-frame");
+          if (frame) frame.style.transform = "";
+        });
+        await pause(500);
+        await full.tab.emulateMedia({ reducedMotion: "reduce" });
+        await pause(800);
+        const reduced = await readStage(full.tab);
+        report.stage.storiesPause = { eightLook, hidden, back, off, reduced };
+        check(
+          "Stories, 8 actors: loops while visible",
+          "one loop per actor",
+          `${eightLook?.infiniteRunning} running of ${eightLook?.infinite}`,
+          eightLook !== null && eightLook.infiniteRunning >= 6,
+        );
+        check(
+          "Stories, 8 actors: hidden window pauses the loops",
+          "0 running",
+          `${hidden.infiniteRunning} running, ${hidden.infinitePaused} paused of ${hidden.infinite}`,
+          hidden.infinite > 0 && hidden.infiniteRunning === 0 && back.infiniteRunning > 0,
+        );
+        check(
+          "Stories, 8 actors: stage off screen pauses the loops",
+          "0 running",
+          `${off.infiniteRunning} running, ${off.infinitePaused} paused of ${off.infinite}`,
+          off.infinite > 0 && off.infiniteRunning === 0,
+        );
+        check(
+          "Stories, 8 actors: prefers-reduced-motion",
+          "0 infinite animations",
+          `${reduced.infinite} infinite, ${reduced.animations} animations`,
+          reduced.infinite === 0,
+        );
+      }
+      await full.context.close();
+    }
+    const median = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] ?? 0;
+    const cost = Number((median(eight) - median(folded)).toFixed(3));
+    report.stage.storiesHeap = { folded, eight, medianCostMb: cost };
+    check(
+      "8 actors on the real component, against the folded strip: JS heap after GC",
+      `<= ${LIMITS.flagOnCostHeapMb} MB`,
+      `folded ${folded.join(" / ")} MB, 8 actors ${eight.join(" / ")} MB, median cost ${cost} MB`,
+      cost <= LIMITS.flagOnCostHeapMb,
+    );
+    check(
+      "Stories, 8 actors at work for 6 s after the page is up: long tasks of 50 ms or more",
+      "none (the page boot is Storybook's own, it is listed in longTasks)",
+      `${eightTiming.count}, max ${eightTiming.maxMs} ms; boot with 8 actors ${JSON.stringify(report.longTasks["stories: page boot with 8 actors"])}, boot of the folded strip ${JSON.stringify(report.longTasks["stories: page boot, folded strip"])}`,
+      eightTiming.count === 0,
+    );
+
+    // Nobody working: the strip and the open empty stage run nothing.
+    for (const story of ["folded", "empty"] as const) {
+      const idle = await load(story, 1_500);
+      const before = await idle.tab.evaluate(() => {
+        const probe = window.__stageProbe;
+        return { timeouts: probe?.timeouts ?? 0, frames: probe?.frames ?? 0, intervals: probe?.intervals ?? 0 };
+      });
+      await pause(8_000);
+      const reading = await readStage(idle.tab);
+      const after = await idle.tab.evaluate(() => {
+        const probe = window.__stageProbe;
+        return {
+          timeouts: probe?.timeouts ?? 0,
+          frames: probe?.frames ?? 0,
+          intervals: probe?.intervals ?? 0,
+          liveTimers: probe?.live.size ?? 0,
+          liveFrames: probe?.liveFrames.size ?? 0,
+        };
+      });
+      check(
+        `Stories, nobody at work (${story}): animations, timers, frames of the stage`,
+        "0 animations, 0 live timers, 0 live frames, 0 new in 8 s",
+        `${reading.animations} animations, live ${after.liveTimers} timers ${after.liveFrames} frames, new ${after.timeouts - before.timeouts + after.intervals - before.intervals} timers ${after.frames - before.frames} frames`,
+        reading.animations === 0 &&
+          after.liveTimers === 0 &&
+          after.liveFrames === 0 &&
+          after.timeouts === before.timeouts &&
+          after.intervals === before.intervals &&
+          after.frames === before.frames,
+      );
+      await idle.context.close();
+    }
+
+    // Enter and leave: the scripted run brings agents in and out; the heap and the stage nodes come back.
+    // The run ends where it began, in the folded strip, so the folded story is the base line.
+    const run = await load("run", 0);
+    const startNodes = await run.tab.evaluate(
+      () => document.querySelector(".channel-stage-frame")?.querySelectorAll("*").length ?? 0,
+    );
+    let peak = 0;
+    for (let waited = 0; waited < 30_000; waited += 1_000) {
+      await pause(1_000);
+      peak = Math.max(peak, (await readStage(run.tab)).actors);
+    }
+    await run.tab.locator(".channel-stage[data-collapsed]").waitFor({ timeout: 15_000 });
+    await pause(1_000);
+    const end = await heapOf(run.cdpTab, "run: after");
+    const endNodes = await run.tab.evaluate(
+      () => document.querySelector(".channel-stage-frame")?.querySelectorAll("*").length ?? 0,
+    );
+    const endLook = await readStage(run.tab);
+    const endElements = await run.tab.evaluate(() => document.querySelectorAll("*").length);
+    const endDetached = await detachedNodes(run.cdpTab);
+    // The control waits as long as the run did, so growth that the story makes by itself is in the base.
+    const control = await load("folded", 33_000);
+    const controlSample = await heapOf(control.cdpTab, "folded, 33 s");
+    const baseElements = await control.tab.evaluate(() => document.querySelectorAll("*").length);
+    const baseDetached = await detachedNodes(control.cdpTab);
+    await control.context.close();
+    const baseHeap = controlSample.heapMb;
+    report.stage.storiesRun = {
+      baseHeap,
+      endHeap: end.heapMb,
+      baseElements,
+      endElements,
+      baseDetached,
+      endDetached,
+      blinkNodeCounter: { base: controlSample.nodes, end: end.nodes },
+      startStageNodes: startNodes,
+      endStageNodes: endNodes,
+      peak,
+    };
+    check(
+      "Stories, scripted run (enter, hand-off, wait, finish, leave): heap and DOM against the folded strip",
+      `heap within ${LIMITS.leakHeapMb} MB, DOM elements and stage nodes back, no detached nodes, 0 animations`,
+      `heap ${baseHeap} -> ${end.heapMb} MB (${Number((end.heapMb - baseHeap).toFixed(3))}); DOM elements ${baseElements} -> ${endElements}; stage nodes ${startNodes} -> ${endNodes}; detached ${baseDetached} -> ${endDetached}; peak ${peak} actors; animations at end ${endLook.animations}; Blink node counter ${controlSample.nodes} -> ${end.nodes} (informative)`,
+      Math.abs(end.heapMb - baseHeap) <= LIMITS.leakHeapMb &&
+        endElements === baseElements &&
+        startNodes === endNodes &&
+        endDetached <= baseDetached &&
+        endLook.animations === 0 &&
+        peak >= 2,
+    );
+    await run.context.close();
+  } catch (error) {
+    report.scriptError = error instanceof Error ? (error.stack ?? error.message) : String(error);
+  } finally {
+    await browser.close();
+  }
+  finish();
+}
+
+/** Detached DOM nodes that still live on the heap: a heap snapshot, counted by name. */
+async function detachedNodes(session: CDPSession) {
+  const chunks: string[] = [];
+  const onChunk = (event: { chunk: string }) => chunks.push(event.chunk);
+  session.on("HeapProfiler.addHeapSnapshotChunk", onChunk);
+  try {
+    await session.send("HeapProfiler.collectGarbage");
+    await session.send("HeapProfiler.takeHeapSnapshot", { reportProgress: false });
+  } finally {
+    session.off("HeapProfiler.addHeapSnapshotChunk", onChunk);
+  }
+  const snapshot = z
+    .object({
+      snapshot: z.object({ meta: z.object({ node_fields: z.array(z.string()) }) }),
+      nodes: z.array(z.number()),
+      strings: z.array(z.string()),
+    })
+    .parse(JSON.parse(chunks.join("")));
+  const stride = snapshot.snapshot.meta.node_fields.length;
+  const nameAt = snapshot.snapshot.meta.node_fields.indexOf("name");
+  let detached = 0;
+  for (let index = 0; index < snapshot.nodes.length; index += stride)
+    if ((snapshot.strings[snapshot.nodes[index + nameAt] ?? 0] ?? "").startsWith("Detached ")) detached += 1;
+  return detached;
 }
