@@ -385,6 +385,20 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
             }}
             onArchive={(item) => void tabs.archive(item.agentId, item.taskId)}
             onRestore={(item) => void tabs.restore(item.agentId, item.taskId)}
+            onRestoreMany={async (items) => {
+              const done = await tabs.restoreMany(items.map((item) => ({ agentId: item.agentId, id: item.taskId })));
+              if (done > 0) actionToast.success(t("quick.archived.restored", { count: done }));
+            }}
+            onDeleteMany={
+              tasks.editable()
+                ? async (items) => {
+                    const done = await tabs.removeMany(
+                      items.map((item) => ({ agentId: item.agentId, id: item.taskId })),
+                    );
+                    if (done > 0) actionToast.success(t("quick.archived.deleted", { count: done }));
+                  }
+                : undefined
+            }
             folders={folderState().folders}
             assignments={folderState().assignments}
             onCreateFolder={(name) => setFolderState(addQuickChatFolder(activeServerId(), name))}

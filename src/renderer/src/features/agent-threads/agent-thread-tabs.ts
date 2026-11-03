@@ -21,6 +21,12 @@ const NO_TABS: AgentThreadTabs = { open: [], active: null, side: [] };
 /** The window that shows the Undo toast finishes the delete. Another window waits this much longer. */
 const OTHER_WINDOW_DELAY_MS = 5_000;
 
+/** A thread of an agent. */
+interface ThreadRef {
+  agentId: string;
+  id: string;
+}
+
 export interface AgentThreadTabsOptions {
   serverId: () => string;
   activeAgentId: () => string | undefined;
@@ -246,6 +252,35 @@ export function createAgentThreadTabs(options: AgentThreadTabsOptions) {
   async function restore(agentId: string, id: string): Promise<void> {
     if (task(agentId, id)?.state === "closed" && !(await tasks.reopenTask(agentId, id))) return;
     if (scopeIsCurrent()) open(agentId, id);
+  }
+
+  /**
+   * Restores archived threads one after the other, with no tab. Stops at the first one that the host
+   * refuses, because the host already showed that error. Resolves how many came back.
+   */
+  async function restoreMany(items: readonly ThreadRef[]) {
+    let done = 0;
+    for (const { agentId, id } of items) {
+      if (!scopeIsCurrent() || !(await tasks.reopenTask(agentId, id))) break;
+      done += 1;
+    }
+    return done;
+  }
+
+  /**
+   * Deletes threads at once, with no Undo time: the person confirmed the list before. Stops at the first
+   * one that the host keeps. Resolves how many are gone.
+   */
+  async function removeMany(items: readonly ThreadRef[]) {
+    let done = 0;
+    for (const { agentId, id } of items) {
+      if (!scopeIsCurrent() || !(await tasks.deleteTask(agentId, id))) break;
+      if (storedTabs(agentId).side.includes(id)) closeSide(agentId, id);
+      else close(agentId, id);
+      setHiddenThread(id, true);
+      done += 1;
+    }
+    return done;
   }
 
   async function rename(agentId: string, id: string, title: string): Promise<void> {
@@ -543,8 +578,10 @@ export function createAgentThreadTabs(options: AgentThreadTabsOptions) {
     moveSide,
     archive,
     restore,
+    restoreMany,
     rename,
     remove,
+    removeMany,
     send,
     sendDraft,
     startIn,

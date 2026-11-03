@@ -34,6 +34,7 @@ import { createMemo, createSignal, For, Show } from "solid-js";
 import { ThreadStatusMark } from "../conversation/threads/ThreadStatusMark";
 import { ThreadTitle } from "../conversation/threads/ThreadTitle";
 import { SIDEBAR_SECTION_COLOR_PRESETS } from "../sidebar/section-color";
+import { QuickChatArchivedDialog } from "./QuickChatArchivedDialog";
 import {
   applyQuickChatFilter,
   filterQuickChatRows,
@@ -66,6 +67,10 @@ export interface QuickChatListProps {
   onNew: () => void;
   onArchive: (row: QuickChatRow) => void;
   onRestore: (row: QuickChatRow) => void;
+  /** Restores many archived conversations, without opening them. */
+  onRestoreMany: (rows: readonly QuickChatRow[]) => Promise<void>;
+  /** Deletes many archived conversations. Missing where the host cannot delete a thread. */
+  onDeleteMany?: ((rows: readonly QuickChatRow[]) => Promise<void>) | undefined;
   /** Missing where the host cannot delete a thread: the item then does not show. */
   onDelete?: ((row: QuickChatRow) => void) | undefined;
   /** The folders, in order. Missing where the host keeps no folders: the list then shows none. */
@@ -599,7 +604,6 @@ export function QuickChatList(props: QuickChatListProps) {
   const [query, setQuery] = createSignal("");
   const [archivedOpen, setArchivedOpen] = createSignal(false);
   const rows = createMemo(() => filterQuickChatRows(props.rows, query()));
-  const archived = createMemo(() => filterQuickChatRows(props.archived, query()));
   // The day of "now" is read when the rows change, so no timer runs while the list is idle.
   const searching = () => query().trim() !== "";
   const [filter, setFilter] = createSignal<QuickChatFilter>("all");
@@ -803,32 +807,25 @@ export function QuickChatList(props: QuickChatListProps) {
               </For>
             </section>
           </Show>
-          <Show when={archived().length === 0 && (filter() === "all" ? rows().length === 0 : filtered().length === 0)}>
+          <Show
+            when={props.archived.length === 0 && (filter() === "all" ? rows().length === 0 : filtered().length === 0)}
+          >
             <p class="quick-list-empty">{t(searching() ? "quick.list.noResults" : "quick.list.empty")}</p>
           </Show>
-          <Show when={archived().length > 0}>
+          <Show when={props.archived.length > 0}>
             <section class="quick-list-group">
               <Button
                 variant="ghost"
                 size="sm"
                 type="button"
                 class="quick-list-archived-toggle"
-                aria-expanded={archivedOpen() ? "true" : "false"}
-                onClick={() => setArchivedOpen((open) => !open)}
+                aria-haspopup="dialog"
+                onClick={() => setArchivedOpen(true)}
               >
-                <ChevronRight
-                  class="quick-list-chevron"
-                  data-open={archivedOpen() ? "" : undefined}
-                  aria-hidden="true"
-                />
+                <Archive class="quick-list-chevron" aria-hidden="true" />
                 {t("quick.list.archived")}
-                <span class="quick-list-count">{archived().length}</span>
+                <span class="quick-list-count">{props.archived.length}</span>
               </Button>
-              <Show when={archivedOpen()}>
-                <For each={archived()} keyed={(row) => row.key}>
-                  {(row) => <QuickChatItem {...props} row={row()} isArchived onTagDialog={setTagDialog} />}
-                </For>
-              </Show>
             </section>
           </Show>
         </Show>
@@ -839,6 +836,18 @@ export function QuickChatList(props: QuickChatListProps) {
         onCreate={props.onCreateTag}
         onEdit={props.onEditTag}
         onDelete={props.onDeleteTag}
+      />
+      <QuickChatArchivedDialog
+        open={archivedOpen()}
+        onClose={() => setArchivedOpen(false)}
+        rows={props.archived}
+        selectedKey={props.selectedKey}
+        onSelect={(row) => {
+          setArchivedOpen(false);
+          props.onSelect(row);
+        }}
+        onRestoreMany={props.onRestoreMany}
+        onDeleteMany={props.onDeleteMany}
       />
     </nav>
   );

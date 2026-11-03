@@ -489,3 +489,129 @@
 .quick-tag-delete.ui-button {
   margin-right: auto;
 }
+
+/* The archived conversations: a dialog with a search, a page of rows, and bulk actions. It has the
+ * surface of the confirmation dialog (`primitives.css`). */
+.ui-dialog-overlay .quick-archived-dialog {
+  display: flex;
+  width: min(36rem, 100%);
+  height: min(40rem, calc(100dvh - 2 * var(--buildersbot-space-6)));
+  flex-direction: column;
+  gap: var(--buildersbot-space-3);
+  box-sizing: border-box;
+  padding: var(--buildersbot-space-4);
+  overflow: hidden;
+  outline: 0;
+  border: 1px solid var(--buildersbot-dialog-ring);
+  border-radius: var(--buildersbot-radius-xl);
+  background: var(--buildersbot-bg-sidebar);
+  box-shadow: none;
+  color: var(--buildersbot-text-primary);
+  animation: ui-confirm-dialog-in var(--buildersbot-duration-slow) var(--buildersbot-ease-out);
+}
+
+.quick-archived-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-2);
+}
+
+.quick-archived-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--buildersbot-space-2);
+  margin: 0;
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-medium);
+}
+
+.quick-archived-toolbar {
+  display: flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-2);
+  padding-inline: var(--buildersbot-space-2);
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.quick-archived-all {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+}
+
+.quick-archived-bulk {
+  display: flex;
+  gap: var(--buildersbot-space-1);
+}
+
+.quick-archived-delete.ui-button {
+  color: var(--buildersbot-danger);
+}
+
+.quick-archived-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-lg);
+}
+
+.quick-archived-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quick-archived-row {
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  padding: 0 var(--buildersbot-space-2);
+  border-bottom: 1px solid var(--buildersbot-border);
+  /* A long archive stays cheap: the browser skips the rows that are out of view. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3.25rem;
+}
+
+.quick-archived-row[data-selected] {
+  background: var(--buildersbot-bg-control-hover);
+}
+
+.quick-archived-open.ui-button {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 2px;
+  height: auto;
+  padding: var(--buildersbot-space-2);
+  text-align: left;
+}
+
+.quick-archived-time {
+  flex: none;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.quick-archived-preview {
+  overflow: hidden;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-archived-more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-2);
+  padding: var(--buildersbot-space-2);
+}
