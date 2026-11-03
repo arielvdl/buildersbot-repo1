@@ -1,0 +1,191 @@
+/*
+ * The agents that a Quick chat conversation called (`QuickChatAgentStrip.tsx`): a strip at the top of the
+ * conversation that unfolds into the agent stage. The table and the agents are in `stage/agent-stage.css`.
+ */
+
+.quick-agent-strip {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--buildersbot-border);
+  background: var(--buildersbot-bg-canvas);
+  animation: quick-agent-strip-in var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
+}
+
+/* The messages fade out under the strip, as under the stage of a channel. */
+.quick-agent-strip::after {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  height: var(--buildersbot-space-4);
+  background: linear-gradient(to bottom, var(--buildersbot-bg-canvas), transparent);
+  content: "";
+  pointer-events: none;
+}
+
+.quick-agent-strip-bar {
+  display: flex;
+  height: var(--buildersbot-control-xl);
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  padding: 0 var(--buildersbot-space-2) 0 var(--buildersbot-space-3);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.quick-agent-strip-live {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-success);
+  animation: quick-agent-strip-pulse 1.6s ease-out infinite;
+}
+
+.quick-agent-strip[data-finished] .quick-agent-strip-live {
+  animation: none;
+}
+
+.quick-agent-strip-marks {
+  display: flex;
+  flex: none;
+  gap: var(--buildersbot-space-0-5);
+}
+
+.quick-agent-strip-mark {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  transition: opacity var(--buildersbot-duration-overlay) var(--buildersbot-ease-out);
+}
+
+/* An agent that has not started yet is dimmer than the ones at work. */
+.quick-agent-strip-mark[data-state="asked"] {
+  opacity: 0.55;
+}
+
+.quick-agent-strip-avatar {
+  width: 22px;
+  height: 22px;
+}
+
+.quick-agent-strip-text {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+  color: var(--buildersbot-text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-agent-strip-bars {
+  display: flex;
+  width: 96px;
+  flex: none;
+  gap: var(--buildersbot-space-1);
+}
+
+.quick-agent-strip-bars i {
+  height: var(--buildersbot-space-1-5);
+  flex: 1;
+  border-radius: var(--buildersbot-radius-xs);
+  background: var(--buildersbot-bg-control-hover);
+  transition: background-color var(--buildersbot-duration-overlay) var(--buildersbot-ease-out);
+}
+
+.quick-agent-strip-bars i[data-state="working"] {
+  background: var(--buildersbot-accent);
+}
+
+.quick-agent-strip-bars i[data-state="replied"] {
+  background: var(--buildersbot-success);
+}
+
+.quick-agent-strip-bars i[data-state="failed"] {
+  background: var(--buildersbot-danger-border);
+}
+
+.quick-agent-strip-count {
+  flex: none;
+  color: var(--buildersbot-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.quick-agent-strip-toggle {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  place-items: center;
+  border: 0;
+  border-radius: var(--buildersbot-radius-sm, 6px);
+  background: transparent;
+  color: var(--buildersbot-text-dim);
+  cursor: pointer;
+}
+
+.quick-agent-strip-toggle:hover {
+  background: var(--buildersbot-bg-surface-raised);
+  color: var(--buildersbot-text-primary);
+}
+
+.quick-agent-strip-toggle:focus-visible {
+  outline: 2px solid var(--buildersbot-focus-ring, currentColor);
+}
+
+.quick-agent-strip-toggle svg {
+  transition: transform var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
+}
+
+.quick-agent-strip-toggle svg[data-open] {
+  transform: rotate(180deg);
+}
+
+.quick-agent-strip-stage {
+  position: relative;
+  height: clamp(240px, 40vh, 380px);
+  overflow: hidden;
+  background:
+    radial-gradient(46% 58% at 50% 56%, color-mix(in srgb, var(--buildersbot-success) 5%, transparent), transparent 70%),
+    var(--buildersbot-bg-canvas);
+  contain: layout paint;
+  animation: quick-agent-strip-unfold var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
+}
+
+@keyframes quick-agent-strip-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes quick-agent-strip-unfold {
+  from {
+    height: 0;
+  }
+}
+
+@keyframes quick-agent-strip-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--buildersbot-success) 60%, transparent);
+  }
+
+  100% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-agent-strip,
+  .quick-agent-strip-stage,
+  .quick-agent-strip-live {
+    animation: none;
+  }
+
+  .quick-agent-strip-bars i,
+  .quick-agent-strip-mark,
+  .quick-agent-strip-toggle svg {
+    transition: none;
+  }
+}

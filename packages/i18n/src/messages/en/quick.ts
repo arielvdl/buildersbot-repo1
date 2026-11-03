@@ -30,4 +30,10 @@ export const messages = defineMessages("quick", {
   "quick.error.agentGone": "That agent is no longer available.",
   "quick.error.title": "Quick chat did not open",
   "quick.error.retry": "Try again",
+  "quick.agents.label": "Agents at work",
+  "quick.agents.calling": "Calling the agents…",
+  "quick.agents.finished": { one: "The agent is done", other: "The agents are done" },
+  "quick.agents.count": "{done}/{total}",
+  "quick.agents.fold": "Fold the stage",
+  "quick.agents.unfold": "Show the stage",
 });

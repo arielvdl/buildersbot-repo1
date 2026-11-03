@@ -29,4 +29,10 @@ export const messages = {
   "quick.error.agentGone": "Esse agente não está mais disponível.",
   "quick.error.title": "O Chat rápido não abriu",
   "quick.error.retry": "Tentar de novo",
+  "quick.agents.label": "Agentes trabalhando",
+  "quick.agents.calling": "Chamando os agentes…",
+  "quick.agents.finished": { one: "O agente terminou", other: "Os agentes terminaram" },
+  "quick.agents.count": "{done}/{total}",
+  "quick.agents.fold": "Recolher o palco",
+  "quick.agents.unfold": "Ver o palco",
 } as const satisfies PartialTranslation<typeof source>;

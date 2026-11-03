@@ -17,6 +17,7 @@ import { useShowAgentSteps } from "../../agent-steps-preference";
 import { toAgentMessages } from "../../app-message-projection";
 import { usePlatform } from "../../platform";
 import { deviceSendShortcut } from "../../send-shortcut-preference";
+import { QuickChatAgentStripHost } from "../quick-chat/QuickChatAgentStripHost";
 import { offerSpeechModelDownload, speechModelOffersDownload, speechModelReady } from "../speech/speech-model";
 import { speechReading } from "../speech/speech-playback";
 import { dropThreadDictations, stopSpokenReply, toggleReadAloud } from "../speech/speech-replies";
@@ -292,6 +293,10 @@ export function ConversationThread() {
               onNext={() => threadSearch.moveChatSearch(1)}
               onClose={threadSearch.closeChatSearch}
             />
+          </Show>
+          {/* The agents that a Quick chat conversation called, above its messages. */}
+          <Show when={props.quickChat}>
+            <QuickChatAgentStripHost conversation={props} messages={messages} />
           </Show>
           <AgentThreadView
             scrollRef={setThreadScrollElement}
