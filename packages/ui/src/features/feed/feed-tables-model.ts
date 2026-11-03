@@ -43,12 +43,24 @@ export interface FeedTableActor {
   activity: StageActivity;
 }
 
+/** A hand-off at a table: `from` gave the run of card `key` to `to`. Both are `feedAgentKey`. */
+export interface FeedTableLink {
+  /** The id of the card, so the cube flies once for each card. */
+  key: string;
+  from: string;
+  to: string;
+}
+
 export interface FeedTable {
   /** `feedProjectKey` of the project. */
   key: string;
   /** The name of the project. Null: the agents of no section. */
   name: string | null;
   actors: FeedTableActor[];
+  /** The hand-offs between two agents that sit at this table, while the agent that got the work works. */
+  links: FeedTableLink[];
+  /** The agents that handed work over at this table. They take the seat at the back. */
+  leads: string[];
   /** The agents that have no seat. */
   overflow: number;
   /** The title of the newest card that works or waits for the person. */
@@ -87,6 +99,7 @@ interface Candidate {
 interface Accumulator {
   name: string | null;
   actors: Map<string, Candidate>;
+  links: FeedTableLink[];
   now: { title: string; updatedAt: string } | null;
   working: number;
   needsYou: number;
@@ -103,7 +116,10 @@ function activityOf(item: FeedItem, now: number): { activity: StageActivity; unt
     case "needs-you":
       return { activity: "waiting", until: null };
     case "working":
-      return { activity: item.lastStep ? stageActivityOfLine(item.lastStep.text) : "thinking", until: null };
+      return {
+        activity: item.lastStep ? stageActivityOfLine(item.lastStep.text, item.lastStep.tool) : "thinking",
+        until: null,
+      };
     case "done":
     case "failed": {
       if (!item.endedAt) return null;
@@ -135,6 +151,7 @@ export function feedTablesModel(
       table = {
         name: item.projectName,
         actors: new Map(),
+        links: [],
         now: null,
         working: 0,
         needsYou: 0,
@@ -152,6 +169,13 @@ export function feedTablesModel(
 
     // One seat for an agent, in its most urgent state; a tie goes to the newest card.
     const agentKey = feedAgentKey(item);
+    // A run that another agent handed over, while it works: a line from that agent, if it sits here too.
+    if (item.delegatedBy && item.state === "working" && item.delegatedBy !== item.agentId)
+      table.links.push({
+        key: item.id,
+        from: feedAgentKey({ serverId: item.serverId, agentId: item.delegatedBy }),
+        to: agentKey,
+      });
     const known = table.actors.get(agentKey);
     if (known) {
       const same = RANK[seen.activity] === RANK[known.actor.activity];
@@ -189,10 +213,22 @@ export function feedTablesModel(
     const room = Math.min(FEED_TABLE_SEATS, seats);
     const shown = entry.actors.slice(0, room);
     seats -= shown.length;
+    const seated = new Set(shown.map((actor) => actor.id));
+    // One line for each pair, the newest card first; a line needs both agents at the table.
+    const pairs = new Set<string>();
+    const links: FeedTableLink[] = [];
+    for (const link of entry.table.links) {
+      const pair = `${link.from}|${link.to}`;
+      if (!seated.has(link.from) || !seated.has(link.to) || pairs.has(pair)) continue;
+      pairs.add(pair);
+      links.push(link);
+    }
     tables.push({
       key: entry.key,
       name: entry.table.name,
       actors: shown,
+      links,
+      leads: [...new Set(links.map((link) => link.from))],
       overflow: entry.actors.length - shown.length,
       now: entry.table.now?.title ?? null,
       working: entry.table.working,
@@ -230,6 +266,11 @@ export function sameFeedTables(a: FeedTablesModel, b: FeedTablesModel): boolean 
       table.working === other.working &&
       table.needsYou === other.needsYou &&
       table.overflow === other.overflow &&
+      table.links.length === other.links.length &&
+      table.links.every((link, at) => {
+        const peer = other.links[at];
+        return peer !== undefined && link.key === peer.key && link.from === peer.from && link.to === peer.to;
+      }) &&
       table.actors.length === other.actors.length &&
       table.actors.every((actor, at) => {
         const peer = other.actors[at];
@@ -241,7 +282,8 @@ export function sameFeedTables(a: FeedTablesModel, b: FeedTablesModel): boolean 
 
 /**
  * The seat of each agent at its table, kept while the agent stays, so the others do not move when one
- * leaves. `book` is keyed by table and agent, holds at most `FEED_ACTOR_LIMIT` entries, and the page
+ * leaves. An agent that handed work over takes the seat at the back (0) when it is free; at a table
+ * with such an agent the others start at the next seat. `book` is keyed by table and agent, holds at most `FEED_ACTOR_LIMIT` entries, and the page
  * drops it with the feed.
  */
 export function assignTableSeats(book: Map<string, number>, tables: readonly FeedTable[]): void {
@@ -254,11 +296,14 @@ export function assignTableSeats(book: Map<string, number>, tables: readonly Fee
       const seat = book.get(`${table.key}|${actor.id}`);
       if (seat !== undefined) used.add(seat);
     }
-    for (const actor of table.actors) {
+    const leads = new Set(table.leads);
+    const ordered = [...table.actors].sort((a, b) => Number(leads.has(b.id)) - Number(leads.has(a.id)));
+    for (const actor of ordered) {
       const key = `${table.key}|${actor.id}`;
       if (book.has(key)) continue;
-      let seat = 0;
+      let seat = leads.size > 0 && !leads.has(actor.id) ? 1 : 0;
       while (used.has(seat) && seat < FEED_TABLE_SEATS - 1) seat += 1;
+      if (used.has(seat)) seat = [0, 1, 2, 3].find((free) => !used.has(free)) ?? seat;
       book.set(key, seat);
       used.add(seat);
     }

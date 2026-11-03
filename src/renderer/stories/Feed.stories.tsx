@@ -1,4 +1,5 @@
 import { AVATAR_HUES, type FeedItem } from "@buildersbot/contracts/ipc";
+import { Button } from "@buildersbot/ui";
 import { FeedPage } from "@buildersbot/ui/features/feed/FeedPage";
 import type { FeedAgentProfile } from "@buildersbot/ui/features/feed/feed-tables-model";
 import { feedAgentKey } from "@buildersbot/ui/features/feed/feed-view";
@@ -176,6 +177,73 @@ function TablesStory(props: { script?: boolean; folded?: boolean; onOpen: (item:
   );
 }
 
+/**
+ * One table with a lead and two agents (example data). "Hand off" gives a run of the lead to Backend:
+ * a dashed line joins them and the cube flies once. "Same 50 times" sends 50 deltas that change the
+ * cards but not the table. "Finish" ends the run, and the line goes.
+ */
+function DelegationStory(props: { onOpen: (item: FeedItem) => void }) {
+  const lead = {
+    ...tableCard(0, 0, "working", { step: "Coordinating with another agent…" }),
+    title: "Plan the release",
+  };
+  const helper = (patch: Partial<FeedItem>): FeedItem => ({
+    ...tableCard(1, 0, "working", { step: "Making the requested changes…" }),
+    title: "Write the release notes",
+    ...patch,
+  });
+  const other = tableCard(2, 0, "working", { step: "Checking the work…" });
+  const [items, setItems] = createSignal<FeedItem[]>([lead, helper({}), other]);
+  let revision = 1;
+  const handOff = () =>
+    setItems((current) =>
+      current.map((item) =>
+        item.id === helper({}).id
+          ? {
+              ...item,
+              delegatedBy: lead.agentId,
+              lastStep: item.lastStep ? { ...item.lastStep, tool: "write" } : item.lastStep,
+            }
+          : item,
+      ),
+    );
+  const sameAgain = () => {
+    for (let step = 0; step < 50; step += 1) {
+      revision += 1;
+      setItems((current) => current.map((item) => ({ ...item, revision, stepCount: item.stepCount + 1 })));
+    }
+  };
+  const finish = () =>
+    setItems((current) =>
+      current.map((item) =>
+        item.id === helper({}).id ? { ...item, state: "done", endedAt: new Date().toISOString() } : item,
+      ),
+    );
+  return (
+    <div class="feed-story">
+      <div class="feed-story-controls">
+        <Button size="sm" variant="secondary" onClick={handOff}>
+          Hand off
+        </Button>
+        <Button size="sm" variant="secondary" onClick={sameAgain}>
+          Same 50 times
+        </Button>
+        <Button size="sm" variant="secondary" onClick={finish}>
+          Finish
+        </Button>
+      </div>
+      <FeedPage
+        items={items()}
+        agents={storyProfiles()}
+        loading={false}
+        error={null}
+        tablesFolded={false}
+        onOpen={props.onOpen}
+      />
+    </div>
+  );
+}
+
 const meta = {
   title: "Features/Feed",
   component: FeedStory,
@@ -236,3 +304,6 @@ export const TablesRun: Story = { render: (args) => <TablesStory script onOpen={
 
 /** The tables folded into a strip. */
 export const TablesFolded: Story = { render: (args) => <TablesStory folded onOpen={args.onOpen} /> };
+
+/** A lead hands a run to an agent at the same table: a dashed line, and the cube flies once. */
+export const TablesDelegation: Story = { render: (args) => <DelegationStory onOpen={args.onOpen} /> };

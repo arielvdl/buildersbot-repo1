@@ -158,6 +158,7 @@ function FeedTableView(props: {
       <div class="feed-table-stage">
         <StageBoard
           actors={actors()}
+          links={props.table.links}
           bubbles={false}
           maxTable={TABLE_MAX_WIDTH}
           suspended={props.suspended}

@@ -8,6 +8,9 @@
 // - a hidden window, tables off screen and `prefers-reduced-motion` stop every loop;
 // - with nobody at work (an empty feed, and tables folded into a strip) no board, no animation, no timer
 //   and no animation frame of the tables exist;
+// - a hand-off at a table (`FeedItem.delegatedBy`) draws one dashed line and flies the cube once; 50
+//   deltas that do not change the tables write nothing to their DOM and fly nothing; the line goes when
+//   the run ends (A10);
 // - the open tables cost at most 3 MB of JS heap over the folded strip, after a forced GC, and no
 //   long task of 50 ms or more runs while they work.
 // Memory over many enter and leave cycles is measured by the QA gate with a harness story that is not
@@ -25,6 +28,8 @@ import { type Browser, type CDPSession, chromium, type Page } from "playwright-c
 
 declare global {
   interface Window {
+    /** The writes to the tables and the cubes that flew, counted by `checkDelegation`. */
+    __delegation?: { mutations: number; flights: number };
     __tablesProbe?: {
       timeouts: number;
       intervals: number;
@@ -318,6 +323,62 @@ async function checkNobody(browser: Browser, story: string, label: string): Prom
   }
 }
 
+/** A10: the line and the flying cube of a hand-off, in the story with buttons that drive the cards. */
+async function checkDelegation(browser: Browser): Promise<void> {
+  const { context, page } = await load(browser, "tables-delegation", 1_500);
+  const reading = () =>
+    page.evaluate(() => ({
+      links: document.querySelectorAll(".feed-tables .agent-stage-link").length,
+      packets: document.querySelectorAll(".feed-tables .agent-stage-packet").length,
+    }));
+  try {
+    const before = await reading();
+    await page.evaluate(() => {
+      const state = { mutations: 0, flights: 0 };
+      window.__delegation = state;
+      new MutationObserver((records) => {
+        for (const record of records) {
+          state.mutations += 1;
+          for (const node of record.addedNodes)
+            if (node instanceof Element && node.classList.contains("agent-stage-packet")) state.flights += 1;
+        }
+      }).observe(document.querySelector(".feed-tables") ?? document.body, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        characterData: true,
+      });
+    });
+    const counts = () => page.evaluate(() => window.__delegation ?? { mutations: -1, flights: -1 });
+    await page.getByRole("button", { name: "Hand off", exact: true }).click();
+    await pause(1_200);
+    const handed = await reading();
+    const afterHandOff = await counts();
+    const picture = resolve(OUT, "tables-delegation.png");
+    await page.screenshot({ path: picture });
+    report.screenshots.push(picture);
+    await page.getByRole("button", { name: "Same 50 times", exact: true }).click();
+    await pause(800);
+    const afterSame = await counts();
+    await page.getByRole("button", { name: "Finish", exact: true }).click();
+    await pause(500);
+    const finished = await reading();
+    check(
+      "A10 hand-off: one line, one flight; 50 deltas with no change write nothing; the line goes at the end",
+      "0 lines before, 1 line and 1 flight after, 0 writes and 0 flights for 50 deltas, 0 lines after the end",
+      `before ${before.links} lines; after ${handed.links} lines, ${afterHandOff.flights} flight; 50 deltas ${afterSame.mutations - afterHandOff.mutations} writes, ${afterSame.flights - afterHandOff.flights} flights; end ${finished.links} lines`,
+      before.links === 0 &&
+        handed.links === 1 &&
+        afterHandOff.flights === 1 &&
+        afterSame.mutations === afterHandOff.mutations &&
+        afterSame.flights === afterHandOff.flights &&
+        finished.links === 0,
+    );
+  } finally {
+    await context.close();
+  }
+}
+
 async function checkMemory(browser: Browser): Promise<void> {
   const open: number[] = [];
   const folded: number[] = [];
@@ -349,6 +410,7 @@ try {
     () => checkBusy(browser),
     () => checkNobody(browser, "empty", "empty feed"),
     () => checkNobody(browser, "tables-folded", "tables folded into the strip"),
+    () => checkDelegation(browser),
     () => checkMemory(browser),
   ]) {
     try {

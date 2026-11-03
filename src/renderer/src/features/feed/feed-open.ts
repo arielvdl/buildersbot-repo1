@@ -20,7 +20,7 @@ type FeedOpenTarget = Pick<FeedItem, "serverId" | "agentId" | "threadId" | "chan
 let pendingOpen: FeedOpenTarget | null = null;
 
 /** Opens a channel on the tab of the work, else on the tab that the sidebar would open. Call it in a component. */
-export function createOpenChannel() {
+function createOpenChannel() {
   const channels = useChannels();
   return (channelId: string, topicId: string | null) => {
     const topics = channels.state.channels.find((entry) => entry.id === channelId)?.topics ?? [];
