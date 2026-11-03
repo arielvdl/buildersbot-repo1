@@ -296,7 +296,7 @@ numbers are the fixed ones. `LaneBudget` (`src/backend/agent/lane-budget.ts`) ha
 
 | Memory | Warm sessions (idle, open before the timeout) | Idle time before it closes |
 | --- | --- | --- |
-| `ok`, spare 16 or more | `min(8, floor(spare / 2))` | 10 min |
+| `ok`, spare 16 or more | `min(4, floor(spare / 2))` | 5 min |
 | `ok`, spare 1 to 15 | `max(2, floor(spare / 2))` | 5 min |
 | spare 0, or `low` | 2 | 2 min |
 | `critical` | 0 | 2 min, and the memory hold closes them at once |
@@ -310,7 +310,7 @@ numbers are the fixed ones. `LaneBudget` (`src/backend/agent/lane-budget.ts`) ha
   limit of warm sessions catch up with it. Claude keeps a process that runs a background task, and a
   session that is not saved to disk, until three times the idle time (`forceReleaseAfterMs`).
 - The values are a first guess. `dev:bench` scenarios `s7-release-claude` and `s14-lanes-claude`
-  measure them (see [analytics.md](analytics.md#resource-sampling)); no measurement has been taken yet.
+  measure them (see [analytics.md](analytics.md#resource-sampling)); a first measurement on 3 November 2026 gave about 200 MB of real memory (`footprint`) for each Claude process, so 4 warm sessions cost about 800 MB.
 
 ## Model catalog
 

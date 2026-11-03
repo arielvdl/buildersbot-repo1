@@ -20,6 +20,7 @@ import {
   streamingTrailReach,
   useStreamingReveal,
 } from "./streamingReveal";
+import { createWeightedCache } from "./weighted-cache";
 
 type MarkdownMessageTextProps = Omit<RichMessageTextProps, "showCitationFooter"> & {
   showCitationFooter?: boolean;
@@ -132,7 +133,10 @@ function headingLevel(depth: number): 1 | 2 | 3 | 4 | 5 | 6 {
 // virtualization re-renders settled messages often). Cap the size so a long
 // session cannot grow this without bound.
 const LEXER_CACHE_LIMIT = 200;
-const lexerCache = new Map<string, TokensList>();
+// A token list weighs several times its body, so the cache also stops at this many characters of
+// bodies, and a body longer than the budget is lexed each time and not kept.
+const LEXER_CACHE_CHARACTERS = 1_000_000;
+const lexerCache = createWeightedCache<TokensList>(LEXER_CACHE_LIMIT, LEXER_CACHE_CHARACTERS);
 const inlineLexerCache = new Map<string, Token[]>();
 
 function lexBlockTokens(body: string, cache: boolean): TokensList {
@@ -140,11 +144,7 @@ function lexBlockTokens(body: string, cache: boolean): TokensList {
   const cached = lexerCache.get(body);
   if (cached) return cached;
   const tokens = markdown.lexer(body);
-  if (lexerCache.size >= LEXER_CACHE_LIMIT) {
-    const oldest = lexerCache.keys().next();
-    if (!oldest.done) lexerCache.delete(oldest.value);
-  }
-  lexerCache.set(body, tokens);
+  lexerCache.set(body, tokens, body.length);
   return tokens;
 }
 

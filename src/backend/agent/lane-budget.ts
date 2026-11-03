@@ -5,7 +5,9 @@ const MINUTE_MS = 60_000;
 /** The idle time under pressure: the same as `LOW_MEMORY_IDLE_RELEASE_MS` of the memory hold. */
 const PRESSURE_RELEASE_MS = 2 * MINUTE_MS;
 const COMFORT_SPARE_SESSIONS = 16;
-const MOST_WARM_SESSIONS = 8;
+/** A Claude session holds about 200 MB (measured with `footprint` on 3 November 2026), so 4 idle ones cost about 800 MB. */
+const MOST_WARM_SESSIONS = 4;
+const COMFORT_RELEASE_MS = 5 * MINUTE_MS;
 const LEAST_WARM_SESSIONS = 2;
 
 export interface LaneBudgetOptions {
@@ -70,7 +72,7 @@ export class LaneBudget {
    *
    * | Memory | Warm sessions | Idle time |
    * | --- | --- | --- |
-   * | `ok`, spare 16 or more | `min(8, floor(spare / 2))` | 10 min |
+   * | `ok`, spare 16 or more | `min(4, floor(spare / 2))` | 5 min |
    * | `ok`, spare 1 to 15 | `max(2, floor(spare / 2))` | 5 min |
    * | spare 0, or `low` | 2 | 2 min |
    * | `critical` | 0 | 2 min (the memory hold also closes them at once) |
@@ -86,7 +88,7 @@ export class LaneBudget {
     if (level === "low" || spare === 0) return { idleLimit: LEAST_WARM_SESSIONS, releaseAfterMs: PRESSURE_RELEASE_MS };
     if (spare < COMFORT_SPARE_SESSIONS)
       return { idleLimit: Math.max(LEAST_WARM_SESSIONS, Math.floor(spare / 2)), releaseAfterMs: 5 * MINUTE_MS };
-    return { idleLimit: Math.min(MOST_WARM_SESSIONS, Math.floor(spare / 2)), releaseAfterMs: 10 * MINUTE_MS };
+    return { idleLimit: Math.min(MOST_WARM_SESSIONS, Math.floor(spare / 2)), releaseAfterMs: COMFORT_RELEASE_MS };
   }
 
   /** Whether one extra tab may start. Without a reading it may: the fixed limit decides. */

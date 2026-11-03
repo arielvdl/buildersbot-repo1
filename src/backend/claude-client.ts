@@ -254,7 +254,7 @@ const CLAUDE_THREAD_IDLE_RELEASE_MS = 10 * 60_000;
 
 /**
  * How many idle threads keep their `claude` process before the timeout. A user who runs one turn on
- * each of five agents otherwise holds five processes of about 140 MB each for ten minutes.
+ * each of five agents otherwise holds five processes of about 200 MB each for ten minutes.
  */
 const CLAUDE_IDLE_THREAD_LIMIT = 2;
 
