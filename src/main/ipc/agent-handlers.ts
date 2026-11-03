@@ -754,7 +754,7 @@ export function agentIpcHandlers({
       }),
       // A joined server branches through `agent-thread-branches-v1`; an older one cannot branch.
       branchTask: scopedHandler(parseBranchAgentTask, {
-        local: (parsed) => runCauseEffect(host.branchAgentTask(parsed)),
+        local: (parsed) => runCauseEffect(host.branchAgentTask(parsed, "quick-chat")),
         remote: (parsed, serverId) => {
           if (!remoteServers.supportsCapability(serverId, AGENT_THREAD_BRANCHES_CAPABILITY))
             throw new Error(sourceText("error.backend.branchRemoteUnsupported"));

@@ -1215,9 +1215,9 @@ export class HostService extends EventEmitter<HostEvents> {
   }
 
   /** Makes a branch of a local conversation. This computer's reader has read the branch through its last copied message. */
-  branchAgentTask(input: BranchAgentTaskInput) {
+  branchAgentTask(input: BranchAgentTaskInput, via?: "quick-chat") {
     return remoteDecode(() => this.#currentAgentReaderId()).pipe(
-      Effect.flatMap((readerId) => this.#options.agents.branchTask(input, readerId)),
+      Effect.flatMap((readerId) => this.#options.agents.branchTask(input, readerId, via)),
     );
   }
 

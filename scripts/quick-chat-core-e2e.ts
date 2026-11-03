@@ -496,6 +496,23 @@ async function partTwoSteps(host2: Host2, log: string, sockets: WebSocket[]): Pr
     },
   );
 
+  await step("a branch of a quick conversation works through the local IPC, and is refused with no `via`", async () => {
+    const reply = agents.readTask(quickId, first.taskId).messages.find((message) => message.author === "assistant");
+    assert.ok(reply, "The first conversation has no reply to branch from.");
+    const input = { agentId: quickId, taskId: first.taskId, messageId: reply.id };
+    await assert.rejects(
+      () => runCauseEffect(agents.branchTask({ ...input, requestId: "branch-no-via" }, "e2e-reader")),
+      (error: unknown) => messageOf(error).includes(sourceText("error.backend.recipientHidden")),
+      "A branch with no via was not refused as hidden.",
+    );
+    const branch = await runCauseEffect(
+      agents.branchTask({ ...input, requestId: "branch-via" }, "e2e-reader", "quick-chat"),
+    );
+    assert.equal(branch.agentId, quickId);
+    assert.notEqual(branch.id, first.taskId, "The branch is the same conversation.");
+    return { branch: branch.id };
+  });
+
   await step("the Dynamic Island action and a routine find no agent to reach", async () => {
     const unknown = sourceText("error.agent.unknown", { id: quickId });
     const hiddenText = sourceText("error.backend.recipientHidden");

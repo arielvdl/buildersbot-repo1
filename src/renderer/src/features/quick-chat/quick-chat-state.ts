@@ -94,7 +94,9 @@ export function createQuickChat(options: QuickChatOptions) {
       });
     } catch (error) {
       if (!scopeIsCurrent() || own !== generation) return;
-      const noProvider = error instanceof Error && error.message === options.noProviderMessage();
+      // Electron wraps the text of an error from the main process ("Error invoking remote method ..."), so the
+      // message ends with the text of the host instead of being equal to it.
+      const noProvider = error instanceof Error && error.message.endsWith(options.noProviderMessage());
       setState((draft) => {
         draft.phase = noProvider ? "no-provider" : "failed";
       });
