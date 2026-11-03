@@ -55,20 +55,9 @@ const OUTCOMES = [
   { value: "other", label: "settings.profile.tabReports.total.other", badge: "secondary" },
 ] as const satisfies readonly { value: ChannelTabOutcome; label: AppTextKey; badge: string }[];
 
-const REPORT_TIME_FORMAT: Intl.DateTimeFormatOptions = {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "numeric",
-};
-
-const MINUTE = 60_000;
-const HOUR = 60 * MINUTE;
-const DAY = 24 * HOUR;
-
 /**
  * "Closed tabs" of the Profile: how many tabs ended Done, Not done or Other in a period, and the
- * newest records with their note and what the agents did. Nothing shows when the host cannot list
+ * newest records. A record shows its outcome and name; the name opens its note and last result. Nothing shows when the host cannot list
  * them. The store loads the pages; this component only draws what it is given.
  */
 export function ProfileTabReports(props: { state: ProfileTabReportsState }) {
@@ -79,26 +68,14 @@ export function ProfileTabReports(props: { state: ProfileTabReportsState }) {
   const [continuing, setContinuing] = createSignal<string | null>(null);
   const [continueFailed, setContinueFailed] = createSignal<string | null>(null);
   const outcome = (value: ChannelTabOutcome) => OUTCOMES.find((item) => item.value === value) ?? OUTCOMES[2];
-  const duration = (report: ChannelTabReport) => {
-    const span = Math.max(0, Date.parse(report.closedAt) - Date.parse(report.openedAt));
-    if (span < HOUR)
-      return t("settings.profile.tabReports.duration.minute", { count: Math.max(1, Math.round(span / MINUTE)) });
-    if (span < DAY) return t("settings.profile.tabReports.duration.hour", { count: Math.round(span / HOUR) });
-    return t("settings.profile.tabReports.duration.day", { count: Math.round(span / DAY) });
-  };
-  const details = (report: ChannelTabReport) =>
-    [
-      format.date(Date.parse(report.closedAt), REPORT_TIME_FORMAT),
-      t("settings.profile.tabReports.duration", { duration: duration(report) }),
-      t("settings.profile.tabReports.tasks", {
-        completed: report.tasks.completed,
-        failed: report.tasks.failed,
-        open: report.tasks.open,
-      }),
-      ...(report.agents.length > 0
-        ? [t("settings.profile.tabReports.agents", { names: format.list(report.agents.map((agent) => agent.name)) })]
-        : []),
-    ].join(" · ");
+  /** The records whose note and last result show. A record starts closed. */
+  const [expanded, setExpanded] = createSignal<ReadonlySet<string>>(new Set());
+  const toggle = (id: string) =>
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
   async function continueTab(report: ChannelTabReport, onContinue: (report: ChannelTabReport) => Promise<boolean>) {
     if (continuing() !== null) return;
     setContinuing(report.id);
@@ -176,69 +153,89 @@ export function ProfileTabReports(props: { state: ProfileTabReportsState }) {
               >
                 <ItemGroup class="settings-modal-card">
                   <For each={props.state.reports} keyed={(report) => report.id}>
-                    {(report) => (
-                      <Item class="profile-tab-report">
-                        <ItemContent>
-                          <ItemTitle class="profile-tab-report-title">
-                            <Badge variant={outcome(report().outcome).badge}>
-                              {t(outcome(report().outcome).label)}
-                            </Badge>
-                            <span class="profile-tab-report-name">
-                              {report().topicName} · {report().channelName}
-                            </span>
-                          </ItemTitle>
-                          <Show when={report().note}>
-                            {(note) => <ItemDescription class="profile-tab-report-note">{note()}</ItemDescription>}
-                          </Show>
-                          <ItemDescription>{details(report())}</ItemDescription>
-                          <Show when={props.state.continueBlocked?.(report())}>
-                            {(reason) => (
-                              <ItemDescription class="profile-tab-report-blocked">{t(reason())}</ItemDescription>
-                            )}
-                          </Show>
-                          <Show when={continueFailed() === report().id}>
-                            <ItemDescription role="alert" class="profile-tab-report-failed">
-                              {t("settings.profile.tabReports.continue.failed")}
-                            </ItemDescription>
-                          </Show>
-                          <Show when={report().lastResult}>
-                            {(result) => (
-                              <ItemDescription class="profile-tab-report-result" title={result()}>
-                                {t("settings.profile.tabReports.lastResult", { result: result() })}
+                    {(report) => {
+                      const bodyId = `profile-tab-report-${report().id}`;
+                      const hasBody = () => Boolean(report().note || report().lastResult);
+                      const open = () => hasBody() && expanded().has(report().id);
+                      const name = () => `${report().topicName} · ${report().channelName}`;
+                      return (
+                        <Item class="profile-tab-report">
+                          <ItemContent>
+                            <ItemTitle class="profile-tab-report-title">
+                              <Badge variant={outcome(report().outcome).badge}>
+                                {t(outcome(report().outcome).label)}
+                              </Badge>
+                              <Show when={hasBody()} fallback={<span class="profile-tab-report-name">{name()}</span>}>
+                                <Button
+                                  variant="unstyled"
+                                  type="button"
+                                  class="profile-tab-report-toggle"
+                                  aria-expanded={open() ? "true" : "false"}
+                                  aria-controls={open() ? bodyId : undefined}
+                                  onClick={() => toggle(report().id)}
+                                >
+                                  <span class="profile-tab-report-name">{name()}</span>
+                                </Button>
+                              </Show>
+                            </ItemTitle>
+                            <Show when={open()}>
+                              <div id={bodyId} class="profile-tab-report-body">
+                                <Show when={report().note}>
+                                  {(note) => (
+                                    <ItemDescription class="profile-tab-report-clamp">{note()}</ItemDescription>
+                                  )}
+                                </Show>
+                                <Show when={report().lastResult}>
+                                  {(result) => (
+                                    <ItemDescription class="profile-tab-report-clamp" title={result()}>
+                                      {t("settings.profile.tabReports.lastResult", { result: result() })}
+                                    </ItemDescription>
+                                  )}
+                                </Show>
+                              </div>
+                            </Show>
+                            <Show when={props.state.continueBlocked?.(report())}>
+                              {(reason) => (
+                                <ItemDescription class="profile-tab-report-blocked">{t(reason())}</ItemDescription>
+                              )}
+                            </Show>
+                            <Show when={continueFailed() === report().id}>
+                              <ItemDescription role="alert" class="profile-tab-report-failed">
+                                {t("settings.profile.tabReports.continue.failed")}
                               </ItemDescription>
-                            )}
-                          </Show>
-                        </ItemContent>
-                        <ItemActions>
-                          <Show when={props.state.onContinue}>
-                            {(onContinue) => (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                aria-label={t("settings.profile.tabReports.continue.label", {
-                                  name: report().topicName,
-                                })}
-                                disabled={props.state.continueBlocked?.(report()) != null}
-                                loading={continuing() === report().id}
-                                onClick={() => void continueTab(report(), onContinue())}
-                              >
-                                {t("settings.profile.tabReports.continue.action")}
-                              </Button>
-                            )}
-                          </Show>
-                          <IconButton
-                            variant="ghost"
-                            label={t("settings.profile.tabReports.delete.label", { name: report().topicName })}
-                            onClick={() => {
-                              setDeleteFailed(false);
-                              setDeleting(report());
-                            }}
-                          >
-                            <Trash2 aria-hidden="true" />
-                          </IconButton>
-                        </ItemActions>
-                      </Item>
-                    )}
+                            </Show>
+                          </ItemContent>
+                          <ItemActions>
+                            <Show when={props.state.onContinue}>
+                              {(onContinue) => (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  aria-label={t("settings.profile.tabReports.continue.label", {
+                                    name: report().topicName,
+                                  })}
+                                  disabled={props.state.continueBlocked?.(report()) != null}
+                                  loading={continuing() === report().id}
+                                  onClick={() => void continueTab(report(), onContinue())}
+                                >
+                                  {t("settings.profile.tabReports.continue.action")}
+                                </Button>
+                              )}
+                            </Show>
+                            <IconButton
+                              variant="ghost"
+                              label={t("settings.profile.tabReports.delete.label", { name: report().topicName })}
+                              onClick={() => {
+                                setDeleteFailed(false);
+                                setDeleting(report());
+                              }}
+                            >
+                              <Trash2 aria-hidden="true" />
+                            </IconButton>
+                          </ItemActions>
+                        </Item>
+                      );
+                    }}
                   </For>
                 </ItemGroup>
                 <Show when={props.state.hasMore}>

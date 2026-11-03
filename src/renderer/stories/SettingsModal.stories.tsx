@@ -432,7 +432,11 @@ function storyTabReports(count: number): ChannelTabReport[] {
             ]
           : [{ id: "agent-1", name: "Nova" }],
       tasks: { completed: 3 - (index % 3), failed: index % 3 === 1 ? 1 : 0, open: index % 3 === 2 ? 1 : 0 },
-      lastResult: outcome === "done" ? "The plan is written and the dates are set for the first week." : null,
+      // Longer than four lines, so the open record shows the cut.
+      lastResult:
+        outcome === "done"
+          ? "The plan is written and the dates are set for the first week. Each task has an owner, and the owners know whom to ask when a task stops. The launch review is on Friday, the copy is in review, and the pricing page waits for the legal check of the new terms before it goes live…"
+          : null,
     };
   });
 }
