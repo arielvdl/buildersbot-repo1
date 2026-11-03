@@ -105,7 +105,14 @@ const turn = (message) => {
     finish(message, ${JSON.stringify(STEERED_ANSWER)});
     return;
   }
-  if (JSON.stringify(message.message).includes("late-steer")) {
+  const content = message.message?.content;
+  // Only the agent's own first message holds the turn. The guard's review of the message quotes its
+  // text inside a longer prompt, so a bare includes() holds the guard probe and stalls the turn
+  // before it starts; the guard probes run with "--tools=", the agent's session does not.
+  const ownTexts = Array.isArray(content)
+    ? content.filter((block) => block && block.type === "text").map((block) => block.text)
+    : [content];
+  if (!args.includes("--tools=") && ownTexts.some((text) => text === "late-steer")) {
     begin(message, ${JSON.stringify(OLD_ANSWER)});
     held = message;
     fs.writeFileSync(${JSON.stringify(holdMarker)}, message.uuid);

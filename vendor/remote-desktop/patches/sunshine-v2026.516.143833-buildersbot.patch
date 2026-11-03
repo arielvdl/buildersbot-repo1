@@ -20,12 +20,12 @@ index ccfb8d7a..8b0b6c33 100644
      list(APPEND SUNSHINE_DEFINITIONS EGL_NO_X11=1)
  endif()
  
-+# OpenBot: the prebuilt FFmpeg needs vaMapBuffer2 also when libva is older than 2.21.
++# Builders Bot: the prebuilt FFmpeg needs vaMapBuffer2 also when libva is older than 2.21.
 +if(NOT FREEBSD)
-+    list(APPEND PLATFORM_TARGET_FILES "${CMAKE_SOURCE_DIR}/src/platform/linux/openbot_libva_compat.cpp")
++    list(APPEND PLATFORM_TARGET_FILES "${CMAKE_SOURCE_DIR}/src/platform/linux/buildersbot_libva_compat.cpp")
 +endif()
 +
-+# OpenBot: graphics.cpp and misc.cpp call libcap on every Linux build, also when DRM is disabled.
++# Builders Bot: graphics.cpp and misc.cpp call libcap on every Linux build, also when DRM is disabled.
 +if(NOT FREEBSD AND NOT LIBCAP_FOUND)
 +    find_package(LIBCAP REQUIRED)
 +    include_directories(SYSTEM ${LIBCAP_INCLUDE_DIRS})
@@ -40,8 +40,8 @@ index ccfb8d7a..8b0b6c33 100644
          ${CMAKE_SOURCE_DIR}/src/platform/linux/input/inputtino*.cpp)
  list(APPEND PLATFORM_TARGET_FILES ${INPUTTINO_SOURCES})
 +list(APPEND PLATFORM_TARGET_FILES
-+        "${CMAKE_SOURCE_DIR}/src/platform/linux/input/openbot_xtest.h"
-+        "${CMAKE_SOURCE_DIR}/src/platform/linux/input/openbot_xtest.cpp")
++        "${CMAKE_SOURCE_DIR}/src/platform/linux/input/buildersbot_xtest.h"
++        "${CMAKE_SOURCE_DIR}/src/platform/linux/input/buildersbot_xtest.cpp")
  
  # build libevdev before the libinputtino target
  if(EXTERNAL_PROJECT_LIBEVDEV_USED)
@@ -53,7 +53,7 @@ index 42a5dbe1..9ef25249 100644
          "${CMAKE_SOURCE_DIR}/src/platform/macos/input.cpp"
          "${CMAKE_SOURCE_DIR}/src/platform/macos/microphone.mm"
          "${CMAKE_SOURCE_DIR}/src/platform/macos/misc.mm"
-+        "${CMAKE_SOURCE_DIR}/src/platform/macos/openbot_setup.mm"
++        "${CMAKE_SOURCE_DIR}/src/platform/macos/buildersbot_setup.mm"
          "${CMAKE_SOURCE_DIR}/src/platform/macos/misc.h"
          "${CMAKE_SOURCE_DIR}/src/platform/macos/nv12_zero_device.cpp"
          "${CMAKE_SOURCE_DIR}/src/platform/macos/nv12_zero_device.h"
@@ -62,12 +62,12 @@ index 42a5dbe1..9ef25249 100644
              "${CMAKE_SOURCE_DIR}/third-party/tray/src/tray_darwin.m")
  endif()
 +
-+set_source_files_properties("${CMAKE_SOURCE_DIR}/src/platform/macos/openbot_setup.mm" PROPERTIES COMPILE_FLAGS "-fobjc-arc")
++set_source_files_properties("${CMAKE_SOURCE_DIR}/src/platform/macos/buildersbot_setup.mm" PROPERTIES COMPILE_FLAGS "-fobjc-arc")
 +
-+add_executable(openbot-setup-test "${CMAKE_SOURCE_DIR}/tests/unit/test_openbot_setup.mm")
-+target_compile_options(openbot-setup-test PRIVATE -fobjc-arc)
-+target_compile_features(openbot-setup-test PRIVATE cxx_std_20)
-+target_link_libraries(openbot-setup-test PRIVATE nlohmann_json::nlohmann_json ${APP_KIT_LIBRARY} ${APP_SERVICES_LIBRARY})
++add_executable(buildersbot-setup-test "${CMAKE_SOURCE_DIR}/tests/unit/test_buildersbot_setup.mm")
++target_compile_options(buildersbot-setup-test PRIVATE -fobjc-arc)
++target_compile_features(buildersbot-setup-test PRIVATE cxx_std_20)
++target_link_libraries(buildersbot-setup-test PRIVATE nlohmann_json::nlohmann_json ${APP_KIT_LIBRARY} ${APP_SERVICES_LIBRARY})
 diff --git a/package-lock.json b/package-lock.json
 index f8381b16..049b6fbb 100644
 --- a/package-lock.json
@@ -1204,7 +1204,7 @@ index 2f703dbc..c9fb7f58 100644
 @@ -1,3 +1,7 @@
 +#include <cstdlib>
 +#ifdef __APPLE__
-+#include "platform/macos/openbot_setup.h"
++#include "platform/macos/buildersbot_setup.h"
 +#endif
  /**
   * @file src/confighttp.cpp
@@ -1338,19 +1338,19 @@ index 2f703dbc..c9fb7f58 100644
 +   * @param response The HTTP response object.
 +   * @param request The HTTP request object.
 +   */
-+  void getOpenBotSetup(const resp_https_t &response, const req_https_t &request) {
++  void getBuildersBotSetup(const resp_https_t &response, const req_https_t &request) {
 +    if (!authenticate(response, request)) return;
 +#ifdef __APPLE__
-+    send_response(response, platf::openbot_setup_status());
++    send_response(response, platf::buildersbot_setup_status());
 +#else
 +    not_found(response, request, "macOS setup is unavailable.");
 +#endif
 +  }
 +
-+  void openBotTest(const resp_https_t &response, const req_https_t &request) {
++  void buildersBotTest(const resp_https_t &response, const req_https_t &request) {
 +    if (!authenticate(response, request)) return;
 +#ifdef __APPLE__
-+    if (!std::getenv("OPENBOT_REMOTE_SETUP")) {
++    if (!std::getenv("BUILDERSBOT_REMOTE_SETUP")) {
 +      not_found(response, request, "Remote desktop testing is unavailable.");
 +      return;
 +    }
@@ -1364,15 +1364,15 @@ index 2f703dbc..c9fb7f58 100644
 +        bad_request(response, request, "Invalid test display.");
 +        return;
 +      }
-+      platf::openbot_test_action(body["action"].get<std::string>(), body.value("displayId", ""));
++      platf::buildersbot_test_action(body["action"].get<std::string>(), body.value("displayId", ""));
 +    }
-+    send_response(response, platf::openbot_test_status());
++    send_response(response, platf::buildersbot_test_status());
 +#else
 +    not_found(response, request, "macOS setup is unavailable.");
 +#endif
 +  }
 +
-+  void getOpenBotDisplays(const resp_https_t &response, const req_https_t &request) {
++  void getBuildersBotDisplays(const resp_https_t &response, const req_https_t &request) {
 +    if (!authenticate(response, request)) {
 +      return;
 +    }
@@ -1402,10 +1402,10 @@ index 2f703dbc..c9fb7f58 100644
 +    server.resource["^/api/pin$"]["GET"] = getPendingPairings;
      server.resource["^/api/pin$"]["POST"] = savePin;
      server.resource["^/api/logs$"]["GET"] = getLogs;
-+    server.resource["^/api/openbot/setup$"]["GET"] = getOpenBotSetup;
-+    server.resource["^/api/openbot/test$"]["GET"] = openBotTest;
-+    server.resource["^/api/openbot/test$"]["POST"] = openBotTest;
-+    server.resource["^/api/openbot/displays$"]["GET"] = getOpenBotDisplays;
++    server.resource["^/api/buildersbot/setup$"]["GET"] = getBuildersBotSetup;
++    server.resource["^/api/buildersbot/test$"]["GET"] = buildersBotTest;
++    server.resource["^/api/buildersbot/test$"]["POST"] = buildersBotTest;
++    server.resource["^/api/buildersbot/displays$"]["GET"] = getBuildersBotDisplays;
      server.resource["^/api/reset-display-device-persistence$"]["POST"] = resetDisplayDevicePersistence;
      server.resource["^/api/restart$"]["POST"] = restart;
      server.resource["^/api/vigembus/status$"]["GET"] = getViGEmBusStatus;
@@ -1417,7 +1417,7 @@ index e8c4ea00..404fef87 100644
    void browseDirectory(const resp_https_t &response, const req_https_t &request);
    void getLocale(const resp_https_t &response, const req_https_t &request);
    void getCSRFToken(const resp_https_t &response, const req_https_t &request);
-+  void getOpenBotDisplays(const resp_https_t &response, const req_https_t &request);
++  void getBuildersBotDisplays(const resp_https_t &response, const req_https_t &request);
 +
 +  void getPendingPairings(const resp_https_t &, const req_https_t &);
 +  void cancelPairing(const resp_https_t &, const req_https_t &);
@@ -1689,7 +1689,7 @@ index 13df6784..26e77cec 100644
 @@ -1,3 +1,7 @@
 +#include <cstdlib>
 +#ifdef __APPLE__
-+#include "platform/macos/openbot_setup.h"
++#include "platform/macos/buildersbot_setup.h"
 +#endif
  /**
   * @file src/main.cpp
@@ -1699,8 +1699,8 @@ index 13df6784..26e77cec 100644
  
  void mainThreadLoop(const std::shared_ptr<safe::event_t<bool>> &shutdown_event) {
 +  #ifdef __APPLE__
-+  if (std::getenv("OPENBOT_REMOTE_SETUP")) {
-+    platf::openbot_main_loop([&] { return shutdown_event->peek(); });
++  if (std::getenv("BUILDERSBOT_REMOTE_SETUP")) {
++    platf::buildersbot_main_loop([&] { return shutdown_event->peek(); });
 +    return;
 +  }
 +  #endif
@@ -2687,7 +2687,7 @@ index acc1b759..af790811 100644
  #include "src/logging.h"
  #include "src/platform/common.h"
  #include "src/platform/linux/input/inputtino_seat.h"
-+#include "src/platform/linux/input/openbot_xtest.h"
++#include "src/platform/linux/input/buildersbot_xtest.h"
  #include "src/utility.h"
  
  using namespace std::literals;
@@ -2698,7 +2698,7 @@ index acc1b759..af790811 100644
 +      // An X server reads uinput only through a libinput driver, and a virtual one such as Xvfb
 +      // has none. XTest reaches every X server, so it is used for an X11 session.
 +      if (!std::getenv("WAYLAND_DISPLAY")) {
-+        xtest = openbot_xtest::open();
++        xtest = buildersbot_xtest::open();
 +      }
      }
  
@@ -2708,7 +2708,7 @@ index acc1b759..af790811 100644
      inputtino::Result<inputtino::Keyboard> keyboard;
  
 +    // When set, mouse and keyboard input go here instead of to the uinput devices.
-+    std::unique_ptr<openbot_xtest::xtest_t> xtest;
++    std::unique_ptr<buildersbot_xtest::xtest_t> xtest;
 +
      /**
       * A list of gamepads that are currently connected.
@@ -2791,15 +2791,15 @@ index f8d822de..8790aa1f 100644
        (*raw->mouse).horizontal_scroll(high_res_distance);
      }
    }
-diff --git a/src/platform/linux/input/openbot_xtest.cpp b/src/platform/linux/input/openbot_xtest.cpp
+diff --git a/src/platform/linux/input/buildersbot_xtest.cpp b/src/platform/linux/input/buildersbot_xtest.cpp
 new file mode 100644
 index 00000000..fb0ca3b7
 --- /dev/null
-+++ b/src/platform/linux/input/openbot_xtest.cpp
++++ b/src/platform/linux/input/buildersbot_xtest.cpp
 @@ -0,0 +1,403 @@
 +/**
-+ * @file src/platform/linux/input/openbot_xtest.cpp
-+ * @brief Definitions for the OpenBot XTest input fallback.
++ * @file src/platform/linux/input/buildersbot_xtest.cpp
++ * @brief Definitions for the Builders Bot XTest input fallback.
 + */
 +// standard includes
 +#include <cstdlib>
@@ -2810,13 +2810,13 @@ index 00000000..fb0ca3b7
 +#include <moonlight-common-c/src/Limelight.h>
 +
 +// local includes
-+#include "openbot_xtest.h"
++#include "buildersbot_xtest.h"
 +#include "src/logging.h"
 +#include "src/platform/linux/misc.h"
 +
 +using namespace std::literals;
 +
-+namespace platf::openbot_xtest {
++namespace platf::buildersbot_xtest {
 +  namespace {
 +    // Opaque X11 types: the fallback loads libX11 and libXtst at run time, as the X11 capture code
 +    // does, so Sunshine still starts on a computer that has no X server libraries.
@@ -3199,16 +3199,16 @@ index 00000000..fb0ca3b7
 +        return 0;
 +    }
 +  }
-+}  // namespace platf::openbot_xtest
-diff --git a/src/platform/linux/input/openbot_xtest.h b/src/platform/linux/input/openbot_xtest.h
++}  // namespace platf::buildersbot_xtest
+diff --git a/src/platform/linux/input/buildersbot_xtest.h b/src/platform/linux/input/buildersbot_xtest.h
 new file mode 100644
 index 00000000..7fb4c41a
 --- /dev/null
-+++ b/src/platform/linux/input/openbot_xtest.h
++++ b/src/platform/linux/input/buildersbot_xtest.h
 @@ -0,0 +1,42 @@
 +/**
-+ * @file src/platform/linux/input/openbot_xtest.h
-+ * @brief Declarations for the OpenBot XTest input fallback.
++ * @file src/platform/linux/input/buildersbot_xtest.h
++ * @brief Declarations for the Builders Bot XTest input fallback.
 + */
 +#pragma once
 +
@@ -3216,7 +3216,7 @@ index 00000000..7fb4c41a
 +#include <cstdint>
 +#include <memory>
 +
-+namespace platf::openbot_xtest {
++namespace platf::buildersbot_xtest {
 +
 +  /**
 +   * Sends input to the X server through the XTest extension.
@@ -3247,16 +3247,16 @@ index 00000000..7fb4c41a
 +   * @return The event code, or 0 when the key has no mapping.
 +   */
 +  int linux_key_code(std::uint16_t modcode);
-+}  // namespace platf::openbot_xtest
-diff --git a/src/platform/linux/openbot_libva_compat.cpp b/src/platform/linux/openbot_libva_compat.cpp
++}  // namespace platf::buildersbot_xtest
+diff --git a/src/platform/linux/buildersbot_libva_compat.cpp b/src/platform/linux/buildersbot_libva_compat.cpp
 new file mode 100644
 index 00000000..24572465
 --- /dev/null
-+++ b/src/platform/linux/openbot_libva_compat.cpp
++++ b/src/platform/linux/buildersbot_libva_compat.cpp
 @@ -0,0 +1,16 @@
 +/**
-+ * @file src/platform/linux/openbot_libva_compat.cpp
-+ * @brief OpenBot: vaMapBuffer2 for a libva older than 2.21.
++ * @file src/platform/linux/buildersbot_libva_compat.cpp
++ * @brief Builders Bot: vaMapBuffer2 for a libva older than 2.21.
 + *
 + * The prebuilt FFmpeg calls vaMapBuffer2, which libva adds in 2.21. Ubuntu 24.04 has libva 2.20,
 + * so without this definition Sunshine does not link there. vaMapBuffer maps the buffer with the
@@ -3278,7 +3278,7 @@ index de721819..fbf8d310 100644
  #include <mach/mach.h>
  
  // local includes
-+#include "openbot_setup.h"
++#include "buildersbot_setup.h"
  #include "src/display_device.h"
  #include "src/input.h"
  #include "src/logging.h"
@@ -3287,7 +3287,7 @@ index de721819..fbf8d310 100644
  
      CGEventSetFlags(event, macos_input->kb_flags);
 -    CGEventPost(kCGSessionEventTap, event);
-+    if (!openbot_test_input(event)) CGEventPost(kCGSessionEventTap, event);
++    if (!buildersbot_test_input(event)) CGEventPost(kCGSessionEventTap, event);
      CFRelease(event);
    }
  
@@ -3295,7 +3295,7 @@ index de721819..fbf8d310 100644
  
      // Inject modifier flags into mouse events so that shift+click and similar combinations work correctly.
      CGEventSetFlags(event, macos_input->kb_flags);
-+    if (openbot_test_input(event)) return;
++    if (buildersbot_test_input(event)) return;
      CGEventPost(kCGHIDEventTap, event);
      // For why this is here, see:
      // https://stackoverflow.com/questions/15194409/simulated-mouseevent-not-working-properly-osx
@@ -3312,7 +3312,7 @@ index de721819..fbf8d310 100644
 -    CGEventRef upEvent = CGEventCreateScrollWheelEvent(nullptr, kCGScrollEventUnitLine, 2, wheelY, wheelX);
 -    CGEventPost(kCGHIDEventTap, upEvent);
 +    CGEventRef upEvent = CGEventCreateScrollWheelEvent(nullptr, kCGScrollEventUnitPixel, 2, wheelY, wheelX);
-+    if (!openbot_test_input(upEvent)) CGEventPost(kCGHIDEventTap, upEvent);
++    if (!buildersbot_test_input(upEvent)) CGEventPost(kCGHIDEventTap, upEvent);
      CFRelease(upEvent);
    }
  
@@ -3323,40 +3323,40 @@ index de721819..fbf8d310 100644
 -    CGEventPost(kCGHIDEventTap, upEvent);
 +    int wheelX = high_res_distance;
 +    CGEventRef upEvent = CGEventCreateScrollWheelEvent(nullptr, kCGScrollEventUnitPixel, 2, wheelY, wheelX);
-+    if (!openbot_test_input(upEvent)) CGEventPost(kCGHIDEventTap, upEvent);
++    if (!buildersbot_test_input(upEvent)) CGEventPost(kCGHIDEventTap, upEvent);
      CFRelease(upEvent);
    }
  
-diff --git a/src/platform/macos/openbot_setup.h b/src/platform/macos/openbot_setup.h
+diff --git a/src/platform/macos/buildersbot_setup.h b/src/platform/macos/buildersbot_setup.h
 new file mode 100644
 index 00000000..3821983e
 --- /dev/null
-+++ b/src/platform/macos/openbot_setup.h
++++ b/src/platform/macos/buildersbot_setup.h
 @@ -0,0 +1,12 @@
-+// OpenBot additions to Sunshine, distributed under GPL-3.0.
++// Builders Bot additions to Sunshine, distributed under GPL-3.0.
 +#pragma once
 +#include <functional>
 +#include <ApplicationServices/ApplicationServices.h>
 +#include <nlohmann/json.hpp>
 +namespace platf {
-+  nlohmann::json openbot_setup_status();
-+  nlohmann::json openbot_test_status();
-+  void openbot_test_action(const std::string &action, const std::string &display_id = "");
-+  void openbot_main_loop(const std::function<bool()> &stopped);
-+  bool openbot_test_input(CGEventRef event);
++  nlohmann::json buildersbot_setup_status();
++  nlohmann::json buildersbot_test_status();
++  void buildersbot_test_action(const std::string &action, const std::string &display_id = "");
++  void buildersbot_main_loop(const std::function<bool()> &stopped);
++  bool buildersbot_test_input(CGEventRef event);
 +}
-diff --git a/src/platform/macos/openbot_setup.mm b/src/platform/macos/openbot_setup.mm
+diff --git a/src/platform/macos/buildersbot_setup.mm b/src/platform/macos/buildersbot_setup.mm
 new file mode 100644
 index 00000000..e42489af
 --- /dev/null
-+++ b/src/platform/macos/openbot_setup.mm
++++ b/src/platform/macos/buildersbot_setup.mm
 @@ -0,0 +1,177 @@
-+// OpenBot additions to Sunshine, distributed under GPL-3.0.
++// Builders Bot additions to Sunshine, distributed under GPL-3.0.
 +#import <AppKit/AppKit.h>
 +#import <CoreGraphics/CoreGraphics.h>
 +#include <mutex>
 +#include <unistd.h>
-+#include "openbot_setup.h"
++#include "buildersbot_setup.h"
 +#include "misc.h"
 +
 +namespace {
@@ -3376,15 +3376,15 @@ index 00000000..e42489af
 +  }
 +}
 +
-+@interface OpenBotTestView : NSView
++@interface BuildersBotTestView : NSView
 +@end
-+@implementation OpenBotTestView
++@implementation BuildersBotTestView
 +- (BOOL)acceptsFirstResponder { return YES; }
 +- (void)drawRect:(NSRect)dirtyRect {
 +  [[NSColor windowBackgroundColor] setFill];
 +  NSRectFill(self.bounds);
 +  NSDictionary *attributes = @{NSFontAttributeName: [NSFont systemFontOfSize:20], NSForegroundColorAttributeName: [NSColor labelColor]};
-+  [@"OpenBot remote desktop test" drawAtPoint:NSMakePoint(24, 240) withAttributes:attributes];
++  [@"Builders Bot remote desktop test" drawAtPoint:NSMakePoint(24, 240) withAttributes:attributes];
 +  [@"Click the target through the remote connection." drawAtPoint:NSMakePoint(24, 198) withAttributes:attributes];
 +  [[NSColor controlAccentColor] setFill];
 +  NSRectFill(NSMakeRect(24, 110, 390, 60));
@@ -3422,7 +3422,7 @@ index 00000000..e42489af
 +@end
 +
 +namespace platf {
-+  nlohmann::json openbot_setup_status() {
++  nlohmann::json buildersbot_setup_status() {
 +    auto session = CGSessionCopyCurrentDictionary();
 +    bool gui = false;
 +    if (session) {
@@ -3444,7 +3444,7 @@ index 00000000..e42489af
 +      {"hostName", std::string([NSProcessInfo.processInfo.hostName UTF8String])}};
 +  }
 +
-+  nlohmann::json openbot_test_status() {
++  nlohmann::json buildersbot_test_status() {
 +    __block nlohmann::json result;
 +    on_main(^{
 +      result = {{"active", panel != nil && panel.visible}, {"mouse", clicked}, {"keyboard", typed}, {"code", std::string([code UTF8String])}};
@@ -3452,7 +3452,7 @@ index 00000000..e42489af
 +    return result;
 +  }
 +
-+  void openbot_test_action(const std::string &action, const std::string &display_id) {
++  void buildersbot_test_action(const std::string &action, const std::string &display_id) {
 +    on_main(^{
 +      if (action == "stop") {
 +        [panel close];
@@ -3470,9 +3470,9 @@ index 00000000..e42489af
 +      panel = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 480, 290) styleMask:NSWindowStyleMaskTitled backing:NSBackingStoreBuffered defer:NO];
 +      panel.releasedWhenClosed = NO;
 +      panel.movable = NO;
-+      panel.title = @"OpenBot remote desktop test";
++      panel.title = @"Builders Bot remote desktop test";
 +      panel.level = NSFloatingWindowLevel;
-+      panel.contentView = [[OpenBotTestView alloc] initWithFrame:NSMakeRect(0, 0, 480, 290)];
++      panel.contentView = [[BuildersBotTestView alloc] initWithFrame:NSMakeRect(0, 0, 480, 290)];
 +      NSScreen *target = NSScreen.screens.firstObject;
 +      for (NSScreen *screen in NSScreen.screens) {
 +        if (std::string([screen.deviceDescription[@"NSScreenNumber"] stringValue].UTF8String) == display_id) target = screen;
@@ -3491,7 +3491,7 @@ index 00000000..e42489af
 +    });
 +  }
 +
-+  bool openbot_test_input(CGEventRef event) {
++  bool buildersbot_test_input(CGEventRef event) {
 +    std::lock_guard<std::mutex> lock(input_mutex);
 +    if (!test_mode) return false;
 +    auto type = CGEventGetType(event);
@@ -3508,7 +3508,7 @@ index 00000000..e42489af
 +    return true;
 +  }
 +
-+  void openbot_main_loop(const std::function<bool()> &stopped) {
++  void buildersbot_main_loop(const std::function<bool()> &stopped) {
 +    @autoreleasepool {
 +      [NSApplication sharedApplication];
 +      [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
@@ -3829,8 +3829,8 @@ index 984481f6..f8118465 100644
      list(APPEND TEST_SOURCES ${MACOS_TEST_SOURCES})
  endif ()
  
-+# Compile only the backported security regressions for OpenBot's runtime build.
-+if(OPENBOT_SECURITY_TESTS)
++# Compile only the backported security regressions for Builders Bot's runtime build.
++if(BUILDERSBOT_SECURITY_TESTS)
 +    set(TEST_SOURCES
 +        "${CMAKE_SOURCE_DIR}/tests/tests_main.cpp"
 +        "${CMAKE_SOURCE_DIR}/tests/unit/test_input.cpp"
@@ -3965,11 +3965,11 @@ index 195a666c..50c6630e 100644
        // If not authenticated, authenticate() already sent the response
      };
  
-+    server->resource["^/api/openbot/displays$"]["GET"] = [](
++    server->resource["^/api/buildersbot/displays$"]["GET"] = [](
 +                                                               const std::shared_ptr<SimpleWeb::ServerBase<SimpleWeb::HTTPS>::Response> &response,
 +                                                               const std::shared_ptr<SimpleWeb::ServerBase<SimpleWeb::HTTPS>::Request> &request
 +                                                             ) {
-+      confighttp::getOpenBotDisplays(response, request);
++      confighttp::getBuildersBotDisplays(response, request);
 +    };
 +
      // Add a route to test send_unauthorized
@@ -4135,16 +4135,16 @@ index 195a666c..50c6630e 100644
    ASSERT_EQ(body, "authenticated");
  }
  
-+TEST_F(ConfigHttpTest, OpenBotDisplaysRejectsNoAuth) {
-+  const auto response = client->request("GET", "/api/openbot/displays");
++TEST_F(ConfigHttpTest, BuildersBotDisplaysRejectsNoAuth) {
++  const auto response = client->request("GET", "/api/buildersbot/displays");
 +  ASSERT_EQ(response->status_code, "401 Unauthorized");
 +}
 +
-+TEST_F(ConfigHttpTest, OpenBotDisplaysReturnsAnArray) {
++TEST_F(ConfigHttpTest, BuildersBotDisplaysReturnsAnArray) {
 +  SimpleWeb::CaseInsensitiveMultimap headers;
 +  headers.emplace("Authorization", create_auth_header("testuser", "testpass"));
 +
-+  const auto response = client->request("GET", "/api/openbot/displays", "", headers);
++  const auto response = client->request("GET", "/api/buildersbot/displays", "", headers);
 +  ASSERT_EQ(response->status_code, "200 OK");
 +  const auto body = nlohmann::json::parse(response->content.string());
 +  ASSERT_TRUE(body.contains("displays"));
@@ -4833,16 +4833,16 @@ index 00000000..9e539d1e
 +  ASSERT_TRUE(nvhttp::set_client_enabled(uuid, false));
 +  EXPECT_FALSE(nvhttp::test_support::authorize_client_certificate(credentials.x509));
 +}
-diff --git a/tests/unit/test_openbot_setup.mm b/tests/unit/test_openbot_setup.mm
+diff --git a/tests/unit/test_buildersbot_setup.mm b/tests/unit/test_buildersbot_setup.mm
 new file mode 100644
 index 00000000..7972aebd
 --- /dev/null
-+++ b/tests/unit/test_openbot_setup.mm
++++ b/tests/unit/test_buildersbot_setup.mm
 @@ -0,0 +1,55 @@
-+// OpenBot additions to Sunshine, distributed under GPL-3.0.
++// Builders Bot additions to Sunshine, distributed under GPL-3.0.
 +#import <AppKit/AppKit.h>
 +#include <stdexcept>
-+#include "../../src/platform/macos/openbot_setup.mm"
++#include "../../src/platform/macos/buildersbot_setup.mm"
 +namespace platf { bool is_screen_capture_allowed() { return false; } }
 +#define require(condition) do { if (!(condition)) throw std::runtime_error(#condition); } while (false)
 +int main() {
@@ -4850,15 +4850,15 @@ index 00000000..7972aebd
 +    [NSApplication sharedApplication];
 +    [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
 +    [NSApp finishLaunching];
-+    platf::openbot_test_action("start");
-+    require(platf::openbot_test_status()["active"] == true);
++    platf::buildersbot_test_action("start");
++    require(platf::buildersbot_test_status()["active"] == true);
 +    require(!panel.movable);
-+    auto view = (OpenBotTestView *)panel.contentView;
++    auto view = (BuildersBotTestView *)panel.contentView;
 +    CGEventRef native = CGEventCreateKeyboardEvent(nullptr, 18, true);
 +    NSEvent *event = [NSEvent eventWithCGEvent:native];
 +    require(![view remoteEvent:event]);
 +    [view keyDown:event];
-+    require(platf::openbot_test_status()["keyboard"] == false);
++    require(platf::buildersbot_test_status()["keyboard"] == false);
 +    CGEventSetIntegerValueField(native, kCGEventSourceUserData, event_tag);
 +    event = [NSEvent eventWithCGEvent:native];
 +    require([view remoteEvent:event]);
@@ -4888,8 +4888,8 @@ index 00000000..7972aebd
 +    require(typed);
 +    CFRelease(mouse);
 +    CFRelease(key);
-+    platf::openbot_test_action("stop");
-+    require(platf::openbot_test_status()["active"] == false);
++    platf::buildersbot_test_action("stop");
++    require(platf::buildersbot_test_status()["active"] == false);
 +    require(!test_mode);
 +    puts("Native test: local input rejected; marked Sunshine input recognized; panel cleanup passed.");
 +  }

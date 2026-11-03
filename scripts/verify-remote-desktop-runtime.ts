@@ -44,25 +44,13 @@ await Promise.all([
   access(resolve(`build/remote-desktop-runtime/sources/Sunshine-${lock.remoteDesktop.sunshine.version}-source.tar.gz`)),
   access(resolve("build/remote-desktop-runtime/sources", sunshinePatch)),
   access(
-    await firstExisting(
+    resolve(
       `build/remote-desktop-runtime/sources/moonlight-web-stream-${lock.remoteDesktop.moonlightWeb.version}-buildersbot-source.tar.gz`,
-      `build/remote-desktop-runtime/sources/moonlight-web-stream-${lock.remoteDesktop.moonlightWeb.version}-openbot-source.tar.gz`,
     ),
   ),
   access(resolve("build/remote-desktop-runtime/sources", moonlightPatch)),
   access(join(distributionRoot, "DISTRIBUTION-SHA256SUMS.txt")),
 ]);
-
-/** The first path that exists. The published package carries the name it was built with. */
-async function firstExisting(...paths: string[]): Promise<string> {
-  for (const path of paths) {
-    try {
-      await access(path);
-      return path;
-    } catch {}
-  }
-  return paths[0] ?? "";
-}
 
 await expectMissing(join(root, "static/stream/audio"));
 await expectMissing(join(root, "static/stream/transport/web_socket.js"));
