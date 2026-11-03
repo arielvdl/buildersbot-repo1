@@ -20,7 +20,7 @@ const LEGACY_FOLDER = "OpenBot";
 /** Files that describe one run, and a lock that would point at the old directory. */
 const EPHEMERAL = new Set(["SingletonLock", "SingletonCookie", "SingletonSocket", "logs"]);
 
-export type CarryOverReason = "no-legacy-profile" | "profile-exists" | "carried" | "failed";
+type CarryOverReason = "no-legacy-profile" | "profile-exists" | "carried" | "failed";
 
 export interface CarryOverResult {
   carried: boolean;
