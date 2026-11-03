@@ -81,6 +81,14 @@ export const messages = {
   "channel.topic.closeBusyDescription": "Агенты остановятся, а переписка этой вкладки будет удалена.",
   "channel.stage.label": "Сцена агентов",
   "channel.stage.empty": "Никто не работает",
+  "channel.stage.fold": "Свернуть сцену агентов",
+  "channel.stage.unfold": "Развернуть сцену агентов",
+  "channel.task.wait.summary": {
+    one: "{count} сообщение ждёт",
+    few: "{count} сообщения ждут",
+    many: "{count} сообщений ждут",
+    other: "{count} сообщения ждут",
+  },
   "channel.stage.more": "+{count}",
   "channel.stage.moreLabel": {
     one: "Ещё {count} агент работает",

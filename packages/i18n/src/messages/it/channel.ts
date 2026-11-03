@@ -71,6 +71,9 @@ export const messages = {
   "channel.topic.closeBusyDescription": "Gli agenti si fermano e la conversazione di questa scheda viene eliminata.",
   "channel.stage.label": "Palco degli agenti",
   "channel.stage.empty": "Nessuno sta lavorando",
+  "channel.stage.fold": "Comprimi il palco degli agenti",
+  "channel.stage.unfold": "Espandi il palco degli agenti",
+  "channel.task.wait.summary": { one: "{count} messaggio in attesa", other: "{count} messaggi in attesa" },
   "channel.stage.more": "+{count}",
   "channel.stage.moreLabel": {
     one: "{count} altro agente sta lavorando",

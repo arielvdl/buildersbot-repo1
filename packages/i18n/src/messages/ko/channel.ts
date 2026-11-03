@@ -71,6 +71,9 @@ export const messages = {
   "channel.topic.closeBusyDescription": "에이전트가 멈추고 이 탭의 대화가 삭제돼요.",
   "channel.stage.label": "에이전트 무대",
   "channel.stage.empty": "작업 중인 에이전트가 없어요",
+  "channel.stage.fold": "에이전트 무대 접기",
+  "channel.stage.unfold": "에이전트 무대 펼치기",
+  "channel.task.wait.summary": { other: "대기 중인 메시지 {count}개" },
   "channel.stage.more": "+{count}",
   "channel.stage.moreLabel": {
     one: "에이전트 {count}명이 더 작업 중이에요",

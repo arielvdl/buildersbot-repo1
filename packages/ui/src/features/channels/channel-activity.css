@@ -73,17 +73,33 @@
 }
 .channel-start-retries,
 .channel-task-waits,
-.channel-task-waits-list {
+.channel-task-wait-list {
   margin: 0 var(--buildersbot-space-3);
   padding: 0;
   list-style: none;
 }
-.channel-task-waits-summary {
-  width: fit-content;
-  padding: 0 var(--buildersbot-space-3);
+.channel-task-wait-list {
+  margin: 0;
+}
+.channel-task-waits-toggle {
+  display: inline-flex;
+  padding: var(--buildersbot-space-1) var(--buildersbot-space-3);
+  align-items: center;
+  gap: var(--buildersbot-space-1);
+  border: 0;
+  background: transparent;
   color: var(--buildersbot-text-dim);
-  font-size: var(--buildersbot-text-xs);
+  font-size: var(--buildersbot-text-sm);
   cursor: pointer;
+}
+.channel-task-waits-toggle:hover {
+  color: var(--buildersbot-text);
+}
+.channel-task-waits-toggle svg {
+  transition: transform var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
+}
+.channel-task-waits-toggle svg[data-open] {
+  transform: rotate(90deg);
 }
 .channel-start-retry,
 .channel-task-wait {

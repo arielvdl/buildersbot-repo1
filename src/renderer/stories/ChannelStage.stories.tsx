@@ -54,6 +54,8 @@ export const AtWork: Story = {
       stage={
         <ChannelStage
           collapsed={false}
+          folded={false}
+          onToggleFold={() => {}}
           overflow={0}
           request={REQUEST}
           links={[{ key: "t1", from: "lead", to: "back" }]}
@@ -84,6 +86,8 @@ export const Behaviors: Story = {
       stage={
         <ChannelStage
           collapsed={false}
+          folded={false}
+          onToggleFold={() => {}}
           overflow={2}
           request={{ ...REQUEST, done: 2 }}
           links={[]}
@@ -106,7 +110,19 @@ export const Behaviors: Story = {
 /** Nobody works and the reader chose to fold the stage: a strip, and nothing runs in it. */
 export const Folded: Story = {
   render: () => (
-    <StoryChannelConversation stage={<ChannelStage collapsed overflow={0} request={null} links={[]} actors={[]} />} />
+    <StoryChannelConversation
+      stage={
+        <ChannelStage
+          collapsed
+          folded={false}
+          onToggleFold={() => {}}
+          overflow={0}
+          request={null}
+          links={[]}
+          actors={[]}
+        />
+      }
+    />
   ),
 };
 
@@ -114,7 +130,17 @@ export const Folded: Story = {
 export const Empty: Story = {
   render: () => (
     <StoryChannelConversation
-      stage={<ChannelStage collapsed={false} overflow={0} request={null} links={[]} actors={[]} />}
+      stage={
+        <ChannelStage
+          collapsed={false}
+          folded={false}
+          onToggleFold={() => {}}
+          overflow={0}
+          request={null}
+          links={[]}
+          actors={[]}
+        />
+      }
     />
   ),
 };
@@ -195,6 +221,8 @@ function Scripted() {
       stage={
         <ChannelStage
           collapsed={step().actors.length === 0}
+          folded={false}
+          onToggleFold={() => {}}
           overflow={0}
           request={
             step().parts > 0

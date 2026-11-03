@@ -81,6 +81,14 @@ export const messages = {
   "channel.topic.closeBusyDescription": "Agenci się zatrzymają, a rozmowa z tej karty zostanie usunięta.",
   "channel.stage.label": "Scena agentów",
   "channel.stage.empty": "Nikt nie pracuje",
+  "channel.stage.fold": "Zwiń scenę agentów",
+  "channel.stage.unfold": "Rozwiń scenę agentów",
+  "channel.task.wait.summary": {
+    one: "{count} wiadomość czeka",
+    few: "{count} wiadomości czekają",
+    many: "{count} wiadomości czeka",
+    other: "{count} wiadomości czeka",
+  },
   "channel.stage.more": "+{count}",
   "channel.stage.moreLabel": {
     one: "Kolejny {count} agent pracuje",

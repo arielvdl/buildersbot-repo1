@@ -72,6 +72,9 @@ export const messages = {
   "channel.topic.closeBusyDescription": "De agents stoppen en het gesprek van dit tabblad wordt verwijderd.",
   "channel.stage.label": "Podium van agents",
   "channel.stage.empty": "Niemand is aan het werk",
+  "channel.stage.fold": "Agentenpodium inklappen",
+  "channel.stage.unfold": "Agentenpodium uitklappen",
+  "channel.task.wait.summary": { one: "{count} bericht wacht", other: "{count} berichten wachten" },
   "channel.stage.more": "+{count}",
   "channel.stage.moreLabel": {
     one: "Nog {count} agent is aan het werk",

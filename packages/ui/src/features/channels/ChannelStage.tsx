@@ -12,7 +12,8 @@
  * nothing else: no observer, no animation.
  */
 
-import { createEffect, createSignal, For, Show } from "solid-js";
+import { For, Show } from "solid-js";
+import { Button } from "../../button";
 import { useText } from "../../text";
 import { createTaskListPlayState } from "../conversation/TaskList";
 import type { StageActorData } from "../stage/StageActor";
@@ -40,54 +41,56 @@ export interface ChannelStageProps {
   links: readonly ChannelStageLink[];
   /** Fold the stage into a strip. The desktop sets it while nobody works and the reader chose to fold. */
   collapsed: boolean;
+  /** The reader folded the stage by hand. The button then unfolds it, also while nobody works. */
+  folded: boolean;
+  /** Folds or unfolds the stage of this channel. */
+  onToggleFold: () => void;
 }
-
-/** Folding is sequential: the figures fade out, then the panel folds. Unfolding is the reverse. */
-const FIGURES_OUT_MS = 320;
-const PANEL_OPEN_MS = 520;
 
 export function ChannelStage(props: ChannelStageProps) {
   const { t } = useText();
   const playState = createTaskListPlayState();
-  // `folded` drives the panel height, `mounted` the board and its figures, `closing` their fade-out.
-  const [folded, setFolded] = createSignal(props.collapsed);
-  const [mounted, setMounted] = createSignal(!props.collapsed);
-  const [closing, setClosing] = createSignal(false);
-  createEffect(
-    () => props.collapsed,
-    (collapsed) => {
-      const instant = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      if (collapsed) {
-        setClosing(true);
-        timer = setTimeout(
-          () => {
-            setMounted(false);
-            setClosing(false);
-            setFolded(true);
-          },
-          instant ? 0 : FIGURES_OUT_MS,
-        );
-      } else {
-        setClosing(false);
-        setFolded(false);
-        timer = setTimeout(() => setMounted(true), instant ? 0 : PANEL_OPEN_MS);
-      }
-      return () => clearTimeout(timer);
-    },
-  );
   return (
     <div class="channel-stage-frame">
       <section
         class="channel-stage"
         aria-label={t("channel.stage.label")}
-        data-collapsed={folded() ? "" : undefined}
-        data-closing={closing() ? "" : undefined}
+        data-collapsed={props.collapsed ? "" : undefined}
       >
-        <Show when={folded()}>
-          <p class="channel-stage-strip">{t("channel.stage.empty")}</p>
+        <Show when={!props.collapsed || props.folded}>
+          <Button
+            variant="unstyled"
+            type="button"
+            class="channel-stage-fold"
+            aria-expanded={props.folded ? "false" : "true"}
+            aria-label={props.folded ? t("channel.stage.unfold") : t("channel.stage.fold")}
+            title={props.folded ? t("channel.stage.unfold") : t("channel.stage.fold")}
+            onClick={() => props.onToggleFold()}
+          >
+            <svg
+              viewBox="0 0 16 16"
+              width="14"
+              height="14"
+              aria-hidden="true"
+              data-folded={props.folded ? "" : undefined}
+            >
+              <path
+                d="M4 6.5 8 10l4-3.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </Button>
         </Show>
-        <Show when={mounted()}>
+        <Show
+          when={!props.collapsed}
+          fallback={
+            <p class="channel-stage-strip">{props.folded ? t("channel.stage.label") : t("channel.stage.empty")}</p>
+          }
+        >
           <StageBoard
             actors={props.actors}
             links={props.links}

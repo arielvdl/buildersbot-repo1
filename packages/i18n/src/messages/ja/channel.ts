@@ -71,6 +71,9 @@ export const messages = {
   "channel.topic.closeBusyDescription": "エージェントは停止し、このタブの会話は削除されます。",
   "channel.stage.label": "エージェントのステージ",
   "channel.stage.empty": "作業中のエージェントはいません",
+  "channel.stage.fold": "エージェントステージを折りたたむ",
+  "channel.stage.unfold": "エージェントステージを展開",
+  "channel.task.wait.summary": { other: "{count}件のメッセージが待機中" },
   "channel.stage.more": "+{count}",
   "channel.stage.moreLabel": {
     one: "ほかに {count} 個のエージェントが作業中",

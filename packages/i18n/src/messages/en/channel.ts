@@ -11,8 +11,8 @@ export const messages = defineMessages("channel", {
   "channel.task.onBackup": "{name} runs on the backup model {model}",
   "channel.task.resuming":
     "{name} stopped on a short provider failure. It continues where it stopped ({attempt}/{max}), in {seconds} s",
-  "channel.task.wait.summary": "Queued ({count})",
   "channel.task.wait.tab": "Waiting - {name} answers the earlier message of this tab first",
+  "channel.task.wait.summary": { one: "{count} message waiting", other: "{count} messages waiting" },
   "channel.task.wait.agentTabs": {
     one: "Waiting - {name} already works in {count} tab, the most at the same time. This message starts when it ends",
     other:
@@ -112,6 +112,8 @@ export const messages = defineMessages("channel", {
   // The stage of a channel: the agents that work show on a table above the conversation.
   "channel.stage.label": "Agent stage",
   "channel.stage.empty": "Nobody is working",
+  "channel.stage.fold": "Fold the agent stage",
+  "channel.stage.unfold": "Unfold the agent stage",
   "channel.stage.more": "+{count}",
   "channel.stage.moreLabel": { one: "{count} more agent is working", other: "{count} more agents are working" },
   "channel.stage.request": "Request",

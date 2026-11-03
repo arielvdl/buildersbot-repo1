@@ -4,8 +4,6 @@
  */
 
 .channel-stage-frame {
-  --stage-fold-duration: 0.75s;
-  --stage-figures-duration: 0.3s;
   position: relative;
   z-index: 2;
   flex: 0 0 auto;
@@ -31,17 +29,10 @@
     radial-gradient(46% 58% at 50% 56%, color-mix(in srgb, var(--buildersbot-success) 5%, transparent), transparent 70%),
     var(--buildersbot-bg-canvas);
   contain: layout paint;
-  transition: height var(--stage-fold-duration) var(--buildersbot-ease-in-out);
 }
 
 .channel-stage[data-collapsed] {
   height: var(--buildersbot-control-xl);
-}
-
-/* Folding: the figures fade out first (the component then folds the panel); nothing shrinks with it. */
-.channel-stage[data-closing] > :not(.channel-stage-strip) {
-  opacity: 0;
-  transition: opacity var(--stage-figures-duration) var(--buildersbot-ease-in-out);
 }
 
 .channel-stage-strip {
@@ -52,7 +43,7 @@
   justify-content: center;
   color: var(--buildersbot-text-dim);
   font-size: var(--buildersbot-text-sm);
-  animation: agent-stage-fade var(--buildersbot-duration-normal) var(--buildersbot-ease-out) 0.45s backwards;
+  animation: agent-stage-fade var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
 }
 
 /* The request on the table */
@@ -130,6 +121,46 @@
 
 @media (prefers-reduced-motion: reduce) {
   .channel-stage-request-bars i {
+    transition: none;
+  }
+}
+
+/* The fold button: small and quiet in the corner of the stage, above the board. */
+.channel-stage-fold {
+  position: absolute;
+  top: var(--buildersbot-space-2, 8px);
+  right: var(--buildersbot-space-2, 8px);
+  z-index: 2;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 0;
+  border-radius: var(--buildersbot-radius-sm, 6px);
+  background: transparent;
+  color: var(--buildersbot-text-dim);
+  cursor: pointer;
+}
+
+.channel-stage-fold:hover {
+  background: var(--buildersbot-bg-surface-raised);
+  color: var(--buildersbot-text);
+}
+
+.channel-stage-fold:focus-visible {
+  outline: 2px solid var(--buildersbot-focus-ring, currentColor);
+}
+
+.channel-stage-fold svg {
+  transition: transform var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
+}
+
+.channel-stage-fold svg[data-folded] {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .channel-stage-fold svg {
     transition: none;
   }
 }

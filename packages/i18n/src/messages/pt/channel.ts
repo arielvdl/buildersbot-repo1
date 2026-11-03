@@ -12,8 +12,8 @@ export const messages = {
   "channel.task.onBackup": "{name} roda no modelo de reserva {model}",
   "channel.task.resuming":
     "{name} parou numa falha curta do provedor. Continua de onde parou ({attempt}/{max}), em {seconds} s",
-  "channel.task.wait.summary": "Na fila ({count})",
   "channel.task.wait.tab": "Aguardando - {name} responde antes a mensagem anterior desta aba",
+  "channel.task.wait.summary": { one: "{count} mensagem aguardando", other: "{count} mensagens aguardando" },
   "channel.task.wait.agentTabs": {
     one: "Aguardando - {name} já trabalha em {count} aba, o máximo ao mesmo tempo. Esta mensagem começa quando ela terminar",
     other:
@@ -108,6 +108,8 @@ export const messages = {
   "channel.topic.age.day": { one: "há {count} dia", other: "há {count} dias" },
   "channel.stage.label": "Palco dos agentes",
   "channel.stage.empty": "Ninguém está trabalhando",
+  "channel.stage.fold": "Recolher o palco dos agentes",
+  "channel.stage.unfold": "Expandir o palco dos agentes",
   "channel.stage.more": "+{count}",
   "channel.stage.moreLabel": {
     one: "Mais {count} agente está trabalhando",
