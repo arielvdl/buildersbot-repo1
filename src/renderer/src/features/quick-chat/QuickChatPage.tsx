@@ -52,11 +52,19 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
     noProviderMessage: () => sourceText("error.provider.noneReady"),
     onModelChanged: () => toast(t("quick.notice.modelChanged")),
   });
-  const { agentList, agentListSettled, userHiddenAgentIds, updateAgent: updateRosterAgent } = useAgents();
+  const { agentList, agentListSettled, agentStatus, userHiddenAgentIds, updateAgent: updateRosterAgent } = useAgents();
   const buildThreads = useConversationThreadsOf();
   let chat: HTMLDivElement | undefined;
 
   onSettled(() => void quick.open());
+  // Right after the app starts, no provider has read its model list yet, so the first open can find none.
+  // A new provider status asks again; the phase is read untracked, so the retry starts no loop.
+  createEffect(
+    () => agentStatus(),
+    () => {
+      if (untrack(quick.phase) === "no-provider") void quick.open();
+    },
+  );
   // The first key in the message box starts the provider, so it is ready when the person sends. It is asked
   // once for each time the page opens, with no wait, and a failure changes nothing: the first send starts it.
   let warmed = false;
