@@ -164,9 +164,16 @@ async function accessibility(page: Page, name: string): Promise<void> {
   await page.addScriptTag({ path: AXE });
   const violations = await page.evaluate(async () => {
     if (!document.querySelector(".feed-page") || !window.axe) return ["no feed page or no axe"];
-    // The story frame holds the feed page alone.
-    const result = await window.axe.run();
-    return result.violations.map((violation) => `${violation.id}: ${violation.nodes[0]?.target.join(" ") ?? ""}`);
+    // The accessibility addon of Storybook can run axe on the story at the same time: wait for it.
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        const result = await window.axe.run();
+        return result.violations.map((violation) => `${violation.id}: ${violation.nodes[0]?.target.join(" ") ?? ""}`);
+      } catch (error) {
+        if (attempt >= 20 || !String(error).includes("already running")) throw error;
+        await new Promise((done) => setTimeout(done, 250));
+      }
+    }
   });
   report.accessibility[name] = violations;
   assert.deepEqual(violations, [], `${name}: axe found accessibility violations.`);
