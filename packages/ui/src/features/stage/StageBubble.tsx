@@ -9,6 +9,8 @@ const SQUEEZE_MS = 170;
 const EXPAND_MS = 640;
 /** The line shows again this long after the bubble starts to open. */
 const REVEAL_MS = 130;
+/** If the opening has not ended this long after it should have, the bubble shows its line anyway. */
+const FAILSAFE_MS = SQUEEZE_MS + EXPAND_MS + 250;
 
 interface Shown {
   tone: string | null;
@@ -18,9 +20,11 @@ interface Shown {
 }
 
 /**
- * The speech bubble of an agent. When its line changes, the bubble closes to a pill with three dots and opens with a
+ * The speech bubble of an agent. When its status changes, the bubble closes to a pill with three dots and opens with a
  * spring round the new line, so the line never jumps. The bubble does the size change with the Web Animations API, and
- * it ends with the bubble. With reduced motion the new line shows at once.
+ * it ends with the bubble. With reduced motion the new line shows at once. A new line under the same status (the host
+ * sends a new progress line at each step) takes the place of the old one with no motion: the bubble moves only when
+ * the status changes.
  */
 export function StageBubble(props: { activity: string; tone: string | null; sentence: string }) {
   let bubble: HTMLDivElement | undefined;
@@ -29,11 +33,14 @@ export function StageBubble(props: { activity: string; tone: string | null; sent
   let run = 0;
   let animations: Animation[] = [];
   let reveal: ReturnType<typeof setTimeout> | undefined;
+  let failsafe: ReturnType<typeof setTimeout> | undefined;
   let first = true;
+  let lastActivity = props.activity;
 
   const stop = () => {
     run += 1;
     clearTimeout(reveal);
+    clearTimeout(failsafe);
     for (const animation of animations) animation.cancel();
     animations = [];
   };
@@ -51,6 +58,13 @@ export function StageBubble(props: { activity: string; tone: string | null; sent
     stop();
     const token = run;
     setMorphing(true);
+    // The bubble never stays a pill with three dots: whatever stops the animation, the line shows in the end.
+    failsafe = setTimeout(() => {
+      if (token !== run) return;
+      for (const animation of animations) animation.cancel();
+      setShown(next);
+      setMorphing(false);
+    }, FAILSAFE_MS);
     const pill = { width: `${PILL_WIDTH}px`, height: `${PILL_HEIGHT}px` };
     const squeeze = node.animate([from, pill], {
       duration: SQUEEZE_MS,
@@ -77,10 +91,19 @@ export function StageBubble(props: { activity: string; tone: string | null; sent
   };
 
   createEffect(
-    () => ({ tone: props.tone, text: props.sentence }),
-    (now) => {
+    () => ({ activity: props.activity, tone: props.tone, text: props.sentence }),
+    ({ activity, ...now }) => {
+      const before = lastActivity;
+      lastActivity = activity;
       if (first) {
         first = false;
+        return;
+      }
+      if (before === activity) {
+        // Same status, a new line: swap the text in place. No squeeze, no spring.
+        stop();
+        setMorphing(false);
+        setShown({ ...now, typed: false });
         return;
       }
       morph({ ...now, typed: false });
