@@ -304,7 +304,7 @@ import { ProviderCredentialStore } from "./provider-credential-store";
 import { createProviderDetection, type ProviderDetection } from "./provider-detection";
 import { PROVIDER_DETECTION_SETTINGS_FILE, ProviderDetectionSettingsStore } from "./provider-detection-settings-store";
 import { ProviderHostSignIns } from "./provider-host-sign-ins";
-import { startAccountLog, startAgentLog, startProviderLog, startTaskReviewerLog } from "./provider-log";
+import { startAccountLog, startAgentLog, startProviderLog, startQueueLog, startTaskReviewerLog } from "./provider-log";
 import { toProviderRuntimeFailure } from "./provider-runtime-effects";
 import { ProviderRuntimeManager, providerRuntimeRoot, runtimeTarget } from "./provider-runtime-manager";
 import { ProviderUseSettingsStore } from "./provider-use-settings-store";
@@ -568,6 +568,8 @@ const TEARDOWN_ORDER = {
   providerLog: 121,
   // After the service, so a deletion that fails while the service stops is kept.
   agentLog: 122,
+  // After the service, so the turns that end while it stops keep their lines.
+  queueLog: 122.2,
   // After the recovery timer, so its last lines are kept.
   taskReviewerLog: 122.5,
   // After the account, so a session write that fails while it stops is kept.
@@ -1042,6 +1044,7 @@ export async function createApplicationServices({
     startProviderLog(join(app.getPath("userData"), "logs")),
   );
   teardown.push(TEARDOWN_ORDER.agentLog, "the agent log", startAgentLog(join(app.getPath("userData"), "logs")));
+  teardown.push(TEARDOWN_ORDER.queueLog, "the queue log", startQueueLog(join(app.getPath("userData"), "logs")));
   teardown.push(
     TEARDOWN_ORDER.taskReviewerLog,
     "the task reviewer log",

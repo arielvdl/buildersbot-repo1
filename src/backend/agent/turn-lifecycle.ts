@@ -1087,6 +1087,7 @@ export class TurnLifecycle {
         // provider start, the session and its settings. `firstOutputMs` is the provider's: the time
         // to its first text, thinking or tool step.
         logger.info("A turn finished.", {
+          agentId,
           provider: running.client.provider,
           model: this.#hooks.turnModel(agentId, turnId),
           status,
