@@ -154,6 +154,17 @@ export function WorkspaceSidebar(props: { peopleEnabled: boolean }) {
     }
     if (selectAgent(chatId)) agentThreads.open(chatId, tabId);
   };
+  /**
+   * Closes one tab from the list. An agent's thread tab closes as a tab only: the thread stays in its list.
+   * A channel's tab closes as its own cross does, with the same questions, so the channel opens on it.
+   */
+  const closeChatTab = (kind: "agent" | "channel", chatId: string, tabId: string) => {
+    if (kind === "channel") {
+      void channels.requestTopicClose(chatId, tabId);
+      return;
+    }
+    agentThreads.close(chatId, tabId);
+  };
   /** The tabs of each chat, as its row shows them: the agent's own chat and its threads, a channel's tabs. */
   const chatTabs = createMemo((): Record<string, SidebarChatTabs> => {
     const tabsByChat: Record<string, SidebarChatTabs> = {};
@@ -163,7 +174,7 @@ export function WorkspaceSidebar(props: { peopleEnabled: boolean }) {
         const ids = snapshot ? agentThreads.openIds(agent.id) : agentThreads.storedOpenIds(agent.id);
         const tasks = snapshot?.tasks ?? [];
         const tabs = [
-          { id: MAIN_THREAD_ID, title: t("sidebar.tabs.main") },
+          { id: MAIN_THREAD_ID, title: t("sidebar.tabs.main"), closable: false },
           ...ids.flatMap((id) => {
             const task = tasks.find((entry) => entry.id === id);
             return task
@@ -410,6 +421,7 @@ export function WorkspaceSidebar(props: { peopleEnabled: boolean }) {
       onSelectChannel={openChannel}
       chatTabs={chatTabs()}
       onOpenChatTab={openChatTab}
+      onCloseChatTab={closeChatTab}
       onEditChannel={(id) => void channels.editChannel(id)}
       onDeleteChannel={channels.deletionSupported() ? deleteChannel : undefined}
       onRestoreChannel={channels.deletionSupported() ? channels.restore : undefined}

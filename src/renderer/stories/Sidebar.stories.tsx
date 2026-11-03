@@ -185,6 +185,7 @@ const args: Parameters<typeof Sidebar>[0] = {
     },
   },
   onOpenChatTab: fn(),
+  onCloseChatTab: fn(),
 };
 
 function InteractiveSidebar(props: Parameters<typeof Sidebar>[0]) {

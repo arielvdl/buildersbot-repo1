@@ -90,8 +90,9 @@ const port: ChannelsPort = {
 };
 
 async function mount() {
+  let controller: ReturnType<typeof createChannelsController> | undefined;
   render(() => {
-    const controller = createChannelsController({
+    controller = createChannelsController({
       port: () => port,
       agents: () => [],
       scopeKey: () => "reader",
@@ -111,6 +112,8 @@ async function mount() {
   await screen.findByText("Renomeada");
   // The tab "new" opens when the read of the channel arrives.
   await screen.findByRole("button", { name: "Thread details" });
+  if (!controller) throw new Error("The controller did not mount.");
+  return controller;
 }
 
 const tab = (name: string) => screen.getByRole("button", { name });
@@ -147,5 +150,14 @@ describe("the tabs of a channel", () => {
     await fireEvent.click(tab("Aba 3"));
     await vi.waitFor(() => expect(tab("Aba 3").getAttribute("aria-current")).toBe("true"));
     expect(screen.queryByRole("button", { name: "Thread details" })).toBeNull();
+  });
+
+  it("asks to close the tab that the sidebar asked to close, and takes the request", async () => {
+    const channels = await mount();
+
+    await channels.requestTopicClose(CHANNEL, "empty");
+
+    expect(await screen.findByText("Close this tab?")).toBeTruthy();
+    expect(channels.state.closeRequest).toBeNull();
   });
 });

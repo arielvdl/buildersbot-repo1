@@ -224,6 +224,7 @@ export const messages = {
   "sidebar.channel.workingPreview": "Trabalhando · {preview}",
   "sidebar.channel.unread": { one: "{count} mensagem não lida", other: "{count} mensagens não lidas" },
   "sidebar.tabs.show": "Mostrar abas ({count})",
+  "sidebar.tabs.close": "Fechar aba",
   "sidebar.tabs.hide": "Ocultar abas",
   "sidebar.tabs.main": "Conversa principal",
   "sidebar.tabs.thread": "Tópico",

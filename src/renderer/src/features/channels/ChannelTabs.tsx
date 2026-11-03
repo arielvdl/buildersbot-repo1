@@ -101,6 +101,19 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
     },
   );
 
+  // The sidebar asks to close a tab of this channel: it closes as the cross of the tab does. A request for
+  // a tab that is gone, or for a read that is not here yet, waits for the tabs and is dropped by the next open.
+  createEffect(
+    () => ({ topicId: channels.state.closeRequest, topics: topics(), archived: props.archived }),
+    ({ topicId, topics: current, archived }) => {
+      if (!topicId) return;
+      const topic = current.find((candidate) => candidate.id === topicId);
+      if (!topic) return;
+      channels.clearCloseRequest();
+      if (!archived) close(topic);
+    },
+  );
+
   async function add(): Promise<void> {
     // The name follows the position, so two new tabs are told apart before either is renamed.
     await channels.createTopic(t("channel.topic.defaultName", { n: topics().length + 1 }));

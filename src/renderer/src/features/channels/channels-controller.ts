@@ -34,6 +34,8 @@ interface ChannelsState {
   /** The code of the failure in `error`. It shows only while `error` is set. */
   errorReference: string | null;
   editing: "create" | "settings" | null;
+  /** A tab that the sidebar asked to close. The tab bar of its channel takes the request and asks as its own cross does. */
+  closeRequest: string | null;
   archived: boolean;
   collapsed: boolean;
 }
@@ -97,6 +99,7 @@ export function createChannelsController(env: ChannelsEnvironment) {
     error: null,
     errorReference: null,
     editing: null,
+    closeRequest: null,
     archived: false,
     collapsed: false,
   });
@@ -276,7 +279,14 @@ export function createChannelsController(env: ChannelsEnvironment) {
       setState((state) => {
         // A tab belongs to its channel: another channel never opens on a tab id of this one.
         const tab = topicId ?? (state.selectedId === channelId ? state.topicId : (env.lastTopic?.(channelId) ?? null));
-        Object.assign(state, { selectedId: channelId, topicId: tab, page: null, editing: null, loading: true });
+        Object.assign(state, {
+          selectedId: channelId,
+          topicId: tab,
+          page: null,
+          editing: null,
+          closeRequest: null,
+          loading: true,
+        });
       }),
     );
     await refreshAfter();
@@ -559,6 +569,26 @@ export function createChannelsController(env: ChannelsEnvironment) {
      * Closes a tab with its work. The open one falls back to the first tab of the channel. With a
      * `report`, the service saves how the tab ended in the same step, and the tab stays if that fails.
      */
+    /**
+     * Asks to close a tab from outside its bar, such as from the sidebar. The channel opens on the tab,
+     * and its tab bar closes it the way its own cross does: at once when the tab is empty and idle, and
+     * after the questions of the dialog when it is not.
+     */
+    requestTopicClose: async (channelId: string, topicId: string) => {
+      await open(channelId, topicId);
+      if (state.selectedId !== channelId) return;
+      flush(() =>
+        setState((state) => {
+          state.closeRequest = topicId;
+        }),
+      );
+    },
+    clearCloseRequest: () =>
+      flush(() =>
+        setState((state) => {
+          state.closeRequest = null;
+        }),
+      ),
     deleteTopic: async (topicId: string, report?: ChannelTabCloseReport) => {
       const channelId = state.selectedId;
       if (!channelId) return false;
