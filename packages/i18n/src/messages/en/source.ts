@@ -24,6 +24,7 @@ import { messages as errorUpdate } from "./error/update";
 import { messages as errorVault } from "./error/vault";
 import { messages as errorVoice } from "./error/voice";
 import { messages as errorWorkflow } from "./error/workflow";
+import { messages as quick } from "./quick";
 import { messages as statusAgent } from "./status/agent";
 import { messages as statusComputerUse } from "./status/computerUse";
 import { messages as statusGuard } from "./status/guard";
@@ -69,4 +70,5 @@ export const source = {
   ...statusComputerUse,
   ...statusUpdate,
   ...statusGuard,
+  ...quick,
 } as const;
