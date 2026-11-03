@@ -62,7 +62,8 @@
 /* The board of a table fills this box. The box has a size of its own, so the board can measure it. */
 .feed-table-stage {
   position: relative;
-  height: 282px;
+  /* A little shorter on a low window. Below this the names would not fit: a low window opens folded. */
+  height: clamp(248px, 30vh, 252px);
   overflow: hidden;
   contain: layout paint;
 }
@@ -114,8 +115,20 @@
   white-space: nowrap;
 }
 
+/* The text keeps a token with contrast on every palette; the state shows in the dot beside it. */
 .feed-table-counts [data-state] {
-  color: var(--feed-state);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--buildersbot-space-1-5);
+  color: var(--buildersbot-text-secondary);
+}
+
+.feed-table-counts [data-state]::before {
+  width: var(--buildersbot-space-1-5);
+  height: var(--buildersbot-space-1-5);
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--feed-state);
+  content: "";
 }
 
 @container (max-width: 760px) {

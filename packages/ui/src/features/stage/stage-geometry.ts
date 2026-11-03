@@ -34,19 +34,23 @@ export interface StageGeometry {
   reach: { x: number; y: number };
 }
 
-/** `maxTable` is the widest the table gets: the stage of a channel draws a big one, a feed table a small one. */
+/**
+ * `maxTable` is the widest the table gets: the stage of a channel draws a big one, a feed table a small
+ * one. A small table scales with its height (`unit`), so a short box keeps the agents apart and in the box.
+ */
 export function stageGeometry(width: number, height: number, maxTable = 380): StageGeometry {
-  const tableWidth = Math.max(120, Math.min(maxTable, width * 0.4, (height * 0.5) / TABLE_RATIO));
   const small = maxTable < 380;
+  const unit = small ? Math.max(0.82, Math.min(1, height / 282)) : 1;
+  const tableWidth = Math.max(small ? 96 : 120, Math.min(maxTable * unit, width * 0.4, (height * 0.5) / TABLE_RATIO));
   return {
     width,
     height,
     tableWidth,
     tableHeight: tableWidth * TABLE_RATIO,
     centerX: width / 2,
-    centerY: height * (small ? 0.49 : 0.52),
-    fit: Math.max(0.62, Math.min(1, height / (small ? 300 : 380))),
-    reach: small ? { x: 36, y: 34 } : { x: 44, y: 18 },
+    centerY: height * (small ? 0.485 : 0.52),
+    fit: small ? unit : Math.max(0.62, Math.min(1, height / 380)),
+    reach: small ? { x: 36 * unit, y: 34 * unit } : { x: 44, y: 18 },
   };
 }
 
