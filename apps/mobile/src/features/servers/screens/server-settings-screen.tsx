@@ -338,7 +338,7 @@ function ServerHeader({ server }: { server: MobileServer }) {
  * The host checks the role and the value again.
  */
 function ServerGeneralSettings({ serverId }: { serverId: string }) {
-  const { t, errorMessage } = useText();
+  const { t, format, errorMessage } = useText();
   const { theme } = useUniwind();
   const queryScope = useQueryScope();
   const queryClient = useQueryClient();
@@ -417,7 +417,7 @@ function ServerGeneralSettings({ serverId }: { serverId: string }) {
                 value={limit.limit}
                 // A host that no longer permits its saved value still shows it.
                 options={(limit.choices.includes(limit.limit) ? limit.choices : [limit.limit, ...limit.choices]).map(
-                  (choice) => ({ value: choice, label: String(choice) }),
+                  (choice) => ({ value: choice, label: format.number(choice) }),
                 )}
                 enabled={!saving}
                 dark={theme === "dark"}

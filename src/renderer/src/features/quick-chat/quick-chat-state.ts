@@ -106,11 +106,27 @@ export function createQuickChat(options: QuickChatOptions) {
     if (scopeIsCurrent()) keep(stored);
   }
 
+  /**
+   * Reads the agent again, with no new conversation. The agent is in no roster and no event names it, so
+   * a change that the host makes by itself, such as a queued model that applies before the next turn,
+   * shows only here. An answer that arrives after the page closed, or for another agent, changes nothing.
+   */
+  async function refresh(): Promise<void> {
+    const id = agent()?.id;
+    if (!id) return;
+    try {
+      const result = await options.port().ensure();
+      if (scopeIsCurrent() && result.agent.id === id) keep(result.agent);
+    } catch {
+      // The page keeps what it has; the next change reads again.
+    }
+  }
+
   /** The page is closing: the thread state stops reading the agent. */
   function close(): void {
     generation += 1;
     setQuickChatAgentId(undefined);
   }
 
-  return { phase: () => state.phase, agent, open, updateAgent, close };
+  return { phase: () => state.phase, agent, open, updateAgent, refresh, close };
 }

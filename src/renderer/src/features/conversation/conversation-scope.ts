@@ -952,6 +952,7 @@ export function createConversationViewScope(props: ConversationProps) {
     setComposerError: setScopedComposerError,
     viewIsMounted,
     saveAgentPatch,
+    saveFailure: () => lastSaveFailure,
   });
   const { updateRuntimeSettings, selectAndConfirmModel, selectAndConfirmReasoning } = settings;
   let scrollElement: HTMLDivElement | undefined;
@@ -999,16 +1000,20 @@ export function createConversationViewScope(props: ConversationProps) {
   let lastHandledMessageFocusNonce: number | undefined;
   const [quoteRequest, setQuoteRequest] = createSignal<QuoteRequest | undefined>(undefined);
   let lastRuntimeSettingsSignature: string | undefined;
+  /** Why the last save was refused, so the picker can say it instead of a generic failure. */
+  let lastSaveFailure: string | null = null;
   async function saveAgentPatch(
     updates: Omit<UpdateAgentInput, "agentId">,
     targetAgentId = props.agent?.id,
   ): Promise<boolean> {
     const agentId = targetAgentId;
     if (!agentId) return false;
+    lastSaveFailure = null;
     try {
       await props.onUpdateAgent(agentId, updates);
       return true;
-    } catch {
+    } catch (error) {
+      lastSaveFailure = error instanceof Error && error.message ? error.message : null;
       return false;
     }
   }

@@ -157,6 +157,15 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
     return item && id ? quickChatRowKey(id, item.id) : null;
   };
 
+  // A model changed during a turn applies before the next one, with no event for this agent: read it
+  // again each time the open conversation starts or ends a turn, so the pickers show the model it runs on.
+  createEffect(
+    () => (owner()?.id === agentId() ? open()?.state : undefined),
+    (state) => {
+      if (state !== undefined) void quick.refresh();
+    },
+  );
+
   // The Quick chat has no chat of its own for an agent, so a closed or deleted conversation, or one of an
   // agent that is gone, opens a new conversation, and the page never shows an empty pane.
   createEffect(

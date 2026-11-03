@@ -37,7 +37,7 @@ export function ServerMemoryLimitSetting(
     run: (key: string, action: () => Promise<void>) => Promise<boolean>;
   },
 ) {
-  const { t, errorMessage } = useText();
+  const { t, format, errorMessage } = useText();
   const calls = (): HostMemoryLimitCalls => props.calls ?? window.buildersbot.hostAdmin;
   const [settings, setSettings] = createSignal<HostAgentMemoryLimit | null>(null);
   const [loadError, setLoadError] = createSignal<string | null>(null);
@@ -94,10 +94,15 @@ export function ServerMemoryLimitSetting(
               disabled={props.disabled}
               placement="bottom-end"
               onChange={choose}
-              itemComponent={(item) => <SelectItem item={item.item}>{String(item.item.rawValue)}</SelectItem>}
+              itemComponent={(item) => <SelectItem item={item.item}>{format.number(item.item.rawValue)}</SelectItem>}
             >
               <SelectTrigger size="sm" aria-labelledby="server-settings-memory-limit-label">
-                <SelectValue<number>>{(state) => String(state.selectedOption() ?? "")}</SelectValue>
+                <SelectValue<number>>
+                  {(state) => {
+                    const value = state.selectedOption();
+                    return value === undefined || value === null ? "" : format.number(value);
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent mount={props.menuMount} />
             </Select>

@@ -41,6 +41,8 @@ export interface SettingsStoreDeps {
   setSettingsReasoning: (effort: AgentReasoningEffort) => void;
   setComposerError: (error: string | null, targetOverride?: ConversationTarget) => void;
   viewIsMounted: () => boolean;
+  /** The reason the last save was refused, when the host gave one. */
+  saveFailure?: () => string | null;
   saveAgentPatch: (updates: Omit<UpdateAgentInput, "agentId">, targetAgentId?: string) => Promise<boolean>;
 }
 
@@ -116,7 +118,7 @@ export function createSettingsStore(deps: SettingsStoreDeps) {
     if (isKnownAgentProvider(runtime.provider)) deps.setSettingsProvider(runtime.provider);
     deps.setSettingsModel(runtime.model);
     deps.setSettingsReasoning(runtime.reasoningEffort);
-    if (errorMessage) deps.setComposerError(errorMessage, target);
+    if (errorMessage) deps.setComposerError(deps.saveFailure?.() ?? errorMessage, target);
     return false;
   }
 
