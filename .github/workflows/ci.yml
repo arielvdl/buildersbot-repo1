@@ -106,7 +106,7 @@ jobs:
     #
     # They run on a pull request and on a push to main, and on a manual run. `check` needs this job,
     # and `all-checks-pass` needs both, so a red guard keeps the deploy.
-    name: Guards
+    name: guards
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -160,7 +160,7 @@ jobs:
     # Branch protection requires this job, and a skipped required check counts as passed. So it
     # runs when `detect` did not succeed, and it skips only when `detect` found no code change and
     # no Markdown change. A Markdown-only change runs only the link check.
-    name: Check
+    name: check
     needs: [detect, guards]
     if: ${{ !cancelled() && (needs.detect.result != 'success' || needs.detect.outputs.code == 'true' || needs.detect.outputs.docs == 'true') }}
     runs-on: ubuntu-latest

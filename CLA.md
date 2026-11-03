@@ -1,6 +1,7 @@
 # Termo de Cessão de Contribuições — Builders Bot (CLA v2)
 
 Versão: 2.0
+Version: 2.0
 
 Data: 02/11/2026
 
@@ -133,11 +134,23 @@ do seu país lhe conceder.
    - [x] Li o Termo de Cessão de Contribuições do Builders Bot (CLA v2) e concordo com ele.
    ```
 
+   A linha em inglês abaixo também vale, e é a que a verificação automática cria:
+
+   ```markdown
+   - [x] I have read the Builders Bot Contributor Assignment Agreement 2.0 and I agree to it.
+   ```
+
 2. Se você for autor de um commit em um pull request aberto por outra pessoa, comente
    nesse pull request com a linha:
 
    ```text
    Li o Termo de Cessão de Contribuições do Builders Bot (CLA v2) e concordo com ele.
+   ```
+
+   ou, em inglês:
+
+   ```text
+   I have read the Builders Bot Contributor Assignment Agreement 2.0 and I agree to it.
    ```
 
 3. A caixa marcada ou o comentário feito a partir da sua conta do GitHub vale como
