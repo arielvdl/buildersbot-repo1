@@ -80,6 +80,13 @@
   height: 14px;
 }
 
+.quick-header-title h1::after {
+  margin-left: var(--buildersbot-space-2);
+  color: var(--buildersbot-text-muted);
+  content: "/";
+  font-weight: var(--buildersbot-weight-regular, 400);
+}
+
 .quick-header-sub {
   min-width: 0;
   overflow: hidden;
@@ -103,4 +110,20 @@
 
 .quick-page-chat {
   position: relative;
+}
+
+/* Under 1000px the model is only its icon and a dot for the effort. Nothing wraps. */
+@media (max-width: 999px) {
+  .quick-page .provider-model-trigger-name,
+  .quick-page .provider-model-trigger-effort {
+    display: none;
+  }
+
+  .quick-page .provider-model-trigger-value::after {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--buildersbot-radius-pill);
+    background: var(--buildersbot-accent-text);
+    content: "";
+  }
 }

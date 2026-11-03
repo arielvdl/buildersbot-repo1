@@ -552,7 +552,8 @@ export function WorkspaceConversation(props: { account: () => CentralAuthUser; s
         discontinuous={activeAgent() ? conversations[activeAgent()?.id ?? ""]?.windowMode === "around" : false}
         loadingOlder={activeAgent() ? conversations[activeAgent()?.id ?? ""]?.olderLoading === true : false}
         olderError={activeAgent() ? (conversations[activeAgent()?.id ?? ""]?.olderError ?? null) : null}
-        queue={props.subject ? undefined : activeQueue()}
+        // A subject chat (Quick chat) owns its agent, so its queue is read by that agent's id.
+        queue={props.subject ? queues()[activeAgent()?.id ?? ""] : activeQueue()}
         browserTabs={browserTabs()}
         activeBrowserTabId={activeBrowserTabId()}
         browserVisibilitySuspended={browserVisibilitySuspended()}
