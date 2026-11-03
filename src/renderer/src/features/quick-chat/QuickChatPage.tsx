@@ -57,6 +57,14 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   let chat: HTMLDivElement | undefined;
 
   onSettled(() => void quick.open());
+  // The first key in the message box starts the provider, so it is ready when the person sends. It is asked
+  // once for each time the page opens, with no wait, and a failure changes nothing: the first send starts it.
+  let warmed = false;
+  const warmOnFirstKey = (event: KeyboardEvent) => {
+    if (warmed || !(event.target instanceof HTMLElement) || event.target.getAttribute("role") !== "textbox") return;
+    warmed = true;
+    void Promise.resolve(quickChatPort().warm()).catch(() => undefined);
+  };
   onCleanup(quick.close);
 
   const agentId = () => quick.agent()?.id;
@@ -264,7 +272,13 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
             onRestore={(item) => void tabs.restore(item.agentId, item.taskId)}
             onDelete={tasks.editable() ? (item) => void tabs.remove(item.agentId, item.taskId) : undefined}
           />
-          <div class="quick-page-chat" ref={(element: HTMLDivElement) => (chat = element)}>
+          <div
+            class="quick-page-chat"
+            ref={(element: HTMLDivElement) => {
+              chat = element;
+              element.addEventListener("keydown", warmOnFirstKey);
+            }}
+          >
             {/* A new conversation has no message to show, so the page says what it is for. */}
             <Show when={quick.phase() === "ready" && open() === null}>
               <div class="quick-page-welcome" aria-hidden="true">
