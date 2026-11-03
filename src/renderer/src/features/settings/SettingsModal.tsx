@@ -25,6 +25,7 @@ import {
   Tabs,
   TriangleAlert,
 } from "@buildersbot/ui";
+import { BillingEnterpriseNotice } from "@buildersbot/ui/features/billing/BillingEnterpriseNotice";
 import { BillingPanel } from "@buildersbot/ui/features/billing/BillingPanel";
 import { createBillingStore } from "@buildersbot/ui/features/billing/billing-store";
 import { LicenseSection } from "@buildersbot/ui/features/billing/LicenseSection";
@@ -66,6 +67,12 @@ import { createSettingsGuardStore } from "./settings-guard-store";
 import { createSettingsLoadStore } from "./settings-load-store";
 import { dynamicIslandSettingsShown, navItem, navItems, type SettingsTab, settingsTabShown } from "./settings-tabs";
 import { createSettingsVoiceStore } from "./settings-voice-store";
+
+/**
+ * Billing is off for now: every account is handled by the Cultura Builder sales team, so the Billing
+ * tab shows a contact notice and makes no billing calls. Set to false to bring the panel back.
+ */
+const BILLING_MANAGED_BY_SALES = true;
 
 export interface SettingsModalProps {
   open: boolean;
@@ -184,14 +191,17 @@ export function SettingsModal(props: SettingsModalProps) {
   const updates = createSettingsUpdatesStore(props);
   const billing = createBillingStore(
     () => props.billingApi,
-    () => props.open && activeTab() === "billing",
+    () => !BILLING_MANAGED_BY_SALES && props.open && activeTab() === "billing",
   );
   const license = createLicenseStore(
     () => props.licenseApi,
-    () => props.open && activeTab() === "billing",
+    () => !BILLING_MANAGED_BY_SALES && props.open && activeTab() === "billing",
     trackLicenseEvent,
   );
-  const hostedServers = createSettingsHostedServersStore(props, () => activeTab() === "billing");
+  const hostedServers = createSettingsHostedServersStore(
+    props,
+    () => !BILLING_MANAGED_BY_SALES && activeTab() === "billing",
+  );
   // Only an administrator sees this section. The account server checks the administrator on each call.
   const serverCreationAdmin = createServerCreationAdminStore(
     () => props.hostedServersApi,
@@ -473,19 +483,21 @@ export function SettingsModal(props: SettingsModalProps) {
         </Tabs.Content>
 
         <Tabs.Content value="billing" class="settings-modal-tab-panel" data-tab="billing">
-          <BillingPanel
-            store={billing}
-            available={Boolean(props.billingApi)}
-            hostedServers={hostedServers}
-            onAddServer={hostedServers.state.available ? props.onAddHostedServer : undefined}
-            license={
-              <LicenseSection
-                store={license}
-                onManagePayment={() => void billing.openPortal({ flow: "manage" })}
-                onContactUs={licenseContactUs(props.onContactUs)}
-              />
-            }
-          />
+          <Show when={!BILLING_MANAGED_BY_SALES} fallback={<BillingEnterpriseNotice />}>
+            <BillingPanel
+              store={billing}
+              available={Boolean(props.billingApi)}
+              hostedServers={hostedServers}
+              onAddServer={hostedServers.state.available ? props.onAddHostedServer : undefined}
+              license={
+                <LicenseSection
+                  store={license}
+                  onManagePayment={() => void billing.openPortal({ flow: "manage" })}
+                  onContactUs={licenseContactUs(props.onContactUs)}
+                />
+              }
+            />
+          </Show>
         </Tabs.Content>
 
         <Tabs.Content value="mobile-connect" class="settings-modal-tab-panel" data-tab="mobile-connect">
