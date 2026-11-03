@@ -166,6 +166,7 @@ export const messages = {
   "settings.presets.title": "Atalhos de prompt",
   "settings.presets.description":
     "Salve os prompts que você usa muito. Escolha um no menu + da caixa de mensagem, ou aperte as teclas dele enquanto digita. Você pode criar quantos quiser.",
+  "settings.presets.listTitle": "Seus atalhos",
   "settings.presets.empty": "Nenhum atalho de prompt ainda.",
   "settings.presets.add": "Adicionar atalho de prompt",
   "settings.presets.name": "Nome",
@@ -439,6 +440,9 @@ export const messages = {
     "Uma resposta em andamento é salva a cada 1 a 2 segundos, não várias vezes por segundo. Risco: se o app parar, até 2 segundos de uma resposta podem se perder.",
   "settings.tab.general.title": "Geral",
   "settings.tab.general.description": "Controle como o Builders Bot se comporta neste computador.",
+  "settings.tab.promptShortcuts.title": "Atalhos de prompt",
+  "settings.tab.promptShortcuts.description":
+    "Salve os prompts que você usa muito. Escolha um no menu + da caixa de mensagem, ou aperte as teclas dele enquanto digita.",
   "settings.tab.agents.title": "Agentes",
   "settings.tab.agents.description":
     "Escolha o que os agentes deste computador podem fazer quando você não define isso para um agente.",

@@ -169,6 +169,7 @@ export const messages = defineMessages("settings", {
   "settings.presets.title": "Prompt presets",
   "settings.presets.description":
     "Save prompts that you use often. Pick one in the + menu of the message box, or press its keys while you type. You can add as many as you want.",
+  "settings.presets.listTitle": "Your presets",
   "settings.presets.empty": "No presets yet.",
   "settings.presets.add": "Add preset",
   "settings.presets.name": "Name",
@@ -459,6 +460,9 @@ export const messages = defineMessages("settings", {
   // The Settings window shell: its tab list, headers and save bar.
   "settings.tab.general.title": "General",
   "settings.tab.general.description": "Control how Builders Bot behaves on this computer.",
+  "settings.tab.promptShortcuts.title": "Prompt presets",
+  "settings.tab.promptShortcuts.description":
+    "Save prompts that you use often. Pick one in the + menu of the message box, or press its keys while you type.",
   "settings.tab.agents.title": "Agents",
   "settings.tab.agents.description":
     "Choose what the agents on this computer can do when you do not set it for an agent.",

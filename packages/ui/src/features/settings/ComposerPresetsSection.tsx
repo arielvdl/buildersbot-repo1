@@ -33,6 +33,11 @@ export interface ComposerPresetInput {
 
 export interface ComposerPresetsSectionProps {
   presets: readonly ComposerPreset[];
+  /**
+   * True inside the tab of its own, whose header already says what the presets are: the section then
+   * shows a short list title and no description.
+   */
+  embedded?: boolean;
   /** The device with the keyboard, so the keys show as ⌘ or as Ctrl. */
   devicePlatform: "darwin" | "win32" | "linux";
   onAdd: (input: ComposerPresetInput) => void;
@@ -169,8 +174,8 @@ export function ComposerPresetsSection(props: ComposerPresetsSectionProps) {
   return (
     <SettingsSection
       data-settings-row="settings.presets.title"
-      title={t("settings.presets.title")}
-      description={t("settings.presets.description")}
+      title={props.embedded ? t("settings.presets.listTitle") : t("settings.presets.title")}
+      description={props.embedded ? undefined : t("settings.presets.description")}
       actions={
         <Button type="button" variant="outline" size="sm" onClick={() => setEditing("new")}>
           <Plus aria-hidden="true" />
