@@ -5,8 +5,6 @@ import type { ComposerAgent, ComposerMcpServer, ComposerSkill } from "../../data
 import type { TextValue } from "../../text";
 import { formatConnectionMoney } from "../billing/money";
 
-export { storeToolText } from "./composer-store-tool";
-
 /**
  * Where the picker hangs, and from which element. Like the queue panel, it is a child of
  * `.composer-wrap` that hangs from the composer's top edge, so the composer paints over its
