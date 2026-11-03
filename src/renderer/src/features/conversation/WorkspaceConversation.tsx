@@ -368,6 +368,11 @@ export function WorkspaceConversation(props: { account: () => CentralAuthUser; s
   const threads = useConversationThreads(activeAgent, { onSendDraft: props.subject?.sendDraft });
   /** The thread that the conversation shows: the open side thread, or the agent's own chat. */
   const openThreadId = () => threads()?.open?.threadId;
+  /** The agent of a page's subject, which the active agent is not: answers go to it. Absent: the active agent. */
+  const shownSubject = () => {
+    const agent = props.subject ? props.subject.agent() : undefined;
+    return agent ? { id: agent.id, threadId: agent.threadId } : undefined;
+  };
   /** The thread whose waits the conversation shows. A new thread draft has no turn, so it has none. */
   const shownThreadId = () => {
     const open = threads()?.open;
@@ -622,9 +627,9 @@ export function WorkspaceConversation(props: { account: () => CentralAuthUser; s
           activeAgent() ? openAgentMessage(activeAgent()?.id ?? "", messageId) : Promise.resolve()
         }
         onTypingChange={setTeamTyping}
-        onAnswerPrompt={(answers, options) => answerPrompt(answers, options, openThreadId())}
+        onAnswerPrompt={(answers, options) => answerPrompt(answers, options, openThreadId(), shownSubject())}
         onPromptResolutionPresented={presentPromptResolution}
-        onRespondToApproval={respondToApproval}
+        onRespondToApproval={(decision) => respondToApproval(decision, shownSubject())}
         onAlwaysAllowApproval={alwaysAllowApproval()}
         agentAutoApproves={activeAgentAutoApproves()}
         remoteBackupModelsLoaded={remoteAgentAdmin.backupModels() !== undefined}
@@ -641,7 +646,9 @@ export function WorkspaceConversation(props: { account: () => CentralAuthUser; s
         agentMemoryLimit={generalSettings().agentMemoryLimit}
         onClearAgentContext={clearActiveAgentContext()}
         onCompactAgentContext={compactActiveAgentContext()}
-        onRespondToBrowserTakeover={(decision, options) => respondToBrowserTakeover(decision, openThreadId(), options)}
+        onRespondToBrowserTakeover={(decision, options) =>
+          respondToBrowserTakeover(decision, openThreadId(), options, shownSubject())
+        }
         onCancelQueuedMessage={cancelQueuedMessage}
         waits={props.subject ? undefined : activeWaits()}
         threads={threads()}
