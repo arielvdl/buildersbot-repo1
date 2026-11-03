@@ -1391,6 +1391,8 @@ if (!hasSingleInstanceLock) {
         trace.record({ kind: "start", name: timing.stage, durationMs: timing.durationMs, outcome: timing.outcome }),
       );
       service.on("event", (event) => forwardAgentEvent("local", event));
+      // The runs of channels, tasks and messaging threads never reach "event"; the feed reads them here.
+      service.on("runActivity", (event) => services?.feed.ingest("local", event));
       // A routine or its owner can be deleted outside the events API. Its route is then revoked here.
       // Turns and channel messages also send these events, so only a deleted owner starts a sync.
       let webhookAgentIds = new Set(service.listAgents().map((agent) => agent.id));

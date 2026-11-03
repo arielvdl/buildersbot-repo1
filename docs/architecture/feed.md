@@ -52,6 +52,10 @@ invalid delta instead of throwing it into the page.
 file access. `src/main/feed/feed-service.ts` adds the batch timer, the windows and the reads of the
 load. `forwardAgentEvent` (`src/main/renderer-forwarders.ts`) gives every agent event of every server
 to `FeedService.ingest`, before any window check, so the cards stay current while no window is open.
+The start, the steps and the end of a run in a channel, a task or a messaging thread of this computer never
+reach the `event` listeners of `AgentService`: a channel, a task or a messaging thread takes them first
+(`routeAgentEvent`, `src/backend/agent/event-routing.ts`). The service gives those turn events to the
+`runActivity` listeners too, and `main` passes them to `FeedService.ingest`, so these runs have cards.
 
 | Source | What it gives the card |
 | --- | --- |

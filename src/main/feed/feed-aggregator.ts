@@ -165,6 +165,12 @@ export class FeedAggregator {
   readonly #turnIdOfCard = new Map<string, string>();
   /** The card that each pending request is on, by `server:kind:request`. */
   readonly #requests = new Map<string, string>();
+  /**
+   * The chat threads of each agent that a runtime snapshot has listed, by `server:agent`. A snapshot
+   * lists the turn of an agent's own chat only: a task, a channel tab and a messaging thread run
+   * beside it and are never in `activeTurns`, so the snapshot cannot tell that such a run ended.
+   */
+  readonly #chatThreads = new Map<string, Set<string>>();
   /** The open thread cards of each agent, by `server:agent`. */
   readonly #openByAgent = new Map<string, Set<string>>();
   /** Cards of routine runs: a quiet end removes them, as it is not news. */
@@ -515,6 +521,7 @@ export class FeedAggregator {
     for (const turn of snapshot.activeTurns) {
       const card = this.#threadCard(serverId, turn.agentId, turn.threadId);
       active.add(card.id);
+      this.#chatThreadsOf(serverId, turn.agentId).add(turn.threadId);
       if (OPEN_STATES.has(card.state) && this.#turnOfCard.get(card.id) === key(serverId, turn.turnId)) continue;
       this.#turnStarted(serverId, turn.agentId, turn.threadId, turn.turnId, false);
     }
@@ -531,7 +538,9 @@ export class FeedAggregator {
       if (card?.need?.kind === "prompt" && String(card.need.requestId) === String(prompt.requestId)) continue;
       this.#prompt(serverId, prompt.agentId, prompt.threadId, prompt.turnId, prompt.requestId, prompt.questions);
     }
-    // The snapshot is the truth of this server: a run that it does not list ended while no event came.
+    // The snapshot is the truth of the chats of this server: a chat run that it does not list ended while
+    // no event came. A run in a thread that the snapshot does not cover (a task, a channel tab) is judged
+    // by its own events only, or the card would end while the agent still works.
     for (const card of [...this.#cards.values()]) {
       if (card.serverId !== serverId || !card.threadId || !OPEN_STATES.has(card.state)) continue;
       if (snapshot.attentionComplete && card.need && !pending.has(card.id)) {
@@ -539,7 +548,7 @@ export class FeedAggregator {
         if (active.has(card.id)) this.#setState(card, "working");
         this.#touch(card);
       }
-      if (!active.has(card.id) && !pending.has(card.id)) {
+      if (!active.has(card.id) && !pending.has(card.id) && this.#isChatThread(card)) {
         this.#clearNeed(card);
         card.endedAt = this.#iso();
         this.#setState(card, "done");
@@ -561,6 +570,23 @@ export class FeedAggregator {
         this.#syncQueueCard(serverId, agentId);
       }
     }
+  }
+
+  #chatThreadsOf(serverId: string, agentId: string): Set<string> {
+    const agentKey = key(serverId, agentId);
+    let threads = this.#chatThreads.get(agentKey);
+    if (!threads) {
+      threads = new Set();
+      this.#chatThreads.set(agentKey, threads);
+    }
+    return threads;
+  }
+
+  /** Whether the runtime snapshot covers this card: its thread is a chat that the snapshot has listed. */
+  #isChatThread(card: FeedItem): boolean {
+    return (
+      card.threadId !== null && (this.#chatThreads.get(key(card.serverId, card.agentId))?.has(card.threadId) ?? false)
+    );
   }
 
   #tasks(serverId: string, agentId: string, tasks: ReadonlyArray<{ threadId: string; title: string }>): void {
