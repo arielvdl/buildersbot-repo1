@@ -12,7 +12,7 @@ import { providerAccountName } from "@buildersbot/ui/components/provider-account
 import { ConversationHeader as SharedConversationHeader } from "@buildersbot/ui/features/conversation/ConversationHeader";
 import { ThreadHeader } from "@buildersbot/ui/features/conversation/threads/ThreadHeader";
 import { MAIN_THREAD_ID, threadBusy } from "@buildersbot/ui/features/conversation/threads/thread-types";
-import { Show } from "solid-js";
+import { createMemo, Show, untrack } from "solid-js";
 import { useConversationViewScope } from "./conversation-scope";
 
 const loadAgentSettingsPanel = () => import("./AgentSettingsPanel");
@@ -86,6 +86,20 @@ export function ConversationHeader() {
     return item ? threadBusy(item.status) : false;
   };
   /**
+   * The model that the open Quick chat conversation runs now: the one that the header showed when its turn
+   * started. The host sends no runtime of a turn, and the agent of this header already holds the model that
+   * the person chose, so without this the running model and the chosen one always look the same.
+   */
+  const quickTurnRuntime = createMemo<{ threadId: string; runtime: BadgeRuntime } | null>((previous) => {
+    const threadId = props.threads?.open?.id;
+    if (!props.quickChat || !threadId || !openThreadWorking()) return null;
+    if (previous?.threadId === threadId) return previous;
+    const agent = untrack(() => props.agent);
+    if (!agent) return null;
+    const { provider, model, reasoningEffort, providerAccountId } = agent;
+    return { threadId, runtime: { provider, model, reasoningEffort, providerAccountId } };
+  });
+  /**
    * A turn runs that a model change waits for. In the Quick chat only the open conversation counts: another
    * conversation that runs has its own model, so it must not add the badge and move the picker.
    */
@@ -94,7 +108,8 @@ export function ConversationHeader() {
   const pendingModel = () => {
     const agent = props.agent;
     if (!agent || !modelChangeWaits()) return undefined;
-    const running: BadgeRuntime = (props.quickChat || working() ? runningTurnRuntime() : null) ?? agent;
+    const running: BadgeRuntime =
+      (props.quickChat ? quickTurnRuntime()?.runtime : working() ? runningTurnRuntime() : null) ?? agent;
     const next: BadgeRuntime = agent.pendingRuntime ?? {
       provider: settingsProvider(),
       model: settingsModel(),
