@@ -168,6 +168,11 @@ export interface ChannelPreview {
 export interface ChannelThread {
   agentId: string;
   threadId: string;
+  /**
+   * The tab of the thread, so a wait on it opens that tab. Absent from a remote host: the wire of
+   * channel-attention-v1 is frozen and does not carry it.
+   */
+  topicId?: string | undefined;
 }
 
 export const CHANNEL_PREVIEW_LIMIT = 160;
@@ -442,7 +447,12 @@ function hasValidTopicMessages(topics: unknown): boolean {
 }
 
 function isChannelThread(value: unknown): value is ChannelThread {
-  return isDynamicRecord(value) && isIdentifier(value.agentId) && isIdentifier(value.threadId);
+  return (
+    isDynamicRecord(value) &&
+    isIdentifier(value.agentId) &&
+    isIdentifier(value.threadId) &&
+    (value.topicId === undefined || isIdentifier(value.topicId))
+  );
 }
 
 function isChannelPreview(value: unknown): value is ChannelPreview {

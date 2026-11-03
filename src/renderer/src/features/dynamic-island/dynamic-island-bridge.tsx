@@ -127,8 +127,14 @@ export function DynamicIslandBridge() {
     });
   });
 
-  /** The channel whose member thread raised this wait, or none when it is the agent's own chat or a side thread. */
-  function channelOfRequest(agentId: string, requestId: string | number): string | undefined {
+  /**
+   * The channel, and the tab, whose member thread raised this wait. None when it is the agent's own
+   * chat or a side thread. A host that does not name the tab of a thread leaves `topicId` out.
+   */
+  function channelOfRequest(
+    agentId: string,
+    requestId: string | number,
+  ): { channelId: string; topicId: string | undefined } | undefined {
     const sameRequest = (id: string | number) => String(id) === String(requestId);
     const prompt = attentionOfAgent(pendingPrompts(), agentId).find((event) =>
       sameRequest(event.type === "prompt" ? event.requestId : event.request.requestId),
@@ -139,11 +145,12 @@ export function DynamicIslandBridge() {
         : prompt.request.threadId
       : approvals().find((approval) => approval.agentId === agentId && sameRequest(approval.requestId))?.threadId;
     if (!waitThreadId) return undefined;
-    return channels.state.channels.find(
-      (channel) =>
-        !channel.archived &&
-        channel.threads?.some((thread) => thread.agentId === agentId && thread.threadId === waitThreadId),
-    )?.id;
+    for (const channel of channels.state.channels) {
+      if (channel.archived) continue;
+      const thread = channel.threads?.find((entry) => entry.agentId === agentId && entry.threadId === waitThreadId);
+      if (thread) return { channelId: channel.id, topicId: thread.topicId };
+    }
+    return undefined;
   }
 
   /** The tab a channel opens on: the last one it had, else its first. */
@@ -210,9 +217,9 @@ export function DynamicIslandBridge() {
     }
     // A wait that comes from a channel thread is answered in the channel, not in the agent's chat.
     if (action.type === "review-attention") {
-      const channelId = channelOfRequest(action.agentId, action.requestId);
-      if (channelId) {
-        void channels.open(channelId, channelTopicFor(channelId));
+      const owner = channelOfRequest(action.agentId, action.requestId);
+      if (owner) {
+        void channels.open(owner.channelId, owner.topicId ?? channelTopicFor(owner.channelId));
         return;
       }
     }

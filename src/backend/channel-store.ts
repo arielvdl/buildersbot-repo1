@@ -240,14 +240,15 @@ export class ChannelStore {
     for (const row of databaseRows(
       this.database.connection
         .prepare(
-          "SELECT channel_id, agent_id, thread_id FROM projection_channel_contexts ORDER BY channel_id, agent_id",
+          "SELECT channel_id, topic_id, agent_id, thread_id FROM projection_channel_contexts ORDER BY channel_id, agent_id",
         )
         .all(),
     )) {
       const channelId = requiredStringColumn(row, "channel_id");
-      const thread = {
+      const thread: ChannelThread = {
         agentId: requiredStringColumn(row, "agent_id"),
         threadId: requiredStringColumn(row, "thread_id"),
+        topicId: requiredStringColumn(row, "topic_id"),
       };
       threads.set(channelId, [...(threads.get(channelId) ?? []), thread]);
     }

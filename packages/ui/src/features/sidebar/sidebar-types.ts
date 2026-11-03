@@ -271,7 +271,13 @@ export type SidebarWaitReason = "question" | "approval" | "takeover";
 
 export type SidebarAgentState =
   /** `detail` is the question or the command, for the row tooltip. `null` when there is none. */
-  | { kind: "waiting"; reason: SidebarWaitReason; detail: string | null }
+  | {
+      kind: "waiting";
+      reason: SidebarWaitReason;
+      detail: string | null;
+      /** For a channel: the tab whose thread waits, so a click opens it. */
+      topicId?: string | undefined;
+    }
   | { kind: "working" }
   | { kind: "responded" }
   | { kind: "unread"; count: number }
