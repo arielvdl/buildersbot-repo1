@@ -9,6 +9,8 @@ import { usePlatform } from "../../platform";
 import { useTurns } from "../../turns";
 import { attentionByAgent, attentionEventKey, attentionOfAgent } from "../agents/agent-runtime-snapshot";
 import { useAgents } from "../agents/agents-context";
+import { readChannelLastTopics } from "../channels/channel-tabs-model";
+import { useChannels } from "../channels/channels-context";
 import { useConversation } from "../conversation/conversation-context";
 import { promptRequestKey } from "../conversation/conversation-keys";
 import { useServerScope } from "../servers/server-scope";
@@ -45,12 +47,14 @@ export function DynamicIslandBridge() {
     setPendingPrompts,
     setSubmittedPromptRequests,
     pendingApprovals,
+    approvals,
     forgetApproval,
     failedTurns,
     setFailedTurns,
   } = useTurns();
   const { unreadReplies, conversations } = useConversation();
   const { selectAgent, openAgentMessage } = useNavigation();
+  const channels = useChannels();
   /** The handoff this bridge published, so it never consumes or clears its own. */
   let publishedAction: DynamicIslandAction | null = null;
 
@@ -123,6 +127,32 @@ export function DynamicIslandBridge() {
     });
   });
 
+  /** The channel whose member thread raised this wait, or none when it is the agent's own chat or a side thread. */
+  function channelOfRequest(agentId: string, requestId: string | number): string | undefined {
+    const sameRequest = (id: string | number) => String(id) === String(requestId);
+    const prompt = attentionOfAgent(pendingPrompts(), agentId).find((event) =>
+      sameRequest(event.type === "prompt" ? event.requestId : event.request.requestId),
+    );
+    const waitThreadId = prompt
+      ? prompt.type === "prompt"
+        ? prompt.threadId
+        : prompt.request.threadId
+      : approvals().find((approval) => approval.agentId === agentId && sameRequest(approval.requestId))?.threadId;
+    if (!waitThreadId) return undefined;
+    return channels.state.channels.find(
+      (channel) =>
+        !channel.archived &&
+        channel.threads?.some((thread) => thread.agentId === agentId && thread.threadId === waitThreadId),
+    )?.id;
+  }
+
+  /** The tab a channel opens on: the last one it had, else its first. */
+  function channelTopicFor(channelId: string): string | undefined {
+    const topics = channels.state.channels.find((channel) => channel.id === channelId)?.topics ?? [];
+    const last = readChannelLastTopics()[channelId];
+    return topics.find((topic) => topic.id === last)?.id ?? topics[0]?.id;
+  }
+
   async function handleDynamicIslandAction(action: DynamicIslandAction): Promise<void> {
     // Main runs a reply and a stop against the agent. They must not move the main window.
     if (action.type === "open-app" || action.type === "send-message" || action.type === "stop-agent") return;
@@ -177,6 +207,14 @@ export function DynamicIslandBridge() {
       // which is why `publishedAction` stays untouched.
       setPendingIslandAction(action);
       return;
+    }
+    // A wait that comes from a channel thread is answered in the channel, not in the agent's chat.
+    if (action.type === "review-attention") {
+      const channelId = channelOfRequest(action.agentId, action.requestId);
+      if (channelId) {
+        void channels.open(channelId, channelTopicFor(channelId));
+        return;
+      }
     }
     selectAgent(action.agentId);
     if (action.type === "open-message") await openAgentMessage(action.agentId, action.messageId);
