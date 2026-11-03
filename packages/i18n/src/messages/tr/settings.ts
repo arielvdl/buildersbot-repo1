@@ -162,7 +162,7 @@ export const messages = {
   "settings.tab.billing.title": "Faturalandırma",
   "settings.tab.billing.description": "Lisans, sunucu planları, ödeme yöntemi ve faturalar.",
   "settings.tab.hostedServers.title": "Barındırılan sunucular",
-  "settings.tab.hostedServers.description": "Bu bilgisayar kapalıyken çalışan Builders Bot sunucuları oluşturun.",
+  "settings.tab.hostedServers.description": "Bu bilgisayar kapalıyken çalışa Builders Bot sunucuları oluşturun.",
   "settings.load.lines.title": "Kanallarda paralel çalışma",
   "settings.load.lines.description":
     "Bir kanal sekmesinde aynı anda kaç ajanın çalıştığı ve bir ajanın aynı anda kaç sekmede çalıştığı.",

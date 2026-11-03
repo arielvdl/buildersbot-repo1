@@ -58,7 +58,7 @@ export const messages = {
   "sitePage.report.pageTitle": "Gehostete Website melden — Builders Bot",
   "sitePage.report.title": "Gehostete Website melden",
   "sitePage.report.intro":
-    "Sende eine Meldung über schädliche oder rechtswidrige Inhalte auf einer sites.buildersbot.culturabuilder.com-Adresse.",
+    "Sende eine Meldung über schädliche oder rechtswidrige Inhalte auf einer culturabuilder.com-Adresse.",
   "sitePage.report.hostnameLabel": "Website-Adresse",
   "sitePage.report.hostnameMissing": "Gib die Website-Adresse ein",
   "sitePage.report.reasonLabel": "Grund",

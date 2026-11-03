@@ -1,6 +1,6 @@
 ---
 name: buildersbot-site-hosting
-description: Build, publish, replace, list, and delete small static websites hosted by Builders Bot. Use when the user asks to host or manage a site on sites.buildersbot.culturabuilder.com.
+description: Build, publish, replace, list, and delete small static websites hosted by Builders Bot. Use when the user asks to host or manage a site on culturabuilder.com.
 ---
 
 # Builders Bot site hosting

@@ -926,7 +926,7 @@ export class BillingService {
       parseBillingLookupKey(`buildersbot_${planMetadata}_${intervalMetadata}`);
     const currency = subscription.currency.toLowerCase();
     if (!key || !isBillingCurrency(currency) || !isOneOf(BILLING_SUBSCRIPTION_STATUSES, subscription.status)) {
-      console.warn("billing: subscription is not an Builders Bot plan", { subscriptionId });
+      console.warn("billing: subscription is not a Builders Bot plan", { subscriptionId });
       return null;
     }
     const ownerId = yield* this.#subscriptionOwner(subscription, customerId);
@@ -1156,7 +1156,7 @@ export class BillingService {
         )
       : null;
     if (!user) {
-      console.warn("billing: subscription names no Builders Bot account", { subscriptionId: subscription.id });
+      console.warn("billing: subscription names no Cultura Builder account", { subscriptionId: subscription.id });
       return null;
     }
     const now = dependencies.now();

@@ -103,9 +103,9 @@ export const messages = defineMessages("mobile.settings", {
   "mobile.settings.notifications.openSettingsAndroid": "Open Android settings",
   "mobile.settings.notifications.preview": "Show reply preview",
   "mobile.settings.notifications.previewFooter":
-    "Shows the start of a reply, a question, or the action to approve. Apple and the Builders Bot account service cannot read it.",
+    "Shows the start of a reply, a question, or the action to approve. Apple and the Cultura Builder account service cannot read it.",
   "mobile.settings.notifications.previewFooterAndroid":
-    "Shows the start of a reply, a question, or the action to approve. Google and the Builders Bot account service cannot read it.",
+    "Shows the start of a reply, a question, or the action to approve. Google and the Cultura Builder account service cannot read it.",
   "mobile.settings.notifications.sound": "Sound",
   "mobile.settings.notifications.playSound": "Play sound",
   "mobile.settings.notifications.sound.buildersbot": "Builders Bot",

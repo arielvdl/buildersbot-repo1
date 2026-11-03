@@ -568,7 +568,7 @@ running, and the public release flag has not been enabled.
 ### PR verification follow-up — 2026-09-21
 
 CI passed on `50bfa658`, including Check, API, both desktop shards, browser smoke,
-Storybook, Cloudflare preview, remote, hosted sites, and Surfaces. NorbiAI reached its
+Storybook, Cloudflare preview, remote, hosted sites, and Surfaces. Builders Bot review reached its
 15-minute timeout without a review result. That timeout is not a code finding or a
 successful review. The PR remains open and must not be merged by this task.
 

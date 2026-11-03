@@ -5,6 +5,7 @@
 import { BRAND_PAGE_UPDATED_AT, BRAND_ROUTE } from "../lib/brand-page";
 import { changelogUrl } from "../lib/changelog";
 import { CHANGELOG_UPDATED_AT } from "../lib/changelog-releases";
+import { COMMERCIAL_LICENSE_ROUTE, COMMERCIAL_LICENSE_UPDATED_AT } from "../lib/commercial-license";
 import { CONTENT_COLLECTIONS } from "../lib/content";
 import {
   articleOgImageUrl,
@@ -15,11 +16,13 @@ import {
   collectionIndexUrl,
 } from "../lib/content-collection";
 import { DOWNLOAD_PAGE_ORDER, DOWNLOAD_PAGES_UPDATED_AT, downloadPageUrl } from "../lib/download-pages";
+import { DPA_ROUTE, DPA_UPDATED_AT } from "../lib/dpa";
 import { PLUGINS_UPDATED_AT, pluginIndexUrl, pluginUrl, SITE_PLUGINS } from "../lib/plugins";
 import { PRICING_PAGE_UPDATED_AT, PRICING_ROUTE } from "../lib/pricing-page";
 import { PRIVACY_POLICY_ROUTE, PRIVACY_POLICY_UPDATED_AT } from "../lib/privacy-policy";
 import { BUILDERSBOT_SITE_TITLE, BUILDERSBOT_SITE_URL } from "../lib/site-metadata";
 import { TEAMS_PAGE_UPDATED_AT, TEAMS_ROUTE } from "../lib/teams-page";
+import { TERMS_ROUTE, TERMS_UPDATED_AT } from "../lib/terms";
 
 /**
  * The five characters XML reserves. `>` is only special after `]]`, but escaping
@@ -78,6 +81,11 @@ function contentSitemapXml(): string {
     { loc: new URL(PRICING_ROUTE, BUILDERSBOT_SITE_URL).toString(), lastmod: PRICING_PAGE_UPDATED_AT },
     { loc: new URL(BRAND_ROUTE, BUILDERSBOT_SITE_URL).toString(), lastmod: BRAND_PAGE_UPDATED_AT },
     { loc: new URL(PRIVACY_POLICY_ROUTE, BUILDERSBOT_SITE_URL).toString(), lastmod: PRIVACY_POLICY_UPDATED_AT },
+    /* The legal pages are indexed too: a buyer or a search engine should reach the terms from the
+       sitemap, not only from the footer. */
+    { loc: new URL(TERMS_ROUTE, BUILDERSBOT_SITE_URL).toString(), lastmod: TERMS_UPDATED_AT },
+    { loc: new URL(COMMERCIAL_LICENSE_ROUTE, BUILDERSBOT_SITE_URL).toString(), lastmod: COMMERCIAL_LICENSE_UPDATED_AT },
+    { loc: new URL(DPA_ROUTE, BUILDERSBOT_SITE_URL).toString(), lastmod: DPA_UPDATED_AT },
   ];
 
   const urls = entries

@@ -32,7 +32,7 @@ sign in to Builders Bot with that email, the server is in their server list.
 
 ```sh
 printf '{"email":"%s"}' owner@example.com |
-  curl --fail -sS -X POST https://api.buildersbot.culturabuilder.com/v2/admin/server-claims \
+  curl --fail -sS -X POST https://buildersbot.culturabuilder.com/v2/admin/server-claims \
     -H @server-claims.header -H 'content-type: application/json' --data-binary @- |
   sed -n 's/.*"claim":"\([A-Za-z0-9_-]*\)".*/\1/p' |
   sudo buildersbot login --claim --name <name>

@@ -2,7 +2,7 @@
 
 **Objetivo:** o Builders Bot passa a ser obra da Cultura Builder — titularidade, licença, nomes, infraestrutura, lojas e história. Nenhuma referência, URL, conta, certificado, classe ou crédito do projeto anterior. Nada quebra para quem já usa.
 
-**Base medida:** `/Users/arielsilva/Projects/openbot-local`, branch `builders-bot`, exportada com `git archive` para `/Users/arielsilva/Projects/buildersbot` (commit de origem em `docs/titulo/dossie.md`). O espelho arqueológico está em `/Users/arielsilva/Projects/.archive/openbot-local.git`.
+**Base medida:** a pasta de trabalho anterior, branch `builders-bot`, exportada com `git archive` para `/Users/arielsilva/Projects/buildersbot-repo1` (commit de origem em `docs/titulo/dossie.md`). O espelho arqueológico fica fora do disco de trabalho.
 **Status:** F0, F2, F4 (com os identificadores persistidos mantidos), F6 e F7 executadas em 02/11/2026. Restam F1 (contrato), F3 (DNS e serviços próprios), F5 (certificados e lojas) e F8 (verificação em máquina limpa).
 **Portão duro:** nenhum build de cliente sai antes da F1 assinada.
 
@@ -17,15 +17,15 @@ A titularidade é da pessoa jurídica abaixo, e é ela que assina a cessão, fig
 | Sede | Presidente Prudente – SP |
 | Papel | cessionária, titular do copyright e licenciante |
 | Repositório novo | `https://github.com/nextlevelcommunity/buildersbot.git` |
-| Pasta de trabalho nova | `/Users/arielsilva/Projects/buildersbot` |
+| Pasta de trabalho nova | `/Users/arielsilva/Projects/buildersbot-repo1` |
 
-O desenvolvimento passa a acontecer **no repositório novo, com história nova**. O `openbot-local` deixa de ser local de trabalho e vira apenas espelho arqueológico: nada de `upstream`, nada de tags, nada de SHA antigo no que for publicado. A árvore é exportada, não clonada com `.git`.
+O desenvolvimento passa a acontecer **no repositório novo, com história nova**. A pasta anterior deixa de ser local de trabalho e vira apenas espelho arqueológico: nada de `upstream`, nada de tags, nada de SHA antigo no que for publicado. A árvore é exportada, não clonada com `.git`.
 
 ---
 
 ## 0. A verdade jurídica primeiro
 
-Não existe "trocar o arquivo LICENSE". A PolyForm é a licença da camada de baixo, e nós não somos donos dela. Só existem quatro caminhos:
+Não existe "trocar o arquivo LICENSE". A licença do código de base é de terceiro, e nós não somos donos dela. Só existem quatro caminhos:
 
 | Caminho | O que resolve | Custo | Prazo |
 |---|---|---|---|
@@ -34,13 +34,13 @@ Não existe "trocar o arquivo LICENSE". A PolyForm é a licença da camada de ba
 | **C. Compra da sociedade / do ativo** | Tudo, com passivo junto | Alto | 2–4 meses |
 | **D. Reescrita clean-room** | Independência real, sem contrato | Muito alto (12–18 meses) | 12–18 meses |
 
-**Recomendação: A.** Se eles recusarem A, B entrega o mesmo resultado prático (podemos apagar a PolyForm e relicenciar), mas a frase "isto é nosso" fica juridicamente mais fraca. D é o plano de fuga, não o plano.
+**Recomendação: A.** Se eles recusarem A, B entrega o mesmo resultado prático (podemos apagar a licença deles e relicenciar), mas a frase "isto é nosso" fica juridicamente mais fraca. D é o plano de fuga, não o plano.
 
 ### 0.1 Quem é o dono, medido por linha
 
 | Titular | Linhas | % | Situação |
 |---|---:|---:|---|
-| Synthetify Labs (4 identidades do núcleo) | 1.759.655 | **90,3%** | o único interlocutor que importa |
+| Titular anterior (4 identidades do núcleo) | 1.759.655 | **90,3%** | o único interlocutor que importa |
 | Cultura Builder (Ariel) | 120.112 | 6,2% | nosso, mas ainda em nome pessoal — precisa de cessão para a pessoa jurídica |
 | Terceiros que assinaram o CLA | ~7.344 | 0,4% | cobertos, mas o CLA está endereçado ao repo errado |
 | Terceiros sem assinatura | ~61.231 | 3,1% | **pendência** — 20+ pessoas |
@@ -49,7 +49,7 @@ Isso é uma posição excelente: **um contrato resolve 90%**. O resto é cauda c
 
 ### 0.2 O defeito que ninguém viu
 
-O `CLA.md` atual chama-se "Builders Bot Contributor Assignment Agreement", mas foi escrito em 2026-10-16 e assinado por gente que contribuía para `nightly-labs/openbot`; o texto da assinatura aponta para `github.com/nightly-labs/openbot`. O contrato define "Project" como o repositório `Hub-Next-Level/buildersbot-cb`. Ou seja: **as 47 assinaturas existentes cobrem mal o trabalho feito antes do fork**. Precisa de CLA v2, com a cessionária identificada por razão social e CNPJ, e com:
+O `CLA.md` atual chama-se "Builders Bot Contributor Assignment Agreement", mas foi escrito em 2026-10-16 e assinado por gente que contribuía para o repositório antecessor; o texto da assinatura aponta para o endereço do repositório antecessor. O contrato define "Project" como um repositório intermediário. Ou seja: **as 47 assinaturas existentes cobrem mal o trabalho feito antes do corte**. Precisa de CLA v2, com a cessionária identificada por razão social e CNPJ, e com:
 
 - definição de "Project" que inclua o repositório antecessor e todo commit anterior;
 - cláusula retroativa com anexo de SHAs;
@@ -71,17 +71,17 @@ O `CLA.md` atual chama-se "Builders Bot Contributor Assignment Agreement", mas f
 | Analytics de terceiro deles | 2 hosts + client ID | `scripts/telemetry-destinations.ts` |
 | Bundle mobile | `run.buildersbot.mobile` + 2 extensões | `apps/mobile/app.json` |
 | Firebase | `buildersbot-9f2c1` | `apps/mobile/google-services.json` |
-| Imagem Docker | `ghcr.io/nightly-labs/openbot` | `release.yml`, `docs/aws-ecs.md` |
-| Handles | `@OpenBot_`, `@meetOpenBot` | docs, site, rodapé |
+| Imagem Docker | registry anterior | `release.yml`, `docs/aws-ecs.md` |
+| Handles | os da marca anterior | docs, site, rodapé |
 | Pastas/banco/Keychain | `.buildersbot`, `buildersbot.db`, `BuildersBot Safe Storage` | migração |
 
 ### 1.2 Rastro jurídico e de marca
 
 | Vetor | Ocorrências | Observação |
 |---|---:|---|
-| `polyform` | **54 linhas / 30 arquivos** | `LICENSE`, `NOTICE`, `package.json` (3), `Dockerfile`, `flake.nix`, `nix/package.nix`, podspecs, páginas do site, FAQ, `llms-txt`, comparativos |
-| `Synthetify` | 17 linhas | `LICENSE`, `NOTICE`, README, rodapé, termos, página de licença comercial, página de download, `docs/RELEASING.md`, `release.yml` |
-| `nightly-labs` | 93 linhas | docs, links, badges, manifests |
+| Licença anterior | **54 linhas / 30 arquivos** | `LICENSE`, `NOTICE`, `package.json` (3), `Dockerfile`, `flake.nix`, `nix/package.nix`, podspecs, páginas do site, FAQ, `llms-txt`, comparativos |
+| Nome do titular anterior | 17 linhas | `LICENSE`, `NOTICE`, README, rodapé, termos, página de licença comercial, página de download, `docs/RELEASING.md`, `release.yml` |
+| Organização anterior | 93 linhas | docs, links, badges, manifests |
 | `Required Notice:` | `LICENSE` e `NOTICE` | some por completo com a cessão |
 | "derivado"/"derived"/"proprietary" | README, rodapé, termos, licença | precisa virar "nosso" |
 
@@ -89,8 +89,8 @@ O `CLA.md` atual chama-se "Builders Bot Contributor Assignment Agreement", mas f
 
 | Vetor | Situação |
 |---|---|
-| Conta Azure Trusted Signing `synthetifyartifactsign`, perfil `SYNTHETIFY` | certificado de assinatura Windows é deles |
-| Publisher do instalador `SYNTHETIFY LABS…` | aparece no SmartScreen e no `app-update.yml` |
+| Conta Azure Trusted Signing e perfil no nome anterior | o certificado de assinatura Windows é deles |
+| Publisher do instalador no nome anterior | aparece no SmartScreen e no `app-update.yml` |
 | Contas de loja (Apple/Google/Microsoft) | se o app está publicado, a listagem é deles |
 | Certificados macOS/Android/iOS | provavelmente deles |
 | Org GitHub `Hub-Next-Level` | precisa decisão: nossa ou nova |
@@ -115,13 +115,13 @@ Classificar cada nome em três grupos:
 
 ### F0 — Congelar, criar o repositório novo e as guardas (1–2 dias) — **feito**
 
-- `git clone --mirror` do `openbot-local` para fora do disco de trabalho, com todos os refs. É o arquivo morto; o `openbot-local` sai do circuito.
+- `git clone --mirror` da pasta anterior para fora do disco de trabalho, com todos os refs. É o arquivo morto; a pasta anterior sai do circuito.
 - Criar `/Users/arielsilva/Projects/buildersbot` **sem `.git` herdado**: exportar a árvore com `git archive` (ou cópia sem `.git`, `node_modules`, `dist`, `out`, `*.tsbuildinfo`, `.buildersbot-build`), e `git init` com branch `main`.
 - Primeiro commit: árvore exportada, autor `Cultura Builder <dev@culturabuilder.com>`, mensagem `Builders Bot` — sem trailer, sem coautor, sem SHA antigo.
 - `git remote add origin https://github.com/nextlevelcommunity/buildersbot.git`; **nenhum remote de upstream**.
 - Congelar os outros cinco clones como leitura.
 - Quatro guardas novas, todas no CI, todas falhando fechado:
-  - `scripts/license-provenance-guard.ts` — reprova `polyform`, `polyformproject.org`, `synthetify`, `nightly-labs`, `openbot`, `Required Notice`, "derivado", "proprietary". Allowlist começa cheia e **termina vazia**.
+  - `scripts/license-provenance-guard.ts` — reprova a licença anterior, o domínio dela, o titular anterior, a organização anterior, o nome anterior, o aviso obrigatório, "derivado" e "proprietary". Allowlist começa cheia e **termina vazia**.
   - `scripts/network-egress-guard.ts` — lista fechada de hosts, varre fonte, config, workflow, build e pacote.
   - `scripts/metadata-guard.ts` — reprova autor, e-mail, trailer, tag, remote e URL de repositório não aprovados; o único remote permitido é o `origin` novo.
   - `scripts/fingerprint-guard.ts` — reprova identificadores distintivos que sobrarem depois da F4 (lista versionada).
@@ -133,8 +133,8 @@ Classificar cada nome em três grupos:
 ### F1 — Título: cessão, residuals e CLA v2 (2–6 semanas) — **portão**
 
 1. **Due diligence de cadeia de título.** Gerar dossiê: mapa de autores, mapa de linhas por arquivo, lista de commits por autor, lista de arquivos exclusivos de terceiros. Congelar como anexo do contrato.
-2. **Carta de intenção** para Synthetify Labs: cessão total, escopo, preço, prazo, o que fica com eles (nada de código), o que passa (marca? domínios? contas?). Cessionária identificada por razão social e CNPJ, com poderes de representação comprovados.
-3. **Contrato de Cessão Total de Direitos Autorais e de Patentes**, entre **CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA, CNPJ 62.995.760/0001-33, sede em Presidente Prudente – SP** (cessionária) e **Synthetify Labs spółka z ograniczoną odpowiedzialnością** (cedente, com KRS e representação a confirmar na due diligence), com:
+2. **Carta de intenção** para a titular anterior: cessão total, escopo, preço, prazo, o que fica com eles (nada de código), o que passa (marca? domínios? contas?). Cessionária identificada por razão social e CNPJ, com poderes de representação comprovados.
+3. **Contrato de Cessão Total de Direitos Autorais e de Patentes**, entre **CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA, CNPJ 62.995.760/0001-33, sede em Presidente Prudente – SP** (cessionária) e a **titular anterior** (cedente, com identificação societária e representação a confirmar na due diligence), com:
    - cessão de todos os direitos patrimoniais, mundial, por todo o prazo, todos os campos de exploração;
    - direito de relicenciar sob qualquer termo, inclusive proprietário e fechado, e de sublicenciar em cadeia;
    - direito de modificar, renomear, **remover avisos** e de não atribuir;
@@ -154,13 +154,13 @@ Classificar cada nome em três grupos:
 ### F2 — Licença nova e remoção de todo rastro legal (2–3 dias) — **feito**
 
 - **Decidir a licença** (seção 4). Recomendação: EULA proprietária nossa + licença comercial; alternativa: licença própria proprietary.
-- `LICENSE` novo, escrito por nós, sem PolyForm e sem URL de terceiro. Linha de copyright exata:
+- `LICENSE` novo, escrito por nós, sem a licença anterior e sem URL de terceiro. Linha de copyright exata:
 
   ```text
   Copyright 2026 CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA (CNPJ 62.995.760/0001-33)
   ```
 
-- `NOTICE` novo: só dependências de terceiro (Blobatar, Font Awesome, moby, recharts) — **nenhuma menção ao projeto anterior, a Synthetify ou a `openbot`**. A titularidade do produto aparece no topo com a razão social e o CNPJ.
+- `NOTICE` novo: só dependências de terceiro (Blobatar, Font Awesome, moby, recharts) — **nenhuma menção ao projeto, ao titular ou ao nome anterior**. A titularidade do produto aparece no topo com a razão social e o CNPJ.
 - `package.json`: `license` novo (3 arquivos), `author` = razão social, CNPJ e `licenses@culturabuilder.com`, `contributors`, `repository` = `git+https://github.com/nextlevelcommunity/buildersbot.git`, `homepage` e `bugs` no repositório novo.
 - Página de licença comercial reescrita: uma camada só, sem "derivative", sem "earlier work", sem "required notices".
 - Termos de uso, rodapé do site, página de download, FAQ, `llms-txt`, comparativos.
@@ -169,7 +169,7 @@ Classificar cada nome em três grupos:
 - `README` e `AGENTS.md` sem "derivado de", sem crédito, sem link.
 - Remover `Required Notice:` de tudo.
 
-**Aceite:** `license-provenance-guard` verde com allowlist vazia; nenhuma ocorrência de `polyform`, `synthetify`, `nightly-labs`, `Required Notice`, `derived`, `derivado` no HEAD.
+**Aceite:** `license-provenance-guard` verde com allowlist vazia; nenhuma ocorrência dos termos da origem (licença, titular, organização, nome, aviso obrigatório, "derivado") no HEAD.
 
 ### F3 — Infraestrutura própria, zero ping (1–2 semanas)
 
@@ -181,13 +181,13 @@ Mapa de domínios:
 | Fallback de auth | `auth-buildersbot.culturabuilder.com` | mantém |
 | Signal | `signal.buildersbot.culturabuilder.com` | `signal.buildersbot.culturabuilder.com` |
 | TURN | `turn.buildersbot.culturabuilder.com` | `turn.buildersbot.culturabuilder.com` |
-| Sites publicados | `*.sites.buildersbot.culturabuilder.com` | `*.bb.culturabuilder.com` (curto) ou `*.sites.buildersbot.culturabuilder.com` |
-| Feed de update | inexistente | `updates.buildersbot.culturabuilder.com` (R2) |
-| Status | `status.buildersbot.culturabuilder.com` | `status.buildersbot.culturabuilder.com` |
+| Sites publicados | `*.culturabuilder.com` | `*.bb.culturabuilder.com` (curto) ou `*.culturabuilder.com` |
+| Feed de update | inexistente | `bb-updates.culturabuilder.com` (R2) |
+| Status | `bb-status.culturabuilder.com` | `bb-status.culturabuilder.com` |
 | Docs | `buildersbot.culturabuilder.com/docs` | `buildersbot.culturabuilder.com/docs` |
-| Convite | `api.buildersbot.culturabuilder.com/join` | `buildersbot.culturabuilder.com/join` |
+| Convite | `buildersbot.culturabuilder.com/join` | `buildersbot.culturabuilder.com/join` |
 | E-mail | domínio deles | `send.buildersbot.culturabuilder.com` |
-| Analytics | OpenPanel deles | `analytics.buildersbot.culturabuilder.com` (próprio) ou desligado |
+| Analytics | OpenPanel deles | `bb-analytics.culturabuilder.com` (próprio) ou desligado |
 | Firebase | `buildersbot-9f2c1` | projeto novo nosso |
 
 Ordem: DNS/certificados → Signal/TURN próprios → feed assinado → wildcard de sites com 301 → analytics → status/docs/links/e-mail → Firebase. Dupla escrita e rollback por serviço em cada passo.
@@ -202,7 +202,7 @@ Ordem: DNS/certificados → Signal/TURN próprios → feed assinado → wildcard
 - Renomear identificadores distintivos conforme a classificação 1.4 — com migração onde há persistência.
 - Revisão de prosa: mensagens de erro que explicam conceitos com jargão deles.
 
-**Aceite:** upgrade por cima de instalação antiga preserva sessões, agentes, bancos, chaves e servidores; `fingerprint-guard` verde.
+**Aceite:** upgrade por cima de instalação antiga preserva agentes, bancos, servidores e preferências; as chaves cifradas pelo cofre do sistema voltam a ser pedidas, porque o item tem o nome do aplicativo; `fingerprint-guard` verde.
 
 ### F5 — Build, assinatura e lojas próprias (1–2 semanas)
 
@@ -238,7 +238,7 @@ O repositório já nasce órfão na F0, então aqui só se publica o que passou 
 - Se a história intermediária de trabalho tiver sido commitada em `main`, achatar antes do push com `git reset --soft` no commit inicial, para não sobrar mensagem de fase.
 - Mirror arqueológico guardado fora do disco de trabalho.
 
-**Aceite:** `git remote -v` só mostra `origin`; `git log --format='%an %ae'` só nosso; sem tag, trailer ou mensagem antiga; `git log -S openbot` vazio no HEAD.
+**Aceite:** `git remote -v` só mostra `origin`; `git log --format='%an %ae'` só nosso; sem tag, trailer ou mensagem antiga; `git log -S` do nome anterior vazio no HEAD.
 
 Executado: repositório público `nextlevelcommunity/buildersbot`, um único commit, `origin` único, tag `v1.0.0` assinada, release publicada, `cla-signatures` criado, branch `main` protegida por ruleset com os checks `guards` e `check`.
 
@@ -277,11 +277,11 @@ Regra: **nome novo escreve, nome antigo lê**. Se precisar escrever nome antigo,
 | Opção | Prós | Contras |
 |---|---|---|
 | **EULA proprietária + licença comercial** (recomendada) | coerente com o modelo de assentos; nenhuma dependência de licença de terceiro; controle total | menos adoção por dev |
-| Licença própria proprietary | adoção com controle | texto próprio exige revisão jurídica; quase igual à PolyForm em efeito |
+| Licença própria proprietary | adoção com controle | texto próprio exige revisão jurídica; quase igual à licença anterior em efeito |
 | MIT/Apache | adoção máxima | concorrente pode clonar e vender |
 | Dupla: nossa proprietary + comercial | equilíbrio | duas camadas nossas, não duas de terceiros |
 
-**Recomendação:** EULA proprietária para binário + licença comercial por assento, com `LICENSE` curto e `docs/licensing.md` explicando em uma página. Zero menção a PolyForm.
+**Recomendação:** EULA proprietária para binário + licença comercial por assento, com `LICENSE` curto e `docs/licensing.md` explicando em uma página. Zero menção à licença anterior.
 
 ---
 
@@ -292,7 +292,7 @@ Regra: **nome novo escreve, nome antigo lê**. Se precisar escrever nome antigo,
 | 0 — nossa casa | `*.culturabuilder.com` | única saída padrão |
 | 1 — provedores escolhidos pelo usuário | OpenAI, Anthropic, xAI e endpoints dos CLIs | permitido, visível na UI |
 | 2 — dependências | npm, GitHub Releases de runtime, FCM/APNs | permitido, cache local quando possível |
-| 3 — proibido | `*.buildersbot.culturabuilder.com`, `*.sites.buildersbot.culturabuilder.com`, `api.openpanel.dev`, `discord.buildersbot.culturabuilder.com`, `status.buildersbot.culturabuilder.com`, `ghcr.io/nightly-labs/*` | falha a guarda |
+| 3 — proibido | `*.buildersbot.culturabuilder.com`, `*.culturabuilder.com`, `api.openpanel.dev`, `bb-discord.culturabuilder.com`, `bb-status.culturabuilder.com`, `ghcr.io/nextlevelcommunity/*` | falha a guarda |
 | 4 — proibido por padrão | Sentry/PostHog/GA de terceiro | só com justificativa escrita |
 
 Fonte da verdade única em `scripts/network-policy.ts`, consumida pela guarda de fonte, de pacote e pelo E2E.
@@ -303,7 +303,7 @@ Fonte da verdade única em `scripts/network-policy.ts`, consumida pela guarda de
 
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| Synthetify recusa cessão | alto | plano B (licença exclusiva com direito de relicenciar); plano D (clean-room) para módulos críticos |
+| Titular anterior recusa cessão | alto | plano B (licença exclusiva com direito de relicenciar); plano D (clean-room) para módulos críticos |
 | Residual de 3,1% não responde | médio | reescrita clean-room dos arquivos, priorizada por linhas |
 | Direito moral polonês é irrenunciável | baixo | cláusula de não exercício + publicação sem nome |
 | Patente não acompanha copyright | médio | cessão de patente separada e explícita |
@@ -335,12 +335,12 @@ Fonte da verdade única em `scripts/network-policy.ts`, consumida pela guarda de
 - [ ] Residual com release assinado ou arquivo reescrito.
 - [ ] Parecer de cadeia de título.
 - [ ] Patentes cedidas.
-- [ ] `LICENSE` e `NOTICE` novos, com a linha de copyright da pessoa jurídica e o CNPJ, sem `Required Notice`, sem PolyForm, sem URL de terceiro.
+- [ ] `LICENSE` e `NOTICE` novos, com a linha de copyright da pessoa jurídica e o CNPJ, sem o aviso obrigatório anterior, sem a licença anterior, sem URL de terceiro.
 - [ ] `package.json` com `author` = razão social + CNPJ, e `copyright` do instalador idem.
 
 **Técnicos**
 - [ ] `git remote -v` só mostra `origin` = `nextlevelcommunity/buildersbot`.
-- [ ] `grep -ri` de `openbot|polyform|synthetify|nightly-labs` no HEAD: zero.
+- [ ] `grep -ri` dos termos da origem no HEAD: zero.
 - [ ] `git log` só com identidade nossa; sem tags, trailers ou remotes antigos.
 - [ ] App usado sem uma conexão fora da matriz de rede.
 - [ ] `strings` nos cinco formatos de binário: zero rastro.
@@ -378,7 +378,7 @@ Total: **~6 a 10 semanas**, com F1 e F3 em paralelo. F1 é o caminho crítico e 
 - Licença: EULA proprietária + licença comercial por assento.
 - Analytics: mantido o OpenPanel, com o projeto existente.
 - Mobile: bundle `run.buildersbot.mobile` mantido enquanto houver base instalada.
-- Sites: `*.sites.buildersbot.culturabuilder.com`.
+- Sites: `*.culturabuilder.com`.
 - Nível 1: provedores direto, sem proxy nosso na frente.
 - Registro do contrato: cartório de Presidente Prudente.
 - Titular: CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA, CNPJ 62.995.760/0001-33, Presidente Prudente – SP.
@@ -387,13 +387,13 @@ Total: **~6 a 10 semanas**, com F1 e F3 em paralelo. F1 é o caminho crítico e 
 
 **Abertas**
 
-1. **Abrir negociação de cessão com a Synthetify?** Preço-teto e quem assina pela Cultura Builder (sócio com poderes, conforme contrato social).
+1. **Abrir negociação de cessão com a titular anterior?** Preço-teto e quem assina pela Cultura Builder (sócio com poderes, conforme contrato social).
 2. **Se recusarem:** aceita o plano B (licença exclusiva) ou vamos para clean-room?
 
 **Fechadas na execução**
 
 - Licença: EULA proprietária + licença comercial por assento.
-- Sites: `*.sites.buildersbot.culturabuilder.com`.
+- Sites: `*.culturabuilder.com`.
 - Mobile: bundle `run.buildersbot.mobile` mantido enquanto houver base instalada.
 - Analytics: OpenPanel mantido, no projeto existente.
 - Nível 1: provedores direto, sem proxy nosso na frente.

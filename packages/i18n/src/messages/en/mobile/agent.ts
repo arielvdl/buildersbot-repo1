@@ -295,7 +295,7 @@ export const messages = defineMessages("mobile.agent", {
   "mobile.agent.access.autoApproveLocked": "Turbo mode is on for this host, so every agent auto-approves.",
   "mobile.agent.access.workspaceNote": "The agent works in its workspace and the shared folder on the host.",
   "mobile.agent.access.askNote":
-    "The agent asks you before it uses an Builders Bot tool or publishes a site, and when its provider asks for approval.",
+    "The agent asks you before it uses a Builders Bot tool or publishes a site, and when its provider asks for approval.",
   "mobile.agent.access.fullNote": "The agent acts without asking, except for questions it puts to you.",
   "mobile.agent.access.fullTitle": "Give this agent full access?",
   "mobile.agent.access.askTitle": "Let this agent work outside its workspace?",

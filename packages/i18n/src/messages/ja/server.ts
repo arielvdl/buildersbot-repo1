@@ -235,8 +235,7 @@ export const messages = {
   "server.settings.storageDescription":
     "Builders Bot がこのサーバーのディスクに保存しているものを確認し、空き容量を増やします。",
   "server.settings.hostedSitesTitle": "サイト",
-  "server.settings.hostedSitesDescription":
-    "このサーバーのエージェントが sites.buildersbot.culturabuilder.com に公開した静的サイト。",
+  "server.settings.hostedSitesDescription": "このサーバーのエージェントが culturabuilder.com に公開した静的サイト。",
   "server.settings.importTitle": "インポート",
   "server.settings.importDescription": "Grok Bot または Hermes Agent からこのサーバーにエージェントを移動します。",
   "server.settings.transferTitle": "移行",

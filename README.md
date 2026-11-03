@@ -29,7 +29,7 @@ messaging in one desktop app.
 - Optional Computer Use on macOS, Windows and Linux through the `cua-driver` binary in the release, which Builders Bot starts as its own child process and gives to every provider.
 - Per-agent model, reasoning, profile, notification, browser, and panel state.
 - Local data and privacy-safe diagnostics exports from the account menu.
-- Optional Builders Bot accounts through one-time email codes. The account API runs on Cloudflare Workers and D1.
+- Optional Cultura Builder accounts through one-time email codes. The account API runs on Cloudflare Workers and D1.
 
 Builders Bot is local-first, not offline-only. Codex connects to OpenAI, Claude connects to Anthropic,
 Grok connects to xAI, Gemini connects to Google, Cursor connects to Cursor, Cline connects to Cline,
@@ -123,8 +123,9 @@ needs.
 
 > [!IMPORTANT]
 > Windows releases are signed by Cultura Builder Educação e Tecnologia Ltda. SmartScreen can
-> still warn about a new release. Check the release checksum or GitHub build attestation before
-> you run the installer.
+> still warn about a new release. While the Cultura Builder signing account is being created, a build
+> can still arrive unsigned: check the release checksum or GitHub build attestation before you run the
+> installer.
 
 ### Agent setup
 
@@ -347,7 +348,7 @@ See [web client delivery](docs/web-client.md) for the release gate and focused c
 | `bun run api:stripe:bootstrap` | Create or update the Stripe plan catalog and the Customer Portal settings from `STRIPE_SECRET_KEY` in the encrypted `apps/auth-api/.env.dev` (shell values replace it). It refuses a live key unless you add `--live`. For local webhooks, run `stripe listen --forward-to localhost:<API port>/v1/stripe/webhook` and set the signing secret in `STRIPE_WEBHOOK_SECRET`. See [Billing](docs/architecture/servers.md#billing). |
 | `bun run hosting:setup --target=production\|test` | Set up the Stripe catalog, the Customer Portal, and the Stripe and boat webhooks of one account server, and store the webhook signing secrets: production in the `cloudflare-production` GitHub Environment, test in the encrypted `apps/auth-api/.env.dev`. See [hosted servers](docs/hosted-servers.md#production). |
 | `bun run hosting:template` | Build the boat named snapshot that new hosted servers start from. Needs `BOAT_TEMPLATE_API_KEY` and `--version`, `--appimage-url`, `--appimage-sha256` and `--auth-api-url`. See [hosted servers](docs/hosted-servers.md). |
-| `bun run status:build` | Build the public status page in `apps/status/dist`. The `status-page` workflow adds `status.json` and `feed.xml` and publishes it to GitHub Pages at `status.buildersbot.culturabuilder.com`. |
+| `bun run status:build` | Build the public status page in `apps/status/dist`. The `status-page` workflow adds `status.json` and `feed.xml` and publishes it to GitHub Pages at `bb-status.culturabuilder.com`. |
 | `bun run status:smoke` | Run the status page smoke test: update runs against a local fake service, the status webhooks against a local receiver, one read-only run against the live checks, and the built page in Chrome. It writes `.buildersbot-build/status-page/report.json`. |
 | `bun run remote:up` | Build and start the self-hosted Signal, coturn, and ACME stack. |
 | `bun run remote:check` | Check the Remote API and both Docker Compose configurations. |
@@ -516,7 +517,7 @@ Cloudflare Workers
 - `src/preload` exposes only the typed `window.buildersbot` API.
 - `src/renderer` contains the SolidJS interface.
 - `apps/auth-api` contains the TanStack Start account API, one-time email codes, rate limits, and D1 migrations. It also serves the public site: the landing page, `/news`, `/guides`, and the plugin pages at `/plugins` and `/plugins/<slug>`.
-- `apps/status` contains the public status page at `status.buildersbot.culturabuilder.com`, the script that the `status-page` workflow runs to check the services, and the script that sends the [status webhooks](docs/status-webhooks.md) of the team. GitHub hosts it, so it stays up when Cloudflare does not.
+- `apps/status` contains the public status page at `bb-status.culturabuilder.com`, the script that the `status-page` workflow runs to check the services, and the script that sends the [status webhooks](docs/status-webhooks.md) of the team. GitHub hosts it, so it stays up when Cloudflare does not.
 - `packages/contracts` contains process-boundary contracts, shared limits, and pure validation.
 - `packages/i18n` contains the interface text in English, French, Japanese, Brazilian Portuguese and Turkish for desktop, web and mobile. See [docs/i18n.md](docs/i18n.md) to add text or a language.
 

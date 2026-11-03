@@ -57,7 +57,7 @@ export const messages = {
   "sitePage.report.pageTitle": "Barındırılan siteyi bildir — Builders Bot",
   "sitePage.report.title": "Barındırılan siteyi bildir",
   "sitePage.report.intro":
-    "Bir sites.buildersbot.culturabuilder.com adresindeki zararlı veya yasa dışı içerik hakkında bildirim gönderin.",
+    "Bir culturabuilder.com adresindeki zararlı veya yasa dışı içerik hakkında bildirim gönderin.",
   "sitePage.report.hostnameLabel": "Site adresi",
   "sitePage.report.hostnameMissing": "Site adresini girin",
   "sitePage.report.reasonLabel": "Neden",

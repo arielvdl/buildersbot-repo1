@@ -127,15 +127,15 @@ export function PrivacyPolicy() {
       </ul>
       <p>
         Builders Bot does not collect product analytics or error reports from its desktop, mobile, and web applications.
-        The central account service does not send account, subscription, payment, or email events to an analytics
-        service.
+        The central account service does send account, subscription, payment, and email events, described under Product
+        Analytics, to an analytics service of Cultura Builder.
       </p>
       <h3>Information You Provide</h3>
       <p>Builders Bot may collect and process personal data provided directly by users, including:</p>
       <ul>
         <li>
           <strong>Account information</strong> – email address, display name, optional profile picture, and other
-          information required to create and manage an Builders Bot account.
+          information required to create and manage a Cultura Builder account.
         </li>
         <li>
           <strong>Authentication information</strong> – information necessary to verify identity, including email
@@ -296,7 +296,7 @@ export function PrivacyPolicy() {
 
       <h2>Provision of Personal Data</h2>
       <p>
-        Providing certain personal data is necessary to create and manage an Builders Bot account, access
+        Providing certain personal data is necessary to create and manage a Cultura Builder account, access
         account-related functionalities, and use paid Services. This includes information required for authentication,
         account administration, and subscription management.
       </p>
@@ -503,8 +503,9 @@ export function PrivacyPolicy() {
 
       <h2>Product Analytics</h2>
       <p>
-        Builders Bot does not use a product analytics service. Its applications do not send product usage events or
-        error reports.
+        Builders Bot does not use a third-party product analytics service, and its applications send no product usage
+        events or error reports. The central account service reports account, subscription, payment, and email events to
+        OpenPanel, running at <code>bb-analytics.culturabuilder.com</code> for Cultura Builder.
       </p>
       <p>
         Certain information remains identifiable where necessary for account authentication, security, and payment or
@@ -629,7 +630,7 @@ export function PrivacyPolicy() {
 
       <h2>Account Deletion and Data Removal</h2>
       <p>
-        Users may request the deletion of their Builders Bot account and associated personal data in accordance with
+        Users may request the deletion of their Cultura Builder account and associated personal data in accordance with
         applicable data protection laws.
       </p>
       <p>

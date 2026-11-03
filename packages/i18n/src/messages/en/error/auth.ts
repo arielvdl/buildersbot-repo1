@@ -1,7 +1,7 @@
 import { defineMessages } from "../../../message";
 
 export const messages = defineMessages("error.auth", {
-  // Errors from the Builders Bot account service.
+  // Errors from the Cultura Builder account service.
   "error.auth.serviceUnavailable":
     "Builders Bot could not reach the account service. Check that the API is running, then try again.",
   "error.auth.networkBlocked":

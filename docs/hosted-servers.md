@@ -1,6 +1,6 @@
 # Hosted servers
 
-A hosted server is an Builders Bot server that runs in a [boat](https://boat.dev) sandbox, so it works
+A hosted server is a Builders Bot server that runs in a [boat](https://boat.dev) sandbox, so it works
 when the user's computer is off. Each server is one boat sandbox for one account. The sandbox runs
 the Linux build of Builders Bot on the boat desktop. The server runs while it is in use. After 15 minutes with no
 use, the Worker stops it and keeps its data. The next client starts it again, the Worker cron
@@ -251,7 +251,7 @@ when a server is idle or boat stops a sandbox; and `error` and `deleted`. The Wo
    does not charge that card again. In both cases
    the server stops with `plan_ended` and keeps its disk. The Worker finds the plan through the
    invoice of the PaymentIntent (`GET /v1/invoice_payments`). A refund or dispute of a payment that
-   is not an Builders Bot plan invoice changes nothing. A refund that fails after it succeeded does not
+   is not a Builders Bot plan invoice changes nothing. A refund that fails after it succeeded does not
    start the plan again.
 8. **Plan change.** In the Customer Portal an upgrade is charged at once, and a downgrade or a
    shorter interval starts at the next period. The Worker copies the new plan, interval and currency
@@ -599,7 +599,7 @@ it. A release without all of its `resources/hosting` files cannot update a serve
 A server that has no updater, such as one made from a template before 0.26.0, needs one upgrade by
 hand. With a boat key that has command and file access: upload `scripts/hosting/` to
 `/tmp/buildersbot-upgrade`, run `sudo systemctl stop buildersbot.service`, run `sudo bash /tmp/buildersbot-upgrade/provision.sh user <AppImage URL> <SHA-256>
-https://api.buildersbot.culturabuilder.com` as a detached command, and start the service again. The data in the home
+https://buildersbot.culturabuilder.com` as a detached command, and start the service again. The data in the home
 folder and in `/srv` stays.
 
 ### Upgrade of an installed server

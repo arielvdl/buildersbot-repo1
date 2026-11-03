@@ -211,7 +211,7 @@ laptop lid, or a sleep that you select, still sleeps the computer, unless macOS 
 display (closed-display mode). On battery power, the computer sleeps as usual, unless you also turn
 on **Also on battery**.
 
-`pmset -g assertions` can show an Builders Bot entry named `WebRTC has active PeerConnections`. It
+`pmset -g assertions` can show a Builders Bot entry named `WebRTC has active PeerConnections`. It
 exists only while another device is connected to this computer, so the computer can sleep after that
 device disconnects. With the setting on, the entry is named `Electron`.
 
@@ -236,7 +236,7 @@ Ask the network administrator to allow these hosts over HTTPS (TCP 443) and WebS
 
 | Host | Use |
 | --- | --- |
-| `api.buildersbot.culturabuilder.com` | Accounts, sign-in, teams, and hosted servers |
+| `buildersbot.culturabuilder.com` | Accounts, sign-in, teams, and hosted servers |
 | `signal.buildersbot.culturabuilder.com` | Connection setup for teams and remote servers |
 | `buildersbot.culturabuilder.com` | Public site and images in invitation emails |
 | `*.buildersbot.culturabuilder.com` | Hosted servers and sites |

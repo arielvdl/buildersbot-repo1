@@ -40,7 +40,7 @@ export function AgenticAIDefinition() {
       </p>
       <p>
         <strong>It can leave you a real deliverable.</strong> An answer in chat can be helpful, but a saved brief or
-        draft is easier to review, edit, and pass along. An Builders Bot agent can use files and a built-in browser as
+        draft is easier to review, edit, and pass along. A Builders Bot agent can use files and a built-in browser as
         part of the job.
       </p>
       <p>

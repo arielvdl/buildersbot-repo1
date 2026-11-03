@@ -22,7 +22,7 @@ export function AIAgentsVsAgenticAI() {
       <h2>One Builders Bot task, two terms</h2>
 
       <p>
-        Suppose you want to compare three project-management tools for your team. You ask an Builders Bot research agent
+        Suppose you want to compare three project-management tools for your team. You ask a Builders Bot research agent
         to check their official pages and save a short comparison with links.
       </p>
 

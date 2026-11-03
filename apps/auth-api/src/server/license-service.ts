@@ -772,7 +772,7 @@ export class LicenseService {
         !Number.isSafeInteger(users) ||
         users < 1
       ) {
-        console.warn("billing: subscription is not an Builders Bot license", { subscriptionId: subscription.id });
+        console.warn("billing: subscription is not a Builders Bot license", { subscriptionId: subscription.id });
         return null;
       }
       const cancelAtPeriodEnd = subscription.cancel_at_period_end || typeof subscription.cancel_at === "number";

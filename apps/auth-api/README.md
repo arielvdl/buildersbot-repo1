@@ -356,7 +356,7 @@ because the key they hold no longer matches.
 
 ### The login is being replaced
 
-The web app is moving to the Cultura Builder login, which is not the account login of Builders Bot. All of
+The web app now uses the Cultura Builder login, which is not the account login of Builders Bot. All of
 the browser work above reads the session through `src/server/web-session.ts` instead of the cookie, so
 the swap is a change to that file. Whoever makes it must keep three things, or the installs lose
 their sessions and their notifications:

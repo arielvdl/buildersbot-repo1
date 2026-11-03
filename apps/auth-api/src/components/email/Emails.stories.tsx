@@ -102,7 +102,7 @@ export const TeamInviteAdminDark: Story = {
     scheme: "dark",
     email: renderTeamInviteEmail({
       inviterEmail: "norbert@example.com",
-      serverName: "Nightly Labs Build Server",
+      serverName: "Cultura Builder Build Server",
       inviteUrl: INVITE_URL,
       role: "admin",
     }),
@@ -126,7 +126,7 @@ export const Welcome: Story = {
 };
 
 export const WelcomeDark: Story = {
-  args: { scheme: "dark", email: renderWelcomeEmail({ plan: "pro", serverName: "Nightly Labs Build Server" }) },
+  args: { scheme: "dark", email: renderWelcomeEmail({ plan: "pro", serverName: "Cultura Builder Build Server" }) },
 };
 
 export const WelcomeMobile: Story = {

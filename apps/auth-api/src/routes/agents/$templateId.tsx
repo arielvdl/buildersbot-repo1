@@ -27,7 +27,7 @@ async function agentTemplateHead(template: AgentTemplateDetail, siteUrl: string)
   const card = template.cardUrl
     ? {
         url: new URL(template.cardUrl, siteUrl).toString(),
-        alt: `${template.name}, an Builders Bot agent by ${template.creatorName}`,
+        alt: `${template.name}, a Builders Bot agent by ${template.creatorName}`,
       }
     : { url: BUILDERSBOT_SOCIAL_IMAGE_URL, alt: BUILDERSBOT_SOCIAL_IMAGE_ALT };
   return {

@@ -157,7 +157,7 @@ export const messages = {
   "connector.slack.summaryMany": { other: "{count} 个工作区 · 由 Slack 调度助手回答" },
   // Marketplace > Apps > Discord: a Discord server (a guild) adds the one Builders Bot bot, and
   // the Discord Orchestrator agent receives each request, asks the team and answers. Always write
-  // "Discord server": "server" alone is an Builders Bot server.
+  // "Discord server": "server" alone is a Builders Bot server.
   "connector.discord.title": "Discord",
   "connector.discord.description":
     "人们在 Discord 服务器的频道中提及 @Builders Bot，Discord 调度助手会找到合适的助手来回答。",

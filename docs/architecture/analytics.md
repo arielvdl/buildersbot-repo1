@@ -1,11 +1,11 @@
 # Analytics
 
-> **Builders Bot sends none of these events.** The events target the OpenPanel service at
-> `analytics.buildersbot.culturabuilder.com`, which runs apart from the app. The telemetry destination guard
-> (`bun run test:telemetry-guard`) fails when a change brings a client or transport back: the
-> `Telemetry destination guard` workflow runs it on each pull request and each push to `main`, the
-> package scripts run it on `out/` and on the packaged app, and the package checks scan `app.asar`.
-> This document keeps the event contract until Builders Bot has a diagnostics service of its own.
+> **Builders Bot sends none of these events.** Builders Bot does not run a product analytics
+> service. The telemetry destination guard (`bun run test:telemetry-guard`) fails when a change
+> brings a client or transport back: the `Telemetry destination guard` workflow runs it on each
+> pull request and each push to `main`, the package scripts run it on `out/` and on the packaged
+> app, and the package checks scan `app.asar`. This document keeps the event contract for a future
+> diagnostics service; hosted sites may add their own analytics, such as Google Analytics.
 
 ## Mobile product analytics
 

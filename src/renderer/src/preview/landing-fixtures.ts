@@ -37,7 +37,7 @@ import type { MockChannelSeed } from "./mock-channels";
  * together. Every time is an offset from the moment the page opens, so the demo always shows today.
  */
 
-const LANDING_PREVIEW_EMAIL = "norbertbodziony@gmail.com";
+const LANDING_PREVIEW_EMAIL = "dev@culturabuilder.com";
 const MINUTE_MS = 60_000;
 
 export const LANDING_LEAD_AGENT_ID = "atlas";
@@ -615,7 +615,7 @@ type LandingChannelLine = [author: "member-self" | "atlas" | "pulse" | "scout", 
 /** The launch channel: you and the agents plan Friday together. */
 function landingChannels(at: (minutesAgo: number) => string): MockChannelSeed[] {
   const authors = {
-    "member-self": { kind: "member", id: "member-self", name: "Norbert" },
+    "member-self": { kind: "member", id: "member-self", name: "Cultura Builder" },
     atlas: { kind: "agent", id: "atlas", name: "Atlas" },
     pulse: { kind: "agent", id: "pulse", name: "Pulse" },
     scout: { kind: "agent", id: "scout", name: "Scout" },
@@ -720,7 +720,7 @@ export function createLandingPreviewOptions(now: Date): MockBuildersBotOptions {
   return {
     authState: {
       status: "signed_in",
-      user: { id: "user-1", email: LANDING_PREVIEW_EMAIL, name: "Norbert", avatarUrl: null },
+      user: { id: "user-1", email: LANDING_PREVIEW_EMAIL, name: "Cultura Builder", avatarUrl: null },
     },
     agentStatus: landingAgentStatus(),
     usage: landingUsage(nowMs),

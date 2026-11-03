@@ -9,7 +9,7 @@ settings in [apps/discord-app/README.md](../apps/discord-app/README.md).
 ## Connect Slack
 
 A workspace installs the one Builders Bot Slack app. People mention @Builders Bot or send it a direct message,
-and the Slack Orchestrator, an agent that Builders Bot adds, asks the right agent and answers. This needs an Builders Bot account and a name for this
+and the Slack Orchestrator, an agent that Builders Bot adds, asks the right agent and answers. This needs a Cultura Builder account and a name for this
 computer (**Server settings**), because Slack sends the workspace's events to Builders Bot's Signal
 service, which passes them to this computer.
 
@@ -65,7 +65,7 @@ browser. A joined server shows no Slack page.
 
 A Discord server installs the one Builders Bot Discord app. People mention @Builders Bot in a channel, and the
 Discord Orchestrator, an agent that Builders Bot adds, asks the right agent and answers. As for Slack, this
-needs an Builders Bot account and a name for this computer (**Server settings**): Signal keeps the bot's
+needs a Cultura Builder account and a name for this computer (**Server settings**): Signal keeps the bot's
 Discord connection, passes the server's mentions to this computer, and makes Builders Bot's Discord posts
 for it.
 
@@ -98,7 +98,7 @@ again.
 ## What happens in Discord
 
 - A message that mentions @Builders Bot starts a conversation. Builders Bot replies to that message.
-- A reply to an Builders Bot post continues the same conversation. The reply must keep the mention:
+- A reply to a Builders Bot post continues the same conversation. The reply must keep the mention:
   Discord's **@ ON** setting of a reply does this, and it is on by default. Without the mention,
   Discord does not give the text to Builders Bot.
 - A mention that replies to another person's message starts a new conversation.
@@ -112,7 +112,7 @@ again.
   the message arrived, "Working on it…" is replaced by the answer, and ✅, ❌ or ⏹️ shows the end.
   An approval has **Approve** and **Deny** buttons, and a status post has **Stop**. Only the person
   who wrote the request can press them; another person gets a reply that only they see. A reply to
-  an Builders Bot post with only `stop` or `cancel` stops the request of the person who sends it.
+  a Builders Bot post with only `stop` or `cancel` stops the request of the person who sends it.
 - A post never pings anyone, also when it names a person.
 - An answer longer than 2,000 characters is sent in more than one post. A file larger than 10 MB is
   not sent, and the conversation says which files were not sent.
@@ -121,7 +121,7 @@ again.
 
 One Builders Bot bot serves every user. People mention it in a group, or reply to its messages, and the
 Telegram Orchestrator, an agent that Builders Bot adds, asks the right agent and answers. This needs an
-Builders Bot account and a name for this computer (**Server settings**), because Telegram sends the
+Cultura Builder account and a name for this computer (**Server settings**), because Telegram sends the
 updates to Builders Bot's Signal service, which passes them to this computer. Signal holds the bot token;
 this computer never has it.
 

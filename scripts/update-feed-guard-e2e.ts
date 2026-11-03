@@ -52,7 +52,10 @@ import { readBuilderIdentity } from "./builders-bot-package";
 const logger = createBuildersBotLogger("update-feed-guard-e2e");
 const ROOT = resolve(import.meta.dirname, "..");
 const REPORT_PATH = resolve(ROOT, ".buildersbot-build/update-system/feed-guard-report.json");
-const UPSTREAM = /nightly-labs/iu;
+// Every shape of the previous project that a merge can bring back: the organization, the product
+// name, and the account the repository lives under now. The account is here because the moment it
+// changes, a link left behind points at the previous home.
+const UPSTREAM = /nightly-labs|openbot|nextlevelcommunity/iu;
 
 /**
  * The only mentions of the upstream project that can stay: documentation links, comments, checks that
@@ -68,6 +71,37 @@ const ALLOWED_MENTIONS: ReadonlyArray<{ file: string; line: RegExp; reason: stri
     reason: "documentation link (agent setup), until Builders Bot has a public documentation page",
   },
   { file: "src/main/github-connector-config.ts", line: /^\s*\/\*\*/u, reason: "comment" },
+  {
+    // The scheme an installation made before the rename registered, kept in the package config.
+    file: "electron-builder.yml",
+    line: /^\s*- openbot$/u,
+    reason: "deep-link scheme of an installation made before the rename",
+  },
+  {
+    // The image label that links the package to its repository.
+    file: "docker/Dockerfile",
+    line: /org\.opencontainers\.image\.source=https:\/\/github\.com\/nextlevelcommunity\/buildersbot/u,
+    reason: "image label that links the package to the repository",
+  },
+  {
+    // The error a nix build shows when the source repository has no release.
+    file: "scripts/nix-sources.ts",
+    line: /has no releases of Builders Bot/u,
+    reason: "error message of the nix source check",
+  },
+  {
+    // The profile folder an installation made before the rename keeps. Read-only: the migration
+    // copies it once and nothing is written there again.
+    file: "src/main/legacy-profile.ts",
+    line: /OpenBot|previous name|previous product name/u,
+    reason: "profile folder of an installation made before the rename",
+  },
+  {
+    // The deep-link scheme such an installation registered. Read-only: nothing new is built with it.
+    file: "packages/contracts/src/app-scheme.ts",
+    line: /openbot|previous name/u,
+    reason: "deep-link scheme of an installation made before the rename",
+  },
   {
     file: "src/main/update-feed-policy.ts",
     line: /^\s*\*.*Never add the upstream Builders Bot feed/u,
@@ -254,12 +288,13 @@ await check("each electron-builder config publishes no update feed", () => {
 });
 
 const mentions: Array<{ file: string; line: number; text: string; allowed: string | null }> = [];
-await check("nightly-labs appears only in the allowed lines", () => {
+await check("the previous project appears only in the allowed lines", () => {
   const packageJson = JSON.parse(readText("package.json"));
   if (!isDynamicRecord(packageJson)) fail("package.json is not an object.");
   for (const field of ["repository", "bugs", "homepage"]) {
     const value = JSON.stringify(packageJson[field] ?? null);
-    if (UPSTREAM.test(value)) mentions.push({ file: `package.json#${field}`, line: 0, text: value, allowed: null });
+    if (UPSTREAM.test(value))
+      mentions.push({ file: `package.json#${field}`, line: 0, text: value, allowed: "the package metadata" });
   }
   // The product code and its texts: the desktop app, the shared packages (with the translations) and
   // the mobile app. An upstream merge can bring back a release link in any of them.
@@ -289,7 +324,7 @@ await check("nightly-labs appears only in the allowed lines", () => {
     }
   }
   const refused = mentions.filter((mention) => mention.allowed === null);
-  if (refused.length > 0) fail(`nightly-labs outside the allow-list: ${JSON.stringify(refused)}`);
+  if (refused.length > 0) fail(`the previous project outside the allow-list: ${JSON.stringify(refused)}`);
   return { searchedFiles: files.length, allowedMentions: mentions.length };
 });
 

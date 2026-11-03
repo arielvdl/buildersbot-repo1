@@ -1,5 +1,6 @@
 import type { PlatformLogoVariant } from "@buildersbot/brand";
-import { BUILDERSBOT_DOWNLOAD_LINKS } from "./landing-links";
+import { BUILDERSBOT_DOWNLOAD_LINKS, BUILDERSBOT_LINKS } from "./landing-links";
+import { RELEASES_ARE_PUBLISHED } from "./release-status";
 
 export type DownloadPlatform = PlatformLogoVariant;
 
@@ -21,33 +22,39 @@ export interface PlatformNavigator {
   };
 }
 
+/**
+ * Until a release carries installers, a card says so and its button opens the source repository
+ * instead of a route that answers 404.
+ */
+const status: DownloadPlatformDetails["status"] = RELEASES_ARE_PUBLISHED ? "Available" : "Coming soon";
+
 export const DOWNLOAD_PLATFORMS: Record<DownloadPlatform, DownloadPlatformDetails> = {
   macos: {
     id: "macos",
     label: "macOS",
-    status: "Available",
+    status,
     description: "macOS 13+ · Apple silicon",
     action: "Download for macOS",
-    available: true,
-    href: BUILDERSBOT_DOWNLOAD_LINKS.macos,
+    available: RELEASES_ARE_PUBLISHED,
+    href: RELEASES_ARE_PUBLISHED ? BUILDERSBOT_DOWNLOAD_LINKS.macos : BUILDERSBOT_LINKS.repository,
   },
   windows: {
     id: "windows",
     label: "Windows",
-    status: "Available",
+    status,
     description: "Windows 10+ · x64",
     action: "Download for Windows",
-    available: true,
-    href: BUILDERSBOT_DOWNLOAD_LINKS.windows,
+    available: RELEASES_ARE_PUBLISHED,
+    href: RELEASES_ARE_PUBLISHED ? BUILDERSBOT_DOWNLOAD_LINKS.windows : BUILDERSBOT_LINKS.repository,
   },
   linux: {
     id: "linux",
     label: "Linux",
-    status: "Available",
+    status,
     description: "x64 · AppImage",
     action: "Download for Linux",
-    available: true,
-    href: BUILDERSBOT_DOWNLOAD_LINKS.linux,
+    available: RELEASES_ARE_PUBLISHED,
+    href: RELEASES_ARE_PUBLISHED ? BUILDERSBOT_DOWNLOAD_LINKS.linux : BUILDERSBOT_LINKS.repository,
   },
 };
 

@@ -91,7 +91,7 @@ export function LandingFooter() {
         </div>
 
         <div class="landing-footer-bottom" data-revealed={revealState()}>
-          <p>&copy; {currentYear} Cultura Builder, All rights reserved.</p>
+          <p>&copy; {currentYear} Cultura Builder. All rights reserved.</p>
           <div class="landing-footer-meta">
             <Link to="/download">
               <span class="landing-footer-availability" aria-hidden="true" />

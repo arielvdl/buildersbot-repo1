@@ -1947,8 +1947,8 @@ export const STORY_AGENT_SUBMISSIONS: AgentSubmission[] = [
 export const STORY_HOSTED_SITES: HostedSiteSummary[] = [
   {
     id: "site-launch-notes",
-    hostname: "launch-notes.sites.buildersbot.culturabuilder.com",
-    url: "https://launch-notes.sites.buildersbot.culturabuilder.com",
+    hostname: "launch-notes.culturabuilder.com",
+    url: "https://launch-notes.culturabuilder.com",
     title: "Launch notes",
     description: "The public changelog for the 0.2 release.",
     framework: "astro",
@@ -1961,8 +1961,8 @@ export const STORY_HOSTED_SITES: HostedSiteSummary[] = [
   },
   {
     id: "site-design-review",
-    hostname: "design-review.sites.buildersbot.culturabuilder.com",
-    url: "https://design-review.sites.buildersbot.culturabuilder.com",
+    hostname: "design-review.culturabuilder.com",
+    url: "https://design-review.culturabuilder.com",
     title: "Design review",
     description: "A one-page mockup shared with the design studio.",
     framework: "vanilla",

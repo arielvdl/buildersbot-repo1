@@ -255,13 +255,13 @@ await check("the matcher ignores case and refuses a Markdown paragraph that does
   if (capitals.length !== 1 || capitals[0]?.allowed !== null) fail("A host in capital letters was not refused.");
   const table = findMentionsInText(
     "docs/sample.md",
-    "| Host | Use |\n| --- | --- |\n| `*.buildersbot.culturabuilder.com` | Sites, and `analytics.buildersbot.culturabuilder.com` |\n",
+    "| Host | Use |\n| --- | --- |\n| `*.buildersbot.culturabuilder.com` | Sites, and `bb-analytics.culturabuilder.com` |\n",
     BLOCKED_ANALYTICS_STRINGS,
   );
   if (table.length !== 1 || table[0]?.allowed !== null) fail("A Markdown table that allows the host was not refused.");
   const history = findMentionsInText(
     "docs/sample.md",
-    "Earlier versions sent events to the upstream\nproject (`analytics.buildersbot.culturabuilder.com`).\n",
+    "Earlier versions sent events to the upstream\nproject (`bb-analytics.culturabuilder.com`).\n",
     BLOCKED_ANALYTICS_STRINGS,
   );
   if (history.length !== 1 || history[0]?.allowed !== MARKDOWN_UPSTREAM_REASON) {

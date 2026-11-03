@@ -78,57 +78,16 @@ const COMPATIBILITY: readonly Allowance[] = [
   {
     file: /.*/u,
     tokens: ["openbot"],
-    line: /openbot\.(?:run|site)\b/iu,
+    line: /openbot\\?\.(?:run|site)\b/iu,
     reason:
       "compatibility host: an invitation link, a published site, the deploy smoke check and a fixture still read it",
   },
   {
     file: /.*/u,
     tokens: ["openbot"],
-    line: /run\.openbot\.mobile/iu,
-    reason: "the mobile bundle identifier: an installed app keeps it while the store listing is theirs",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
     line: /app\.openbot\.desktop/iu,
-    reason: "the desktop bundle identifier: an installed app keeps it so an upgrade is an upgrade",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /\/opt\/OpenBot/iu,
-    reason: "the install directory of an existing host",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openbot\.service/iu,
-    reason: "the systemd unit of an existing host: a rename breaks the unit that is installed",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /buildersbot-host/iu,
-    reason: "the installed host command and its files",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openbot_license_prices/u,
-    reason: "the price signature that a Stripe price of the old name carries, which the bootstrap compares",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /OpenBot Safe Storage/iu,
-    reason: "the macOS Keychain item: an existing secret is found under the old name",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openbot\.db/iu,
-    reason: "the database file of an existing install",
+    reason:
+      "the relaunch agent label of an install made before the rename, which the host preinstall boots out and removes",
   },
   {
     file: /.*/u,
@@ -145,56 +104,8 @@ const COMPATIBILITY: readonly Allowance[] = [
   {
     file: /.*/u,
     tokens: ["openbot"],
-    line: /OpenBot\.(?:exe|AppImage)/u,
-    reason: "the executable name inside an existing package and its update feed",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
     line: /openbot:\/\//iu,
     reason: "the deep-link scheme of an invitation that was already sent",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openbot-[a-z0-9-]+\.(?:json|path|timer|service|conf)/iu,
-    reason: "a state, unit or timer file of an existing install",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /buildersbot-update/iu,
-    reason: "the update request and apply units of an existing host",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openBotTool(?:Failure|Result)/u,
-    reason: "the tool result envelope: an agent sees the field name, so a rename needs the migration of F4",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /\bopenBotTool\b/u,
-    reason: "the same envelope, held in a local variable",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openbot-browser/iu,
-    reason: "the browser profile directories and the CDP allow-list name of an existing profile",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /persist:openbot-browser/u,
-    reason: "the persisted browser partition of an existing profile",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /files\.storage\.openBotOn/u,
-    reason: "an i18n key: a translation catalogue and its readers share it",
   },
   {
     file: /.*/u,
@@ -205,131 +116,17 @@ const COMPATIBILITY: readonly Allowance[] = [
   {
     file: /.*/u,
     tokens: ["openbot"],
-    line: /OpenBot\.app/u,
-    reason: "the macOS application bundle name of an existing install",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openbot-events/u,
-    reason: "the event stream name of the Team API",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openbot-hosted/u,
-    reason:
-      "the keyring, state, AppArmor, unit and published guide names of a server installed before the rename, which the migration reads",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /OpenBot-Host-(?:Id|Token)|OpenBot-Hosting-Developer-Key/u,
-    reason: "the host and developer-key header names that a released host or Worker still sends",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
     line: /\/usr\/local\/bin\/openbot(?:-host)?\b/u,
     reason:
       "the administrator and terminal commands that an install of the old name made, and the migration now removes",
   },
   {
-    file: "src/main/update-feed-policy.test.ts",
+    file: /^src\/backend\/contracts-legacy-names\.test\.ts$|^electron-builder\.yml$/u,
     tokens: ["openbot"],
-    line: /openbot-updater/u,
-    reason: "the updater cache folder of an installation made before the rename, which the policy refuses",
+    reason: "the protocol name that a released client still reads, and the link scheme it registered",
   },
   {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openbot-vs-grokbot/u,
-    reason: "the slug of a published article",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /@OpenBot_|@meetOpenBot/u,
-    reason: "the social handles that the footer and the support page print",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openBotContentImage/u,
-    reason: "the bridge name that the content page and its preload share",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openBotSoftwareApplication/u,
-    reason: "the JSON-LD node identifier of the software application",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openBot(?:Root|Home)Head/u,
-    reason: "the head-element helper of a route",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openbot\.share-target\.v1/u,
-    reason: "the persisted key of the last share target",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openbot-a3328/u,
-    reason: "the Firebase project of the mobile build",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /buildersbot-cultura-builder-start-e2e-/u,
-    reason: "the temporary directory prefix of a smoke test",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /installOpenbotStub/u,
-    reason: "the name of a test helper",
-  },
-  {
-    file: /^packages\/contracts\/src\/|^src\/backend\/contracts-legacy-names\.test\.ts$|^electron-builder\.yml$/u,
-    tokens: ["openbot"],
-    reason: "the package owns the persisted and protocol names that a released client still reads, and the link scheme",
-  },
-  {
-    file: /^packages\/contracts\/src\/team-protocol\//u,
-    tokens: ["openbot"],
-    reason: "the header names of a released client, host or Worker, read after the new name and written beside it",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /\[?"OpenBot-|OpenBot-\$version|OpenBot-<version>|OpenBot-0\.|OpenBot-\(|OpenBot-\.\.\.|openbot-source\.tar\.gz|\.replace\(\/\^Builders Bot-\/u, "OpenBot-"|setAsDefaultProtocolClient\("openbot"\)/u,
-    reason: "a sender, a parser or the installer also accepts the released header, asset or scheme name",
-  },
-  {
-    file: "docs/architecture/team-api.md",
-    tokens: ["openbot"],
-    line: /OpenBot-Protocol-Version/u,
-    reason: "the protocol note names the header that a released client still sends",
-  },
-  {
-    file: "docs/web-client.md",
-    tokens: ["openbot"],
-    line: /published `OpenBot-\*` names/u,
-    reason: "the web client doc names the released header family that a client still sends",
-  },
-  {
-    file: "scripts/builders-bot-phone-links.test.ts",
-    tokens: ["openbot"],
-    line: /not\.toMatch\(\/openbot\/iu\)/u,
-    reason: "the test asserts that a made link is not the old one",
-  },
-  {
-    file: /^src\/(?:main\/legacy-profile|backend\/database\/legacy-preference-files)\.ts$/u,
+    file: /^src\/main\/legacy-profile(?:\.test)?\.ts$/u,
     tokens: ["openbot"],
     reason: "the migration reads the application name, the profile folder and the file prefix of an existing profile",
   },
@@ -344,44 +141,21 @@ const COMPATIBILITY: readonly Allowance[] = [
     reason: "the word that describes the licence of this product, used by the licence, the site and the docs",
   },
   {
-    file: /^(?:\.github\/workflows\/release\.yml|docs\/RELEASING\.md)$/u,
-    tokens: ["synthetify"],
-    reason: "the Azure Trusted Signing account is still named synthetifyartifactsign; a new account is F5",
-  },
-  {
-    file: /^(?:scripts\/update-feed-guard-e2e|src\/main\/update-feed-policy\.test|apps\/auth-api\/test\/phone-web-app-pages\.test)\.ts$/u,
+    file: "apps/auth-api/test/phone-web-app-pages.test.ts",
     tokens: ["nightly-labs"],
-    reason: "the guard tests name the previous repository on purpose, to assert that it does not come back",
+    line: /not\.toMatch\(\/nightly-labs/u,
+    reason: "the test names the previous repository on purpose, to assert that it does not come back",
   },
   {
-    file: "apps/mobile/README.md",
+    file: "packages/contracts/src/app-scheme.ts",
     tokens: ["openbot"],
-    line: /\*\*Openbot(?: Mobile)?\*\*/u,
-    reason: "the project of the OpenPanel dashboard keeps the name it was created with",
+    reason: "the deep-link scheme an installation made before the rename registered, which the reader still accepts",
   },
   {
-    file: "scripts/update-feed-guard-e2e.ts",
+    file: "resources/cli/buildersbot-cli.mjs",
     tokens: ["openbot"],
-    line: /openBot|updaterCacheDirName/u,
-    reason: "the guard asserts the updater cache folder of an installation made before the rename",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /%?(?:USERPROFILE|APPDATA|PROFILE)%?\\OpenBot\b/u,
-    reason: "the Windows home and application-data folders of an existing install, which the profile migration reads",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /Software\\Classes\\openbot\b/u,
-    reason: "the deep-link scheme key that an invitation already registered on Windows",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openbot-export/u,
-    reason: "the export skill folder that a user installed in Hermes before the rename",
+    line: /replace\("Builders Bot", "OpenBot"\)/u,
+    reason: "the automation folder an installation made before the rename wrote to",
   },
 ];
 
@@ -397,14 +171,9 @@ const HISTORY: readonly Allowance[] = [
     reason: "a plan written before the cut, kept as the record of the decision",
   },
   {
-    file: "plans/legal/purga-de-autoria.md",
+    file: "scripts/update-feed-guard-e2e.ts",
     tokens: [...LEGAL, "openbot"],
-    reason: "the purge plan itself: it names every trail it removes",
-  },
-  {
-    file: /^docs\/titulo\//u,
-    tokens: [...LEGAL, "openbot"],
-    reason: "the title dossier of F1: the contract and the annex name the previous owner",
+    reason: "the update feed guard: it names the terms it refuses and the allow-list it checks",
   },
   {
     file: "scripts/builders-bot-rename.pl",
@@ -488,6 +257,9 @@ function fail(message: string): never {
   throw new Error(message);
 }
 
+/** The compatibility entries a line has matched, so one that never matches can be reported. */
+const matchedCompatibility = new Set<Allowance>();
+
 const BINARY_FILE =
   /\.(?:png|jpe?g|gif|webp|ico|icns|car|svg|woff2?|ttf|otf|mp3|wav|webm|mp4|zip|gz|tgz|pdf|node|wasm)$/iu;
 
@@ -501,13 +273,22 @@ function repositoryFiles(): string[] {
   return [...new Set(output.split("\0").filter(Boolean))].filter((file) => existsSync(resolve(ROOT, file)));
 }
 
-function allowedReason(file: string, token: Token, text: string): string | null {
-  const entry = [...COMPATIBILITY, ...HISTORY, ...DEBT].find(
-    (allowance) =>
-      (typeof allowance.file === "string" ? allowance.file === file : allowance.file.test(file)) &&
-      allowance.tokens.includes(token) &&
-      (allowance.line === undefined || allowance.line.test(text)),
+function matches(allowance: Allowance, file: string, token: Token, text: string): boolean {
+  return (
+    (typeof allowance.file === "string" ? allowance.file === file : allowance.file.test(file)) &&
+    allowance.tokens.includes(token) &&
+    (allowance.line === undefined || allowance.line.test(text))
   );
+}
+
+function allowedReason(file: string, token: Token, text: string): string | null {
+  const entry = [...COMPATIBILITY, ...HISTORY, ...DEBT].find((allowance) => matches(allowance, file, token, text));
+  // Every entry the line matches counts as evidence, not only the first one, or a shape covered by
+  // two entries reports the second as dead. This file is skipped as evidence: its own pattern
+  // literals match their entries and would keep a dead one alive forever.
+  if (file !== GUARD_FILE)
+    for (const allowance of COMPATIBILITY)
+      if (matches(allowance, file, token, text)) matchedCompatibility.add(allowance);
   return entry?.reason ?? null;
 }
 
@@ -589,6 +370,21 @@ await check("the allow-list entries name a reason, and a legal entry outside HIS
   if (empty.length > 0) fail(`${empty.length} allow-list entries have no reason.`);
   const legalDebt = DEBT.filter((entry) => entry.tokens.some((token) => LEGAL.includes(token)));
   return { entries: COMPATIBILITY.length + HISTORY.length + DEBT.length, legalDebt: legalDebt.length };
+});
+
+await check("no compatibility entry is stale: each one still covers a line", () => {
+  const stale = COMPATIBILITY.filter((entry) => !matchedCompatibility.has(entry));
+  if (stale.length > 0) {
+    fail(
+      [
+        `${stale.length} compatibility entr${stale.length === 1 ? "y covers" : "ies cover"} no line any more:`,
+        ...stale.map((entry) => `  ${String(entry.file)} ${entry.tokens.join(", ")}: ${entry.reason}`),
+        "",
+        "Delete the entry, or the guard keeps certifying a compatibility surface the code no longer has.",
+      ].join("\n"),
+    );
+  }
+  return { entries: COMPATIBILITY.length, matched: matchedCompatibility.size };
 });
 
 const passed = checks.every((entry) => entry.passed);

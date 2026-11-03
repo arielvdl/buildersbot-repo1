@@ -212,7 +212,7 @@ export const GROK_BOT_COMPARISON: Comparison = {
     {
       question: "Does Builders Bot have a mobile app?",
       answer:
-        "Yes. The Builders Bot apps for iPhone and Android connect to the computer that runs your agents, over an encrypted connection. That computer must stay on, and remote access needs an Builders Bot account. Your chats and files stay on that computer.",
+        "Yes. The Builders Bot apps for iPhone and Android connect to the computer that runs your agents, over an encrypted connection. That computer must stay on, and remote access needs a Cultura Builder account. Your chats and files stay on that computer.",
     },
     {
       question: "How much do Builders Bot and Grok Bot cost?",

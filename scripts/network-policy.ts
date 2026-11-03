@@ -159,6 +159,8 @@ const DEPENDENCIES: readonly EgressEntry[] = [
   { level: 2, host: "ssl.com", reason: "the C2PA certificate chain of a signed image" },
   { level: 2, host: "creativecommons.org", reason: "a licence link of a bundled model" },
   { level: 2, host: "apache.org", reason: "the Apache licence of a bundled model" },
+  { level: 2, host: "gnu.org", reason: "the GPL text of the bundled remote-desktop runtime" },
+  { level: 2, host: "fsf.org", reason: "the address the GPL text names" },
   { level: 2, host: "semver.org", reason: "the version grammar that a changelog link names" },
   { level: 2, host: "developer.mozilla.org", reason: "the web platform reference that a fixture names" },
   { level: 2, host: "expo.dev", reason: "the Expo documentation of the mobile app" },

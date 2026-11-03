@@ -45,14 +45,14 @@ hash da lista, tendo como commit-base o listado na seção 1.
 - **Tag:** `v1.0.0`, assinada com a chave GPG `BAD0392AD4E7BFF2` (Cultura Builder <dev@culturabuilder.com>).
 - **Release:** `https://github.com/nextlevelcommunity/buildersbot/releases/tag/v1.0.0`.
 - **Remote único:** `origin` = `https://github.com/nextlevelcommunity/buildersbot.git`.
-- **Espelho arqueológico:** `/Users/arielsilva/Projects/.archive/openbot-local.git`, fora do disco de trabalho.
+- **Espelho arqueológico:** espelho integral do acervo antecessor, guardado fora do disco de trabalho.
 
 ## 5. Pendências contratuais em acompanhamento
 
 As seguintes questões contratuais permanecem em fase de formalização e devem ser
 acompanhadas até conclusão:
 
-1. **Instrumento de cessão com a Synthetify Labs** — formalização (ou confirmação
+1. **Instrumento de cessão com a titular anterior** — formalização (ou confirmação
    documental) da cessão integral dos direitos patrimoniais relativos ao produto
    e ao histórico de desenvolvimento anterior, em favor da Cultura Builder;
 2. **Cláusula de residuals (resíduos)** — pactuação expressa do direito de a
@@ -61,8 +61,8 @@ acompanhadas até conclusão:
 3. **CLA retroativo** — consolidação das assinaturas do CLA v2 com efeito
    retroativo junto aos contribuintes de commits anteriores à criação do
    repositório `nextlevelcommunity/buildersbot`, cobrindo inclusive
-   contribuições vertidas nos repositórios antecessores (`nightly-labs/openbot` e
-   `Hub-Next-Level/buildersbot-cb`) e no ciclo do projeto anterior.
+   contribuições vertidas nos repositórios antecessores e no ciclo anterior do
+   projeto.
 
 Enquanto não concluídas, estas pendências constituem o mapa de risco jurídico do
 projeto e devem constar das tratativas de licenciamento comercial.

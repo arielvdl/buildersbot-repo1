@@ -154,7 +154,7 @@ the web client uses the browser chooser and ships the export skill in its bundle
 
 ### Instance transfer with a joined server
 
-`instance-transfer-v1` moves a server's agents and server settings to or from an Builders Bot transfer file
+`instance-transfer-v1` moves a server's agents and server settings to or from a Builders Bot transfer file
 (see [Instance transfer](agents.md#instance-transfer)). Only an owner or admin can use it: the file holds
 every agent's memories and files, and an import adds server settings. It is protocol 7 only. Every file
 that crosses the connection is at most 100 MB, the size of one WebRTC file transfer; a computer's own

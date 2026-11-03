@@ -521,7 +521,7 @@ export interface MobileWorkspaceContextValue {
   canViewHostedSites: (serverId: string) => boolean;
   /** An owner or admin of an online host that serves `hosted-sites-v1`. The host checks the role again. */
   canDeleteHostedSites: (serverId: string) => boolean;
-  /** The sites.buildersbot.culturabuilder.com sites that agents on the server published, and the site limit of its plan. */
+  /** The culturabuilder.com sites that agents on the server published, and the site limit of its plan. */
   loadHostedSites: (serverId: string) => Promise<HostedSiteList>;
   /** The address of the site returns 410 Gone immediately. */
   deleteHostedSite: (siteId: string, serverId: string) => Promise<void>;

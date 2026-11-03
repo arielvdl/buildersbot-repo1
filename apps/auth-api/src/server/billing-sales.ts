@@ -680,7 +680,7 @@ export class BillingSales {
       : synced?.product === "license"
         ? synced
         : yield* this.#storedLicense(payment.subscriptionId);
-    // A payment of a subscription that is not an Builders Bot plan or license is not an Builders Bot sale.
+    // A payment of a subscription that is not a Builders Bot plan or license is not a Builders Bot sale.
     if (!stored && !license) return;
     const syncedPlan = synced?.product === "license" ? null : synced;
     const attributes: FactAttributes = stored

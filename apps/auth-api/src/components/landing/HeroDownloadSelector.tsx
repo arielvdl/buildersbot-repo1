@@ -14,6 +14,8 @@ type HeroPlatform = DownloadPlatform | MobilePlatform;
 
 interface HeroOffer {
   action: string;
+  /** Missing for a phone, which always has the web app. */
+  available?: boolean;
   /** Missing while the installer is not out yet. */
   href?: string;
   label: string;
@@ -163,7 +165,11 @@ export function HeroDownloadSelector() {
           }
         >
           {(href) => (
-            <a class="landing-download-primary" href={href()} data-state="available">
+            <a
+              class="landing-download-primary"
+              href={href()}
+              data-state={current().available === false ? "coming-soon" : "available"}
+            >
               <PlatformLogo platform={platform()} solid />
               {current().action}
             </a>

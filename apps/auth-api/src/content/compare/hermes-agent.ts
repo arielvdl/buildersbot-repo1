@@ -179,7 +179,7 @@ export const HERMES_AGENT_COMPARISON: Comparison = {
     {
       question: "What is the main difference between Builders Bot and Hermes Agent?",
       answer:
-        "What an agent is. An Builders Bot agent is a provider's own coding tool, such as Codex with your ChatGPT plan or Claude Code with your Claude plan, and several agents work as a team. Hermes Agent is its own agent loop over many model providers. It learns skills as it works, and it talks to you in messaging apps.",
+        "What an agent is. A Builders Bot agent is a provider's own coding tool, such as Codex with your ChatGPT plan or Claude Code with your Claude plan, and several agents work as a team. Hermes Agent is its own agent loop over many model providers. It learns skills as it works, and it talks to you in messaging apps.",
     },
     {
       question: "Can I use my Claude subscription with Hermes Agent?",

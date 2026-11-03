@@ -126,7 +126,7 @@ export const messages = defineMessages("mobile.server", {
   "mobile.server.hosted.stepActive": "in progress",
   "mobile.server.hosted.stepPending": "not started",
   "mobile.server.hosted.stepFailed": "failed",
-  "mobile.server.scan.notInvitation": "This QR code is not an Builders Bot invitation.",
+  "mobile.server.scan.notInvitation": "This QR code is not a Builders Bot invitation.",
   "mobile.server.scan.title": "Scan invitation",
   "mobile.server.role.owner": "owner",
   "mobile.server.role.admin": "admin",
@@ -710,7 +710,7 @@ export const messages = defineMessages("mobile.server", {
     "This new agent answers everything that people send to @Builders Bot in {workspace}.",
   "mobile.server.connectors.slack.installFailed": "Slack did not finish the install. Try again.",
   // Discord: a Discord server adds the one Builders Bot bot. Always write "Discord server": "server" alone
-  // is an Builders Bot server. {workspace} is the Discord server name.
+  // is a Builders Bot server. {workspace} is the Discord server name.
   "mobile.server.connectors.discord.title": "Discord",
   "mobile.server.connectors.discord.summary": "People mention @Builders Bot in a Discord server",
   "mobile.server.connectors.discord.description":

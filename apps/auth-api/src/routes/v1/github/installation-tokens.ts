@@ -13,8 +13,8 @@ import { requestSourceIp } from "../../../server/source-ip";
 
 /**
  * Installation tokens of the Builders Bot GitHub App, so that GitHub shows an agent's work as
- * `buildersbotgit[bot]`. The bearer is the GitHub user token of the Builders Bot computer, not an Builders Bot
- * session: the app works without an Builders Bot account. GitHub checks the token, and the answer holds
+ * `buildersbotgit[bot]`. The bearer is the GitHub user token of the Builders Bot computer, not a Builders Bot
+ * session: the app works without a Cultura Builder account. GitHub checks the token, and the answer holds
  * only the repositories where that user can push.
  */
 export const Route = createFileRoute("/v1/github/installation-tokens")({

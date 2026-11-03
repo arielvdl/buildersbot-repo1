@@ -142,7 +142,7 @@ export const messages = defineMessages("agentSettings", {
   "agentSettings.runtime.fullAccessNote":
     "The agent runs with full computer access from its workspace and the shared folder.",
   "agentSettings.runtime.askNote":
-    "It asks you before it uses an Builders Bot tool or publishes a site, and when its provider asks for approval.",
+    "It asks you before it uses a Builders Bot tool or publishes a site, and when its provider asks for approval.",
   "agentSettings.runtime.fullNote": "It acts without asking, except for questions it puts to you.",
 
   "agentSettings.access.workspace": "Workspace only",

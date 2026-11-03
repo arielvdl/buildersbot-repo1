@@ -59,7 +59,7 @@ export function DownloadSection() {
             class="landing-download-card"
             href={macos.href}
             data-download-platform="macos"
-            data-state="available"
+            data-state={macos.available ? "available" : "coming-soon"}
             data-revealed={revealState()}
           >
             <DownloadCardContent
@@ -75,7 +75,7 @@ export function DownloadSection() {
             class="landing-download-card"
             href={windows.href}
             data-download-platform="windows"
-            data-state="available"
+            data-state={windows.available ? "available" : "coming-soon"}
             data-revealed={revealState()}
           >
             <DownloadCardContent
@@ -93,7 +93,7 @@ export function DownloadSection() {
             class="landing-download-card"
             href={linux.href}
             data-download-platform="linux"
-            data-state="available"
+            data-state={linux.available ? "available" : "coming-soon"}
             data-revealed={revealState()}
           >
             <DownloadCardContent

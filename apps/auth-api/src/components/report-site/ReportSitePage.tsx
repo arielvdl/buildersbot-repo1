@@ -13,7 +13,7 @@ const REPORT_REASONS = ["phishing", "malware", "abuse", "copyright", "other"] as
 const DETAILS_LIMIT = 1_000;
 
 /** An example value, not text: it is the same in all languages. */
-const HOSTNAME_EXAMPLE = "example.sites.buildersbot.culturabuilder.com";
+const HOSTNAME_EXAMPLE = "example.culturabuilder.com";
 
 type ReportStatus = "idle" | "sending" | "sent" | "failed";
 

@@ -14,8 +14,9 @@ export function Terms() {
       <h2>Acceptance of the Terms &amp; Conditions</h2>
       <p>
         These Terms &amp; Conditions ("Terms") govern the use of Builders Bot and form a legally binding agreement
-        between you and Builders Bot. By accessing or using the Services, you agree to these Terms. If you are acting on
-        behalf of an organization, you represent that you have the authority to accept these Terms on its behalf.
+        between you and Cultura Builder Educação e Tecnologia Ltda. ("Cultura Builder"), which operates Builders Bot. By
+        accessing or using the Services, you agree to these Terms. If you are acting on behalf of an organization, you
+        represent that you have the authority to accept these Terms on its behalf.
       </p>
 
       <h2>Accounts and Eligibility</h2>
@@ -73,8 +74,7 @@ export function Terms() {
       <ul>
         <li>Starter License – intended for one individual user (one Seat).</li>
         <li>
-          Team License – intended for teams of at least five individual users (a minimum of five Seats), with the option
-          to purchase additional Seats.
+          Team License – intended for teams of at least two individual users (a minimum of two Seats), up to ten Seats.
         </li>
       </ul>
       <p>
@@ -617,7 +617,7 @@ export function Terms() {
         the associated workspace data.
       </p>
       <p>
-        If the subscription is not renewed, the associated Hosted Server data will be retained for 30 days following the
+        If the subscription is not renewed, the associated Hosted Server data will be retained for 14 days following the
         expiry of the paid billing period. If the subscription is not renewed or reactivated within this period, the
         associated Hosted Server data will be deleted.
       </p>
@@ -631,12 +631,16 @@ export function Terms() {
         Users are responsible for saving or exporting any content they wish to retain before deleting a Hosted Server.
       </p>
       <p>
-        The termination of a Hosted Server subscription does not automatically terminate the User's Builders Bot account
-        or any separate agreements with third-party service providers.
+        The termination of a Hosted Server subscription does not automatically terminate the User's Cultura Builder
+        account or any separate agreements with third-party service providers.
       </p>
 
       <h2>Consumer Right of Withdrawal</h2>
       <p>Nothing in these Terms limits or excludes any mandatory rights concerning withdrawal from a contract.</p>
+      <p>
+        If you are a consumer in Brazil, you may withdraw from the purchase within 7 days of it, under article 49 of the
+        Consumer Protection Code (Lei 8.078/1990), with a full refund and no administrative fee.
+      </p>
       <p>
         If you submit a refund request by email to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> within 2
         hours of completing your purchase, Builders Bot offers a refund of 90% of the amount paid, retaining the
@@ -865,7 +869,7 @@ export function Terms() {
         <br />
         Presidente Prudente, São Paulo, Brazil
         <br />
-        +48 515901078
+        +48 515 901 078
       </p>
       <p>
         All inquiries, feedback, comments, requests for technical support, and other communications concerning the

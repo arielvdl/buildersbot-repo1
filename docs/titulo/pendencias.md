@@ -5,6 +5,35 @@ social foi regerado; as capturas de tela ainda não refletem a marca atual. O te
 alternativo e a legenda descrevem o que a imagem deve mostrar; a imagem em si é atualizada
 quando refeita.
 
+## Upgrade por cima de uma instalação antiga
+
+- **Perfil:** `src/main/legacy-profile.ts` copia a pasta de perfil do nome anterior para a pasta
+  atual na primeira execução que não acha perfil próprio, e deixa a pasta antiga no lugar. Agentes,
+  servidores, conversas, banco e preferências chegam inteiros; nada é apagado.
+- **Segredos:** o item de Keychain do `safeStorage` tem o nome do aplicativo, então os arquivos
+  cifrados chegam ilegíveis. O leitor já trata valor ilegível como ausente: o usuário entra de novo e
+  re-digita as chaves de provedor. Migrar o item de Keychain exigiria chamada nativa; só vale se o
+  re-login incomodar na prática.
+- **Deep link:** `openbot://` continua registrado e o leitor aceita os dois esquemas, para um convite
+  já enviado ainda abrir. Nada novo é escrito com ele.
+- **`appId`:** mudou junto com o nome, então o macOS e o Windows tratam a build nova como outro
+  aplicativo. Como `publish` é nulo (não há feed), o custo fica restrito ao re-login acima. Se um
+  feed for ligado antes de a base antiga sumir, o `appId` precisa voltar ou o feed precisa aceitar os
+  dois.
+
+## Repositório e contas
+
+- **Conta do GitHub:** o repositório vive em `nextlevelcommunity`, que é uma **conta de usuário**
+  chamada "Cultura Builder Community", não uma organização. Toda URL de código, release, issue e
+  pacote carrega esse nome. Mover para uma organização com o nome da empresa é a única forma de
+  tirá-lo, e depende de o dono criar a organização e transferir o repositório.
+- **CODEOWNERS:** aponta para a conta que revisa hoje. Um handle que não existe quebra a exigência
+  de revisão do ruleset, então a troca precisa ser feita junto com a criação do handle da empresa.
+- **Registry da imagem:** `ghcr.io/nextlevelcommunity/buildersbot` acompanha a conta, então também
+  muda se o repositório mudar.
+- **Versões herdadas:** `release-announcement.json` e `nix/sources.json` estavam em `0.56.0` com o
+  pacote em `1.0.0`, e o `release.yml` compara os dois — a release falharia. Corrigido para `1.0.0`.
+
 ## Infraestrutura e assinatura
 
 - **Azure Trusted Signing:** criar a conta `culturabuilderartifactsign` e o perfil `CULTURABUILDER`
@@ -12,35 +41,35 @@ quando refeita.
   já aponta para esses nomes; enquanto não existirem, o build Windows assinado falha de propósito
   (`forceCodeSigning`). O CN precisa ser o do certificado, senão o auto-update de uma build já
   instalada recusa a atualização.
-- **DNS:** os registros abaixo ainda não existem. Até criá-los, o acesso remoto e os sites
-  publicados não resolvem. Criar na zona `culturabuilder.com`:
+- **DNS:** criado em 03/11/2026, sem ACM. O certificado grátis cobre um nível
+  (`culturabuilder.com`, `*.culturabuilder.com`), então só os nomes de dois níveis continuam
+  existindo, e esses são DNS-only com certificado no próprio servidor:
 
   | Nome | Tipo | Destino | Proxy |
   | --- | --- | --- | --- |
-  | `signal.buildersbot` | CNAME | `signal.bb-aws.culturabuilder.com` | DNS only |
-  | `turn.buildersbot` | CNAME | `turn.bb-aws.culturabuilder.com` | DNS only |
-  | `api.buildersbot` | CNAME | `buildersbot.culturabuilder.com` | proxied |
-  | `status.buildersbot` | CNAME | `nextlevelcommunity.github.io` | proxied |
-  | `analytics.buildersbot` | CNAME | `analytics.openbot.run` | DNS only |
-  | `discord.buildersbot` | CNAME | `buildersbot.culturabuilder.com` | proxied |
-  | `updates.buildersbot` | CNAME | `buildersbot.culturabuilder.com` | proxied |
-  | `*.sites.buildersbot` | CNAME | `buildersbot.culturabuilder.com` | proxied |
+  | `signal.buildersbot` | A | `95.216.243.233` | DNS only |
+  | `turn.buildersbot` | A | `95.216.243.233` | DNS only |
+  | `bb-status` | CNAME | `nextlevelcommunity.github.io` | proxied |
+  | `bb-updates` | CNAME | `buildersbot` | proxied |
+  | `bb-discord` | CNAME | `buildersbot` | proxied |
+  | `*` | CNAME | `buildersbot` | proxied |
 
-  O token OAuth do wrangler não tem `dns_records:edit`; usar um API token com `Zone.DNS: Edit`.
-- **Token do deploy:** o secret `CLOUDFLARE_PRODUCTION_DEPLOY_TOKEN` está com o token OAuth do
-  wrangler, que expira em horas e é preso ao IP da máquina; o runner recebe `9109`/`Invalid access
-  token`. Trocar por um API token da conta com `Workers Scripts: Edit`, `D1: Edit`, `R2: Edit` e
-  `Zone: Read` em `culturabuilder.com`. A variable `CLOUDFLARE_ACCOUNT_ID` já está criada.
-- **Deploy do Worker:** `cd apps/auth-api && bun run build && ../../node_modules/.bin/wrangler deploy --config dist/server/wrangler.json --keep-vars`.
-  A sessão OAuth do wrangler serve; os secrets já estão no Worker e `--keep-vars` os preserva. A
-  chave `.env.keys` do dotenvx só é necessária para trocar um secret.
+  O `*` serve os sites publicados (`<slug>.culturabuilder.com`) e foi reaproveitado do antigo
+  CloudFront, que respondia 403 em todo nome sem registro. Como os sites agora dividem
+  `culturabuilder.com` com o app, um site pode gravar cookie em `.culturabuilder.com`: por isso
+  `SITE_COOKIE_ISOLATION_READY` continua `true`, mas a isolação é menor que a de antes.
+- **Token do deploy:** API token `buildersbot-ci` criado em 03/11/2026 com `DNS: Edit`,
+  `Zone: Read`, `SSL and Certificates: Write`, `Workers Scripts: Edit`, `Workers Routes: Edit`,
+  `D1: Edit`, `R2: Edit` e `Billing: Write` na conta, restrito à zona `culturabuilder.com`. Está no
+  secret `CLOUDFLARE_PRODUCTION_DEPLOY_TOKEN`. A variable `CLOUDFLARE_ACCOUNT_ID` também existe.
+- **Deploy do Worker:** feito pelo job `Deploy Cloudflare production` do CI a cada push na `main`.
+  Manual: `cd apps/auth-api && bun run build && CLOUDFLARE_API_TOKEN=... ../../node_modules/.bin/wrangler deploy --config dist/server/wrangler.json --keep-vars`.
+  `--keep-vars` preserva os secrets já gravados no Worker.
 - **Publicação:** feita em 02/11/2026: um commit, `origin` único, `v1.0.0` assinada, release publicada
   e `main` protegida. O build de release ainda depende dos dois itens acima.
-- **Release do runtime de desktop remoto:** o `native-runtime.lock.json` ainda aponta para
-  `nightly-labs/openbot`, onde os artefatos e os patches `*-openbot.patch` estão publicados.
-  Republicar o runtime aqui com os nomes novos exige um build do Sunshine que hoje falha no macOS
-  por incompatibilidade de OpenSSL (`ASN1_BIT_STRING` opaco). Até lá, `verify` aceita os dois nomes
-  de source e o build usa o runtime publicado lá.
+- **Release do runtime de desktop remoto:** publicado em 02/11/2026 neste repositório, com os
+  patches `*-buildersbot.patch`. O `native-runtime.lock.json` já aponta para cá e o app instalado
+  usa esse runtime.
 
 ## Imagens a regerar
 
@@ -79,6 +108,6 @@ mesmo enquadramento, para que a legenda continue verdadeira.
 ## Firebase do mobile
 
 - **Projeto Firebase:** o `google-services.json` usa o placeholder `buildersbot-9f2c1` no lugar do
-  projeto antigo (`openbot-a3328`). Criar o projeto novo no console do Firebase com o pacote
+  projeto anterior. Criar o projeto novo no console do Firebase com o pacote
   `run.buildersbot.mobile`, baixar o `google-services.json` real e conferir o `storage_bucket`;
   while the project does not exist, the Android build with push and crashlytics fails.

@@ -21,7 +21,7 @@ export function ImportGrokBotAgents() {
       <h2>Before you start</h2>
 
       <p>
-        Update Builders Bot and decide where the agents should live: on this computer or on an Builders Bot server you
+        Update Builders Bot and decide where the agents should live: on this computer or on a Builders Bot server you
         have joined. The import goes into the server whose settings you open.
       </p>
 

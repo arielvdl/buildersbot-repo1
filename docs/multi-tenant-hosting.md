@@ -209,7 +209,7 @@ A staged version is named only while one is pending, because the host keeps its 
 a finished update. A failed process scan makes `status` fail and `watch` report the reading as
 unavailable; it never becomes an empty process list. A tenant gets a blocker only in `waiting`,
 `stopping`, and `released`, the phases whose rules read that information; in every other phase its
-report is still shown, but it blocks nothing. An Builders Bot process under an unregistered UID is always
+report is still shown, but it blocks nothing. A Builders Bot process under an unregistered UID is always
 listed on its own line, helpers included, because a helper alone still holds the bundle during
 `stopping`. That process becomes the summary only in `waiting`, and only for a main process,
 the one case the host treats as a blocker. When a `waiting` or `stopping` state stops

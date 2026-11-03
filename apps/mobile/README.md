@@ -450,7 +450,8 @@ One-time setup:
    published release, Play accepts only draft releases: dispatch with `release_status` set to `draft`
    and roll out the release in Play Console.
 7. Commit `apps/mobile/google-services.json`, the Firebase file of the Android app
-   `run.buildersbot.mobile`. `app.config.js` adds it when it exists. Without it the build has no Firebase,
+   `run.buildersbot.mobile`. The committed file is a placeholder until the Firebase project exists:
+   its `project_id` is `buildersbot-9f2c1` and no push arrives until the real file replaces it. `app.config.js` adds it when it exists. Without it the build has no Firebase,
    and Android gets no notifications. The file has public identifiers only. The account service has
    the key that sends (`FCM_SERVICE_ACCOUNT` in [the account service](../auth-api/README.md)).
 
@@ -523,7 +524,7 @@ have the version in `apps/mobile/CHANGELOG.md`, and the file must be for that ve
 ## OpenPanel product analytics
 
 > **The app sends no product analytics and no error reports.** The destination is the OpenPanel service
-> that runs apart from the app (`analytics.buildersbot.culturabuilder.com`), which Builders Bot does not control. The
+> that runs apart from the app (`bb-analytics.culturabuilder.com`), which Builders Bot does not control. The
 > analytics folder still defines every event, but the module has no SDK client and no error report
 > queue, so it drops each event. The EAS variables below have no effect. The telemetry destination
 > guard (`bun run test:telemetry-guard`) fails when a client or transport comes back. The rest of this
@@ -531,7 +532,7 @@ have the version in `apps/mobile/CHANGELOG.md`, and the file must be for that ve
 > receive them.
 
 The client is the official OpenPanel React Native SDK with `expo-application`, with the endpoint fixed
-to `https://analytics.buildersbot.culturabuilder.com/api`, the central analytics service. No analytics credentials are committed.
+to `https://bb-analytics.culturabuilder.com/api`, the central analytics service. No analytics credentials are committed.
 
 ### Production configuration
 

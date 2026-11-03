@@ -46,7 +46,7 @@ export interface ProviderPage {
 const BUILDERSBOT_PHONE_ADD: ProviderAdd = {
   icon: "phone",
   title: "Your agents on your phone",
-  text: "The Builders Bot apps for iPhone and Android connect to the computer that runs your agents, over an encrypted connection, with no VPN. Remote access needs an Builders Bot account.",
+  text: "The Builders Bot apps for iPhone and Android connect to the computer that runs your agents, over an encrypted connection, with no VPN. Remote access needs a Cultura Builder account.",
 };
 
 /**

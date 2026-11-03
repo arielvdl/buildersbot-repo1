@@ -248,7 +248,7 @@ export const messages = {
   "server.settings.storageDescription": "Builders Bot'un bu sunucunun diskinde ne sakladığını ve boş alanı görün.",
   "server.settings.hostedSitesTitle": "Siteler",
   "server.settings.hostedSitesDescription":
-    "Bu sunucudaki ajanların sites.buildersbot.culturabuilder.com üzerinde yayımladığı statik siteler.",
+    "Bu sunucudaki ajanların culturabuilder.com üzerinde yayımladığı statik siteler.",
   "server.settings.importTitle": "İçe aktar",
   "server.settings.importDescription": "Ajanlarınızı Grok Bot'tan veya Hermes Agent'tan bu sunucuya taşıyın.",
   "server.settings.transferTitle": "Aktarım",

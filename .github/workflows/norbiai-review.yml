@@ -1,4 +1,4 @@
-name: NorbiAI PR Review
+name: Builders Bot review
 
 on:
   pull_request:
@@ -97,14 +97,14 @@ jobs:
             gh api "repos/${GITHUB_REPOSITORY}/collaborators/${REQUESTER}/permission" \
               --jq '.permission' 2>/dev/null
           ); then
-            echo "::error title=NorbiAI could not authorize the request::Could not read the repository permission of @${REQUESTER}."
+            echo "::error title=Builders Bot review could not authorize the request::Could not read the repository permission of @${REQUESTER}."
             exit 1
           fi
 
           case "$permission" in
             admin | write) ;;
             *)
-              echo "::error title=NorbiAI ignored the request::@${REQUESTER} has ${permission:-no} access to ${GITHUB_REPOSITORY}. Only someone who can merge the pull request can ask for a review or for a finding to be rechecked."
+              echo "::error title=Builders Bot review ignored the request::@${REQUESTER} has ${permission:-no} access to ${GITHUB_REPOSITORY}. Only someone who can merge the pull request can ask for a review or for a finding to be rechecked."
               exit 1
               ;;
           esac
@@ -126,7 +126,7 @@ jobs:
       # A comment-triggered run creates its check run against the default branch, not the
       # pull request head, so the head commit would keep the stale red check forever. The
       # gate is published as a commit status on the head SHA instead, which both trigger
-      # paths can update. Branch protection must require the `NorbiAI review` status.
+      # paths can update. Branch protection must require the `Builders Bot review` status.
       statuses: write
 
     env:
@@ -139,7 +139,10 @@ jobs:
       # correct the newest commit. Both are SHAs, not free text.
       EVENT_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
       EVENT_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || '' }}
-      STATUS_CONTEXT: NorbiAI review
+      STATUS_CONTEXT: Builders Bot review
+      # The status the gate published before this rename. Both are posted until the branch
+      # ruleset requires the new one, so a pull request is never left with a missing check.
+      LEGACY_STATUS_CONTEXT: Builders Bot review
       # The one reviewer, by an explicit decision. Nothing in a pull request, a review
       # request or the changed files can choose another model or effort.
       MODEL: claude-opus-5-5
@@ -192,7 +195,7 @@ jobs:
 
           for sha in "$base_sha" "$head_sha"; do
             if ! git cat-file -e "${sha}^{commit}" 2>/dev/null; then
-              echo "::error title=NorbiAI could not reach the PR commits::${sha} is missing from the checkout. Push the branch again, or resolve the merge conflict that stops GitHub from computing the merge ref."
+              echo "::error title=Builders Bot review could not reach the PR commits::${sha} is missing from the checkout. Push the branch again, or resolve the merge conflict that stops GitHub from computing the merge ref."
               exit 1
             fi
           done
@@ -243,7 +246,7 @@ jobs:
           comment_id=""
           since=""
           if [ "$lookup_exit" -ne 0 ]; then
-            echo "::warning title=NorbiAI history unavailable::Could not load previous review; continuing without history"
+            echo "::warning title=Builders Bot review history unavailable::Could not load previous review; continuing without history"
           elif [ -n "$review_meta" ]; then
             comment_id=${review_meta%%$'\t'*}
             since=${review_meta##*$'\t'}
@@ -278,7 +281,7 @@ jobs:
                 )
               fi
             else
-              echo "::warning title=NorbiAI history unavailable::Could not read previous review; continuing without history"
+              echo "::warning title=Builders Bot review history unavailable::Could not read previous review; continuing without history"
             fi
           fi
 
@@ -291,7 +294,7 @@ jobs:
           case "${TRIGGER_COMMENT_ID:-}" in
             "") ;;
             *[!0-9]*)
-              echo "::warning title=NorbiAI ignored a malformed comment id::Not reading the triggering comment"
+              echo "::warning title=Builders Bot review ignored a malformed comment id::Not reading the triggering comment"
               ;;
             *) trigger_id="$TRIGGER_COMMENT_ID" ;;
           esac
@@ -321,7 +324,7 @@ jobs:
           set -e
 
           if [ "$candidates_exit" -ne 0 ]; then
-            echo "::warning title=NorbiAI author responses unavailable::Could not read PR comments; continuing without them"
+            echo "::warning title=Builders Bot review author responses unavailable::Could not read PR comments; continuing without them"
             candidates=""
           fi
 
@@ -339,7 +342,7 @@ jobs:
                 login_filter="${login_filter} or .user.login == \"${login}\""
                 ;;
               *)
-                echo "::notice title=NorbiAI ignored a comment::@${login} has ${permission:-no} access, so their comments are not read as rebuttals"
+                echo "::notice title=Builders Bot review ignored a comment::@${login} has ${permission:-no} access, so their comments are not read as rebuttals"
                 ;;
             esac
           done
@@ -365,7 +368,7 @@ jobs:
           set -e
 
           if [ "$responses_exit" -ne 0 ]; then
-            echo "::warning title=NorbiAI author responses unavailable::Could not read PR comments; continuing without them"
+            echo "::warning title=Builders Bot review author responses unavailable::Could not read PR comments; continuing without them"
           else
             # The comment that asked for this review is emitted first and whole; only the
             # older responses share what is left of the cap, and they are dropped from the
@@ -403,7 +406,7 @@ jobs:
             echo "reviewed_sha=$reviewed_sha"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Run NorbiAI review
+      - name: Run the review
         id: review
         shell: bash
         env:
@@ -556,7 +559,7 @@ jobs:
             git show "$BASE_SHA:scripts/compose-review-prompt.ts" > "$composer_file"
             bun --config="$composer_bunfig" --no-install "$composer_file" "$BASE_SHA" "$HEAD_SHA" >> "$prompt_file"
           else
-            echo "::notice title=NorbiAI domain fragments skipped::No composer at the base commit"
+            echo "::notice title=Builders Bot review domain fragments skipped::No composer at the base commit"
           fi
 
           # Whether this review owes a `## Withdrawn Findings` section is decided by the
@@ -720,7 +723,7 @@ jobs:
                   await Bun.write(process.env.LAST_MESSAGE_FILE, result.result);
                 }
                 await Bun.write(process.env.FACTS_FILE, `${toolCalls}\n${result ? tokens : ""}\n${error}\n`);
-              ' || echo "::notice title=NorbiAI could not read the Claude events::The review is judged without them."
+              ' || echo "::notice title=Builders Bot review could not read the Claude events::The review is judged without them."
             claude_tool_calls=$(sed -n 1p "$claude_facts_file" | tr -cd '0-9')
             claude_tokens=$(sed -n 2p "$claude_facts_file" | tr -cd '0-9')
             # One sanitised line, because it goes on to `$GITHUB_OUTPUT` and into a comment.
@@ -744,7 +747,7 @@ jobs:
           run_reviewer
           # Once, and only after a short run, so that the retry fits the job timeout.
           if [ "$exit_code" -eq 0 ] && review_is_blind && [ $(( SECONDS - review_started )) -lt 300 ]; then
-            echo "::notice title=NorbiAI retried a blind review::The reviewer did not read the code. Trying once more."
+            echo "::notice title=Builders Bot review retried a blind review::The reviewer did not read the code. Trying once more."
             run_reviewer
           fi
           set -e
@@ -798,7 +801,7 @@ jobs:
               reason="Reviewer returned malformed output. Human review required."
             fi
             printf '## Verdict\n\n%s\n' "$reason" > "$review_file"
-            echo "::warning title=NorbiAI review degraded::${reason}"
+            echo "::warning title=Builders Bot review degraded::${reason}"
           fi
 
           {
@@ -880,7 +883,7 @@ jobs:
           failure_lookup_exit=$?
 
           if [ "$review_lookup_exit" -ne 0 ] || [ "$failure_lookup_exit" -ne 0 ]; then
-            echo "::warning title=NorbiAI comment failed::Could not look up existing PR comment"
+            echo "::warning title=Builders Bot review comment failed::Could not look up existing PR comment"
             exit 1
           fi
 
@@ -888,10 +891,10 @@ jobs:
             review_markdown=$(cat "$REVIEW_FILE")
             coverage_warning=""
             if [ "${LARGE_PR:-false}" = "true" ]; then
-              coverage_warning="> **Best-effort coverage:** This PR exceeds 50 files or 5,000 changed lines. NorbiAI reviewed the full diff, but human review should verify coverage."
+              coverage_warning="> **Best-effort coverage:** This PR exceeds 50 files or 5,000 changed lines. Builders Bot reviewed the full diff, but human review should verify coverage."
             fi
 
-            body="## NorbiAI Code Review
+            body="## Builders Bot review Code Review
 
             Reviewed commit: \`${short_sha}\`<br>
             Completed: ${completed_at}
@@ -929,7 +932,7 @@ jobs:
             create_exit=$?
 
             if [ "$create_exit" -ne 0 ] || [ -z "${new_comment_id:-}" ]; then
-              echo "::warning title=NorbiAI comment failed::Could not create the new review comment; previous review preserved"
+              echo "::warning title=Builders Bot review comment failed::Could not create the new review comment; previous review preserved"
               exit 1
             fi
 
@@ -937,7 +940,7 @@ jobs:
             $failure_ids"
           else
             reason=${FAILURE_REASON:-Review infrastructure failed before producing valid output. Human review required.}
-            body="## NorbiAI Review Failed
+            body="## Builders Bot review Review Failed
 
             Commit \`${short_sha}\` was not reviewed successfully at ${completed_at}.
 
@@ -946,7 +949,7 @@ jobs:
             ${cost_line}.
             ${host_line}. [Workflow run](${run_url})
 
-            The latest successful NorbiAI review remains available above.
+            The latest successful Builders Bot review remains available above.
 
             <!-- norbiai-review-failure -->"
 
@@ -956,7 +959,7 @@ jobs:
             create_exit=$?
 
             if [ "$create_exit" -ne 0 ] || [ -z "${new_comment_id:-}" ]; then
-              echo "::warning title=NorbiAI comment failed::Could not create review failure notice"
+              echo "::warning title=Builders Bot review comment failed::Could not create review failure notice"
               exit 1
             fi
 
@@ -966,7 +969,7 @@ jobs:
           for comment_id in $old_ids; do
             if ! gh api --method DELETE \
               "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" > /dev/null; then
-              echo "::warning title=NorbiAI comment cleanup failed::Could not delete old comment ${comment_id}"
+              echo "::warning title=Builders Bot review comment cleanup failed::Could not delete old comment ${comment_id}"
             fi
           done
 
@@ -988,7 +991,7 @@ jobs:
           set -euo pipefail
 
           if [ "$REVIEW_STATUS" != "success" ]; then
-            echo "::error title=NorbiAI review did not complete::${FAILURE_REASON:-Human review required.}"
+            echo "::error title=Builders Bot review did not complete::${FAILURE_REASON:-Human review required.}"
             exit 1
           fi
 
@@ -997,7 +1000,7 @@ jobs:
           # publishing fails the gate has to block: otherwise the required status goes green
           # over a review that exists only in this log.
           if [ "${PUBLISH_OUTCOME:-}" != "success" ]; then
-            echo "::error title=NorbiAI review was not published::The review comment was not published (publish step: ${PUBLISH_OUTCOME:-did not run}), so neither the findings nor the withdrawal ledger are on the pull request. Human review required."
+            echo "::error title=Builders Bot review was not published::The review comment was not published (publish step: ${PUBLISH_OUTCOME:-did not run}), so neither the findings nor the withdrawal ledger are on the pull request. Human review required."
             exit 1
           fi
 
@@ -1010,7 +1013,7 @@ jobs:
           )
 
           if [ "$blocking" -gt 0 ]; then
-            echo "::error title=NorbiAI found blocking issues::${blocking} unresolved P0/P1 finding(s). Fix them, or comment the concrete reason a finding is wrong and include /norbiai review to have it rechecked."
+            echo "::error title=Builders Bot review found blocking issues::${blocking} unresolved P0/P1 finding(s). Fix them, or comment the concrete reason a finding is wrong and include /norbiai review to have it rechecked."
             exit 1
           fi
 
@@ -1040,12 +1043,14 @@ jobs:
             description="Unresolved P0/P1 findings, or the review did not complete"
           fi
 
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" \
-            -f state="$state" \
-            -f context="$STATUS_CONTEXT" \
-            -f description="$description" \
-            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" \
-            > /dev/null
+          for context in "$STATUS_CONTEXT" "$LEGACY_STATUS_CONTEXT"; do
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" \
+              -f state="$state" \
+              -f context="$context" \
+              -f description="$description" \
+              -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" \
+              > /dev/null
+          done
 
       - name: Remove the request label
         # Left in place, the label makes every re-run two clicks: remove, then re-apply.
@@ -1066,5 +1071,5 @@ jobs:
           if ! gh api --method DELETE \
             "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${LABEL}" > /dev/null 2>&1
           then
-            echo "::warning title=NorbiAI could not remove the label::Remove \`${LABEL}\` by hand before asking for another review."
+            echo "::warning title=Builders Bot review could not remove the label::Remove \`${LABEL}\` by hand before asking for another review."
           fi

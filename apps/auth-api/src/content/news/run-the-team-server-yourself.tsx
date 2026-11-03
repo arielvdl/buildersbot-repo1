@@ -20,7 +20,7 @@ export function RunTheTeamServerYourself() {
       </p>
       <p>
         The account service is separate from the team server. With self-hosting, the host and your work run on hardware
-        you control. With an Builders Bot hosted server, Builders Bot provides the Linux machine and your team's work
+        you control. With a Builders Bot hosted server, Builders Bot provides the Linux machine and your team's work
         stays there instead of on your own computer. The account service still handles memberships and invitations. See
         our{" "}
         <Link to="/guides/$slug" params={{ slug: "buildersbot-hosted-servers" }}>

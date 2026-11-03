@@ -214,7 +214,7 @@ function isHostedSiteHostname(value: string): boolean {
       parsed.pathname === "/" &&
       parsed.search === "" &&
       parsed.hash === "" &&
-      value.endsWith(".sites.buildersbot.culturabuilder.com")
+      value.endsWith(".culturabuilder.com")
     );
   } catch {
     return false;
@@ -239,7 +239,7 @@ export function isHostedSiteConversationEventUrl(value: unknown, hostname: unkno
     if (parsed.protocol === "https:") return parsed.hostname === hostname && parsed.port === "";
     if (parsed.protocol !== "http:" || !parsed.port) return false;
     const port = Number(parsed.port);
-    const label = hostname.slice(0, -".sites.buildersbot.culturabuilder.com".length);
+    const label = hostname.slice(0, -".culturabuilder.com".length);
     return (
       Number.isInteger(port) &&
       port >= 1_024 &&

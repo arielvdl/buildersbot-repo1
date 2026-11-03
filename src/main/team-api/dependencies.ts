@@ -242,7 +242,7 @@ export type TeamApiMachine = Pick<
   MachineAlertMonitor,
   "metrics" | "alerts" | "setAlerts" | "canBeResponsible" | "pending" | "subscribe"
 >;
-/** `hosted-sites-v1`: the sites.buildersbot.culturabuilder.com sites of this server. Members list; only admins delete. */
+/** `hosted-sites-v1`: the culturabuilder.com sites of this server. Members list; only admins delete. */
 export type TeamApiHostedSites = Pick<HostedSiteDesktopService, "listServerSites" | "deleteServerSite">;
 
 /** Its presence is what `#protocolSupport` advertises `agent-hidden-v1` on. Any member can use it. */

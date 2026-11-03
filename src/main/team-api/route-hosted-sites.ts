@@ -7,7 +7,7 @@ import type { RouteOutcome, TeamApiRequestContext } from "./request-context";
 import { readJson, requireAdmin, stringField } from "./request-helpers";
 
 /**
- * The sites.buildersbot.culturabuilder.com sites of this server, read from a joined server. Every member can read the list, as
+ * The culturabuilder.com sites of this server, read from a joined server. Every member can read the list, as
  * every member can open a published site. Deleting a site changes what the server publishes, so only an
  * owner or an admin can. The host calls the account service with its own credential. Frozen by
  * `hosted-sites-v1`.

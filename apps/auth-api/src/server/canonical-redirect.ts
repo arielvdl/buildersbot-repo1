@@ -34,7 +34,7 @@ export function permanentTrailingSlashRedirect(request: Request, response: Respo
 }
 
 /**
- * The page that a Slack or Discord install returns to. The callback runs on `api.buildersbot.culturabuilder.com`, and the
+ * The page that a Slack or Discord install returns to. The callback runs on `buildersbot.culturabuilder.com`, and the
  * page opens on `buildersbot.culturabuilder.com`, where the browser client runs, so the client tab that started the
  * install can take its grant. Another origin, such as a development one, keeps its own.
  */

@@ -628,7 +628,7 @@ export class HostedSiteService {
     function* (hostname: string, reason: string, details: string | null, sourceIp: string) {
       const { database } = yield* HostedSiteStorage;
 
-      if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.sites\.buildersbot\.culturabuilder\.com$/u.test(hostname)) {
+      if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.culturabuilder\.com$/u.test(hostname)) {
         return yield* new HostedSiteInputError(400, "invalid_hostname", "The hosted site address is invalid.");
       }
       if (!["abuse", "malware", "phishing", "copyright", "other"].includes(reason)) {
@@ -1323,7 +1323,7 @@ export class HostedSiteService {
       for (let attempt = 0; attempt < 5; attempt += 1) {
         const words = slugWords(source);
         const descriptive = descriptiveSlug(words);
-        const hostname = `${descriptive}-${randomBase32(10)}.sites.buildersbot.culturabuilder.com`;
+        const hostname = `${descriptive}-${randomBase32(10)}.culturabuilder.com`;
         const existing = yield* siteCall(() =>
           database
             .prepare("SELECT hostname FROM site_hostname_reservations WHERE hostname = ?")

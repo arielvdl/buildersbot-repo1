@@ -1,15 +1,15 @@
 ---
 name: babysit
-description: Babysit a pull request through the NorbiAI review loop until no valid issue remains. Fix valid findings, rebut false positives with checkable evidence, and re-request review. Use when asked to babysit a PR, handle NorbiAI comments, or clear the NorbiAI review gate.
+description: Babysit a pull request through the Builders Bot review loop until no valid issue remains. Fix valid findings, rebut false positives with checkable evidence, and re-request review. Use when asked to babysit a PR, handle Builders Bot review comments, or clear the Builders Bot review gate.
 ---
 
 # Babysit
 
-Drive one pull request through repeated NorbiAI reviews until no valid issue
+Drive one pull request through repeated Builders Bot reviews until no valid issue
 remains. Fix each valid finding. Rebut each false positive with evidence.
 Ask for a new review after each round.
 
-Use this skill only for the NorbiAI review on the current pull request.
+Use this skill only for the Builders Bot review on the current pull request.
 Do not use it for human reviews or for other bots.
 
 ## Before you start
@@ -22,7 +22,7 @@ Do this once, not in each loop.
 - Find the pull request number and the branch. Check `git status`.
   Commit or stash unrelated work first.
 - Confirm `gh` can read the pull request. You need the latest review
-  comment and the `NorbiAI review` commit status on the head SHA.
+  comment and the `Builders Bot review` commit status on the head SHA.
 
 ## Step 1 — Read the latest review
 
@@ -34,7 +34,7 @@ Do this once, not in each loop.
 3. Read `## Findings`, `## Resolved Since Previous Review`, and
    `## Withdrawn Findings` as one set. Note the `[NEW]` and `[REMAINS]`
    tags and each `P0` to `P3` priority.
-4. Read the `NorbiAI review` commit status on the head SHA. The gate
+4. Read the `Builders Bot review` commit status on the head SHA. The gate
    blocks merge on unresolved `P0` and `P1` findings.
 
 Do not act on an old review. Do not edit the review comment.
@@ -127,7 +127,7 @@ Ask for one review only. Each extra request is a full review run.
 3. Do not also apply the `norbiai` label. The label asks for a full
    review of the whole PR.
 4. Wait for the new `<!-- norbiai-review -->` comment and the new
-   `NorbiAI review` status on the new head SHA. Poll with `gh api` at
+   `Builders Bot review` status on the new head SHA. Poll with `gh api` at
    most once each 2 minutes; a review takes 3 to 15 minutes. Do not start
    the next triage on the old SHA.
 
@@ -148,7 +148,7 @@ Stop when both hold:
 
 - `## Findings` says `No actionable findings.` or holds only findings
   you proved not valid and the reviewer withdrew.
-- The `NorbiAI review` status on the head SHA is success.
+- The `Builders Bot review` status on the head SHA is success.
 
 Also stop and ask the user when the same finding returns twice with no
 progress, when a `P0` finding is genuinely valid but the fix needs a

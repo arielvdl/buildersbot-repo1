@@ -468,7 +468,7 @@ file it installed, and every start verifies that record and the binary's `--vers
 install is used. The newest version in the store that verifies is the one that runs.
 
 `provider-runtime-blocklist.json` on `main` names versions no installation may offer. It stops a
-broken upstream release without an Builders Bot release. It suppresses an offer only: it does not remove
+broken upstream release without a Builders Bot release. It suppresses an offer only: it does not remove
 a version a user already installed. A list that cannot be read blocks nothing.
 
 The `Provider CLI canary` workflow (`.github/workflows/provider-cli-canary.yml`) finds a broken

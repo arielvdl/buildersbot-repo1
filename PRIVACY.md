@@ -62,10 +62,10 @@ of the browser, described in "Product analytics", to the account service, when t
 email codes, credentials, message content, file content, or search queries to telemetry.
 
 Builders Bot desktop, the browser client at `/app`, the mobile app, and the website send no product analytics and no
-error reports. The destination of the events below is the service at `analytics.buildersbot.culturabuilder.com`, and they
+error reports. The destination of the events below is the service at `bb-analytics.culturabuilder.com`, and they
 describe what a build sends once a client runs again.
 
-The events below are the contract of the analytics service at `analytics.buildersbot.culturabuilder.com`. The account service would
+The events below are the contract of the analytics service at `bb-analytics.culturabuilder.com`. The account service would
 send them if the Worker had the `OPENPANEL_CLIENT_ID` and `OPENPANEL_CLIENT_SECRET` secrets.
 
 The account service reports an event to OpenPanel when a paid plan or a hosted server
@@ -203,7 +203,7 @@ the account. On start, the desktop app deletes the failure report queue and the 
 analytics service, so an older build that opens the same profile cannot send them.
 
 This section describes the contract of that service. It receives these events, the error reports, and
-the account ID and normalized email of a signed-in user. The service runs at `analytics.buildersbot.culturabuilder.com`,
+the account ID and normalized email of a signed-in user. The service runs at `bb-analytics.culturabuilder.com`,
 apart from the app.
 
 The production website records anonymous page views using only fixed paths: `/`, `/join`, the
@@ -282,7 +282,7 @@ browser, the browser sends it to the account service. The account service keeps 
 it gets on your account and sends it to OpenPanel with your account ID. To remove it from a
 browser, clear the site data of buildersbot.culturabuilder.com. OpenPanel can also derive
 session, device, browser, operating-system, network, and approximate geographic metadata from a
-request. That service runs apart from Builders Bot and receives the events through `analytics.buildersbot.culturabuilder.com`.
+request. That service runs apart from Builders Bot and receives the events through `bb-analytics.culturabuilder.com`.
 Desktop and web have no analytics switch, because no client sends: **Settings → General → Permissions →
 Usage analytics** shows a note that reads "Off". The saved preference still decides what a build sends
 when a client returns. It is stored locally and disables both UI analytics and lifecycle analytics
@@ -614,7 +614,7 @@ computer answers each chat; see [Telegram connections](#telegram-connections). C
 email provider can keep their own security, delivery, and network logs under their own policies. These provider logs are outside the
 Builders Bot application database and its daily maintenance task.
 
-The public status page at `status.buildersbot.culturabuilder.com` is on GitHub Pages. GitHub serves it and keeps its
+The public status page at `bb-status.culturabuilder.com` is on GitHub Pages. GitHub serves it and keeps its
 own request logs under its own policy. The page has no analytics and no cookies, and it loads
 nothing from other sites. A GitHub Actions workflow checks the Builders Bot services about every 5 minutes
 with plain requests that carry no account or user data. Incidents on the page come from issues
@@ -980,7 +980,7 @@ Network traffic can also occur when:
   address that GitHub gives, on GitHub's image host. Agents then reach the
   GitHub MCP server at `api.githubcopilot.com` and GitHub itself through `gh` and `git`, with that
   token. So that GitHub shows the Builders Bot app as the author of an agent's work, Builders Bot sends that
-  token to the central account service (`api.buildersbot.culturabuilder.com`) about once an hour, and when you open the
+  token to the central account service (`buildersbot.culturabuilder.com`) about once an hour, and when you open the
   repository list. The service uses it
   only to ask GitHub which repositories you can push to, and gets back short-lived installation
   tokens for those repositories. It does not store or log either token, and it gets no chats, files

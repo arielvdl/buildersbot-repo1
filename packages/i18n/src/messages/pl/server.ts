@@ -244,7 +244,7 @@ export const messages = {
   "server.settings.storageDescription": "Zobacz, co Builders Bot przechowuje na dysku tego serwera, i zwolnij miejsce.",
   "server.settings.hostedSitesTitle": "Witryny",
   "server.settings.hostedSitesDescription":
-    "Statyczne witryny, które agenci tego serwera opublikowali w sites.buildersbot.culturabuilder.com.",
+    "Statyczne witryny, które agenci tego serwera opublikowali w culturabuilder.com.",
   "server.settings.importTitle": "Import",
   "server.settings.importDescription": "Przenieś swoich agentów z Grok Bot lub Hermes Agent na ten serwer.",
   "server.settings.transferTitle": "Przeniesienie",

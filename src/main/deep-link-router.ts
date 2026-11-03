@@ -1,5 +1,5 @@
 /**
- * What a `buildersbot://` link, or the `buildersbot://` one of an installation made before the rename, or
+ * What a `buildersbot://` link, the scheme an installation made before the rename registered, or
  * a `https://buildersbot.culturabuilder.com/...` link means.
  *
  * The scheme carries more than one kind of link now, so the decision of which kind a URL is has one

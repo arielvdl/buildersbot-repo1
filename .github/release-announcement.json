@@ -1,5 +1,5 @@
 {
-  "version": "0.56.0",
+  "version": "1.0.0",
   "highlights": [
     "Agents do many browser actions in one step, so browser tasks finish sooner and use fewer tokens, and Cloudflare checks pass in the built-in browser.",
     "Right-click an agent message and select Mark unread to come back to it later.",

@@ -17,7 +17,8 @@ export function PricingSection() {
           $0
         </p>
         <p class="landing-pricing-note" data-revealed={revealState()}>
-          Builders Bot is free. No hidden fees. No locked features. Your agents use the AI plans you already pay for.
+          Builders Bot is free for personal and noncommercial use. No hidden fees. No locked features. Commercial use
+          needs a seat, a hosted server is paid, and your agents use the AI plans you already pay for.
         </p>
         <p class="landing-pricing-compare" data-revealed={revealState()}>
           <Link to="/compare/$slug" params={{ slug: "grok-bot" }}>

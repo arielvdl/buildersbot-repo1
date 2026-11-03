@@ -27,7 +27,7 @@ export const messages = defineMessages("server", {
 
   "server.status.steps": "Connection steps",
   "server.status.updateCause": "{name} restarts to install Builders Bot {version}.",
-  "server.status.updateCauseNoVersion": "{name} restarts to install an Builders Bot update.",
+  "server.status.updateCauseNoVersion": "{name} restarts to install a Builders Bot update.",
   "server.status.wakeCause": "{name} was stopped. Builders Bot starts it again.",
   "server.status.connectCause": "This app connects to {name}.",
   "server.status.connectionCause": "This app lost its connection to {name}. It connects again automatically.",
@@ -158,7 +158,7 @@ export const messages = defineMessages("server", {
   "server.upsell.modal.title": "Routines stop when your computer sleeps",
   // {name} is the routine.
   "server.upsell.modal.description":
-    "{name} runs only while your computer is on. An Builders Bot server keeps it running 24/7.",
+    "{name} runs only while your computer is on. A Builders Bot server keeps it running 24/7.",
   // Labels in the small picture above the modal text: a laptop and a server, each with a status.
   "server.upsell.modal.computer": "Your computer",
   "server.upsell.modal.server": "Builders Bot server",
@@ -172,9 +172,9 @@ export const messages = defineMessages("server", {
     one: "{count} routine needs {server} on",
     other: "{count} routines need {server} on",
   },
-  "server.upsell.notice.description": "An Builders Bot server runs them 24/7.",
+  "server.upsell.notice.description": "A Builders Bot server runs them 24/7.",
   // One line under the notice that the user's computer is offline.
-  "server.upsell.offline": "An Builders Bot server stays on 24/7, so routines keep running.",
+  "server.upsell.offline": "A Builders Bot server stays on 24/7, so routines keep running.",
   "server.upsell.seePlans": "See plans",
   "server.upsell.notNow": "Not now",
   "server.hosted.progressTitle": "Setting up {name}",
@@ -294,7 +294,7 @@ export const messages = defineMessages("server", {
   "server.settings.storageDescription": "See what Builders Bot keeps on this server’s disk, and free space.",
   "server.settings.hostedSitesTitle": "Sites",
   "server.settings.hostedSitesDescription":
-    "The static sites that agents on this server published to sites.buildersbot.culturabuilder.com.",
+    "The static sites that agents on this server published to culturabuilder.com.",
   "server.settings.importTitle": "Import",
   "server.settings.importDescription": "Move your agents from Grok Bot or Hermes Agent to this server.",
   "server.settings.transferTitle": "Transfer",

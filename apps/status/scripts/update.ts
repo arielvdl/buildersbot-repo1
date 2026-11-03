@@ -69,7 +69,7 @@ const TOKEN = process.env.GITHUB_TOKEN?.trim() || null;
 if (TOKEN) registerSecretValue(TOKEN);
 if (!DRY_RUN && !TOKEN && !args["issues-file"]) throw new Error("GITHUB_TOKEN is necessary to write issues.");
 
-const SITE_URL = "https://status.buildersbot.culturabuilder.com";
+const SITE_URL = "https://bb-status.culturabuilder.com";
 const BOT_LOGIN = "github-actions[bot]";
 const TIMEOUT_MS = 10_000;
 const SLOW_MS = 5_000;

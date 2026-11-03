@@ -49,6 +49,12 @@ const MANIFEST = z.object({
 });
 const TRAILERS = ["Co-authored-by", "Signed-off-by"] as const;
 
+/**
+ * The one trailer that may credit someone else: the provider that wrote part of the change. It names
+ * no project and no company of the previous work, and the commits already carry it.
+ */
+const PROVIDER_TRAILER = /^co-authored-by:\s*Claude[^<]*<noreply@anthropic\.com>$/iu;
+
 interface CheckResult {
   name: string;
   passed: boolean;
@@ -121,10 +127,10 @@ await check("no commit credits a third party in a trailer", () => {
   const wrong = commits().flatMap((commit) => {
     const trailers = commit.body
       .split("\n")
-      .map((line) => line.match(/^(Co-authored-by|Signed-off-by):\s*(.+)$/u))
+      .map((line) => line.match(/^(co-authored-by|signed-off-by):\s*(.+)$/iu))
       .filter((match): match is RegExpMatchArray => match !== null);
     return trailers
-      .filter((match) => (match[2] ?? "").trim() !== IDENTITY)
+      .filter((match) => !PROVIDER_TRAILER.test(match[0].trim()) && (match[2] ?? "").trim() !== IDENTITY)
       .map((match) => `  ${commit.hash.slice(0, 12)} ${match[1]}: ${match[2]}`);
   });
   if (wrong.length > 0) {
@@ -133,7 +139,7 @@ await check("no commit credits a third party in a trailer", () => {
         `${wrong.length} trailer${wrong.length === 1 ? "" : "s"} credit someone else:`,
         ...wrong,
         "",
-        `Only \`${TRAILERS.join(": …`, `")}: …\` with \`${IDENTITY}\` is allowed.`,
+        `Only \`${TRAILERS.join(": …`, `")}: …\` with \`${IDENTITY}\`, or a provider trailer, is allowed.`,
         "Remove the line, or rewrite it, in the commit that carries it.",
       ].join("\n"),
     );

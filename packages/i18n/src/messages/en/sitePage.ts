@@ -11,7 +11,7 @@ export const messages = defineMessages("sitePage", {
     "Check your connection and reload the page. If it still does not load, go back to the home page.",
   "sitePage.error.reload": "Reload page",
   "sitePage.error.home": "Back to home",
-  "sitePage.join.title": "Join an Builders Bot server",
+  "sitePage.join.title": "Join a Builders Bot server",
   "sitePage.join.description": "Open a private server invitation in Builders Bot.",
   "sitePage.join.eyebrow": "Private invitation",
   "sitePage.join.intro":
@@ -65,8 +65,7 @@ export const messages = defineMessages("sitePage", {
   "sitePage.billing.cancelledBody": "Nothing was charged. Go back to Builders Bot.",
   "sitePage.report.pageTitle": "Report a hosted site — Builders Bot",
   "sitePage.report.title": "Report a hosted site",
-  "sitePage.report.intro":
-    "Send a report about harmful or unlawful content on an sites.buildersbot.culturabuilder.com address.",
+  "sitePage.report.intro": "Send a report about harmful or unlawful content on an culturabuilder.com address.",
   "sitePage.report.hostnameLabel": "Site address",
   "sitePage.report.hostnameMissing": "Enter the site address",
   "sitePage.report.reasonLabel": "Reason",
@@ -92,7 +91,7 @@ export const messages = defineMessages("sitePage", {
     "Hosted servers and a license for teams. Builders Bot is free for personal use on your own computer.",
   "sitePage.pricing.heading": "Pricing",
   "sitePage.pricing.enterprise.title": "Enterprise",
-  // {count} is the largest number of members that the page sells, such as 25.
+  // {count} is the largest number of members that the page sells, such as 10.
   "sitePage.pricing.enterprise.body":
     "Larger servers, more than {count} members, or anything else you need. With enterprise support.",
   "sitePage.pricing.enterprise.contact": "Contact sales",

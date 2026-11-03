@@ -1667,7 +1667,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
       }),
       chooseDirectory: async () => "/mock/Builders Bot/Sites/launch-notes",
       publish: async (input) => {
-        const hostname = `${input.title.toLowerCase().replaceAll(/[^a-z0-9]+/gu, "-")}.sites.buildersbot.culturabuilder.com`;
+        const hostname = `${input.title.toLowerCase().replaceAll(/[^a-z0-9]+/gu, "-")}.culturabuilder.com`;
         const site: HostedSiteSummary = {
           id: `site-${hostedSites.length + 1}`,
           hostname,

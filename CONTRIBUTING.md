@@ -5,7 +5,7 @@ review.
 
 ## What you can send
 
-These rules apply to people outside the `nextlevelcommunity` organization. Organization members and
+These rules apply to people outside the `nextlevelcommunity` account. Account members and
 users with write access to this repository skip them. So do their agents, which act as
 `buildersbotgit[bot]` through the Builders Bot GitHub App.
 
@@ -33,7 +33,7 @@ The `Contribution policy` workflow applies these labels:
 
 | Label | Meaning |
 | --- | --- |
-| `external` | The author is outside the organization. The workflow adds it. |
+| `external` | The author is outside the account. The workflow adds it. |
 | `needs-approved-issue` | A maintainer decided that the pull request needs an approved issue. The `Contribution policy` check fails until the pull request closes an issue with the `approved` label. If it does not do this in 7 days, the workflow closes the pull request. |
 | `approved` | A maintainer accepts the issue. Pull requests that close it pass the check. |
 | `policy-exempt` | A maintainer turned off the check for this pull request. |
@@ -42,7 +42,7 @@ A maintainer who reopens a closed pull request starts a new 7-day period.
 
 ## Before opening an issue
 
-- Use an issue form. The workflow closes an issue from outside the organization that does not
+- Use an issue form. The workflow closes an issue from outside the account that does not
   come from a form or that has an empty required answer.
 - Search existing issues first.
 - Use [Discussions](https://github.com/nextlevelcommunity/buildersbot/discussions) for
@@ -107,7 +107,7 @@ when the picture adds information that the text does not.
 Use `BUILDERSBOT_LINKS` for external links and include useful `alt` text for every image. Do not paste bare URLs into a
 guide.
 
-### Answering the NorbiAI review
+### Answering the Builders Bot review
 
 Every push to a branch in this repository runs the automated reviewer, and it blocks the merge on
 an unresolved P0 or P1 finding. A pull request from a fork is the exception: GitHub gives a fork's
@@ -125,7 +125,7 @@ past a finding:
 
 A rebuttal needs something checkable in it. "Intended", "out of scope", or a promise to fix it
 later leaves the finding `[REMAINS]`, and the reviewer says which part it could not verify. Only
-comments from someone who can merge the pull request are read — organization membership on its own
+comments from someone who can merge the pull request are read — account membership on its own
 is not enough, and on a fork that means the recheck has to be asked for by a maintainer rather than
 by you — and only those written after the review being answered, plus the comment that asked for
 the recheck whatever its timestamp says. That one is passed to the reviewer whole; the older
@@ -184,7 +184,7 @@ reason in the `bunfig.toml` comment. `bun pm untrusted` shows the blocked script
 
 Each author of a pull request must sign the
 [Builders Bot Contributor Assignment Agreement](CLA.md). The agreement assigns the copyright in your
-contributions to Cultura Builder Educação e Tecnologia Ltda.. Organization members,
+contributions to Cultura Builder Educação e Tecnologia Ltda. Account members,
 users with write access to this repository and bots do not sign.
 
 To sign, tick the agreement box in the description of your pull request. The pull request template

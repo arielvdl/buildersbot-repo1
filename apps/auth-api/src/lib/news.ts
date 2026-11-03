@@ -8,7 +8,7 @@
 
 import { type ContentCollection, publishedFirst } from "./content-collection";
 
-export const NEWS_AUTHOR = "Norbert Bodziony";
+export const NEWS_AUTHOR = "Cultura Builder";
 
 export const NEWS_COLLECTION: ContentCollection<"news"> = {
   id: "news",
@@ -75,7 +75,7 @@ export const NEWS_COLLECTION: ContentCollection<"news"> = {
       slug: "run-the-team-server-yourself",
       title: "Run the team server yourself",
       description:
-        "Learn how self-hosting an Builders Bot team server works, where conversations and files live, what the account service handles, and who is responsible for uptime.",
+        "Learn how self-hosting a Builders Bot team server works, where conversations and files live, what the account service handles, and who is responsible for uptime.",
       publishedAt: "2026-07-11",
       updatedAt: "2026-10-07",
       author: NEWS_AUTHOR,

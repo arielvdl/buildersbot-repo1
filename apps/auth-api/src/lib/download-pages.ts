@@ -83,18 +83,18 @@ const PROVIDERS_ANSWER = LANDING_FAQ.find(
   (entry) => entry.question === "Which AI models can Builders Bot use?",
 )?.answer;
 const FREE_ANSWER =
-  "Yes. The app costs $0, with no locked features. You pay only your AI provider, through the plan or API key you already have.";
+  "Yes for personal and noncommercial use: the app costs $0, with no locked features. Commercial use needs a seat, and a hosted server is paid. You also pay your AI provider, through the plan or API key you already have.";
 const CONNECT_STEP: DownloadStep = {
   text: "Connect a provider, such as Codex with your ChatGPT plan or Claude Code with your Claude plan. Then describe the agent you want in one prompt and save it.",
 };
-const UPDATES_NOTE = "Builders Bot checks for new versions and updates itself.";
+const UPDATES_NOTE = "Updates are not available in this version yet; install the new version over this one.";
 const NETWORK_NOTE = "The AI provider you choose needs an internet connection. A local model needs none.";
-const UPDATES_SPEC: DownloadSpec = { label: "Updates", value: "Automatic" };
+const UPDATES_SPEC: DownloadSpec = { label: "Updates", value: "Install over the current version" };
 
 const COMPUTER_STEP: DownloadStep = {
   text: "Install Builders Bot on the Mac, Windows or Linux computer that runs your agents, and sign in with your Cultura Builder account.",
 };
-// A phone uses the web client at `/app` of the Builders Bot account service, installed from its
+// A phone uses the web client at `/app` of the Cultura Builder account service, installed from its
 // browser. There is no phone app to get from a store.
 const WEB_APP_PATH = "/app";
 const WEB_APP_ADDRESS = `${new URL(BUILDERSBOT_CONTROL_PLANE_ORIGIN).host}${WEB_APP_PATH}`;

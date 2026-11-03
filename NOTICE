@@ -100,3 +100,48 @@ The pairing words in packages/contracts/src/chrome-bridge/pairing-words.ts are t
 BIP-39 (https://github.com/bitcoin/bips/blob/master/bip-0039/portuguese.txt).
 Copyright (c) Marek Palatinus, Pavol Rusnak, Aaron Voisine and Sean Bowe.
 Licensed under the MIT License.
+
+Bundled runtime and speech models:
+
+This product includes sherpa-onnx (https://github.com/k2-fsa/sherpa-onnx),
+Copyright k2-fsa and the sherpa-onnx authors, licensed under the Apache License 2.0.
+The full text ships with the app, in its licenses folder.
+
+This product includes ONNX Runtime (https://github.com/microsoft/onnxruntime),
+Copyright (c) Microsoft Corporation, licensed under the MIT License.
+The full text ships with the app, in its licenses folder.
+
+This product includes OpenAI Whisper (https://github.com/openai/whisper),
+Copyright (c) 2022 OpenAI, licensed under the MIT License.
+The full text ships with the app, in its licenses folder.
+
+The following speech models are downloaded on first use and are not part of the package.
+Their license text ships with the app and is at the address below.
+
+- NVIDIA Parakeet TDT 0.6B v3 (https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3),
+  Copyright (c) NVIDIA Corporation, licensed under CC BY 4.0
+  (https://creativecommons.org/licenses/by/4.0/). The model was exported to ONNX and
+  quantized for sherpa-onnx; see the NVIDIA license in the licenses folder.
+- Underdog Bark 3.0 Plus (https://huggingface.co/ConwayResearch/Underdog-Bark-3.0-Plus),
+  Copyright (c) Conway Research, licensed under CC BY 4.0
+  (https://creativecommons.org/licenses/by/4.0/); see the Underdog license in the licenses folder.
+- Supertone Supertonic 3 (https://huggingface.co/Supertone/supertonic-3),
+  Copyright (c) 2025 Supertone Inc. The model weights are licensed under the
+  BigScience Open RAIL-M License and the code under the MIT License; see
+  the Supertone license in the licenses folder.
+
+Bundled remote-desktop runtime (GPL-3.0):
+
+This product includes Sunshine (https://github.com/LizardByte/Sunshine), Copyright the Sunshine
+contributors, modified for Builders Bot. The patch is in
+`vendor/remote-desktop/patches/sunshine-v2026.516.143833-buildersbot.patch`, and the version and the
+digest of the licence are in `build/remote-desktop-runtime/source-manifest.json`.
+Licensed under the GNU General Public License version 3.
+
+This product includes Moonlight Web (https://github.com/MrCreativ3001/moonlight-web-stream),
+modified for Builders Bot. Licensed under the GNU General Public License version 3.
+
+The full text of the GNU General Public License version 3 is in
+`build/licenses` and ships with the app, in its licenses folder. The complete corresponding source of
+both components, with the Builders Bot patches applied, is in this repository and in the manifest
+above, which pins each upstream commit.

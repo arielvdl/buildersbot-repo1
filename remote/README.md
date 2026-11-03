@@ -158,7 +158,7 @@ service before Signal.
 - A Cloudflare token scoped to DNS edit for the `buildersbot.culturabuilder.com` zone.
 
 The `signal.buildersbot.culturabuilder.com` and `turn.buildersbot.culturabuilder.com` records must be in **DNS only** mode. Do not enable the
-Cloudflare proxy for them. `api.buildersbot.culturabuilder.com` stays a Cloudflare Worker.
+Cloudflare proxy for them. `buildersbot.culturabuilder.com` stays a Cloudflare Worker.
 
 If you already run a reverse proxy on port `443`, set `REMOTE_SIGNAL_BIND_ADDRESS=127.0.0.1`,
 `REMOTE_SIGNAL_PUBLIC_PORT=8081`, `REMOTE_SIGNAL_PORT=8081` and `REMOTE_TLS_DISABLED=true`. The reverse proxy

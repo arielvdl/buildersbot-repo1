@@ -279,7 +279,7 @@ function serveLocalHostedSite(
   if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(label)) return Effect.succeed(null);
   const hostedUrl = new URL(requestUrl);
   hostedUrl.protocol = "https:";
-  hostedUrl.hostname = `${label}.sites.buildersbot.culturabuilder.com`;
+  hostedUrl.hostname = `${label}.culturabuilder.com`;
   hostedUrl.port = "";
   return routeHostedSiteRequest(
     new Request(hostedUrl, request),

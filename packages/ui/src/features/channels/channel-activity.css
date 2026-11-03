@@ -72,10 +72,18 @@
   border-top: 1px solid var(--buildersbot-accent-soft);
 }
 .channel-start-retries,
-.channel-task-waits {
+.channel-task-waits,
+.channel-task-waits-list {
   margin: 0 var(--buildersbot-space-3);
   padding: 0;
   list-style: none;
+}
+.channel-task-waits-summary {
+  width: fit-content;
+  padding: 0 var(--buildersbot-space-3);
+  color: var(--buildersbot-text-dim);
+  font-size: var(--buildersbot-text-xs);
+  cursor: pointer;
 }
 .channel-start-retry,
 .channel-task-wait {

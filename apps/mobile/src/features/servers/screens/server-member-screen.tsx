@@ -240,7 +240,7 @@ export function ServerMemberScreen() {
 
 /**
  * The centered portrait, name and email at the top of the page, as Profile has. The initials come
- * from `name`; `label` is the shown text, such as "Norbi (you)".
+ * from `name`; `label` is the shown text, such as "Ana (you)".
  */
 function Identity({ name, label, detail }: { name: string; label: string; detail: string | null }) {
   return (

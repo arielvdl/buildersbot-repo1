@@ -6,7 +6,7 @@ builds uploaded to Google Play, see
 [the Google Play release guide](../apps/mobile/README.md#github-actions-google-play-release).
 The mobile workflows are separate from the desktop tag release described below.
 
-Builders Bot updates are published through GitHub Releases and installed with `electron-updater`.
+Builders Bot updates are meant to be published through GitHub Releases and installed with `electron-updater`; until the signed feed exists, an installed build does not check for them.
 macOS requires every auto-updatable build to be signed with a Developer ID Application certificate.
 The release workflow also notarizes and staples the macOS application before publishing it. A Windows
 x64 tag release is signed with Azure Artifact Signing (see [Windows signing](#windows-signing)). Linux
@@ -57,17 +57,18 @@ The Docker image needs no secret: the `docker-publish` job pushes with `GITHUB_T
 even when the source repository is public. A successful push does not confirm public access.
 
 After the first push, a package administrator must open the
-[Builders Bot package](https://github.com/orgs/nextlevelcommunity/packages/container/package/buildersbot):
+[Builders Bot package](https://github.com/users/nextlevelcommunity/packages/container/package/buildersbot):
 
 1. Open **Package settings** and set **Change visibility** to **Public**.
 2. Check that the package is linked to `nextlevelcommunity/buildersbot`. The Dockerfile sets the
    `org.opencontainers.image.source` label for this link.
 3. Under **Manage Actions access**, check that `nextlevelcommunity/buildersbot` has write access.
 
-If **Public** is disabled by organization administrators, an organization owner must enable
+The repository lives under a user account, not an organization, so the package belongs to that
+account. If **Public** is disabled by the account package policy, the account owner must enable
 **Public** under **Package creation** in the
-[organization package settings](https://github.com/organizations/nextlevelcommunity/settings/packages).
-Make Builders Bot public, then restore the previous organization policy. Existing public packages stay
+[account package settings](https://github.com/settings/packages).
+Make Builders Bot public, then restore the previous policy. Existing public packages stay
 public when this creation permission is disabled again.
 
 If a release pushed its image but users cannot pull it, check these settings first. Changing
@@ -79,7 +80,7 @@ Check access with an empty Docker configuration, so a saved login cannot hide th
 ```sh
 anonymous_config=$(mktemp -d)
 docker --config "$anonymous_config" manifest inspect ghcr.io/nextlevelcommunity/buildersbot:latest
-docker --config "$anonymous_config" manifest inspect ghcr.io/nextlevelcommunity/buildersbot:0.30.0
+docker --config "$anonymous_config" manifest inspect ghcr.io/nextlevelcommunity/buildersbot:1.0.0
 rm -rf "$anonymous_config"
 ```
 
@@ -92,7 +93,7 @@ place. Correct the package settings, then run the failed job again.
 After GitHub publication, `Publish boat server snapshot` builds the Linux x64 release into a boat
 named snapshot (`buildersbot-server-production-<version>` with dots replaced by hyphens), then selects
 it for new production servers. It uses the tagged hosting scripts,
-the published `SHA256SUMS-linux.txt`, and `https://api.buildersbot.culturabuilder.com`. The builder checks the AppImage
+the published `SHA256SUMS-linux.txt`, and `https://buildersbot.culturabuilder.com`. The builder checks the AppImage
 checksum and installed version and requires an empty host profile before saving the snapshot.
 Existing servers and the test Worker do not change.
 
@@ -140,7 +141,7 @@ A tag build signs the Windows release with Azure Artifact Signing. It needs no s
   subject is the one that `publisherName` carries.
 - The Entra app registration `buildersbot-release-signing` has the **Artifact Signing Certificate Profile
   Signer** role on that profile only. Its federated credential trusts the subject
-  `repo:nextlevelcommunity@<organization ID>/buildersbot@<repository ID>:environment:release`,
+  `repo:nextlevelcommunity@<account ID>/buildersbot@<repository ID>:environment:release`,
   because this repository uses GitHub's immutable OIDC subject format. Read both IDs from
   `gh api repos/nextlevelcommunity/buildersbot --jq '.owner.id, .id'` when the credential is
   created. A dry run has no environment, so it cannot sign.
@@ -187,7 +188,7 @@ Use this source build only to make or reproduce a runtime version. The
 `.github/workflows/remote-desktop-runtime.yml` workflow builds macOS ARM64, macOS x64, Windows x64 and Linux x64
 when the recipe or a pinned input changes. It publishes an immutable GitHub prerelease named
 `remote-desktop-runtime-<input-digest>`. The prerelease contains the four deterministic archives, SPDX
-SBOMs, build provenance, and `remote-desktop-runtime-manifest.json`. It is not an Builders Bot application
+SBOMs, build provenance, and `remote-desktop-runtime-manifest.json`. It is not a Builders Bot application
 update and it must never contain `latest.yml`.
 
 PR pushes do not cancel an active runtime build. The next run reuses a successful native build

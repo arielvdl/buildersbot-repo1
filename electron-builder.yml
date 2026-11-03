@@ -5,6 +5,9 @@ protocols:
   - name: Builders Bot invitations
     schemes:
       - buildersbot
+      # The scheme an installation made before the rename registered. A link already sent keeps
+      # opening this build; nothing new is built with it.
+      - openbot
 asar: true
 artifactName: ${productName}-${version}-${arch}.${ext}
 electronUpdaterCompatibility: ">=2.16"
@@ -90,6 +93,9 @@ extraResources:
     to: licenses/OpenAI-Whisper-LICENSE
   - from: build/licenses/Supertone-Supertonic-3-LICENSE
     to: licenses/Supertone-Supertonic-3-LICENSE
+  # The remote-desktop runtime is GPL-3.0, so the licence text and the pinned sources travel with it.
+  - from: build/licenses/GPL-3.0-LICENSE
+    to: licenses/GPL-3.0-LICENSE
 # The voice runtime, the remote desktop runtime and each Computer Use driver are built for one
 # target, so their resources are listed under each platform instead of here.
 # electron-builder merges the root and platform lists, so every build still gets its own, while a

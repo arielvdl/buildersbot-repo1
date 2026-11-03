@@ -1702,6 +1702,12 @@ a {
     box-shadow var(--buildersbot-duration-normal) ease;
 }
 
+/* No installer is published yet: the card still opens the source repository, so it keeps the
+   focus ring and the pointer but drops the lift. */
+.landing-download-card[data-state="coming-soon"] {
+  cursor: pointer;
+}
+
 .landing-download-card:focus-visible {
   outline: 3px solid var(--buildersbot-download-card-focus);
   outline-offset: 3px;

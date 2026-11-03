@@ -2,13 +2,13 @@
   "id": "/app",
   "name": "Builders Bot",
   "short_name": "Builders Bot",
-  "description": "Seus agentes do Builders Bot, de qualquer celular: converse, acompanhe o trabalho e aprove o que precisa de você.",
+  "description": "Your Builders Bot agents from any phone: chat, follow the work, and approve what needs you.",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
-  "lang": "pt-BR",
+  "lang": "en",
   "dir": "ltr",
   "launch_handler": {
     "client_mode": "navigate-existing"

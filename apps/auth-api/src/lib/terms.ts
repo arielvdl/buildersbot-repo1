@@ -3,7 +3,7 @@
 export const TERMS_ROUTE = "/terms";
 
 /** The "Last updated" date on the page. Change it when the text changes. */
-export const TERMS_UPDATED_AT = "2026-10-29";
+export const TERMS_UPDATED_AT = "2026-11-03";
 
 export const TERMS_META = {
   title: "Builders Bot Terms & Conditions",

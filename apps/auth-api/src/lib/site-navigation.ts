@@ -104,7 +104,7 @@ export const SITE_NAVIGATION_SECTIONS: readonly SiteNavigationSection[] = [
     kind: "resources",
     id: "resources",
     label: "Resources",
-    summary: "The source code of Builders Bot is open.",
+    summary: "The Builders Bot source code is public.",
     footer: { label: "Source code", href: BUILDERSBOT_LINKS.repository },
     links: [
       { label: "Download", description: "macOS, Windows and Linux", icon: "download", to: "/download" },

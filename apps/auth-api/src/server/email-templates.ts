@@ -54,7 +54,12 @@ const FOOTER_LINKS = [
   { label: "buildersbot.culturabuilder.com", href: SITE_URL },
   { label: "X", href: BUILDERSBOT_LINKS.x },
   { label: "GitHub", href: BUILDERSBOT_LINKS.repository },
+  { label: "Terms", href: `${SITE_URL}/terms` },
+  { label: "Privacy", href: `${SITE_URL}/privacy-policy` },
 ] as const;
+/** The holder line a transactional message has to carry. */
+const HOLDER_LINE =
+  "Cultura Builder Educação e Tecnologia Ltda. · CNPJ 62.995.760/0001-33 · Presidente Prudente – SP, Brazil";
 const FONT_STACK = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, Helvetica, Arial, sans-serif";
 const MONO_STACK = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace";
 // Filler after the preheader, so a client's inbox preview does not continue into the body text.
@@ -188,12 +193,12 @@ export function renderWelcomeEmail(input: WelcomeEmailInput): RenderedEmail {
   const serverName = input.serverName.trim();
   const planName = PLAN_NAMES[input.plan];
   const subject = "Welcome to Builders Bot!";
-  const thanks = "Thank you for choosing Builders Bot to build and run your AI Coworkers.";
+  const thanks = "Thank you for choosing Builders Bot to build and run your AI coworkers.";
   const reachOut =
     "I just wanted to personally say hello and let you know that if you run into any issues or have any feedback or suggestions - feel free to reach out to me directly by replying to this email.";
   const feedback =
     "Every piece of feedback is incredibly valuable to us, especially as we’re still at an early stage and continuously improving the product.";
-  const footer = "You receive this email because you started an Builders Bot subscription.";
+  const footer = "You receive this email because you started a Builders Bot subscription.";
   return {
     subject,
     preheader: thanks,
@@ -245,6 +250,8 @@ function textBody(lines: string[], footer: string): string {
     "",
     "-- ",
     `Builders Bot · ${SITE_URL}`,
+    HOLDER_LINE,
+    "You receive this message because you asked for it, signed in, or bought a plan.",
     FOOTER_LINKS.slice(1)
       .map((link) => `${link.label}: ${link.href}`)
       .join(" · "),
@@ -322,7 +329,8 @@ function renderLayout(input: LayoutInput): string {
         <tr>
           <td class="ob-faint" style="padding:20px 4px 0;font-family:${FONT_STACK};font-size:12px;line-height:18px;color:${COLOR.faint};">
             <p style="margin:0 0 12px;">${escapeHtml(input.footer)}</p>
-            <p style="margin:0;">${footerLinks()}</p>
+            <p style="margin:0 0 8px;">${footerLinks()}</p>
+            <p style="margin:0;">${escapeHtml(HOLDER_LINE)}</p>
           </td>
         </tr>
       </table>

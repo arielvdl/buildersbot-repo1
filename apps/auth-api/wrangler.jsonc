@@ -27,6 +27,10 @@
     {
       "pattern": "buildersbot.culturabuilder.com/*",
       "zone_name": "culturabuilder.com"
+    },
+    {
+      "pattern": "auth-buildersbot.culturabuilder.com/*",
+      "zone_name": "culturabuilder.com"
     }
   ],
   "assets": {

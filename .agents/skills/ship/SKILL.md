@@ -1,12 +1,12 @@
 ---
 name: ship
-description: Ship the current branch to main. Review the diff, fix findings, open the pull request, babysit the NorbiAI review and CI until green, then squash-merge. Use when a feature is done and the user asks to ship it, open and merge a PR, or get the change to main.
+description: Ship the current branch to main. Review the diff, fix findings, open the pull request, babysit the Builders Bot review and CI until green, then squash-merge. Use when a feature is done and the user asks to ship it, open and merge a PR, or get the change to main.
 ---
 
 # Ship
 
 Move one finished branch to `main` through five gates: local review, pull
-request, NorbiAI review, CI, merge. Do each gate in sequence. Do not skip a
+request, Builders Bot review, CI, merge. Do each gate in sequence. Do not skip a
 gate to go faster.
 
 When the user invokes this skill, they approve the merge at the end, but only
@@ -26,7 +26,7 @@ a force-push, or a bypass.
 
 ## Gate 1 — Review the diff locally
 
-A local review is less expensive than a NorbiAI round. Find the problems
+A local review is less expensive than a Builders Bot review round. Find the problems
 before the push.
 
 1. Commit the finished work. Write the message in ASD-STE100 Simplified
@@ -64,7 +64,7 @@ commit them.
 
 Gates 3 to 5 wait for a long time. `main` can move during the wait and
 cause a merge conflict. GitHub does not run `pull_request` workflows on a
-PR with a merge conflict. Thus `Check` and `NorbiAI review` do not start,
+PR with a merge conflict. Thus `Check` and `Builders Bot review` do not start,
 and a wait for them does not end.
 
 1. Before each wait, and at each poll, run
@@ -74,16 +74,16 @@ and a wait for them does not end.
    next poll. Do not act on it.
 3. `CONFLICTING` or `DIRTY` means a merge conflict. Stop the wait. Go to
    Gate 4, step 5.
-4. When no `Check` or `NorbiAI review` status shows on the head SHA 10
+4. When no `Check` or `Builders Bot review` status shows on the head SHA 10
    minutes after a push, query `mergeable` first. Then read the runs with
    `gh run list --branch <branch> --limit 5`. Do not continue the wait
    with no signal.
 
-## Gate 3 — Babysit the NorbiAI review
+## Gate 3 — Babysit the Builders Bot review
 
 Run the `babysit` skill on the PR. It owns the review loop: triage, fixes,
 rebuttals, and re-review requests. Continue to Gate 4 only when the
-`NorbiAI review` status on the head SHA is success. During each `babysit`
+`Builders Bot review` status on the head SHA is success. During each `babysit`
 wait, do the checks in "While you wait".
 
 ## Gate 4 — Make CI green
@@ -99,14 +99,14 @@ a PR that is behind `main` can merge when it has no merge conflict.
 2. For each failed job, read only the failed log:
    `gh run view <run-id> --log-failed`. Find the cause.
 3. When the failure comes from the change, fix it, commit, and push. Each
-   push starts a new NorbiAI review. Go back to Gate 3 for that review.
+   push starts a new Builders Bot review. Go back to Gate 3 for that review.
 4. When the failure is not related to the change, such as a network
    timeout, run `gh run rerun <run-id> --failed` once. When the same job
    fails again, stop and report it to the user.
 5. Do not update the branch only because `main` moved. When
    `gh pr view <pr> --json mergeable` shows `CONFLICTING`, merge `main` into
    the branch, resolve the conflicts, and push. Do not force-push. The merge
-   starts a full NorbiAI review. Go back to Gate 3. Find the conflict
+   starts a full Builders Bot review. Go back to Gate 3. Find the conflict
    with the checks in "While you wait", not only after CI fails.
 6. Answer each open human review thread. Do not resolve a thread that
    another person opened before you answer it.
@@ -120,7 +120,7 @@ Merge only when all of these are true on the same head SHA:
 - `gh pr view <pr> --json mergeStateStatus,reviewDecision,statusCheckRollup`
   shows `mergeStateStatus` `CLEAN`. `DIRTY` means a merge conflict: go back
   to Gate 4, step 5.
-- `Check` and `NorbiAI review` are success.
+- `Check` and `Builders Bot review` are success.
 - No `P0` or `P1` finding remains, and no conversation is open.
 
 Then merge:
@@ -162,7 +162,7 @@ Keep the report short:
 | --- | --- | --- |
 | Local review | findings fixed / rebutted | commit SHAs |
 | Pull request | opened | PR URL |
-| NorbiAI | success after N rounds | review comment link |
+| Builders Bot review | success after N rounds | review comment link |
 | CI | success | run link |
 | Merge | merged | merge commit SHA on `main` |
 

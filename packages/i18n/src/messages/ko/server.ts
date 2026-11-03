@@ -258,8 +258,7 @@ export const messages = {
   "server.settings.storageTitle": "저장 공간",
   "server.settings.storageDescription": "Builders Bot이 이 서버의 디스크에 보관하는 항목을 확인하고 공간을 확보해요.",
   "server.settings.hostedSitesTitle": "사이트",
-  "server.settings.hostedSitesDescription":
-    "이 서버의 에이전트가 sites.buildersbot.culturabuilder.com에 게시한 정적 사이트예요.",
+  "server.settings.hostedSitesDescription": "이 서버의 에이전트가 culturabuilder.com에 게시한 정적 사이트예요.",
   "server.settings.importTitle": "가져오기",
   "server.settings.importDescription": "Grok Bot이나 Hermes Agent의 에이전트를 이 서버로 옮겨요.",
   "server.settings.transferTitle": "이전",

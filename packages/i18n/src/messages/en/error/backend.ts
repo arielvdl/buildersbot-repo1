@@ -32,7 +32,7 @@ export const messages = defineMessages("error.backend", {
   "error.backend.moonlightRejectedPairing": "Moonlight rejected Sunshine pairing.",
   "error.backend.moonlightNoPin": "Moonlight did not return a pairing PIN.",
   "error.backend.moonlightPairingIncomplete": "Moonlight pairing did not complete.",
-  "error.backend.moonlightWebNotEmbedded": "Moonlight Web is not an Builders Bot embedded build.",
+  "error.backend.moonlightWebNotEmbedded": "Moonlight Web is not a Builders Bot embedded build.",
   "error.backend.moonlightEmptyResponse": "Moonlight returned an empty response.",
   "error.backend.remoteDesktopTimeout": "Remote desktop request timed out.",
   "error.backend.moonlightApiHttp": "Moonlight API failed with HTTP {status}.",

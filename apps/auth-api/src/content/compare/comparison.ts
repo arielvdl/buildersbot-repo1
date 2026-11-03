@@ -34,7 +34,7 @@ export interface ComparisonSource {
   url: string;
 }
 
-/** A plan or a model that an Builders Bot agent can run on. The same on every comparison. */
+/** A plan or a model that a Builders Bot agent can run on. The same on every comparison. */
 export interface BuildersBotPlan {
   /** The provider whose logo the page shows, or `custom` for a model server of your own. */
   provider: ProviderLogoVariant | "custom";
@@ -75,9 +75,9 @@ export const BUILDERSBOT_TEXT = {
   models:
     "Use the plans you already have: ChatGPT, Claude, Gemini, Grok, Cursor, Cline or Muse Code. Or run OpenCode's free models, Pi, Inception's Mercury models, your own model, or any agent that speaks the Agent Client Protocol. Choose one for each agent, and change it later.",
   offline:
-    "Agents keep working on the computer or server that runs Builders Bot, and routines start them on a schedule. On macOS and Windows, Keep this computer awake stops sleep while it is on power. If you do not want to keep a computer on, use a hosted Builders Bot server in the EU, from €20 or $25 a month.",
+    "Agents keep working on the computer or server that runs Builders Bot, and routines start them on a schedule. On macOS and Windows, Keep this computer awake stops sleep while it is on power. If you do not want to keep a computer on, use a hosted Builders Bot server in the EU, from €50 or $60 a month.",
   remote:
-    "Apps for iPhone and Android, and a web app, connect from anywhere. Chats and files go over an encrypted connection between your devices, with no VPN, and no cloud stores them. Private network mode keeps them on Tailscale or your own Wi-Fi.",
+    "Apps for iPhone and Android, and a web app, connect from anywhere. Chats and files go over an encrypted connection between your devices, with no VPN, and no cloud stores them unless you use a hosted server. Private network mode keeps them on Tailscale or your own Wi-Fi.",
   teams:
     "Each agent is a full coding agent with its own job. They give work to each other in shared channels. Coworkers join one team host, and roles set who can view, chat with or manage each agent.",
   regions: `In any country: Builders Bot has no region lock. The desktop app is in ${BUILDERSBOT_LANGUAGE_COUNT} languages, from English, German and Spanish to Japanese, Korean and Turkish, and hosted servers run in the EU. Each AI provider sets the countries for its own plan.`,
@@ -99,9 +99,9 @@ export const BUILDERSBOT_TEXT = {
   plansFaq:
     "Yes. Builders Bot signs in to each provider tool with your own account: your ChatGPT plan for Codex, your Claude plan for Claude Code, and a Google AI Pro or Ultra plan for Gemini. Grok CLI uses your Grok account or an xAI API key, Cursor CLI your Cursor plan, Cline your Cline account, and Muse Code your Meta account. When a plan reaches its limit, an agent can move to a backup model on another provider. Builders Bot adds no charge of its own.",
   workSection:
-    "Builders Bot runs on the computer that hosts it. Agent workspaces, conversations and app data stay on that computer, so it must stay on while its agents work. Run it on a desktop or a server that stays on, and your agents keep working while your laptop is closed. On macOS and Windows, Keep this computer awake stops sleep while the computer is on power, so routines run on time. If you do not want to keep a computer on, use a hosted Builders Bot server. It is a Linux server in the EU (Germany, Finland or France), from €20 or $25 a month, and it keeps the workspaces and chats of its agents. Local-first is not offline: an agent that uses a hosted provider still sends its requests to that provider.",
+    "Builders Bot runs on the computer that hosts it. Agent workspaces, conversations and app data stay on that computer, so it must stay on while its agents work. Run it on a desktop or a server that stays on, and your agents keep working while your laptop is closed. On macOS and Windows, Keep this computer awake stops sleep while the computer is on power, so routines run on time. If you do not want to keep a computer on, use a hosted Builders Bot server. It is a Linux server in the EU (Germany, Finland or France), from €50 or $60 a month, and it keeps the workspaces and chats of its agents. Local-first is not offline: an agent that uses a hosted provider still sends its requests to that provider.",
   phonesSection:
-    "The Builders Bot apps for iPhone and Android, and the web app, connect to the computer that runs your agents. From anywhere, you chat with them, follow their progress, approve their actions and send files, and from the phone you can drive their browser. The connection goes directly between your devices when it can, it is encrypted, and no cloud stores your chats or files. You set up no VPN or tunnel. Turn on Private network, and devices connect only over Tailscale or the same Wi-Fi. The phone app locks with Face ID, Touch ID or a PIN. Agents can also answer in Slack, Discord and Telegram. Remote access needs an Builders Bot account.",
+    "The Builders Bot apps for iPhone and Android, and the web app, connect to the computer that runs your agents. From anywhere, you chat with them, follow their progress, approve their actions and send files, and from the phone you can drive their browser. The connection goes directly between your devices when it can, it is encrypted, and no cloud stores your chats or files unless you use a hosted server. You set up no VPN or tunnel. Turn on Private network, and devices connect only over Tailscale or the same Wi-Fi. The phone app locks with Face ID, Touch ID or a PIN. Agents can also answer in Slack, Discord and Telegram. Remote access needs a Cultura Builder account.",
 } as const;
 
 /** Builders Bot against one rival. The kind is optional, so the first pages need no edit. */

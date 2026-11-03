@@ -28,7 +28,7 @@ export const BUILDERSBOT_LINKS = {
   contact: "/contact",
   x: "https://x.com/CulturaBuilder",
   /** A Redirect Rule in the buildersbot.culturabuilder.com Cloudflare zone sends this to the current Discord invite. */
-  discord: "https://discord.buildersbot.culturabuilder.com",
+  discord: "https://bb-discord.culturabuilder.com",
   download: "#download",
   news: "/news",
   guides: "/guides",
@@ -41,7 +41,7 @@ export const BUILDERSBOT_LINKS = {
   documentation: "https://github.com/nextlevelcommunity/buildersbot#readme",
   troubleshooting: "https://github.com/nextlevelcommunity/buildersbot/blob/main/docs/TROUBLESHOOTING.md",
   /** GitHub Pages hosts the status page, so it stays up when Cloudflare does not. */
-  status: "https://status.buildersbot.culturabuilder.com",
+  status: "https://bb-status.culturabuilder.com",
   selfHostedServer: "https://github.com/nextlevelcommunity/buildersbot/blob/main/docs/self-hosted-server.md",
   architecture: "https://github.com/nextlevelcommunity/buildersbot#architecture",
   contributing: "https://github.com/nextlevelcommunity/buildersbot/blob/main/CONTRIBUTING.md",

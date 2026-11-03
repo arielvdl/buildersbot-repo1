@@ -186,7 +186,7 @@ await check("the policy levels are the five of the plan, and a level 3 host is n
     fail("ghcr.io/nextlevelcommunity/buildersbot is not level 3: the specific path must beat ghcr.io.");
   const ours = classifyHost("signal.buildersbot.culturabuilder.com");
   if (ours?.level !== 0) fail("a culturabuilder.com subdomain is not level 0.");
-  const site = classifyHost("demo.sites.buildersbot.culturabuilder.com");
+  const site = classifyHost("demo.culturabuilder.com");
   if (site?.level !== 0) fail("a published site is not level 0.");
   const provider = classifyHost("api.openai.com");
   if (provider?.level !== 1) fail("api.openai.com is not level 1.");

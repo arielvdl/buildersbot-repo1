@@ -54,7 +54,7 @@ What the workflows do, checked on 2026-10-01:
   `SLACK_SIGNING_SECRET` in this repository does not reach the server by itself.
 - **Desktop.** `release.yml` on a version tag.
 
-Live state on 2026-10-01: `api.buildersbot.culturabuilder.com/.well-known/jwks.json` lists only `buildersbot-remote-1`.
+Live state on 2026-10-01: `buildersbot.culturabuilder.com/.well-known/jwks.json` lists only `buildersbot-remote-1`.
 `/v2/slack/authorize`, `/v2/remote/slack-route/validate` and `signal.buildersbot.culturabuilder.com/v1/slack/events`
 return 404.
 

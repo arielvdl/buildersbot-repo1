@@ -882,7 +882,7 @@ the token and does the platform work for the hosts:
   Another account gets `discord_guild_taken`.
 - **Events.** Signal keeps one Gateway connection (`@discordjs/ws`) with the guilds, guild messages
   and direct messages intents, and no privileged intent. It passes on only a guild message that
-  mentions the bot, and a press of an Builders Bot button, which it acknowledges to Discord at once. It
+  mentions the bot, and a press of a Builders Bot button, which it acknowledges to Discord at once. It
   normalizes each into `DiscordDelivery` (`@buildersbot/contracts/signal-protocol/discord-api`), takes the
   bot's own mention out, and sends a `discord-delivery` frame to the `ingress` socket that holds a
   Discord route ticket for the guild. The ticket mirrors the Slack one (audience
@@ -905,7 +905,7 @@ the token and does the platform work for the hosts:
   of that guild, and makes the call with `@discordjs/rest`. Every post has no allowed mention, so it
   pings nobody. Attachments are signed CDN addresses, which the host downloads directly.
 - **Conversations.** A conversation is a reply chain, keyed by its first message. Every Builders Bot post
-  replies to that message, so a reply to an Builders Bot post names the conversation through the replied
+  replies to that message, so a reply to a Builders Bot post names the conversation through the replied
   post's own reference. A direct message has no guild, so Signal answers it once with a fixed line.
 
 ## Mobile chat queue

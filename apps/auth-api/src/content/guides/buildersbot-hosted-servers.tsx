@@ -7,16 +7,16 @@ export function BuildersBotHostedServers() {
     <>
       <p>
         Running Builders Bot for a team on your own computer or VPS gives you control, but you’re also responsible for
-        maintaining that machine. An Builders Bot hosted server gives your team a Linux machine to work on, without
+        maintaining that machine. A Builders Bot hosted server gives your team a Linux machine to work on, without
         requiring you to set up a VPS yourself. This guide covers the available plans, how to get started, and when
         self-hosting might make more sense.
       </p>
 
-      <h2>What Is an Builders Bot Hosted Server?</h2>
+      <h2>What Is a Builders Bot Hosted Server?</h2>
       <p>
-        An Builders Bot hosted server is a Linux machine where your team’s Builders Bot runs. Builders Bot sets it up
-        for you, so you don’t need to prepare your own computer or VPS. Your agents’ workspaces, conversations, and
-        files stay on the server, and you can connect to your team from another device. Hosted servers run in the EU.
+        A Builders Bot hosted server is a Linux machine where your team’s Builders Bot runs. Builders Bot sets it up for
+        you, so you don’t need to prepare your own computer or VPS. Your agents’ workspaces, conversations, and files
+        stay on the server, and you can connect to your team from another device. Hosted servers run in the EU.
       </p>
       <p>
         The server provides a place for Builders Bot to run; it doesn’t include AI model access. You connect a provider
@@ -84,7 +84,7 @@ export function BuildersBotHostedServers() {
 
       <h2>Hosted Server or Self-Hosting?</h2>
       <p>
-        Many teams wonder whether to use an Builders Bot hosted server or run one themselves. The main difference is who
+        Many teams wonder whether to use a Builders Bot hosted server or run one themselves. The main difference is who
         provides and looks after the machine. Here’s what to consider when choosing between the two.
       </p>
       <p>
@@ -103,7 +103,7 @@ export function BuildersBotHostedServers() {
 
       <h2>In Short</h2>
       <p>
-        If you want a team server without setting up and maintaining the machine yourself, an Builders Bot hosted server
+        If you want a team server without setting up and maintaining the machine yourself, a Builders Bot hosted server
         handles that part. If you’d rather use hardware you control and manage the setup, self-hosting is another
         option.
       </p>

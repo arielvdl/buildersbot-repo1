@@ -27,7 +27,7 @@ function httpsLink(href: string): string | null {
 }
 
 /**
- * Server sheet > Sites: the sites.buildersbot.culturabuilder.com sites that agents on the server published. Every member
+ * Server sheet > Sites: the culturabuilder.com sites that agents on the server published. Every member
  * opens a site; an owner or admin also deletes it, as on desktop.
  */
 export function ServerSitesScreen() {

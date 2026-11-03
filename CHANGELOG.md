@@ -13,8 +13,8 @@ First public release of Builders Bot under Cultura Builder.
 ### Added
 
 - Desktop app for macOS, Windows and Linux, with agents that run on this computer or on a server.
-- Local-first workspace: the account, the agents, the conversations and the database stay on the
-  machine that runs them.
+- Local-first workspace: the agents, the conversations and the database stay on the machine that runs
+  them; the account is central.
 - Builders, Codex, Claude, Grok and custom providers, each with its own model and reasoning level.
 - Channels with a lead and members, tasks, routines, workflows, a schedule, a marketplace and a
   shared browser.

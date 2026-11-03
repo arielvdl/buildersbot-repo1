@@ -11,7 +11,7 @@ export const messages = defineMessages("mobile.link", {
     "You are already signed in. Sign out in Settings before connecting another account.",
   "mobile.link.pairing.description": "Continue only if you requested this Mobile Connect link from your desktop.",
   "mobile.link.pairing.accountService":
-    "This link connects to the account service at {origin}, not to the Builders Bot account service.",
+    "This link connects to the account service at {origin}, not to the Cultura Builder account service.",
   "mobile.link.pairing.connect": "Connect",
   "mobile.link.plugin.title": "Open plugin page",
   "mobile.link.plugin.description": "View this plugin on the Builders Bot website.",

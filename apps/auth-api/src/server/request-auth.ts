@@ -145,7 +145,7 @@ export function requireSitePublishingEnabled(): void {
     throw new HostedSiteInputError(
       409,
       "cookie_isolation_unavailable",
-      "Site publishing is disabled until sites.buildersbot.culturabuilder.com has public-suffix cookie isolation.",
+      "Site publishing is disabled until the site hosts are isolated from the app cookies.",
     );
   }
 }

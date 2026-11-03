@@ -16,7 +16,7 @@ export const BUILDERSBOT_X_HANDLE = "@CulturaBuilder";
 const BUILDERSBOT_X_URL = "https://x.com/CulturaBuilder";
 const BUILDERSBOT_REPOSITORY_URL = "https://github.com/nextlevelcommunity/buildersbot";
 const BUILDERSBOT_PRODUCT_HUNT_URL = "https://www.producthunt.com/products/buildersbot-3";
-const BUILDERSBOT_LICENSE_URL = "https://github.com/nextlevelcommunity/buildersbot/blob/main/LICENSE";
+const BUILDERSBOT_LICENSE_URL = `${BUILDERSBOT_SITE_URL}commercial-license`;
 // One id for each entity, so that every page describes the same organization,
 // site and app, and an assistant can join what the pages say about each.
 const BUILDERSBOT_ORGANIZATION_ID = `${BUILDERSBOT_SITE_URL}#organization`;
@@ -35,9 +35,9 @@ export const BUILDERSBOT_SOCIAL_IMAGE_META = [
   { property: "og:image:alt", content: BUILDERSBOT_SOCIAL_IMAGE_ALT },
 ] as const;
 
-// The hosts production answers on. Both serve the same pages, and those pages go by
-// buildersbot.culturabuilder.com.
-const BUILDERSBOT_PRODUCTION_HOSTS = new Set(["buildersbot.culturabuilder.com", "api.buildersbot.culturabuilder.com"]);
+// The host production answers on. A pull-request preview answers on another one, and those pages go
+// by buildersbot.culturabuilder.com.
+const BUILDERSBOT_PRODUCTION_HOSTS = new Set(["buildersbot.culturabuilder.com"]);
 
 /**
  * The site that the head tags of a page served at `pageUrl` name. Social sites fetch
@@ -114,6 +114,14 @@ const BUILDERSBOT_ORGANIZATION = {
   "@type": "Organization",
   "@id": BUILDERSBOT_ORGANIZATION_ID,
   name: "Builders Bot",
+  legalName: "Cultura Builder Educação e Tecnologia Ltda.",
+  taxID: "62.995.760/0001-33",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Presidente Prudente",
+    addressRegion: "SP",
+    addressCountry: "BR",
+  },
   url: BUILDERSBOT_SITE_URL,
   logo: BUILDERSBOT_LOGO_URL,
   sameAs: [BUILDERSBOT_REPOSITORY_URL, BUILDERSBOT_X_URL, BUILDERSBOT_PRODUCT_HUNT_URL],

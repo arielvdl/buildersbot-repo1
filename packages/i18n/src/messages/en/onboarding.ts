@@ -14,7 +14,7 @@ export const messages = defineMessages("onboarding", {
   "onboarding.setup.title": "Where will Builders Bot run?",
   "onboarding.setup.localDescription": "Agents, conversations, and files stay on this computer.",
   "onboarding.setup.remoteDescription": "Use an invitation from the person who runs your Builders Bot host.",
-  "onboarding.setup.description": "Use this computer, or connect to an Builders Bot host that runs somewhere else.",
+  "onboarding.setup.description": "Use this computer, or connect to a Builders Bot host that runs somewhere else.",
   "onboarding.setup.back": "Back to connection choice",
   "onboarding.setup.signOut": "Sign out",
   "onboarding.setup.eyebrow": "Builders Bot setup",

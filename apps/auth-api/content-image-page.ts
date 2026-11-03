@@ -13,7 +13,7 @@ import { articleGradient, articleGradientUniforms } from "./src/lib/article-grad
 
 declare global {
   interface Window {
-    openBotContentImage?: { render: (job: ContentImageJob) => Promise<string> };
+    buildersBotContentImage?: { render: (job: ContentImageJob) => Promise<string> };
   }
 }
 
@@ -27,7 +27,7 @@ const LOGO_BACKGROUND = "#0b0d0a";
 const LOGO_FACE = "#9ee34f";
 const FONT_FAMILY = '"Inter Variable", Inter, system-ui, sans-serif';
 
-window.openBotContentImage = { render: renderContentImage };
+window.buildersBotContentImage = { render: renderContentImage };
 
 /**
  * Lossy, for the artwork only: a smooth gradient loses nothing a reader can see,

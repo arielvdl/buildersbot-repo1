@@ -22,14 +22,14 @@ export function CommercialLicense() {
       <p>1.3 "Licensee" means the legal entity or individual identified in the Order.</p>
       <p>
         1.4 "Commercial Use" means any use of the Software by or on behalf of a legal entity, or by any individual
-        acting in the course of a business, that is not permitted under the Non-Commercial License. This includes use by
-        employees for work, internal business operations, work for clients, and hosting for third parties.
+        acting in the course of a business, that is not permitted under the EULA. This includes use by employees for
+        work, internal business operations, work for clients, and hosting for third parties.
       </p>
       <p>
         1.5 Two licenses. This agreement is the commercial license for the Software (the "Commercial License").
         References in this agreement to "this license" mean the Commercial License. Any use that is not Commercial Use
-        is governed by the Non-Commercial License published in the LICENSE file of the public source repository (the
-        "Non-Commercial License"), which applies to that use independently of the Commercial License.
+        is governed by the end user license agreement published in the LICENSE file of the public source repository (the
+        "EULA"), which applies to that use independently of the Commercial License.
       </p>
       <p>
         1.6 "Seat" means one slot, purchased under an Order, that is filled by one individual, who may use it on any
@@ -239,8 +239,8 @@ export function CommercialLicense() {
         6.2 Modifications and contributions. The Licensee owns the modifications it makes to Builders Bot. The Licensee
         may contribute a modification to the Licensor under the Contributor License Agreement, and upon acceptance, the
         Licensee assigns to the Licensor the copyright in that contribution as provided in the CLA. The Licensor may
-        then use, modify, and distribute the contribution, including under the Non-Commercial License. Modifications
-        that are not contributed may not be distributed to third parties in Commercial Use.
+        then use, modify, and distribute the contribution, including under the EULA. Modifications that are not
+        contributed may not be distributed to third parties in Commercial Use.
       </p>
       <p>
         6.3 Trademarks. The Licensee may refer to Builders Bot by name to state that it uses Builders Bot, provided that
@@ -353,7 +353,7 @@ export function CommercialLicense() {
         shall stop providing access to Builders Bot to any third party under clause 5.1, and the Licensor may deactivate
         the license. If the Licensor terminates this license under clause 10.4, the Licensee is not entitled to a refund
         of any Fees paid, and Fees due up to the end of the current Billing Period remain payable. This clause does not
-        affect any use governed by the Non-Commercial License. Clause 7.6 applies to personal data.
+        affect any use governed by the EULA. Clause 7.6 applies to personal data.
       </p>
 
       <h2>11. Governing Law and Jurisdiction</h2>
@@ -393,8 +393,8 @@ export function CommercialLicense() {
       <p>12.5 No waiver. A failure or delay in exercising a right under this license does not waive that right.</p>
       <p>
         12.6 Order of precedence. If this license conflicts with an Order, this license prevails, unless the Order
-        expressly states otherwise. The relationship between the Commercial License and the Non-Commercial License is
-        governed by clause 1.5.
+        expressly states otherwise. The relationship between the Commercial License and the EULA is governed by clause
+        1.5.
       </p>
       <p>
         12.7 Force majeure. Neither party is liable for failure or delay in performing its obligations, other than

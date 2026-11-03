@@ -11,7 +11,7 @@ export function ImportHermesAgents() {
     <>
       <p>
         You can move your Hermes Agent setup into Builders Bot without rebuilding every agent from scratch. Each Hermes
-        profile becomes an Builders Bot agent, with its own instructions, saved memories and custom skills where
+        profile becomes a Builders Bot agent, with its own instructions, saved memories and custom skills where
         available.
       </p>
 

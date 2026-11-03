@@ -566,7 +566,7 @@ export const messages = {
     "这个新助手会回答人们在 {workspace} 中发给 @Builders Bot 的所有消息。",
   "mobile.server.connectors.slack.installFailed": "Slack 未完成安装，请重试。",
   // Discord: a Discord server adds the one Builders Bot bot. Always write "Discord server": "server" alone
-  // is an Builders Bot server. {workspace} is the Discord server name.
+  // is a Builders Bot server. {workspace} is the Discord server name.
   "mobile.server.connectors.discord.title": "Discord",
   "mobile.server.connectors.discord.summary": "人们在 Discord 服务器中提及 @Builders Bot",
   "mobile.server.connectors.discord.description":

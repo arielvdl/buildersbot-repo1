@@ -2,7 +2,7 @@ import { defineMessages } from "../../../message";
 
 export const messages = defineMessages("error.team", {
   // Errors that the Team API and the team store send to clients.
-  "error.team.ownerNotLinked": "This host is not linked to an Builders Bot owner account.",
+  "error.team.ownerNotLinked": "This host is not linked to a Builders Bot owner account.",
   "error.team.ownerEmailRequired": "Sign in with the Builders Bot email that created this host.",
   "error.team.hostNotConfigured": "The team host is not configured.",
   "error.team.alreadyConfigured": "The team server is already configured.",
@@ -21,9 +21,9 @@ export const messages = defineMessages("error.team", {
   "error.team.inviteEmailMismatch": "This invitation belongs to a different email address.",
   "error.team.memberDisabled": "This team member is disabled.",
   "error.team.memberLimit": "A host can have up to {limit} members.",
-  "error.team.accountNotMember": "This Builders Bot account is not a member of the team.",
+  "error.team.accountNotMember": "This Cultura Builder account is not a member of the team.",
   "error.team.usernameTaken": "This username is already in use.",
-  "error.team.inviteRequiresAccount": "This invitation requires a verified Builders Bot account.",
+  "error.team.inviteRequiresAccount": "This invitation requires a verified Cultura Builder account.",
   "error.team.loginIncorrect": "The username or password is incorrect.",
   "error.team.currentPasswordIncorrect": "The current password is incorrect.",
   "error.team.memberNotFound": "Team member not found.",

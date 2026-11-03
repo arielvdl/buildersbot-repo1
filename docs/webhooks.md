@@ -13,7 +13,7 @@ editor. The host must be online to receive requests.
 5. Save the routine. The host makes the URL and the signing secret.
 6. Copy the secret into the secret store of the sending service. Builders Bot shows it one time only.
 7. Copy the URL. The URL is empty until the account service registers the route. The host must be
-   signed in to its Builders Bot account.
+   signed in to its Cultura Builder account.
 
 Each webhook routine has its own URL and secret. A host can have at most 64 webhook routines.
 
@@ -34,7 +34,7 @@ stops working immediately. A secret has the format `whsec_<43 base64url characte
 When you change the routine to **Schedule**, or delete the routine, its URL stops working. If you
 change it back to **Webhook**, the routine gets a new URL and a new secret.
 
-The URL also changes when you sign in to a different Builders Bot account on the host. The secret stays
+The URL also changes when you sign in to a different Cultura Builder account on the host. The secret stays
 the same. Copy the new URL into the sending service.
 
 ### Send a test event

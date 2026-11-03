@@ -148,7 +148,7 @@ describe("phone web app flow", () => {
     for (const value of [
       "https://apps.apple.com/us/app/buildersbot-run/id6807024266",
       "https://play.google.com/store/apps/details?id=run.buildersbot.mobile",
-      "buildersbot://mobile-connect?api=https%3A%2F%2Fapi.buildersbot.culturabuilder.com&ticket=x",
+      "buildersbot://mobile-connect?api=https%3A%2F%2Fbuildersbot.culturabuilder.com&ticket=x",
       "http://example.com/app",
       "https://person:secret@example.com/app",
       "https://example.com/app?ticket=x",

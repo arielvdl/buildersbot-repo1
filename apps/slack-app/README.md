@@ -7,7 +7,7 @@ asks the right agent and answers. No code runs here: each directory holds only t
 
 | Directory | App | App ID | Home team | Redirect URL |
 | --- | --- | --- | --- | --- |
-| `production` | `Builders Bot` | `A0C5H5C95NH` | `buildersbotdev` (`T0C5B1XG542`) | `https://api.buildersbot.culturabuilder.com/v2/slack/callback` |
+| `production` | `Builders Bot` | `A0C5H5C95NH` | `buildersbotdev` (`T0C5B1XG542`) | `https://buildersbot.culturabuilder.com/v2/slack/callback` |
 | `development` | `Builders Bot (dev)` | `A0C5G5XGS83` | `buildersbotdev` (`T0C5B1XG542`) | Test Worker (`bun run deploy:test`) |
 
 `.slack/apps.json` links each directory to its app. Run the Slack CLI from inside a directory.

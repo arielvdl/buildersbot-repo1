@@ -18,7 +18,7 @@ export const LANDING_FAQ: readonly LandingQuestion[] = [
   {
     question: "Is Builders Bot's source code public?",
     answer:
-      "Yes. All of the source code is public in the repository, so you can check what Builders Bot does. You can run it for free for noncommercial use, such as personal projects, study or research. Commercial use needs a separate license, and the license is in the repository.",
+      "Yes. The source code is public in the repository, except one licensed website component, so you can check what Builders Bot does. You can run it for free for noncommercial use, such as personal projects, study or research. Commercial use needs a separate license, and the license is in the repository.",
     link: { label: "See the source code on GitHub", href: "https://github.com/nextlevelcommunity/buildersbot" },
   },
   {

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
-# Re-applies the Builders Bot rename to a file after a merge from upstream Open Bot.
+# Re-applies the Builders Bot rename to a file after a merge from the upstream project.
 #
 # The upstream project writes its own name in every case, `[Oo]pen[Bb]ot`, and this filter turns each
 # shape into ours. A host becomes `buildersbot.culturabuilder.com` (a site,
-# `sites.buildersbot.culturabuilder.com`). An environment prefix, `[O]PEN[B]OT_`, becomes
+# `culturabuilder.com`). An environment prefix, `[O]PEN[B]OT_`, becomes
 # `BUILDERSBOT_`. An identifier keeps no space, because shell, systemd, AppArmor, Dockerfile and C++
 # names cannot hold one: a capital letter after the name, or a lowercase name, becomes
 # `BuildersBot`/`buildersBot`. A standalone capitalised name is prose and becomes `Builders Bot`.
@@ -31,7 +31,7 @@ my $lower = "[o]pen[Bb]ot";
 my $upper = "[O]pen[B]ot";
 my $allCaps = "[O]PEN[B]OT";
 $s =~ s/$name\.run/buildersbot.culturabuilder.com/g;
-$s =~ s/$name\.site/sites.buildersbot.culturabuilder.com/g;
+$s =~ s/$name\.site/culturabuilder.com/g;
 $s =~ s/$allCaps/BUILDERSBOT/g;
 $s =~ s/$lower/buildersbot/g;
 $s =~ s/(?<=X-)$upper(?=-[A-Z])/$header/g;

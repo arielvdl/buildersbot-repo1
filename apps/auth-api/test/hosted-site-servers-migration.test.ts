@@ -16,7 +16,7 @@ const insertSiteAsOldWorker = (database: DatabaseSync, id: string, status: strin
          id, user_id, hostname, title, description, framework, spa_fallback, status, created_at, updated_at
        ) VALUES (?, 'user-1', ?, 'Planner', 'A planner.', 'vanilla', 0, ?, 1, 1)`,
     )
-    .run(id, `${id}.sites.buildersbot.culturabuilder.com`, status);
+    .run(id, `${id}.culturabuilder.com`, status);
 
 describe("hosted site servers migration", () => {
   it("keeps every site and deployment in the unlinked bucket, and accepts the old Worker's inserts", () => {

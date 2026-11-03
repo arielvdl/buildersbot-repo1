@@ -1,7 +1,7 @@
 # Self-hosted remote access
 
 This guide tells you how to run your own account service (the Account API Worker), Signal and TURN
-for remote access. Use it when you do not want `api.buildersbot.culturabuilder.com` and `signal.buildersbot.culturabuilder.com` to carry
+for remote access. Use it when you do not want `buildersbot.culturabuilder.com` and `signal.buildersbot.culturabuilder.com` to carry
 your account and connection set-up.
 
 Our Worker does not issue a ticket for another Signal. A ticket gives access to a host, and our key

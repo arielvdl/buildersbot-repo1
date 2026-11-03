@@ -44,8 +44,9 @@ export function Dpa() {
           under this DPA.
         </li>
         <li>
-          <strong>"Processor"</strong> means Cultura Builder Educação e Tecnologia Ltda., operating under the name
-          Builders Bot, insofar as it Processes Personal Data on behalf of the Controller pursuant to this DPA.
+          <strong>"Processor"</strong> means Cultura Builder Educação e Tecnologia Ltda., a company registered in Brazil
+          under CNPJ 62.995.760/0001-33, with its registered office in Presidente Prudente – SP, operating under the
+          name Builders Bot, insofar as it Processes Personal Data on behalf of the Controller pursuant to this DPA.
         </li>
         <li>
           <strong>"Personal Data"</strong> means any information relating to an identified or identifiable natural
@@ -367,7 +368,7 @@ export function Dpa() {
           Upon termination of the Agreement or completion of the relevant Processing activities, the Processor shall, at
           the Controller's choice, return or delete all Personal Data Processed on behalf of the Controller and delete
           any existing copies, unless applicable European Union or Member State law requires continued storage. Where a
-          Hosted Server subscription expires without renewal, the associated Customer Data shall be retained for 30
+          Hosted Server subscription expires without renewal, the associated Customer Data shall be retained for 14
           days, unless the Controller requests its earlier deletion. If the subscription is not renewed or reactivated
           within this period, the associated Customer Data shall be deleted.
         </li>
@@ -381,7 +382,7 @@ export function Dpa() {
         <li>
           Personal Data stored on the Controller's own devices or independently managed infrastructure remains under the
           Controller's control and is not automatically deleted upon termination of the Agreement or deletion of an
-          Builders Bot account.
+          Cultura Builder account.
         </li>
         <li>
           The Processor shall make available to the Controller all information necessary to demonstrate compliance with
