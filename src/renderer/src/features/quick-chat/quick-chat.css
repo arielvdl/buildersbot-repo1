@@ -127,3 +127,18 @@
     content: "";
   }
 }
+
+/* A quiet pointer to channels, just above the message box. It never takes a click. */
+.quick-page-hint {
+  position: absolute;
+  right: var(--buildersbot-space-6);
+  bottom: 5.5rem;
+  left: var(--buildersbot-space-6);
+  margin: 0 auto;
+  max-width: 34rem;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  text-align: center;
+  text-wrap: balance;
+  pointer-events: none;
+}

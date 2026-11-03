@@ -426,6 +426,8 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
                 <Zap class="quick-page-bolt" />
                 <h2 class="quick-page-title">{t("quick.empty.title")}</h2>
               </div>
+              {/* Quick chat keeps no project memory: a quiet pointer to channels, which do. */}
+              <p class="quick-page-hint">{t("quick.empty.hint")}</p>
             </Show>
             <Show
               when={quick.phase() === "ready"}

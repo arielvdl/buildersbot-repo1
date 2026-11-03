@@ -9,6 +9,8 @@ export const messages = defineMessages("quick", {
   "quick.page.loading": "Loading Quick chat",
   "quick.owner.name": "Quick",
   "quick.empty.title": "What do you want to solve?",
+  "quick.empty.hint":
+    "Quick chat does not keep project memory. To remember things or continue a project, use a channel: it keeps the history and the consistency of your data.",
   "quick.list.label": "Quick chat conversations",
   "quick.list.title": "Quick chat",
   "quick.list.new": "New",
