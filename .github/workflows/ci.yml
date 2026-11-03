@@ -1171,7 +1171,9 @@ jobs:
       - name: Deploy public site router
         working-directory: apps/site-router
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_SITE_ROUTER_DEPLOY_TOKEN }}
+          # The dedicated token is optional: production already holds a token with Workers Scripts
+          # and the zone, so a repository that has only that one still deploys the router.
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_SITE_ROUTER_DEPLOY_TOKEN || secrets.CLOUDFLARE_PRODUCTION_DEPLOY_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: ../../node_modules/.bin/wrangler deploy --config wrangler.jsonc --keep-vars
 
