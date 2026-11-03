@@ -21,7 +21,7 @@ import { RailHelpMenu } from "./RailHelpMenu";
 import { useWindowPage } from "./window-page-context";
 
 /**
- * The page rail of the desktop window. Agents, Feed, Routines, Workflows, Schedule, Usage, Marketplace
+ * The page rail of the desktop window. Quick chat, Agents, Feed, Routines, Workflows, Schedule, Usage, Marketplace
  * and Settings change the page in the card.
  */
 export function WorkspacePageRail(props: { hidden: boolean }) {
@@ -105,6 +105,8 @@ export function WorkspacePageRail(props: { hidden: boolean }) {
               }
             : undefined
         }
+        // Only this computer has a Quick chat: a joined server shows no button.
+        onQuick={activeServer()?.kind === "local" ? windowPage.openQuick : undefined}
         onAgents={() => showSidebarView("agents")}
         onTeam={openTeam}
         teamOpen={teamOpen()}

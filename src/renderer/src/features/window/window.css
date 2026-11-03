@@ -461,7 +461,10 @@
     left: var(--left-panel-width);
   }
 
-  .app-window > .app-frame-edge.app-frame-sidebar-hidden > .app-frame-panes :is(.tasks-page-scroll, .tasks-page-side) {
+  .app-window
+    > .app-frame-edge.app-frame-sidebar-hidden
+    > .app-frame-panes
+    :is(.tasks-page-scroll, .tasks-page-side, .quick-page) {
     pointer-events: auto;
   }
 

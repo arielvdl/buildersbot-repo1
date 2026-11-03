@@ -273,6 +273,8 @@ function loadProps(usedMb: number, work: LoadWork, reviewer: boolean, recoveryOn
 
 /** The page rail as the desktop window shows it. Hover a button, or move to it with Tab, to see its tooltip. */
 function RailPreview(props: {
+  /** The page that is current at the start. Absent: the agents. */
+  startPage?: PageRailPage;
   updateReady?: boolean;
   logo?: PageRailProps["logo"];
   customAgentUsage?: readonly CustomAgentUsageRailRow[];
@@ -291,7 +293,7 @@ function RailPreview(props: {
     props.loadMb === undefined
       ? undefined
       : loadProps(props.loadMb, props.loadWork ?? "none", props.loadReviewer ?? false, props.loadRecovery);
-  const [current, setCurrent] = createSignal<PageRailPage | null>("agents");
+  const [current, setCurrent] = createSignal<PageRailPage | null>(props.startPage ?? "agents");
   const [pinned, setPinned] = createSignal<readonly PageRailPinnablePage[]>(["usage"]);
   return (
     // The extra box keeps the rail out of the rule that hides it in a narrow window.
@@ -307,6 +309,7 @@ function RailPreview(props: {
           usageRows={props.usageRows ?? usageRows}
           customAgentUsage={props.customAgentUsage}
           load={load?.()}
+          onQuick={() => setCurrent("quick")}
           onAgents={() => setCurrent("agents")}
           onRoutines={() => setCurrent("routines")}
           onSchedule={() => setCurrent("schedule")}
@@ -342,6 +345,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+/** The Quick chat button is first in the rail, above Agents. Here its page is the current one. */
+export const QuickChat: Story = {
+  args: { startPage: "quick" },
+};
 
 /** The Settings tooltip also says what the dot stands for. */
 export const SettingsNotice: Story = {

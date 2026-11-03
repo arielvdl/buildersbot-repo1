@@ -4,9 +4,9 @@ import { useServers } from "../servers/servers-context";
 
 /**
  * The host pane over the middle of the workspace: the usage report, the routine schedule, the
- * tasks, the workflows or the feed. One state holds them, so each path that uncovers the conversation closes any of them.
+ * tasks, the workflows, the feed or the Quick chat. One state holds them, so each path that uncovers the conversation closes any of them.
  */
-type HostPaneView = "usage" | "schedule" | "tasks" | "workflows" | "feed";
+type HostPaneView = "usage" | "schedule" | "tasks" | "workflows" | "feed" | "quick";
 
 const context = createSimpleContext({
   name: "UsageProvider",
@@ -19,7 +19,7 @@ const context = createSimpleContext({
       serverId: null,
       view: "usage",
     });
-    const { activeServerId } = useServers();
+    const { activeServerId, activeServer } = useServers();
     let trigger: HTMLElement | null = null;
 
     function open(view: HostPaneView, serverId: string, source: HTMLElement | null, agentId?: string) {
@@ -53,6 +53,13 @@ const context = createSimpleContext({
       open("feed", serverId, source);
     }
 
+    /** The Quick chat page is on this computer only, so its server is the local one. */
+    function openQuick(serverId: string, source: HTMLElement | null) {
+      open("quick", serverId, source);
+    }
+
+    const quickChatAvailable = () => activeServer()?.kind === "local";
+
     /**
      * An open report follows the host the user switches to.
      *
@@ -68,7 +75,9 @@ const context = createSimpleContext({
      */
     let previousServer = untrack(activeServerId);
     createEffect(activeServerId, (serverId) => {
-      if (serverId !== previousServer && untrack(() => state.serverId))
+      // The Quick chat is local. A server that is not this computer has no Quick chat, so the page closes.
+      if (serverId !== previousServer && untrack(() => state.view === "quick") && !untrack(quickChatAvailable)) clear();
+      else if (serverId !== previousServer && untrack(() => state.serverId))
         open(
           untrack(() => state.view),
           serverId,
@@ -91,6 +100,7 @@ const context = createSimpleContext({
       openTasks,
       openWorkflows,
       openFeed,
+      openQuick,
       closeUsage() {
         clear();
         queueMicrotask(() => {

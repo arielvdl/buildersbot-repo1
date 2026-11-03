@@ -67,6 +67,9 @@ export const MarketplaceModal = lazy(() =>
 export const WorkspaceFeed = lazy(() =>
   import("./features/feed/WorkspaceFeed").then((module) => ({ default: module.WorkspaceFeed })),
 );
+export const QuickChatPage = lazy(() =>
+  import("./features/quick-chat/QuickChatPage").then((module) => ({ default: module.QuickChatPage })),
+);
 export const WorkflowsPage = lazy(() =>
   import("./features/workflows/WorkflowsPage").then((module) => ({ default: module.WorkflowsPage })),
 );

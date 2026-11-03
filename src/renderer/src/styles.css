@@ -58,6 +58,7 @@
 @import "./features/settings/settings-modal.css";
 @import "@buildersbot/ui/features/window/page-rail.css";
 @import "./features/window/window.css";
+@import "./features/quick-chat/quick-chat.css";
 @import "@buildersbot/ui/features/orbits/orbits.css";
 @import "@buildersbot/ui/features/feed/feed.css";
 @import "@buildersbot/ui/features/settings/opencode-key-dialog.css";

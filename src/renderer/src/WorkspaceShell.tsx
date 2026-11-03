@@ -1,5 +1,6 @@
 import type { CentralAuthUser } from "@buildersbot/contracts/ipc";
 import { AGENT_TASKS_CAPABILITY } from "@buildersbot/contracts/team-protocol/agent-tasks-v1";
+import { Skeleton } from "@buildersbot/ui";
 import {
   ConversationLoadNotice,
   ServerConnectionNotice,
@@ -7,7 +8,7 @@ import {
   serverWorkspacePhase,
 } from "@buildersbot/ui/features/servers/ServerConnectionNotice";
 import { useText } from "@buildersbot/ui/text";
-import { createEffect, createMemo, Show } from "solid-js";
+import { createEffect, createMemo, Loading, Show } from "solid-js";
 import { useAccountUsagePolling } from "./features/account/account-usage-polling";
 import { useAgents } from "./features/agents/agents-context";
 import { WorkspaceAgentSetup } from "./features/agents/WorkspaceAgentSetup";
@@ -39,6 +40,7 @@ import { WindowPageView } from "./features/window/WindowPageView";
 import { WorkspacePageRail } from "./features/window/WorkspacePageRail";
 import { useWindowPage } from "./features/window/window-page-context";
 import { useLayout } from "./layout";
+import { QuickChatPage } from "./lazy-views";
 import { usePlatform } from "./platform";
 import { WorkspaceFrame } from "./WorkspaceFrame";
 import { WorkspaceOverlays } from "./WorkspaceOverlays";
@@ -98,6 +100,7 @@ export function WorkspaceShell(props: { account: () => CentralAuthUser }) {
   const middlePane = createMemo(() => {
     if (chatWindow) return "agent";
     if (windowPage.page() === "tasks") return "tasks";
+    if (windowPage.page() === "quick") return "quick";
     if (agentSetupOpen()) return "agent-setup";
     if (channelOpen()) return "channel";
     if (activeDirectMember()) return "direct";
@@ -140,6 +143,10 @@ export function WorkspaceShell(props: { account: () => CentralAuthUser }) {
     scope.loaded() &&
     !scope.connection.panelsFailed &&
     !blockedRemoteServer();
+
+  /** As the Tasks list: the sidebar stays while a connection screen covers the page. */
+  const quickChatShown = () =>
+    middlePane() === "quick" && scope.loaded() && !scope.connection.panelsFailed && !blockedRemoteServer();
 
   const blockedRemoteServer = createMemo(() => {
     const server = activeServer();
@@ -277,7 +284,7 @@ export function WorkspaceShell(props: { account: () => CentralAuthUser }) {
           blockedServer={blockedRemoteServer()}
           onRetryServer={retryServerConnection}
           windowPage={windowPage.page()}
-          sidebarHidden={tasksAgentsHidden()}
+          sidebarHidden={tasksAgentsHidden() || quickChatShown()}
           left={
             <Show when={!chatWindow}>
               <WorkspaceServerRail />
@@ -306,6 +313,17 @@ export function WorkspaceShell(props: { account: () => CentralAuthUser }) {
                 onToggleAgents={() => windowPage.setTasksAgentsOpen(tasksAgentsHidden())}
               />
             )}
+          </Show>
+          <Show when={middlePane() === "quick"}>
+            <Loading
+              fallback={
+                <div class="quick-page quick-page-loading" role="status" aria-label={t("quick.page.loading")}>
+                  <Skeleton class="quick-page-skeleton" />
+                </div>
+              }
+            >
+              <QuickChatPage />
+            </Loading>
           </Show>
           <Show when={serverOnboardingOpen() && middlePane() !== "tasks"}>
             <WorkspaceServerOnboarding />

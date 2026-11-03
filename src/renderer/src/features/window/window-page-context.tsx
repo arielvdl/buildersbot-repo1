@@ -8,6 +8,7 @@ import { useUsage } from "../usage/usage-context";
 
 /** The pages of the window rail. Each one fills the card below the top row. */
 export type WindowPage =
+  | "quick"
   | "agents"
   | "feed"
   | "tasks"
@@ -20,14 +21,16 @@ export type WindowPage =
 
 /**
  * How a page sits in the window. The tasks page shows in the middle pane, as the agents do. The agent
- * list beside it is hidden until the user shows it. A settings page starts below the top row. The title of a feed, schedule, workflows, usage or
- * Marketplace page goes in the top row after the server menu.
+ * list beside it is hidden until the user shows it. The Quick chat page shows in the middle pane too,
+ * and its sidebar stays hidden: the page has its own list of conversations. A settings page starts
+ * below the top row. The title of a feed, schedule, workflows, usage or Marketplace page goes in the
+ * top row after the server menu.
  */
 export type WindowPageKind = "agents" | "settings" | "titled";
 
 export function windowPageKind(page: WindowPage): WindowPageKind {
   if (page === "settings" || page === "server-settings") return "settings";
-  return page === "agents" || page === "tasks" ? "agents" : "titled";
+  return page === "agents" || page === "tasks" || page === "quick" ? "agents" : "titled";
 }
 
 /** The settings pages: the settings of the user, or the settings of one server. */
@@ -49,7 +52,7 @@ const context = createSimpleContext({
     const settings = useSettings();
     const serverSettings = useServerSettings();
     const usage = useUsage();
-    const { activeServerId } = useServers();
+    const { activeServerId, activeServer } = useServers();
     /** The elements of the settings page that the settings panel shows in. The page sets them. */
     const [settingsMounts, setSettingsMounts] = createSignal<{ nav: HTMLElement; content: HTMLElement } | undefined>();
 
@@ -129,6 +132,11 @@ const context = createSimpleContext({
         serverSettings.setServerSettingsOpen(false);
         settings.setSkillsMarketplaceOpen(false);
         usage.dismissUsage();
+      },
+      /** Only this computer has a Quick chat: on another server, nothing opens. */
+      openQuick(source: HTMLElement | null) {
+        const server = activeServer();
+        if (server?.kind === "local") usage.openQuick(server.id, source);
       },
       openTasks(source: HTMLElement | null) {
         const serverId = activeServerId();

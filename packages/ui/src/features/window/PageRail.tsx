@@ -15,6 +15,7 @@ import {
   Store,
   Waypoints,
   Workflow,
+  Zap,
 } from "@buildersbot/ui";
 import { AccountUsageDetails } from "@buildersbot/ui/features/account/AccountUsageDetails";
 import { type AccountUsageProviderRow, accountUsageRowKey } from "@buildersbot/ui/features/account/account-usage-view";
@@ -179,6 +180,7 @@ function CustomAgentUsageButton(props: { row: CustomAgentUsageRailRow; onOpen: (
 
 /** The rail pages. Agents and Routines show the same page with a different sidebar list. */
 export type PageRailPage =
+  | "quick"
   | "agents"
   | "feed"
   | "routines"
@@ -213,6 +215,11 @@ export interface PageRailProps {
   customAgentUsage?: readonly CustomAgentUsageRailRow[] | undefined;
   /** The load ring, which opens the load page of Settings. Absent where this computer's load is not the window's to show, as on the web. */
   load?: LoadRailProps | undefined;
+  /**
+   * Opens the Quick chat page. It is the first button of the rail, and it is not a pinnable page.
+   * Absent where the window has no Quick chat, such as on the web and on a joined server.
+   */
+  onQuick?: ((button: HTMLElement) => void) | undefined;
   onAgents: () => void;
   /** Opens the Team panel over the window. Absent where the window has no Team panel. */
   onTeam?: ((button: HTMLElement) => void) | undefined;
@@ -402,6 +409,17 @@ export function PageRail(props: PageRailProps) {
     <nav class="window-rail" aria-label={t("app.rail.label")} hidden={props.hidden}>
       <Show when={props.logo}>{(logo) => <RailLogo variant={logo().variant} href={logo().href} />}</Show>
       <div class="window-rail-group">
+        <Show when={props.onQuick}>
+          {(onQuick) => (
+            <RailButton
+              label={t("quick.rail.label")}
+              current={props.current === "quick"}
+              onClick={(button) => onQuick()(button)}
+            >
+              <Zap aria-hidden="true" />
+            </RailButton>
+          )}
+        </Show>
         <RailButton label={t("app.rail.agents")} current={props.current === "agents"} onClick={props.onAgents}>
           <Bot aria-hidden="true" />
         </RailButton>
