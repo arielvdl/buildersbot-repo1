@@ -20,6 +20,13 @@ import { useServerSettings } from "../servers/server-settings";
 import { useServers } from "../servers/servers-context";
 import { calledAgent } from "./quick-chat-address";
 import {
+  addQuickChatFolder,
+  moveQuickChatRow,
+  readQuickChatFolders,
+  removeQuickChatFolder,
+  renameQuickChatFolder,
+} from "./quick-chat-folders";
+import {
   addQuickChatPointer,
   pruneQuickChatPointers,
   type QuickChatPointer,
@@ -82,6 +89,7 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   /** The conversation of an agent that a message called, when one is open. Absent: the Quick chat agent's. */
   const [called, setCalled] = createSignal<QuickChatPointer | null>(null);
   const [pointers, setPointers] = createSignal<QuickChatPointer[]>(readQuickChatPointers(activeServerId()));
+  const [folderState, setFolderState] = createSignal(readQuickChatFolders(activeServerId()));
   /** The agent that owns the open conversation. */
   const owner = createMemo(() => {
     const open = called();
@@ -122,6 +130,7 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
         title: item.title,
         firstMessage: item.firstMessage,
         preview: item.preview,
+        createdAt: item.createdAt,
         updatedAt: item.updatedAt,
         status: item.status,
         owner: agent.id === agentId() ? quickOwner : { name: agent.name, quick: false, agent },
@@ -278,6 +287,12 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
             }}
             onArchive={(item) => void tabs.archive(item.agentId, item.taskId)}
             onRestore={(item) => void tabs.restore(item.agentId, item.taskId)}
+            folders={folderState().folders}
+            assignments={folderState().assignments}
+            onCreateFolder={(name) => setFolderState(addQuickChatFolder(activeServerId(), name))}
+            onRenameFolder={(folder, name) => setFolderState(renameQuickChatFolder(activeServerId(), folder.id, name))}
+            onDeleteFolder={(folder) => setFolderState(removeQuickChatFolder(activeServerId(), folder.id))}
+            onMove={(item, folderId) => setFolderState(moveQuickChatRow(activeServerId(), item.key, folderId))}
             onDelete={tasks.editable() ? (item) => void tabs.remove(item.agentId, item.taskId) : undefined}
           />
           <div

@@ -24,6 +24,8 @@ export interface QuickChatRow {
   firstMessage: string;
   /** The last message that the person sent, as stored. Empty when unknown. */
   preview: string;
+  /** When the conversation was created. Empty when unknown. */
+  createdAt: string;
   updatedAt: string;
   status: ThreadStatus;
   owner: QuickChatOwner;
@@ -86,4 +88,64 @@ export function filterQuickChatRows(rows: readonly QuickChatRow[], query: string
   const needle = fold(query.trim());
   if (!needle) return [...rows];
   return rows.filter((row) => fold(`${row.title}\n${row.firstMessage}\n${row.preview}`).includes(needle));
+}
+
+/** The views of the list: every conversation by day, those at work, the newest created, the newest finished. */
+export type QuickChatFilter = "all" | "running" | "created" | "finished";
+
+export const QUICK_CHAT_FILTERS: readonly QuickChatFilter[] = ["all", "running", "created", "finished"];
+
+/** A conversation at work: the agent answers, waits for the person, or the message waits for a turn. */
+export function quickChatRunning(row: Pick<QuickChatRow, "status">): boolean {
+  const kind = row.status.kind;
+  return kind === "working" || kind === "waiting" || kind === "queued";
+}
+
+function newestFirst(field: "createdAt" | "updatedAt") {
+  return (left: QuickChatRow, right: QuickChatRow) => right[field].localeCompare(left[field]);
+}
+
+/**
+ * The rows of one view, newest first by the field that the view is about. `all` keeps the rows as they
+ * come, so the list can group them by day and by folder.
+ */
+export function applyQuickChatFilter(rows: readonly QuickChatRow[], filter: QuickChatFilter): QuickChatRow[] {
+  switch (filter) {
+    case "running":
+      return rows.filter(quickChatRunning).sort(newestFirst("updatedAt"));
+    case "created":
+      return [...rows].sort(newestFirst("createdAt"));
+    case "finished":
+      return rows.filter((row) => !quickChatRunning(row)).sort(newestFirst("updatedAt"));
+    default:
+      return [...rows];
+  }
+}
+
+/** A folder of the list. A conversation is in no folder or in one. */
+export interface QuickChatFolder {
+  id: string;
+  name: string;
+}
+
+/** Row key → folder id. A row with no entry is in no folder. */
+export type QuickChatFolderAssignments = Readonly<Record<string, string>>;
+
+/**
+ * Splits the rows into those of each folder, in the order of the folders, and those in no folder. A row
+ * whose folder is gone is in no folder.
+ */
+export function splitByFolder<Item extends { key: string }>(
+  items: readonly Item[],
+  folders: readonly QuickChatFolder[],
+  assignments: QuickChatFolderAssignments,
+): { byFolder: Map<string, Item[]>; loose: Item[] } {
+  const byFolder = new Map<string, Item[]>(folders.map((folder) => [folder.id, []]));
+  const loose: Item[] = [];
+  for (const item of items) {
+    const list = byFolder.get(assignments[item.key] ?? "");
+    if (list) list.push(item);
+    else loose.push(item);
+  }
+  return { byFolder, loose };
 }

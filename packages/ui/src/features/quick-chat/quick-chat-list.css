@@ -225,3 +225,108 @@
 .quick-list-search .ui-input {
   font-size: var(--buildersbot-text-md);
 }
+
+/* The filters and the new-folder button, under the search. */
+.quick-list-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-1);
+}
+
+.quick-list-filters {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.quick-list-filter.ui-button {
+  height: 1.5rem;
+  padding-inline: var(--buildersbot-space-2);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.quick-list-folder-add {
+  flex: none;
+}
+
+/* A folder: its head is a drop target, and the rows are indented under it. */
+.quick-folder-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: var(--buildersbot-radius-md, 6px);
+}
+
+.quick-folder-toggle.ui-button {
+  min-width: 0;
+  flex: 1;
+}
+
+.quick-folder-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-folder-icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--buildersbot-text-muted);
+}
+
+.quick-folder-actions.ui-button {
+  flex: none;
+  opacity: 0;
+}
+
+.quick-folder-head:focus-within .quick-folder-actions,
+.quick-folder-actions[data-expanded] {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .quick-folder-head:hover .quick-folder-actions {
+    opacity: 1;
+  }
+}
+
+.quick-folder > .quick-list-item {
+  margin-left: var(--buildersbot-space-3);
+}
+
+.quick-folder-edit {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  padding: var(--buildersbot-space-1) var(--buildersbot-space-2);
+}
+
+.quick-folder-empty {
+  margin: 0 0 0 var(--buildersbot-space-6);
+  padding: var(--buildersbot-space-1) var(--buildersbot-space-2);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.quick-list-loose {
+  min-height: 2rem;
+  border-radius: var(--buildersbot-radius-md, 6px);
+}
+
+[data-drop-over] {
+  background: var(--buildersbot-bg-control-hover);
+  outline: 1px dashed var(--buildersbot-border);
+  outline-offset: -1px;
+}
+
+.quick-list-item[draggable="true"] {
+  cursor: grab;
+}
