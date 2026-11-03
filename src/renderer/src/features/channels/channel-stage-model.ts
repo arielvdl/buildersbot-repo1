@@ -10,6 +10,7 @@ import type { AvatarHue, ChannelPage, ChannelTask } from "@buildersbot/contracts
 import type { AgentProfile } from "@buildersbot/ui/data";
 import { type StageActivity, stageActivityOfLine } from "@buildersbot/ui/features/stage/stage-activity";
 import type { TurnStepLines } from "../conversation/turn-step-lines";
+import { startingChannelTask } from "./channel-conversation-rows";
 
 /** The seats round the table. More agents than this wait in a "+N" chip. */
 const STAGE_SEATS = 8;
@@ -132,7 +133,8 @@ export function nextStageHolds(
 function activeAgentIds(page: ChannelPage, inChannel: (id: string) => boolean): Set<string> {
   const ids = new Set<string>();
   for (const task of page.tasks)
-    if (task.state === "running" && task.ownerAgentId && inTab(page, task)) ids.add(task.ownerAgentId);
+    if ((task.state === "running" || startingChannelTask(task)) && task.ownerAgentId && inTab(page, task))
+      ids.add(task.ownerAgentId);
   const start = Math.max(0, page.messages.length - MESSAGE_TAIL);
   for (let index = start; index < page.messages.length; index += 1) {
     const entry = page.messages[index];
