@@ -61,6 +61,7 @@ export function toAgentProfile(stored: ClientAgentSummary): AgentProfile {
     ...(stored.excludedFolders === undefined ? {} : { excludedFolders: stored.excludedFolders }),
     ...(stored.usageLimitReturn === undefined ? {} : { usageLimitReturn: stored.usageLimitReturn }),
     ...(stored.pendingRuntime === undefined ? {} : { pendingRuntime: stored.pendingRuntime }),
+    ...(stored.quickChat === undefined ? {} : { quickChat: stored.quickChat }),
     threadId: stored.threadId,
     workspacePath: stored.workspacePath,
     avatarSeed: stored.avatarSeed,

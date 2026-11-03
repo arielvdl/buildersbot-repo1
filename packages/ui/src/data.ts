@@ -290,6 +290,8 @@ export interface AgentProfile {
   usageLimitReturn?: ClientAgentSummary["usageLimitReturn"];
   /** Set while a turn or task still runs on the previous provider. The next turn uses this runtime. */
   pendingRuntime?: ClientAgentSummary["pendingRuntime"];
+  /** True only for the agent of the quick chat. No agent list carries it: only the quick chat page holds it. */
+  quickChat?: boolean;
   threadId: string | null;
   /** The agent's working directory. Absent for profiles built before it was tracked. */
   workspacePath?: string;

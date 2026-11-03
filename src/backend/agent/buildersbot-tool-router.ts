@@ -201,6 +201,8 @@ function captureFailure(failure: ScreenCaptureFailed) {
 
 export interface BuildersBotToolRouterHooks {
   listAgents(): AgentSummary[];
+  /** One agent by id, the quick chat one included: it is no list's member, but its own turns call tools. */
+  findAgent(agentId: string): AgentSummary | undefined;
   listModels(): AgentModelOption[];
   /** The accounts of a signed-in provider, as the settings page lists them. */
   providerAccounts: ProviderAccountRows;
@@ -1564,7 +1566,7 @@ export class BuildersBotToolRouter {
     params: DynamicToolCallParams,
   ) {
     const agentId = this.#conversation.agentForThread(params.threadId);
-    const agent = agentId ? this.#hooks.listAgents().find((candidate) => candidate.id === agentId) : undefined;
+    const agent = agentId ? this.#hooks.findAgent(agentId) : undefined;
     if (!agent) return buildersBotToolFailure(sourceText("error.agent.toolRequestInvalid"));
     if (!agentComputerUseEnabled(agent)) return buildersBotToolFailure(sourceText("error.agent.screenCaptureOff"));
     const host = this.#screenCapture;
@@ -2059,7 +2061,7 @@ export class BuildersBotToolRouter {
       ) {
         throw new Error("At least one profile field is required.");
       }
-      const sender = this.#hooks.listAgents().find((agent) => agent.id === senderAgentId);
+      const sender = this.#hooks.findAgent(senderAgentId);
       if (!sender) throw new Error("The calling agent no longer exists.");
       const target = this.#requireAgent(agentId);
       if (widensAgentSettings(target, access, computerUse)) {

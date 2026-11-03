@@ -122,6 +122,7 @@ import {
   hostAgentMemoryLimit,
   hostMemoryReview,
   isAgentMemoryLimit,
+  isAgentModelOption,
   isAgentSummary,
   isMemoryReviewInterval,
   isPromptCacheTtl,
@@ -175,6 +176,7 @@ import {
   type WorkspaceDirectory,
   webAccessFromSwitch,
 } from "@buildersbot/contracts/ipc";
+import { quickChatChoiceListed, quickChatDefaultModel } from "@buildersbot/contracts/quick-chat-model";
 import { sourceText } from "@buildersbot/i18n/source";
 import {
   AGENT_IMPORT_PREVIEW,
@@ -845,7 +847,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
     const updated: ClientAgentSummary = { ...agent, excludedFolders: excluded };
     if (excluded.length === 0) delete updated.excludedFolders;
     agents = agents.map((candidate) => (candidate.id === agent.id ? updated : candidate));
-    emitAgentEvent({ type: "agents-changed", agents });
+    emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
   }
 
   function addMockAgentExclusion(agentId: string, path: string): AgentExclusionChange {
@@ -867,7 +869,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
     const updated: ClientAgentSummary = { ...agent, additionalFolders: folders };
     if (folders.length === 0) delete updated.additionalFolders;
     agents = agents.map((candidate) => (candidate.id === agent.id ? updated : candidate));
-    emitAgentEvent({ type: "agents-changed", agents });
+    emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
   }
 
   function addMockAgentFolder(agentId: string, path: string, replace?: string): AgentFolderChange {
@@ -915,9 +917,14 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
     return agent && isAgentSummary(agent) ? agentTaskLimit(agent) : 1;
   }
 
+  /** As on a host, no list carries the quick chat agent. Only `quickChat.ensure` answers it. */
+  function listedAgents(): typeof agents {
+    return agents.filter((agent) => agent.quickChat !== true);
+  }
+
   function hiddenAgents(): HiddenAgentsSnapshot {
     return {
-      agents: agents
+      agents: listedAgents()
         .flatMap((agent) => (agent.hiddenAt === undefined ? [] : [{ agentId: agent.id, hiddenAt: agent.hiddenAt }]))
         .sort(
           (left, right) => left.hiddenAt.localeCompare(right.hiddenAt) || left.agentId.localeCompare(right.agentId),
@@ -1258,7 +1265,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
     getAgentDefaults: async () => clone(agentDefaults),
     setAgentDefaults: async (next) => {
       agentDefaults = { ...next };
-      emitAgentEvent({ type: "agents-changed", agents });
+      emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
       return clone(agentDefaults);
     },
     getAgentMemoryLimitPreference: async () => clone(agentMemoryLimit),
@@ -1390,6 +1397,61 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
       request: async (targets) => targets.map((target) => ({ target, status: "granted" })),
     },
     whatsappAccounts: createMockWhatsAppAccounts(),
+    quickChat: {
+      // As the host does: makes the hidden agent on the first call, and moves it to a listed model when its own left.
+      ensure: async () => {
+        const providerAvailable = (provider: AgentProviderId) =>
+          agentStatus.providers?.some((row) => row.id === provider && row.state === "available") ?? false;
+        const known = models.filter(isAgentModelOption);
+        const choice = quickChatDefaultModel({ models: known, providerAvailable });
+        const held = agents.find((agent) => agent.quickChat === true);
+        const effortOf = (model: string) => models.find((candidate) => candidate.id === model)?.defaultReasoningEffort;
+        if (!held) {
+          if (!choice) throw new Error(sourceText("error.provider.noneReady"));
+          const made: (typeof agents)[number] = {
+            id: "agent-quick-chat",
+            provider: choice.provider,
+            name: sourceText("quick.agentName"),
+            title: "",
+            description: "",
+            notifications: true,
+            model: choice.model,
+            reasoningEffort: choice.reasoningEffort ?? effortOf(choice.model) ?? "low",
+            access: "full",
+            ...(choice.fastMode ? { fastMode: true } : {}),
+            allowAutomation: false,
+            quickAcknowledgement: false,
+            taskLimit: 3,
+            hiddenAt: new Date().toISOString(),
+            quickChat: true,
+            threadId: null,
+            workspacePath: "/mock/Builders Bot/Agents/agent-quick-chat",
+            preview: "",
+            updatedAt: null,
+            avatarSeed: "agent-quick-chat",
+            avatarHue: null,
+            avatarUrl: null,
+          };
+          if (!isAgentSummary(made)) throw new Error(sourceText("error.provider.noneReady"));
+          agents = [made, ...agents];
+          return clone({ agent: made, changed: true });
+        }
+        if (choice && isAgentSummary(held) && !quickChatChoiceListed(held, known)) {
+          const moved = {
+            ...held,
+            provider: choice.provider,
+            model: choice.model,
+            reasoningEffort: choice.reasoningEffort ?? effortOf(choice.model) ?? held.reasoningEffort,
+            fastMode: choice.fastMode === true,
+          };
+          if (!isAgentSummary(moved)) throw new Error(sourceText("error.provider.noneReady"));
+          agents = agents.map((agent) => (agent.id === held.id ? moved : agent));
+          return clone({ agent: moved, changed: true });
+        }
+        if (!isAgentSummary(held)) throw new Error(sourceText("error.provider.noneReady"));
+        return clone({ agent: held, changed: false });
+      },
+    },
     lidAwake: {
       getStatus: async () => clone(lidAwakeStatus),
       // The preview has a Mac on its power adapter with the safety service installed.
@@ -1536,7 +1598,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
         const { providerAccountId: _removed, ...moved } = agent;
         return moved;
       });
-      emitAgentEvent({ type: "agents-changed", agents });
+      emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
       return clone(
         changeProviderAccounts(provider, (accounts) => accounts.filter((account) => account.id !== accountId)),
       );
@@ -2051,7 +2113,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
           ...created,
           ...(routines.get(agent.id) ?? []).filter((routine) => !previousRoutineIds.includes(routine.id)),
         ]);
-        emitAgentEvent({ type: "agents-changed", agents });
+        emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         emitAgentEvent({ type: "routines-changed", agentId: agent.id });
         return clone({ agent });
       },
@@ -2083,7 +2145,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
           ...(serverId === storyForeignServerId ? [STORY_FOREIGN_MODEL] : []),
         ]),
       listAgents: async (serverId) =>
-        clone(serverId === storyForeignServerId ? [...agents, STORY_FOREIGN_AGENT] : agents),
+        clone(serverId === storyForeignServerId ? [...listedAgents(), STORY_FOREIGN_AGENT] : listedAgents()),
       listHiddenAgents: async () => hiddenAgents(),
       // As on a host: the agent keeps everything, and a hide or a restore goes to every device.
       setAgentHidden: async ({ agentId, hidden }) => {
@@ -2095,7 +2157,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
         agents = agents.map((agent) => (agent.id === agentId ? updated : agent));
         const snapshot = hiddenAgents();
         emitAgentEvent({ type: "hidden-agents-changed", agents: snapshot.agents });
-        emitAgentEvent({ type: "agents-changed", agents });
+        emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         return snapshot;
       },
       listAgentNotificationLevels: async (serverId) => notificationLevelsSnapshot(notificationLevelsOf(serverId)),
@@ -2252,7 +2314,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
         agents = agents.map((agent) =>
           agent.browserProfileId === profileId ? withBrowserProfile(agent, { kind: "shared" }) : agent,
         );
-        emitAgentEvent({ type: "agents-changed", agents });
+        emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         emitAgentEvent({ type: "browser-profiles-changed" });
       },
       getAgentBrowserProfile: async (agentId) => {
@@ -2263,7 +2325,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
       updateAgentBrowserProfile: async ({ agentId, profile }) => {
         if (profile.kind === "profile") requireBrowserProfile(profile.profileId);
         agents = agents.map((agent) => (agent.id === agentId ? withBrowserProfile(agent, profile) : agent));
-        emitAgentEvent({ type: "agents-changed", agents });
+        emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         emitAgentEvent({ type: "browser-profiles-changed" });
         return api.agent.getAgentBrowserProfile(agentId);
       },
@@ -2273,7 +2335,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
         if (!agent) throw new Error("Agent not found");
         if (access !== undefined) {
           agents = agents.map((candidate) => (candidate.id === agentId ? { ...candidate, access } : candidate));
-          emitAgentEvent({ type: "agents-changed", agents });
+          emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         }
         if (autoApprove !== undefined) {
           approvalAutomation = {
@@ -2420,7 +2482,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
         });
         agents = [...agents, agent];
         queues.set(agent.id, emptyQueue(agent.id));
-        emitAgentEvent({ type: "agents-changed", agents });
+        emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         try {
           await api.agent.sendMessage({ agentId: agent.id, text: input.initialMessage, attachmentDraftIds: [] });
           return clone(agent);
@@ -2428,7 +2490,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
           agents = agents.filter((candidate) => candidate.id !== agent.id);
           queues.delete(agent.id);
           delete snapshots[agent.id];
-          emitAgentEvent({ type: "agents-changed", agents });
+          emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
           throw error;
         }
       },
@@ -2491,7 +2553,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
           sectionId: sourceSectionId,
           beforeAgentId,
         });
-        emitAgentEvent({ type: "agents-changed", agents });
+        emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         emitAgentEvent({ type: "sidebar-layout-changed", layout: sidebarLayout });
         return clone({ agent, layout: sidebarLayout });
       },
@@ -2533,7 +2595,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
         if (taskLimit === null) delete updated.taskLimit;
         else if (taskLimit) updated.taskLimit = taskLimit;
         agents = agents.map((agent) => (agent.id === updated.id ? updated : agent));
-        emitAgentEvent({ type: "agents-changed", agents });
+        emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         emitTasks(updated.id);
         return clone(updated);
       },
@@ -2545,7 +2607,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
           avatarUrl: input.image ? `mock-avatar://${input.agentId}` : null,
         };
         agents = agents.map((agent) => (agent.id === updated.id ? updated : agent));
-        emitAgentEvent({ type: "agents-changed", agents });
+        emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         return clone(updated);
       },
       deleteAgent: async (agentId) => {
@@ -2572,7 +2634,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
             update: true,
           });
         }
-        emitAgentEvent({ type: "agents-changed", agents });
+        emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
       },
       getMemorySelection: async (agentId) => clone(getMemorySelection(agentId)),
       setMemoryInclusion: async ({ agentId, changes }) => {
@@ -2829,7 +2891,8 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
       },
       listWorkspaceDirectory: async (input: OpenWorkspaceFileInput) => mockWorkspaceDirectory(input.path),
       sendMessage: async (input: SendMessageInput) => {
-        if (agents.some((agent) => agent.id === input.agentId && agent.hiddenAt !== undefined))
+        // The quick chat agent is hidden, and only this request, which the quick chat page sends, may reach it.
+        if (agents.some((agent) => agent.id === input.agentId && agent.hiddenAt !== undefined && !agent.quickChat))
           throw new Error(sourceText("error.backend.recipientHidden"));
         if (input.taskId) return runTaskTurn(findTask(input.agentId, input.taskId), input.text);
         // As on a host, a repeated client id answers with the first receipt and stores nothing.
@@ -2876,7 +2939,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
               ? { ...agent, firstMessage: agent.firstMessage || text, lastUserMessage: text }
               : agent,
           );
-          emitAgentEvent({ type: "agents-changed", agents });
+          emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         }
         queues.set(input.agentId, { agentId: input.agentId, deliveries: [delivery] });
         emitAgentEvent({
@@ -3439,7 +3502,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
           createAgentSummary({ name: agent.name, title: agent.title, description: agent.description }),
         );
         agents = [...agents, ...imported];
-        emitAgentEvent({ type: "agents-changed", agents });
+        emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         // Channels follow the main process: the members that imported, and at least one of them.
         const agentIds = new Map(selected.map((agent, index) => [agent.key, imported[index]?.id ?? ""]));
         const channels = [];
@@ -3486,7 +3549,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
           .filter((profile) => profiles.some((entry) => entry.key === profile.key))
           .map((profile) => createAgentSummary({ name: profile.name, title: "", description: "" }));
         agents = [...agents, ...imported];
-        emitAgentEvent({ type: "agents-changed", agents });
+        emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         return clone({ agents: imported, skipped: [], channels: [], skippedChannels: [], warnings: [] });
       },
       discardHermes: async () => undefined,
@@ -3522,7 +3585,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
           .filter((agent) => keys.includes(agent.key))
           .map((agent) => createAgentSummary({ name: agent.name, title: agent.title, description: agent.description }));
         agents = [...agents, ...imported];
-        emitAgentEvent({ type: "agents-changed", agents });
+        emitAgentEvent({ type: "agents-changed", agents: listedAgents() });
         return clone({ agents: imported, skipped: [], signIn: ["claude"], warnings: [] });
       },
       discard: async () => undefined,

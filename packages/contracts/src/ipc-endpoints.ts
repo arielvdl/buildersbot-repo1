@@ -444,6 +444,7 @@ import type {
   SteerQueuedMessageInput,
   UpdateQueuedMessageInput,
 } from "./ipc-queue";
+import type { QuickChatEnsureResult } from "./ipc-quick-chat";
 import type {
   RemoteDesktopSetupAction,
   RemoteDesktopSetupStatus,
@@ -1096,6 +1097,11 @@ export const IPC_ENDPOINTS = {
     startTest: request<undefined, LidAwakeStatus>()("lid-awake:start-test"),
     finishTest: request<undefined, LidAwakeStatus>()("lid-awake:finish-test"),
     status: event<LidAwakeStatus>()("lid-awake:status"),
+  },
+  // The quick chat has one agent, local only and left out of every list. `ensure` makes it on the first
+  // call, puts it back on a listed model when its own left the catalog, and answers it.
+  quickChat: {
+    ensure: request<undefined, QuickChatEnsureResult>()("quick-chat:ensure"),
   },
   // The programs that agents left running on this computer. `list` answers null where Builders Bot cannot
   // find them (Windows). `stop` takes the id of one, and ends it with its children.
@@ -2154,6 +2160,7 @@ export const IPC_GROUP_PATHS = {
   whatsappAccounts: "whatsappAccounts",
   backgroundProcesses: "backgroundProcesses",
   lidAwake: "lidAwake",
+  quickChat: "quickChat",
   skills: "skills",
   customProviders: "customProviders",
   providerDetection: "providerDetection",

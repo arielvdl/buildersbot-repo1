@@ -123,6 +123,8 @@ type PersistedStoredAgent = Omit<StoredAgent, "avatarUrl" | "provider" | "access
   pendingRuntime?: AgentPendingRuntime;
   // Present only while a user hides the agent. Absent on every agent stored before hiding existed.
   hiddenAt?: string;
+  // Present only on the agent of the quick chat, which is also hidden from birth. Absent on every other agent.
+  quickChat?: boolean;
   // The first message of the agent's own chat, kept for the row's hover preview. Absent until the
   // first message, and on every agent stored before the preview existed.
   firstMessage?: string;
@@ -131,6 +133,17 @@ type PersistedStoredAgent = Omit<StoredAgent, "avatarUrl" | "provider" | "access
   // text. Present also when empty, so the startup fill reads each chat only once.
   lastUserMessage?: string;
 };
+/** What the quick chat agent starts with. The service chooses the model from the catalog. */
+export interface QuickChatAgentInput {
+  name: string;
+  provider: AgentProviderId;
+  model: AgentModelId;
+  reasoningEffort: AgentReasoningEffort;
+  fastMode?: boolean;
+}
+
+/** How many tasks of the quick chat agent run at once: the default is 2 and the most is 4. */
+const QUICK_CHAT_TASK_LIMIT = 3;
 type StoredAgentBase = Omit<PersistedStoredAgent, "avatarSeed" | "avatarHue"> & DynamicRecord;
 
 interface AgentDuplicationMarker {
@@ -385,6 +398,52 @@ export class AgentStore {
         throw error;
       }
       return { ...record };
+    } catch (cause) {
+      return yield* new StoredStateFailure({ cause });
+    }
+  }, Effect.uninterruptible);
+
+  /**
+   * The agent of the quick chat: the one that exists, else a new one. It is hidden from birth and runs
+   * with the default access, no account of its own, 3 tasks at a time, no automation and no early
+   * acknowledgement. One write makes the record, so no list or event ever shows it as a normal agent.
+   * Under the creation queue, two calls at once make one agent.
+   */
+  createQuickChatAgent(input: QuickChatAgentInput) {
+    return this.#creationQueue.withPermit(this.#createQuickChatAgent(input));
+  }
+
+  #createQuickChatAgent = Effect.fn("AgentStore.createQuickChatAgent")(function* (
+    this: AgentStore,
+    input: QuickChatAgentInput,
+  ): Effect.fn.Return<{ agent: AgentSummary; created: boolean }, StoredStateFailure> {
+    try {
+      const existing = this.quickChatAgent();
+      if (existing) return { agent: existing, created: false };
+      if (this.#state.agents.length >= INPUT_LIMITS.agents) {
+        throw new Error(sourceText("error.agent.hostLimit", { limit: INPUT_LIMITS.agents }));
+      }
+      const name = requiredText(input.name, "Agent name", INPUT_LIMITS.agentName);
+      const record = this.#createRecord(`agent-${randomUUID()}`, name, "", "");
+      record.provider = input.provider;
+      record.model = input.model;
+      record.reasoningEffort = input.reasoningEffort;
+      if (input.fastMode) record.fastMode = true;
+      record.hiddenAt = new Date().toISOString();
+      record.quickChat = true;
+      record.taskLimit = QUICK_CHAT_TASK_LIMIT;
+      record.allowAutomation = false;
+      record.quickAcknowledgement = false;
+      yield* storedIO(() => mkdir(record.workspacePath, { recursive: true, mode: 0o700 }));
+      this.#state.agents.unshift(record);
+      try {
+        this.#persist("agent.created");
+      } catch (error) {
+        this.#state.agents = this.#state.agents.filter((candidate) => candidate.id !== record.id);
+        yield* storedIO(() => rm(record.workspacePath, { recursive: true, force: true }));
+        throw error;
+      }
+      return { agent: { ...record }, created: true };
     } catch (cause) {
       return yield* new StoredStateFailure({ cause });
     }
@@ -938,6 +997,17 @@ export class AgentStore {
   /** Whether a user hid the agent. An unknown agent is not hidden. */
   isHidden(agentId: string): boolean {
     return this.#state.agents.some((agent) => agent.id === agentId && agent.hiddenAt !== undefined);
+  }
+
+  /** Whether the agent is the one of the quick chat. An unknown agent is not. */
+  isQuickChat(agentId: string): boolean {
+    return this.#state.agents.some((agent) => agent.id === agentId && agent.quickChat === true);
+  }
+
+  /** The agent of the quick chat, or undefined before the first `ensure` made it. */
+  quickChatAgent(): AgentSummary | undefined {
+    const agent = this.#state.agents.find((candidate) => candidate.quickChat === true);
+    return agent ? { ...agent } : undefined;
   }
 
   setMarketplaceSource(agentId: string, source: NonNullable<AgentSummary["marketplaceSource"]>): AgentSummary {
@@ -1975,6 +2045,7 @@ function isStoredAgent(value: unknown): value is PersistedStoredAgent {
     (record.usageLimitReturn === undefined || isAgentUsageLimitReturn(record.usageLimitReturn)) &&
     (record.pendingRuntime === undefined || isAgentPendingRuntime(record.pendingRuntime)) &&
     (record.hiddenAt === undefined || isHiddenAt(record.hiddenAt)) &&
+    (record.quickChat === undefined || isBoolean(record.quickChat)) &&
     isAvatarSeed(record.avatarSeed) &&
     (record.avatarHue === null || isAvatarHue(record.avatarHue)) &&
     isMarketplaceSource(record.marketplaceSource)
@@ -2101,6 +2172,9 @@ function readStoredAgent(value: unknown): ReadStoredAgent | UnreadableStoredAgen
     value.hiddenAt === undefined || isHiddenAt(value.hiddenAt)
       ? value.hiddenAt
       : reset("hiddenAt", new Date().toISOString());
+  // Only `true` means anything: the field is absent on every agent but the one of the quick chat.
+  const quickChat =
+    value.quickChat === true ? true : value.quickChat === undefined ? undefined : reset("quickChat", undefined);
   let marketplaceSource: StoredAgent["marketplaceSource"];
   if (value.marketplaceSource !== undefined) {
     if (isMarketplaceSource(value.marketplaceSource)) {
@@ -2160,6 +2234,7 @@ function readStoredAgent(value: unknown): ReadStoredAgent | UnreadableStoredAgen
     ...(usageLimitReturn === undefined ? {} : { usageLimitReturn }),
     ...(pendingRuntime === undefined ? {} : { pendingRuntime }),
     ...(hiddenAt === undefined ? {} : { hiddenAt }),
+    ...(quickChat === undefined ? {} : { quickChat }),
     ...(sessionSettingOverrides === undefined ? {} : { sessionSettingOverrides }),
     ...(sessionSettingResets === undefined ? {} : { sessionSettingResets }),
     ...(marketplaceSource === undefined ? {} : { marketplaceSource }),

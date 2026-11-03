@@ -20,6 +20,7 @@
     "./agent-mention-rank": "./src/agent-mention-rank.ts",
     "./agent-providers": "./src/agent-providers.ts",
     "./development-defaults": "./src/development-defaults.ts",
+    "./quick-chat-model": "./src/quick-chat-model.ts",
     "./app-appearance": "./src/app-appearance.ts",
     "./app-scheme": "./src/app-scheme.ts",
     "./app-language": "./src/app-language.ts",

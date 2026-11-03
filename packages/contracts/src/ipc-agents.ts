@@ -339,6 +339,12 @@ export interface AgentSummary {
    * hidden agents through `agent-hidden-v1`. Absent means the agent is not hidden.
    */
   hiddenAt?: string;
+  /**
+   * True for the one agent behind the quick chat. Local-only, like `hiddenAt`, which it always comes
+   * with. The host leaves it out of every agent list, so no client reads it: only the quick chat page
+   * gets it, from `quickChat.ensure`. Absent means a normal agent.
+   */
+  quickChat?: boolean;
   threadId: string | null;
   workspacePath: string;
   /**
@@ -411,6 +417,7 @@ function hasAgentSummaryFields(value: DynamicRecord): boolean {
     (value.usageLimitReturn === undefined || isAgentUsageLimitReturn(value.usageLimitReturn)) &&
     (value.pendingRuntime === undefined || isAgentPendingRuntime(value.pendingRuntime)) &&
     (value.hiddenAt === undefined || isHiddenAt(value.hiddenAt)) &&
+    (value.quickChat === undefined || isBoolean(value.quickChat)) &&
     (value.threadId === null || isIdentifier(value.threadId)) &&
     isBoundedString(value.workspacePath, INPUT_LIMITS.path) &&
     (value.firstMessage === undefined || isBoundedString(value.firstMessage, INPUT_LIMITS.messageText)) &&

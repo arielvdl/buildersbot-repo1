@@ -85,6 +85,7 @@ try {
 
   const hooks = {
     listAgents: () => store.list(),
+    findAgent: (agentId: string) => store.list().find((candidate) => candidate.id === agentId),
     listModels: () => models,
     // The tool mock refuses a model change while the agent has a turn, so the call reports that agent.
     updateAgent: (input: UpdateAgentInput, initiatingAgentId: string) =>

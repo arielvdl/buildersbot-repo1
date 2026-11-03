@@ -44,7 +44,7 @@ export const handleUpdateAgentsTool = Effect.fn("UpdateAgentsTool.handle")(
   function* (
     params: DynamicToolCallParams,
     senderAgentId: string,
-    hooks: Pick<BuildersBotToolRouterHooks, "listAgents" | "listModels" | "updateAgent" | "redactMcp">,
+    hooks: Pick<BuildersBotToolRouterHooks, "listAgents" | "findAgent" | "listModels" | "updateAgent" | "redactMcp">,
   ): Effect.fn.Return<BuildersBotToolResponse, ToolOperationFailed> {
     const { agentIds, provider, model, reasoningEffort, access, computerUse, notifications } =
       updateAgentsToolSchema.parse(params.arguments, { reportInput: true });
@@ -52,7 +52,7 @@ export const handleUpdateAgentsTool = Effect.fn("UpdateAgentsTool.handle")(
     if ([provider, model, reasoningEffort, access, computerUse, notifications].every((value) => value === undefined)) {
       throw new Error("At least one setting is required.");
     }
-    if (!hooks.listAgents().some((agent) => agent.id === senderAgentId)) {
+    if (!hooks.findAgent(senderAgentId)) {
       throw new Error("The calling agent no longer exists.");
     }
     const models = hooks.listModels();

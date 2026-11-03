@@ -80,6 +80,7 @@ import type {
   ProviderUsageResets,
   QueuedMessageReceipt,
   QueueSnapshot,
+  QuickChatEnsureResult,
   RemoveMcpServerInput,
   ReorderQueueInput,
   ResetAgentSessionSettingInput,
@@ -152,6 +153,7 @@ import {
   WORKFLOWS_USAGE_ID,
   workspaceAccessEnforced,
 } from "@buildersbot/contracts/ipc";
+import { quickChatChoiceListed, quickChatDefaultModel } from "@buildersbot/contracts/quick-chat-model";
 import { AGENT_THREAD_READS_LIMIT } from "@buildersbot/contracts/team-protocol/agent-thread-reads-v1";
 import { CLAUDE_API_KEY_ACCOUNT_ID } from "@buildersbot/contracts/team-protocol/claude-api-key-v1";
 import { ContextResetBusyError } from "@buildersbot/contracts/team-protocol/context-reset-v1";
@@ -748,7 +750,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     this.#conversation = new ConversationRuntime(
       store,
       (event) => this.#emit(event),
-      () => this.listAgents(),
+      () => this.#roster(),
     );
     this.#tasks = new AgentTasks({
       store: new AgentThreadStore(store.database),
@@ -1830,6 +1832,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       ...(options.channelRemotePerson ? { remotePerson: options.channelRemotePerson } : {}),
       hooks: {
         listAgents: () => this.listAgents(),
+        // The calling agent can be the quick chat one, which no list carries.
+        findAgent: (agentId) => this.#roster().find((agent) => agent.id === agentId),
         listModels: () => this.listModels(),
         providerAccounts: (provider) => this.getStatus().providers?.find((row) => row.id === provider)?.accounts,
         preferredProvider: () => this.preferredProvider(),
@@ -1881,7 +1885,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   }
 
   getAnalytics(input: AgentAnalyticsInput) {
-    if (!this.listAgents().some((agent) => agent.id === input.agentId))
+    if (!this.#roster().some((agent) => agent.id === input.agentId))
       throw new Error(sourceText("error.team.agentNotFound"));
     return this.#store.database.usage.read(input);
   }
@@ -1890,7 +1894,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     if (
       input.agentId &&
       input.agentId !== WORKFLOWS_USAGE_ID &&
-      !this.listAgents().some((agent) => agent.id === input.agentId)
+      !this.#roster().some((agent) => agent.id === input.agentId)
     )
       throw new Error(sourceText("error.team.agentNotFound"));
     return this.#store.database.usage.readHost(input);
@@ -1904,7 +1908,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   readonly getUsage = Effect.fn("AgentService.getUsage")(function* (this: AgentService, agentId?: string) {
     const agent = yield* lifecycleStep("find usage agent", () => {
       if (!agentId) return null;
-      const found = this.listAgents().find((candidate) => candidate.id === agentId);
+      const found = this.#roster().find((candidate) => candidate.id === agentId);
       if (!found) throw new Error(sourceText("error.team.agentNotFound"));
       return found;
     });
@@ -1926,7 +1930,17 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     return this.#providers.accountUsage();
   }
 
+  /**
+   * The agents of the user. The quick chat agent is not in it: it is local, no list or event carries it,
+   * and so no Team API client, script or other agent can see it. Code that works on an agent it already
+   * holds by id uses `#roster`.
+   */
   listAgents(): AgentSummary[] {
+    return this.#roster().filter((agent) => agent.quickChat !== true);
+  }
+
+  /** Every agent, the quick chat one included, except the copies that are still being made. */
+  #roster(): AgentSummary[] {
     return this.#duplication.visibleAgents(this.#store.list());
   }
 
@@ -1961,7 +1975,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         ? undefined
         : layout?.sections.find((entry) => entry.id === sectionId);
     if (section?.name.trim()) return { key: `section:${section.id}`, title: section.name };
-    const agent = this.listAgents().find((entry) => entry.id === agentId);
+    const agent = this.#roster().find((entry) => entry.id === agentId);
     return agent ? { key: `agent:${agent.id}`, title: agent.name } : null;
   }
 
@@ -1985,7 +1999,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         ? undefined
         : layout?.sections.find((entry) => entry.id === sectionId);
     if (section?.name.trim()) return { id: `section:${section.id}`, title: section.name, color: section.color ?? null };
-    const agent = this.listAgents().find((entry) => entry.id === agentId);
+    const agent = this.#roster().find((entry) => entry.id === agentId);
     if (!agent) return null;
     const folders = existingAgentFolders(agent);
     const folder = folders.length === 1 ? folders[0] : undefined;
@@ -2090,12 +2104,12 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         break;
       }
     }
-    if (this.listAgents().some((agent) => this.#mailbox.hasUnfinishedDelivery(agent.id))) {
+    if (this.#roster().some((agent) => this.#mailbox.hasUnfinishedDelivery(agent.id))) {
       reasons.push("queued-delivery");
     }
     // A scheduled drain with nothing behind it is a no-op microtask, not work: only an
     // in-flight drain carrying an unfinished delivery or a live turn holds the restart.
-    for (const agent of this.listAgents()) {
+    for (const agent of this.#roster()) {
       if (
         this.#drain.taskFor(agent.id) &&
         (this.#mailbox.hasUnfinishedDelivery(agent.id) || this.#conversation.anyWorkingSnapshot(agent.id)?.activeTurnId)
@@ -2141,7 +2155,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
 
   /** The developer instructions state the limit, so a new limit reloads every agent's threads. */
   memoryLimitChanged(): void {
-    for (const agent of this.listAgents()) this.#conversation.unloadAgentThreads(agent.id);
+    for (const agent of this.#roster()) this.#conversation.unloadAgentThreads(agent.id);
   }
 
   createMemory(input: CreateAgentMemoryInput): AgentMemory {
@@ -2715,7 +2729,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   readonly askSideQuestion = Effect.fn("AgentService.askSideQuestion")(
     function* (this: AgentService, input: AskSideQuestionInput) {
       const failed = (message: string) => new ProfileGenerationFailed({ cause: new Error(message) });
-      const agent = this.listAgents().find((candidate) => candidate.id === input.agentId);
+      const agent = this.#roster().find((candidate) => candidate.id === input.agentId);
       if (!agent) return yield* failed(sourceText("error.agent.gone"));
       if (this.#stopping) return yield* failed(sourceText("error.backend.shuttingDown"));
       if (this.#profileClients.busy()) return yield* failed(sourceText("error.agent.sideQuestionBusy"));
@@ -3108,6 +3122,81 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     return yield* result.failure;
   }, Effect.uninterruptible).bind(this);
 
+  /**
+   * The agent of the quick chat. The first call makes it: hidden from birth, on the model that
+   * `quickChatDefaultModel` picks, with no call to a model. Every call after it returns that agent, and
+   * puts it back on a listed model when its own left the catalog (`changed`). Calls at once make one agent.
+   */
+  readonly ensureQuickChat = Effect.fn("AgentService.ensureQuickChat")(function* (
+    this: AgentService,
+  ): Effect.fn.Return<QuickChatEnsureResult, AgentLifecycleFailed> {
+    const models = this.#endpoints.available();
+    const choice = quickChatDefaultModel({
+      models,
+      providerAvailable: (provider) => this.#providerAvailable(provider),
+    });
+    const modelOf = (agent: Pick<AgentSummary, "provider" | "model">) =>
+      models.find((model) => model.provider === agent.provider && model.id === agent.model);
+    const held = this.#store.quickChatAgent();
+    if (!held) {
+      // Nothing can run: the page shows its sign-in state, and no agent is made on a model that is not there.
+      if (!choice) {
+        return yield* new AgentLifecycleFailed({
+          operation: "ensureQuickChat",
+          cause: new Error(sourceText("error.provider.noneReady")),
+        });
+      }
+      const start = modelOf({ provider: choice.provider, model: choice.model });
+      const made = yield* this.#store
+        .createQuickChatAgent({
+          name: sourceText("quick.agentName"),
+          provider: choice.provider,
+          model: choice.model,
+          reasoningEffort: choice.reasoningEffort ?? start?.defaultReasoningEffort ?? "low",
+          ...(choice.fastMode ? { fastMode: true } : {}),
+        })
+        .pipe(
+          Effect.mapError(
+            (failure) => new AgentLifecycleFailed({ operation: "create quick chat", cause: failure.cause }),
+          ),
+        );
+      if (made.created) {
+        const prepared = yield* Effect.result(this.#prepareAgentWorkspace(made.agent));
+        if (Result.isFailure(prepared)) {
+          yield* this.#removal
+            .deleteData(made.agent)
+            .pipe(
+              Effect.mapError(
+                (failure) => new AgentLifecycleFailed({ operation: "rollback quick chat", cause: failure.cause }),
+              ),
+            );
+          return yield* prepared.failure;
+        }
+      }
+      return { agent: made.agent, changed: made.created };
+    }
+    if (choice && !quickChatChoiceListed(held, models)) {
+      const target = modelOf({ provider: choice.provider, model: choice.model });
+      // A change that cannot apply now leaves the agent as it is: the page opens, and the send says why.
+      const moved = yield* Effect.result(
+        this.updateAgent(
+          {
+            agentId: held.id,
+            provider: choice.provider,
+            model: choice.model,
+            reasoningEffort: choice.reasoningEffort ?? target?.defaultReasoningEffort ?? held.reasoningEffort,
+            fastMode: choice.fastMode === true,
+          },
+          undefined,
+          true,
+        ),
+      );
+      if (Result.isSuccess(moved)) return { agent: this.#store.quickChatAgent() ?? moved.success, changed: true };
+      logger.warn("The quick chat agent stayed on a model that left the catalog.", { error: moved.failure.cause });
+    }
+    return { agent: held, changed: false };
+  }).bind(this);
+
   committedAgentDuplication(operationId: string, sourceAgentId: string): DuplicateAgentResult | null {
     return this.#store.committedAgentDuplication(operationId, sourceAgentId);
   }
@@ -3118,6 +3207,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     operationId: string = randomUUID(),
     by?: HubTurnOrigin,
   ): Effect.Effect<AgentSummary, AgentLifecycleFailed> {
+    if (this.#store.isQuickChat(sourceAgentId)) return this.#unknownAgentFailure("duplicateAgent", sourceAgentId);
     return this.#duplication
       .duplicate(sourceAgentId, operationId, by)
       .pipe(
@@ -3167,6 +3257,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     input: SetAgentHiddenInput,
   ) {
     const changed = yield* lifecycleStep("set agent hidden", () => {
+      // Both ways: the quick chat agent is hidden for good, so nobody restores it, and a request names it as unknown.
       if (!this.listAgents().some((agent) => agent.id === input.agentId)) {
         throw new Error(sourceText("error.agent.unknown", { id: input.agentId }));
       }
@@ -4129,13 +4220,22 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     return agent;
   }
 
+  /** The quick chat agent is not the user's to copy, restore or delete, so a request that names it finds no agent. */
+  #unknownAgentFailure(operation: string, agentId: string): Effect.Effect<never, AgentLifecycleFailed> {
+    return Effect.fail(
+      new AgentLifecycleFailed({ operation, cause: new Error(sourceText("error.agent.unknown", { id: agentId })) }),
+    );
+  }
+
   ensureAgentDeletable(agentId: string): Effect.Effect<void, AgentLifecycleFailed> {
+    if (this.#store.isQuickChat(agentId)) return this.#unknownAgentFailure("deleteAgent", agentId);
     return this.#removal
       .ensureDeletable(agentId)
       .pipe(Effect.mapError((failure) => new AgentLifecycleFailed({ operation: "deleteAgent", cause: failure.cause })));
   }
 
   deleteAgent(agentId: string): Effect.Effect<void, AgentLifecycleFailed> {
+    if (this.#store.isQuickChat(agentId)) return this.#unknownAgentFailure("deleteAgent", agentId);
     return Effect.sync(() => this.#planContinuation.cancel(agentId)).pipe(
       Effect.andThen(this.#removal.delete(agentId)),
       Effect.mapError((failure) => new AgentLifecycleFailed({ operation: "deleteAgent", cause: failure.cause })),
@@ -4973,7 +5073,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     timezone?: string,
   ): Effect.fn.Return<AgentTask, AgentLifecycleFailed> {
     const task = yield* lifecycleStep("start task", () => {
-      if (!this.listAgents().some((agent) => agent.id === input.agentId))
+      if (!this.#roster().some((agent) => agent.id === input.agentId))
         throw new Error(sourceText("error.agent.unknown", { id: input.agentId }));
       this.#requireNotHidden(input.agentId);
       // A start with files and no text takes its title from the first file.
@@ -5050,7 +5150,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     readerId: string,
   ): Effect.fn.Return<AgentTask, AgentLifecycleFailed | AgentTaskBranchFailed> {
     yield* lifecycleStep("find agent", () => {
-      if (!this.listAgents().some((agent) => agent.id === input.agentId))
+      if (!this.#roster().some((agent) => agent.id === input.agentId))
         throw new Error(sourceText("error.agent.unknown", { id: input.agentId }));
       this.#requireNotHidden(input.agentId);
     });
