@@ -136,9 +136,9 @@ const closeTab = {
   initialFocus: "cancel",
 } as const;
 
-/** Nothing is chosen, so Close tab is locked. */
+/** Done is chosen when the dialog opens, so Close tab is ready. */
 export const ChannelTabClose: Story = {
-  args: { ...closeTab, tabClose: { outcome: null, note: "" } },
+  args: { ...closeTab, tabClose: { outcome: "done", note: "" } },
 };
 
 /** Other asks for a note, and the button stays locked while the note is empty. */

@@ -1,4 +1,4 @@
-/* The answer of the close dialog of a channel tab: three radio rows, a note, and one quiet line. */
+/* The answer of the close dialog of a channel tab: three answer buttons, a note, and one quiet line. */
 .channel-tab-outcome {
   display: grid;
   gap: var(--buildersbot-space-3);
@@ -54,20 +54,16 @@
   color: var(--buildersbot-warning-text);
 }
 
-/* The three answers sit in one segmented control; the chosen one is lifted. */
+/* The three answers are three buttons side by side; the chosen one is filled with the accent. */
 .channel-tab-outcome-options {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--buildersbot-space-1);
-  border: 1px solid var(--buildersbot-border);
-  border-radius: var(--buildersbot-radius-lg);
-  background: var(--buildersbot-bg-control);
-  padding: var(--buildersbot-space-1);
+  gap: var(--buildersbot-space-2);
 }
 
 .channel-tab-outcome-label {
   grid-column: 1 / -1;
-  margin: var(--buildersbot-space-1) var(--buildersbot-space-2) 0;
+  margin: 0;
   color: var(--buildersbot-text-secondary);
   font-size: var(--buildersbot-text-md);
   line-height: var(--buildersbot-leading-md);
@@ -79,13 +75,16 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  border: 1px solid var(--buildersbot-border-strong);
   border-radius: var(--buildersbot-radius-md);
-  padding: var(--buildersbot-space-2);
+  background: var(--buildersbot-bg-surface-raised);
+  padding: var(--buildersbot-space-2) var(--buildersbot-space-3);
 }
 
 .channel-tab-outcome-control[data-checked] {
-  background: var(--buildersbot-bg-surface-raised);
-  box-shadow: inset 0 0 0 1px var(--buildersbot-border-strong);
+  border-color: var(--buildersbot-accent);
+  background: var(--buildersbot-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--buildersbot-accent);
 }
 
 .channel-tab-outcome-option:has(:focus-visible) .channel-tab-outcome-control {
@@ -93,7 +92,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .channel-tab-outcome-control:hover {
+  .channel-tab-outcome-control:not([data-checked]):hover {
     background: var(--buildersbot-hover);
   }
 }
@@ -107,7 +106,7 @@
 }
 
 .channel-tab-outcome-control[data-checked] .channel-tab-outcome-option-label {
-  color: var(--buildersbot-text-primary);
+  color: var(--buildersbot-accent-text);
   font-weight: 600;
 }
 

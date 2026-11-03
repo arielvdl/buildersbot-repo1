@@ -53,8 +53,8 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
   const [slot, setSlot] = createSignal<number | null>(null);
   /**
    * The tab whose close waits for an answer, and how the person says it ended. It stays after the
-   * dialog closes, so the text does not change while the dialog fades out. Nothing is chosen when
-   * the dialog opens.
+   * dialog closes, so the text does not change while the dialog fades out. Done is chosen when the
+   * dialog opens: the usual answer closes with one click.
    */
   const [closing, setClosing] = createStore<{
     topicId: string | null;
@@ -195,7 +195,7 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
     }
     setCloseError(null);
     setClosing((state) => {
-      Object.assign(state, { topicId: topic.id, outcome: null, note: "" });
+      Object.assign(state, { topicId: topic.id, outcome: "done", note: "" });
     });
     setConfirmOpen(true);
   }
