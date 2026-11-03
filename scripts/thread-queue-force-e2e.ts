@@ -9,6 +9,8 @@
 //    message stays at the head of its thread and the running turn goes on.
 // 3. The same force in a conversation of the quick chat agent, which the page sends with `via: "quick-chat"`.
 // 4. A force refuses a message that is not queued, and one of a closed thread.
+// 5. The Team API route of the released `queue-force-v1` refuses a message that waits in a thread (409, as before),
+//    sends no cancel and moves nothing; the local app forces the same message.
 // `bun scripts/thread-queue-force-e2e.ts`. Writes .buildersbot-build/thread-queue-force-e2e/report.json.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -16,6 +18,16 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { AGENT_PROVIDERS } from "@buildersbot/contracts/ipc";
+import { TEAM_API_ROUTES } from "@buildersbot/contracts/team-api-routes";
+import {
+  TEAM_APP_VERSION_HEADER,
+  TEAM_CAPABILITIES_HEADER,
+  TEAM_PROTOCOL_VERSION_HEADER,
+} from "@buildersbot/contracts/team-protocol";
+import { teamCapabilitiesForProtocol } from "@buildersbot/contracts/team-protocol/current";
+import { QUEUE_FORCE_ROUTES } from "@buildersbot/contracts/team-protocol/queue-force-v1";
+import { TEAM_PROTOCOL_V9 } from "@buildersbot/contracts/team-protocol/v9";
+import { plugin } from "bun";
 import { Effect } from "effect";
 import type { AgentBrowserHost } from "../src/backend/agent/turn-lifecycle";
 import { AgentService } from "../src/backend/agent-service";
@@ -27,6 +39,38 @@ import { MailboxStore } from "../src/backend/mailbox-store";
 import { NO_PROVIDER_CREDENTIALS } from "../src/backend/provider-drivers";
 import { SidebarLayoutStore } from "../src/backend/sidebar-layout-store";
 import { installFakeAgent, readJsonl } from "./provider-fakes/host";
+
+// The main process imports Electron for its windows and IPC. No check here opens a window.
+plugin({
+  name: "thread-queue-force-electron-boundary",
+  setup(build) {
+    class Inert {}
+    build.module("electron", () => ({
+      loader: "object",
+      exports: {
+        app: { getPath: () => tmpdir(), getVersion: () => "0.0.0-e2e", isPackaged: false, on: () => undefined },
+        BrowserWindow: Object.assign(class extends Inert {}, { getAllWindows: () => [] }),
+        MessageChannelMain: class extends Inert {},
+        Notification: Object.assign(class extends Inert {}, { isSupported: () => false }),
+        clipboard: {},
+        dialog: {},
+        ipcMain: { handle: () => undefined, removeHandler: () => undefined, on: () => undefined },
+        nativeImage: {},
+        net: {},
+        powerMonitor: { on: () => undefined },
+        safeStorage: { isEncryptionAvailable: () => false },
+        screen: {},
+        session: {},
+        shell: { openExternal: async () => undefined },
+        systemPreferences: {},
+        webContents: { getAllWebContents: () => [] },
+      },
+    }));
+  },
+});
+
+const { TeamApiServer } = await import("../src/main/team-api-server");
+const { TeamStore } = await import("../src/main/team-store");
 
 const OUT = resolve(import.meta.dirname, "../.buildersbot-build/thread-queue-force-e2e");
 const WAIT_MS = 30_000;
@@ -43,6 +87,7 @@ const report: { passed: boolean; unverified: string[]; steps: Step[] } = {
   passed: false,
   unverified: [
     "The page: no renderer runs here. The button, the dialog and the preference are the ones of the chat queue, wired in the renderer.",
+    "A member of a joined server with a lower role than the owner: the route is tried with the owner, which the rule does not close either.",
     "A real Cultura Builder account: the CLI is a fake that holds a turn until it is cancelled.",
   ],
   steps: [],
@@ -126,6 +171,10 @@ const store = new AgentStore(userData, join(root, "home"), database);
 const mailbox = new MailboxStore(userData, store.sharedRoot, store.database);
 const sidebar = new SidebarLayoutStore(join(userData, "sidebar-layout.json"));
 await runCauseEffect(sidebar.initialize());
+const OWNER = { username: "owner-user", password: "owner-password-123" };
+const team = new TeamStore(join(userData, "buildersbot-team-server-v2.json"));
+await runCauseEffect(team.initialize());
+await runCauseEffect(team.configure("E2E Host", OWNER.username, OWNER.password));
 const agents = new AgentService({
   store,
   mailbox,
@@ -164,8 +213,41 @@ const taskRow = (agentId: string, taskId: string) => agents.listTasks(agentId).t
 const queued = (agentId: string, taskId: string) =>
   (taskRow(agentId, taskId)?.queuedMessages ?? []).map((message) => message.text);
 
+let server: InstanceType<typeof TeamApiServer> | null = null;
 try {
   await runCauseEffect(agents.initialize());
+  const teamBrowser = {
+    listTabs: () => [],
+    getControlState: () => ({ sessions: [] }),
+    open: unused,
+    activate: unused,
+    navigate: unused,
+    reload: unused,
+    stop: unused,
+    takeUserControl: unused,
+    releaseUserControl: () => {},
+    releaseUserControlHeldBy: () => {},
+    close: unused,
+    capturePreview: unused,
+    setVisible: unused,
+    getDisplayState: () => ({ tabs: [], activeTabId: null }),
+    loadUrl: unused,
+    isPrivate: () => false,
+    startView: unused,
+    dispatchViewInput: unused,
+    copyViewSelection: unused,
+    importSignIn: unused,
+  };
+  server = new TeamApiServer({
+    store: team,
+    agents,
+    mailbox,
+    browser: teamBrowser,
+    sidebarLayout: sidebar,
+    appVersion: "0.0.0-e2e",
+    hiddenAgents: agents,
+  });
+  const port = await Effect.runPromise(server.start());
 
   const agent = await runCauseEffect(
     store.createAgent({ name: "Worker", description: "", avatarSeed: "worker", avatarHue: null }),
@@ -188,7 +270,7 @@ try {
     const message = taskRow(agentId, taskId)?.queuedMessages.find((one) => one.text === text);
     assert.ok(message, `The message "${text}" does not wait in the thread.`);
     return runCauseEffect(
-      agents.forceQueuedMessage({ agentId, deliveryId: message.deliveryId, expectedTurnId }, "quick-chat"),
+      agents.forceQueuedMessage({ agentId, deliveryId: message.deliveryId, expectedTurnId }, "quick-chat", "threads"),
     );
   };
 
@@ -324,6 +406,7 @@ try {
           agents.forceQueuedMessage(
             { agentId: agent.id, deliveryId: "no-such-delivery", expectedTurnId: null },
             "quick-chat",
+            "threads",
           ),
         ),
       /waits|queued|not/i,
@@ -338,8 +421,66 @@ try {
     return { refused: 1 };
   });
 
+  // ---- 5. The released wire does not force a message of a thread.
+  await step(
+    "5: the Team API route refuses a message that waits in a thread, as it always did, and stops nothing",
+    async () => {
+      const call = async (path: string, body: unknown, token?: string) => {
+        const headers: Record<string, string> = {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          [TEAM_PROTOCOL_VERSION_HEADER]: String(TEAM_PROTOCOL_V9),
+          [TEAM_APP_VERSION_HEADER]: "0.0.0-e2e",
+          [TEAM_CAPABILITIES_HEADER]: teamCapabilitiesForProtocol(TEAM_PROTOCOL_V9).join(","),
+        };
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const response = await realFetch(`http://127.0.0.1:${port}${path}`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body),
+        });
+        return { status: response.status, text: await response.text() };
+      };
+      const login = await call(TEAM_API_ROUTES.auth.login, OWNER);
+      assert.equal(login.status, 200, `Sign-in returned ${login.status}.`);
+      const token = String(JSON.parse(login.text).sessionToken);
+      const thread = await start(agent.id, "FIRST HOLD wire");
+      const turn = await until("the turn runs", () => runningTurn(agent.id, thread.id), Boolean);
+      await send(agent.id, thread.id, "W1 behind");
+      await send(agent.id, thread.id, "W2 behind too");
+      await until(
+        "two messages wait",
+        () => queued(agent.id, thread.id).length,
+        (count) => count === 2,
+      );
+      const waiting = taskRow(agent.id, thread.id)?.queuedMessages.find((message) => message.text === "W2 behind too");
+      assert.ok(waiting);
+      const before = (await cancels()).length;
+      const refused = await call(
+        QUEUE_FORCE_ROUTES.force,
+        { agentId: agent.id, deliveryId: waiting.deliveryId, expectedTurnId: turn },
+        token,
+      );
+      assert.equal(refused.status, 409, `The route answered ${refused.status}: ${refused.text}`);
+      assert.match(refused.text, /Only a message that waits in the agent's queue can be forced/);
+      assert.equal((await cancels()).length, before, "The refused force stopped a turn.");
+      assert.equal(runningTurn(agent.id, thread.id), turn, "The refused force changed the running turn.");
+      assert.deepEqual(
+        queued(agent.id, thread.id),
+        ["W1 behind", "W2 behind too"],
+        "The refused force moved a message.",
+      );
+      // The same message, forced by the local app, goes through: the refusal is about who asks, not about the message.
+      const local = await force(agent.id, thread.id, "W2 behind too", turn);
+      assert.equal(local.outcome, "interrupted");
+      await runCauseEffect(agents.stopTask({ agentId: agent.id, taskId: thread.id }));
+      return { status: refused.status, text: refused.text.slice(0, 90) };
+    },
+  );
+
   report.passed = true;
 } finally {
+  if (server) await Effect.runPromise(server.stop()).catch(() => undefined);
   globalThis.fetch = realFetch;
   await runCauseEffect(agents.stop()).catch(() => undefined);
   database.close();

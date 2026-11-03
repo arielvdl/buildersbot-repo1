@@ -28,6 +28,12 @@ import type { RoutineScheduler } from "./routine-scheduler";
 import { providerForAgent } from "./thread-items";
 import type { ThreadRuntimes } from "./thread-runtime";
 
+/**
+ * Whose force it is. `chat` is the released wire: the agent's own chat. `threads` is the local app, which also
+ * forces the messages that wait in a side thread.
+ */
+export type ForceScope = "chat" | "threads";
+
 export interface QueueControlsHooks {
   /** The channel task that owns a delivery. Read late: the channel service is built after this. */
   channelAssignment(deliveryId: string): ChannelAssignment | null;
@@ -122,7 +128,17 @@ export class QueueControls {
    * Stops the turn that holds the agent's own chat and starts this queued message next, alone. See
    * `QueueForce` for the order of the steps.
    */
-  force(input: ForceQueuedMessageInput): Effect.Effect<ForceQueuedMessageResult, QueueOperationFailed> {
+  force(
+    input: ForceQueuedMessageInput,
+    scope: ForceScope = "chat",
+  ): Effect.Effect<ForceQueuedMessageResult, QueueOperationFailed> {
+    // The released `queue-force-v1` wire forces a message of the agent's own chat only, and task work keeps its own
+    // controls. A message of a thread is forced only by the local app (`threads`): a joined server's client, which
+    // reaches the host through the Team API, gets the refusal it always got for it.
+    if (scope === "chat" && this.#mailbox.taskIdForDelivery(input.deliveryId) !== null)
+      return Effect.fail(
+        new QueueOperationFailed({ cause: new QueueForceRefused(sourceText("error.backend.forceQueuedOnly")) }),
+      );
     return this.#force.force(input).pipe(toQueueOperationFailed);
   }
 

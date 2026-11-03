@@ -241,7 +241,7 @@ import {
   ProviderRuntime,
   toProviderOperationFailed,
 } from "./agent/provider-runtime";
-import { QueueControls } from "./agent/queue-controls";
+import { type ForceScope, QueueControls } from "./agent/queue-controls";
 import { cleanQuickChatTitle, quickChatTitlePrompt } from "./agent/quick-chat-title";
 import { quietRoutineRun } from "./agent/routine-quiet-runs";
 import { type RoutineMutationOptions, RoutineScheduler, toRoutineOperationFailed } from "./agent/routine-scheduler";
@@ -5748,6 +5748,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   forceQueuedMessage(
     input: ForceQueuedMessageInput,
     via?: HiddenAgentAccess,
+    scope: ForceScope = "chat",
   ): Effect.Effect<ForceQueuedMessageResult, AgentLifecycleFailed> {
     // As for a steer: the queue of a hidden agent waits.
     if (this.#store.isHidden(input.agentId) && !this.#quickChatAccess(input.agentId, via))
@@ -5758,7 +5759,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         }),
       );
     return this.#queue
-      .force(input)
+      .force(input, scope)
       .pipe(
         Effect.mapError(
           (failure) => new AgentLifecycleFailed({ operation: "forceQueuedMessage", cause: failure.cause }),

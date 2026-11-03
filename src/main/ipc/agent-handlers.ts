@@ -845,7 +845,7 @@ export function agentIpcHandlers({
       }),
       // A joined server forces through `queue-force-v1`. An older host has no route for it.
       forceQueuedMessage: scopedHandler(parseForceQueuedMessage, {
-        local: (parsed) => runCauseEffect(service.forceQueuedMessage(parsed, "quick-chat")),
+        local: (parsed) => runCauseEffect(service.forceQueuedMessage(parsed, "quick-chat", "threads")),
         remote: (parsed, serverId) => {
           if (!remoteServers.supportsCapability(serverId, QUEUE_FORCE_CAPABILITY))
             throw new Error(sourceText("error.team.queueForceUnsupported"));
