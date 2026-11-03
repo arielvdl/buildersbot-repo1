@@ -95,6 +95,8 @@ interface ComposerEditorProps {
   quoteRequest?: QuoteRequest | undefined;
   /** Opens the passage that a quote chip in the draft points to. */
   onOpenQuote?: ((messageId: string, text: string) => void) | undefined;
+  /** A channel with no agent addressed yet: an empty skill list asks for a mention instead of saying "no skills". */
+  skillsNeedMention?: boolean | undefined;
   /** The last skill list request failed, so an empty picker says so instead of "no skills". */
   skillsLoadFailed?: boolean | undefined;
   onValueChange: (value: string) => void;
@@ -295,8 +297,12 @@ export function ComposerEditor(props: ComposerEditorProps) {
     const context = mention();
     if (context?.trigger !== "$" || matchingOptions().length > 0) return null;
     if (requestedMentionStart() !== context.start && context.query.trim()) return null;
-    if (usableSkills().length === 0)
-      return t(props.skillsLoadFailed ? "composer.picker.skillsLoadFailed" : "composer.picker.noSkills");
+    if (usableSkills().length === 0) {
+      if (props.skillsLoadFailed) return t("composer.picker.skillsLoadFailed");
+      // The store has tools for a bare `$` of a channel with no one addressed, and of an agent with no skills.
+      if (props.storeSearch && !context.query.trim()) return t("composer.picker.storeHint");
+      return t(props.skillsNeedMention ? "composer.picker.skillsMentionFirst" : "composer.picker.noSkills");
+    }
     return t("composer.picker.noSkillMatch", { query: context.query.trim() });
   });
   const pickerOpen = createMemo(() => mention() !== null && (matchingOptions().length > 0 || pickerStatus() !== null));
