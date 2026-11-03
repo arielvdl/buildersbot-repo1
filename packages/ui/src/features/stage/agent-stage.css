@@ -108,16 +108,17 @@
   overflow: visible;
 }
 
-/* The provider and the model, above the agent. Static. */
+/* The provider logo and the name of the agent, above it. The model shows as the tooltip. Static. */
 .agent-stage-model {
   position: absolute;
   bottom: calc(100% + var(--buildersbot-space-1));
   left: 50%;
   display: flex;
-  max-width: 140px;
+  max-width: 180px;
   align-items: center;
   gap: var(--buildersbot-space-1);
-  color: var(--buildersbot-text-secondary);
+  color: var(--buildersbot-text-primary);
+  font-weight: var(--buildersbot-weight-semibold);
   font-size: var(--buildersbot-text-sm);
   line-height: 1;
   white-space: nowrap;
@@ -136,7 +137,7 @@
   fill: currentcolor;
 }
 
-/* The name under the feet */
+/* What the agent does, under the feet */
 .agent-stage-name {
   position: absolute;
   top: var(--buildersbot-space-2);
@@ -147,11 +148,6 @@
   font-size: var(--buildersbot-text-sm);
   white-space: nowrap;
   translate: -50% 0;
-}
-
-.agent-stage-name-text {
-  color: var(--buildersbot-text-primary);
-  font-weight: var(--buildersbot-weight-semibold);
 }
 
 .agent-stage-verb {

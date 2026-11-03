@@ -226,14 +226,14 @@ export function StageActor(props: {
           figure = node;
         }}
       >
-        <Show when={logo() || modelName()}>
-          <span class="agent-stage-model" aria-hidden="true">
-            <Show when={logo()}>
-              {(provider) => <ProviderLogo class="agent-stage-model-logo" provider={provider()} />}
-            </Show>
-            <span>{modelName()}</span>
-          </span>
-        </Show>
+        {/* The provider logo and the agent's name. The model is the tooltip: the name says who, the logo and the
+            tooltip say what runs it, and the line under the feet keeps only what the agent does. */}
+        <span class="agent-stage-model" aria-hidden="true" title={modelName() || undefined}>
+          <Show when={logo()}>
+            {(provider) => <ProviderLogo class="agent-stage-model-logo" provider={provider()} />}
+          </Show>
+          <span>{props.actor.name}</span>
+        </span>
         <div
           class="agent-stage-hop"
           ref={(node) => {
@@ -278,7 +278,6 @@ export function StageActor(props: {
         </div>
       </Show>
       <span class="agent-stage-name" aria-hidden="true">
-        <span class="agent-stage-name-text">{props.actor.name}</span>
         <span class="agent-stage-verb">{t(ACTIVITY_LABEL[props.actor.activity])}</span>
       </span>
     </li>
