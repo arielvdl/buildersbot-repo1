@@ -1910,6 +1910,17 @@ export class TurnLifecycle {
     if (!isString(item.id)) return;
     if (isToolItem(item)) {
       const failed = completed && toolFailed(item);
+      // Keep a record of each failed step. The command and its arguments stay out of the log.
+      if (failed) {
+        logger.warn("A tool step failed.", {
+          turnId,
+          itemType: item.type,
+          tool: getString(item, "tool") ?? getString(item, "name"),
+          namespace: getString(item, "namespace"),
+          status: getString(item, "status"),
+          exitCode: typeof item.exitCode === "number" ? item.exitCode : null,
+        });
+      }
       this.#traces.observe(turnId, item.id, "tool", {
         completed,
         failed,
