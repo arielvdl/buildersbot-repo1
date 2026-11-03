@@ -70,30 +70,44 @@ Each conversation has its own model. The value is in `runtime_json` of `projecti
 uses the model of the agent. Migration 52 only adds the column, so an older build ignores it and runs
 every conversation on the agent's model.
 
-- **New conversation:** the draft starts with the model of the last conversation used. The agent keeps
-  that model as the default for new conversations, in its own `provider`, `model`, `reasoningEffort`
-  and `fastMode` fields. The first message writes `runtime_json` in the same transaction that creates
-  the conversation. A model chosen in a draft that is never sent does not become the default.
-- **Existing conversations:** `ensureQuickChat` fills `runtime_json` with the agent's model in each
-  conversation that is still null. It does this once, in a transaction, so a later change of the
-  default does not change an old conversation. A model that left the catalog moves only the default,
-  and it never rewrites a conversation.
-- **Choosing a model:** `quickChat.setConversationRuntime` checks that the model is listed for the
-  provider, that the provider is on, and that the effort is accepted. If a check fails, nothing is
-  written, the picker goes back to the real model, and the error shows as `error.backend.quickChatModelUnavailable`.
-- **When it applies:** the next message in that conversation uses the new model. A reply that is
-  already running is not stopped. A message already queued in that conversation uses the new model,
-  because the model is read when the turn starts. Other conversations are not changed.
-- **Provider change in a stopped conversation:** the provider sessions of the conversation are closed
-  when the choice is made. A change while the conversation runs is applied at the start of its next
-  turn, in its lane.
-- **Locked conversations:** a conversation that starts with `@agent` runs on that agent's model. Its
-  picker is disabled with `quick.model.ownedByAgent`, because a change would alter that agent's own chats.
-- **Refused writes:** `updateAgent` refuses runtime fields for the quick chat agent with
-  `error.backend.quickChatRuntimeByConversation`, so no `pendingRuntime` is created on it. On open,
-  `ensureQuickChat` moves an existing `pendingRuntime` into the default for new conversations and clears it.
-- **Errors are visible:** a refused choice shows an error toast, and the picker goes back to the real
-  model. A failed send shows its error in the conversation, and the message can be sent again. The model
+- **Default for new conversations:** the agent record keeps `provider`, `model`, `reasoningEffort` and
+  `fastMode` as that default. It is written by `#rememberQuickChatDefault` when a model is chosen in the
+  picker and when a first message starts a conversation with a model. It is written straight to the
+  store: nothing is delivered, no session is retired and no `pendingRuntime` is made. A draft that is
+  never sent does not change the default.
+- **Draft:** the page keeps the model of the draft in its own state (`quick-chat-runtime.ts`). It starts
+  from the last model chosen, and `startTask` receives it as `runtime`.
+- **Creating a conversation:** `startTask` with a `runtime` checks the model (as above) and stores it in
+  `runtime_json` through `#tasks.create`. Without one, the new conversation takes the default. A
+  `startTask` with `runtime` for an agent that is not the quick chat agent is refused with
+  `error.backend.quickChatRuntimeOnly`. `setConversationRuntime` for an agent that is not the quick chat
+  agent is refused as an unknown agent.
+- **Existing conversations:** `ensureQuickChat` runs `#pinQuickChatConversations` on each open. It
+  gives the agent's model to every conversation whose `runtime_json` is null (`fillMissingRuntimes`).
+  A conversation that has a model keeps it, so a later change of the default does not move it. A model
+  that left the catalog moves only the default, and never rewrites a conversation.
+- **Choosing a model:** `quickChat.setConversationRuntime` (`quick-chat:set-conversation-runtime`)
+  checks the model before it writes (`#checkQuickChatRuntime`). The model must be in the list of its
+  provider, else the error is `error.backend.quickChatModelUnavailable`. The provider must be on. An
+  effort that the model does not take becomes the model's default, and fast mode stays only for a model
+  with a fast tier. A refused check writes nothing, and the picker goes back to the real model.
+- **Provider change:** if the conversation is at rest, the choice reconciles its provider sessions at
+  once (`reconcileThreadRuntime`), so a provider that is off shows in the picker. If it runs or waits, the
+  reconcile runs at the start of its next turn, in its lane. The sessions of another provider are retired
+  and their work steps are kept, so the next turn starts a session on the new provider with the history.
+- **When it applies:** the next turn of that conversation uses the new model. A turn that runs is not
+  stopped and ends on the model it began with. A message already queued in that conversation uses the
+  new model, because the model is read when its turn starts (`ThreadRuntimes.forTask`). Other
+  conversations are not changed.
+- **Locked conversations:** a conversation that a message opens with `@agent` belongs to that agent and
+  runs on its model. The picker is disabled with `quick.model.ownedByAgent` and the name of the agent,
+  because a change would alter that agent's own chats.
+- **Refused writes:** `updateAgent` refuses any runtime field (`provider`, `model`, `reasoningEffort`,
+  `providerAccountId`, `fastMode`) for the quick chat agent with `error.backend.quickChatRuntimeByConversation`,
+  so no `pendingRuntime` is made on it. On open, `ensureQuickChat` moves an existing `pendingRuntime`
+  into the default and clears it.
+- **Errors are visible:** a failed choice shows an error toast with the backend text, or
+  `quick.model.changeFailed` when there is no text, and the picker goes back to the real model. The model
   never changes by itself.
 
 ## Warm-up
@@ -121,6 +135,8 @@ quick chat as in any side thread. See `voice-input.md`.
 | Part | File |
 | --- | --- |
 | Model rule | `packages/contracts/src/quick-chat-model.ts` |
+| Model of a conversation: reads and reconcile | `src/backend/agent/thread-runtime.ts` (`effectiveRuntime`, `ThreadRuntimes`, `reconcileThreadRuntime`) |
+| Model of a conversation: stored form and store | `src/backend/agent-threads/thread-runtime-json.ts`, `agent-thread-store.ts` (`fillMissingRuntimes`), migration 52 in `buildersbot-database-schema.ts` |
 | Result and field | `packages/contracts/src/ipc-quick-chat.ts`, `quickChat` in `ipc-agents.ts` |
 | Endpoints | `quickChat` group in `packages/contracts/src/ipc-endpoints.ts` |
 | Store | `AgentStore.createQuickChatAgent`, `quickChatAgent`, `isQuickChat` (`src/backend/agent-store.ts`) |
