@@ -53,6 +53,8 @@ import { createStorageCard } from "./storage-card";
 /** Dismissing the mobile app card is a choice of this computer, like the sidebar width. The key is
  * new with the Android release, so a computer that dismissed the iPhone-only card sees it once more. */
 const MOBILE_APP_DISMISSED_STORAGE_KEY = "buildersbot:mobile-app-card-dismissed";
+/** Temporarily hides the "Builders Bot para celular" card; flip to true to bring it back. */
+const SHOW_MOBILE_APP_CARD = false;
 
 /**
  * The list of Agents and people. It reads the most domains of any pane, and every
@@ -551,7 +553,7 @@ export function WorkspaceSidebar(props: { peopleEnabled: boolean }) {
               />
             )}
           </Show>
-          <Show when={!platform.landingPreview && !footerCard() && !mobileAppDismissed()}>
+          <Show when={SHOW_MOBILE_APP_CARD && !platform.landingPreview && !footerCard() && !mobileAppDismissed()}>
             <SidebarMobileAppCard
               onOpenInstall={() => openAppSettings(null, "mobile-connect")}
               onDismiss={() => {
