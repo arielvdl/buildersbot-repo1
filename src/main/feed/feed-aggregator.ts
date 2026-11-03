@@ -38,6 +38,7 @@ import {
   SIDEBAR_UNASSIGNED_SECTION_ID,
   type SidebarLayoutSnapshot,
   type StoppedWork,
+  type TurnProgressKind,
 } from "@buildersbot/contracts/ipc";
 import { cleanAgentMessageText } from "@buildersbot/team-client/agent-message-text";
 
@@ -240,7 +241,7 @@ export class FeedAggregator {
         this.#turnStarted(serverId, event.agentId, event.threadId, event.turnId, event.origin === "routine");
         return;
       case "turn-progress":
-        this.#turnProgress(serverId, event.agentId, event.threadId, event.turnId, event.detail);
+        this.#turnProgress(serverId, event.agentId, event.threadId, event.turnId, event.detail, event.kind);
         return;
       case "turn-completed":
         this.#turnCompleted(serverId, event);
@@ -302,6 +303,12 @@ export class FeedAggregator {
       if (card.channelId !== running.channelId || card.taskId !== running.taskId) {
         card.channelId = running.channelId;
         card.taskId = running.taskId;
+        changed = true;
+      }
+      // The agent that gave the task of this run. It stays once set: a later load that cannot find the
+      // task does not clear it, and the run ends with the card.
+      if (running.parentAgentId && card.delegatedBy !== running.parentAgentId) {
+        card.delegatedBy = running.parentAgentId;
         changed = true;
       }
       if (running.channelName && !card.title) {
@@ -374,7 +381,14 @@ export class FeedAggregator {
     this.#syncQueueCard(serverId, agentId);
   }
 
-  #turnProgress(serverId: string, agentId: string, threadId: string, turnId: string, detail: string): void {
+  #turnProgress(
+    serverId: string,
+    agentId: string,
+    threadId: string,
+    turnId: string,
+    detail: string,
+    tool?: TurnProgressKind,
+  ): void {
     const id = this.#threadId(serverId, agentId, threadId);
     let card = this.#cards.get(id);
     // A late step of a turn that ended does not open its card again.
@@ -386,7 +400,7 @@ export class FeedAggregator {
     }
     const text = this.#text(detail, FEED_TEXT_LIMIT);
     if (!text || card.lastStep?.text === text) return;
-    this.#addStep(card, { at: this.#iso(), kind: "progress", text });
+    this.#addStep(card, { at: this.#iso(), kind: "progress", text, ...(tool ? { tool } : {}) });
     this.#touch(card);
   }
 
@@ -758,6 +772,7 @@ export class FeedAggregator {
     card.lastStep = null;
     card.stop = null;
     delete card.quiet;
+    delete card.delegatedBy;
     this.#clearNeed(card);
   }
 

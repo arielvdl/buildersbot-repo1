@@ -40,7 +40,7 @@ export interface RunningContext {
     channelId: string,
     agentId: string,
     turnId: string,
-  ): { taskId: string; title: string; topicId: string | null } | null;
+  ): { taskId: string; title: string; topicId: string | null; parentAgentId?: string | null } | null;
   /** The name of a tab of a channel, or null when the tab is not found. */
   topicName(channelId: string, topicId: string): string | null;
 }
@@ -58,6 +58,7 @@ export function buildRunningWork(turns: readonly RunningTurnRecord[], context: R
       channelName: channel?.name ?? null,
       topicName: channel && task?.topicId ? context.topicName(channel.id, task.topicId) : null,
       taskId: task?.taskId ?? null,
+      ...(task?.parentAgentId ? { parentAgentId: task.parentAgentId } : {}),
       title: task ? clipText(task.title, TITLE_LIMIT) : "",
       startedAt: turn.startedAt,
     };

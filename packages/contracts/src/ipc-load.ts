@@ -40,6 +40,8 @@ export interface RunningWork {
   /** The name of the tab of the channel that holds the task. Null when the task or its tab is not found. */
   topicName: string | null;
   taskId: string | null;
+  /** The agent that gave this task to `agentId`. Absent when a person or a routine started it, or when no task is found. */
+  parentAgentId?: string;
   /** The request of the task, clipped. Empty for a turn in the chat of an agent. */
   title: string;
   startedAt: string;
@@ -426,6 +428,7 @@ function isRunningWork(value: unknown): value is RunningWork {
     (value.channelName === null || isString(value.channelName)) &&
     (value.topicName === null || isString(value.topicName)) &&
     (value.taskId === null || isIdentifier(value.taskId)) &&
+    (value.parentAgentId === undefined || isIdentifier(value.parentAgentId)) &&
     isString(value.title) &&
     isString(value.startedAt) &&
     (value.quiet === undefined || isRunningWorkQuiet(value.quiet))

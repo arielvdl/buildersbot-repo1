@@ -11,6 +11,7 @@
  */
 
 import { INPUT_LIMITS } from "./input-limits";
+import { TURN_PROGRESS_KINDS, type TurnProgressKind } from "./ipc-agent-events";
 import { isBoundedString, isIdentifier, isNullableBoundedString, isRequestId } from "./ipc-bounded-values";
 import { isBoolean, isDynamicRecord, isNumber, isOneOf } from "./runtime-values";
 
@@ -69,6 +70,11 @@ export interface FeedStep {
   kind: (typeof FEED_STEP_KINDS)[number];
   /** A summary, clipped to `FEED_TEXT_LIMIT` and redacted. */
   text: string;
+  /**
+   * The kind of tool step that a `progress` step stands for, as the host names it. Absent for the
+   * other steps, and when the host predates it. It never carries a command or a path.
+   */
+  tool?: TurnProgressKind;
 }
 
 export const FEED_APPROVAL_KINDS = ["command", "file-change", "permissions"] as const;
@@ -166,6 +172,11 @@ export interface FeedItem {
   updatedAt: string;
   endedAt: string | null;
   lastStep: FeedStep | null;
+  /**
+   * The agent that gave the task of this card to its agent, when another agent did. Absent for a
+   * task that a person or a routine started. It is an agent id only.
+   */
+  delegatedBy?: string;
   /** The newest `FEED_STEP_LIMIT` steps, the newest last. */
   steps: FeedStep[];
   /** Every step, also the ones that left `steps`. */
@@ -350,7 +361,8 @@ export function isFeedStep(value: unknown): value is FeedStep {
     isDynamicRecord(value) &&
     isIsoTime(value.at) &&
     isOneOf(FEED_STEP_KINDS, value.kind) &&
-    isBoundedString(value.text, FEED_TEXT_LIMIT)
+    isBoundedString(value.text, FEED_TEXT_LIMIT) &&
+    (value.tool === undefined || isOneOf(TURN_PROGRESS_KINDS, value.tool))
   );
 }
 
@@ -450,6 +462,7 @@ export function isFeedItem(value: unknown): value is FeedItem {
     isCount(value.stepCount) &&
     (value.need === null || isFeedNeed(value.need)) &&
     (value.stop === null || isFeedStop(value.stop)) &&
+    (value.delegatedBy === undefined || isIdentifier(value.delegatedBy)) &&
     (value.quiet === undefined || isFeedQuiet(value.quiet)) &&
     (value.subtasks === undefined || isFeedSubtasks(value.subtasks)) &&
     (value.queued === undefined || isCount(value.queued)) &&

@@ -847,8 +847,19 @@ export class WorkControl {
         const active =
           working.find((assignment) => assignment.turnId === turnId) ??
           working.find((assignment) => assignment.turnId === null);
-        const task = active ? channels.store.tasks(channelId).find((entry) => entry.id === active.taskId) : undefined;
-        return task ? { taskId: task.id, title: task.instruction, topicId: task.topicId ?? null } : null;
+        const tasks = active ? channels.store.tasks(channelId) : [];
+        const task = active ? tasks.find((entry) => entry.id === active.taskId) : undefined;
+        if (!task) return null;
+        // The agent that gave the task: the owner of the parent task, when it is another agent.
+        const parentOwner = task.parentTaskId
+          ? tasks.find((entry) => entry.id === task.parentTaskId)?.ownerAgentId
+          : null;
+        return {
+          taskId: task.id,
+          title: task.instruction,
+          topicId: task.topicId ?? null,
+          parentAgentId: parentOwner && parentOwner !== agentId ? parentOwner : null,
+        };
       },
       topicName: (channelId, topicId) => this.#topicName(channelId, topicId),
     });

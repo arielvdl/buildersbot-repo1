@@ -224,6 +224,18 @@ describe("the running work", () => {
     ]);
   });
 
+  it("names the agent that gave the task, only when another agent did", () => {
+    const run = (parentAgentId: string | null) =>
+      buildRunningWork([turn("a", "writer", "ch-thread")], {
+        agentName: names,
+        channelOfThread: () => ({ id: "c1", name: "cadastro" }),
+        taskOf: () => ({ taskId: "t9", title: "Fix the form", topicId: null, parentAgentId }),
+        topicName: topics,
+      })[0];
+    expect(run("lead")?.parentAgentId).toBe("lead");
+    expect(run(null)).not.toHaveProperty("parentAgentId");
+  });
+
   it("keeps a channel turn whose task is not found, and names an agent that is gone by its id", () => {
     const [entry] = buildRunningWork([turn("a", "ghost", "ch-thread")], {
       agentName: names,

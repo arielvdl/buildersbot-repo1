@@ -29,7 +29,7 @@ import { type HiddenAgent, isHiddenAgentsSnapshot } from "./ipc-hidden-agents";
 import { isQueueSnapshot, type QueueSnapshot } from "./ipc-queue";
 import { isSidebarLayoutSnapshot, type SidebarLayoutSnapshot } from "./ipc-sidebar-layout";
 import type { ServerNotificationLevel } from "./ipc-team-host";
-import { isBoolean, isDynamicRecord, isNumber, isString } from "./runtime-values";
+import { isBoolean, isDynamicRecord, isNumber, isOneOf, isString } from "./runtime-values";
 
 export type AgentTurnOrigin = "user" | "routine" | "agent" | "unknown";
 
@@ -37,16 +37,8 @@ export type AgentTurnOrigin = "user" | "routine" | "agent" | "unknown";
  * The kind of tool step that a `turn-progress` line stands for. It names the step only: it never
  * carries the command, the arguments or any path. A host that predates it sends no kind.
  */
-export type TurnProgressKind = "read" | "search" | "check" | "write" | "coordinate" | "other";
-
-const TURN_PROGRESS_KINDS: ReadonlySet<string> = new Set<TurnProgressKind>([
-  "read",
-  "search",
-  "check",
-  "write",
-  "coordinate",
-  "other",
-]);
+export const TURN_PROGRESS_KINDS = ["read", "search", "check", "write", "coordinate", "other"] as const;
+export type TurnProgressKind = (typeof TURN_PROGRESS_KINDS)[number];
 
 function isAgentTurnOrigin(value: unknown): value is AgentTurnOrigin {
   return value === "user" || value === "routine" || value === "agent" || value === "unknown";
@@ -299,7 +291,7 @@ export function isAgentEvent(value: unknown): value is AgentEvent {
         isString(value.detail) &&
         value.detail.length > 0 &&
         value.detail.length <= INPUT_LIMITS.promptQuestion &&
-        (value.kind === undefined || (isString(value.kind) && TURN_PROGRESS_KINDS.has(value.kind)))
+        (value.kind === undefined || isOneOf(TURN_PROGRESS_KINDS, value.kind))
       );
     case "turn-started":
     case "turn-completed":

@@ -29,6 +29,8 @@ import {
   FEED_SNAPSHOT_LIMIT,
   type FeedDelta,
   type FeedItem,
+  isFeedItem,
+  isFeedStep,
   type McpServerConfig,
 } from "@buildersbot/contracts/ipc";
 import { Effect } from "effect";
@@ -38,6 +40,7 @@ import type { ClaudeCliInfo } from "../src/backend/cli";
 import type { AppServerNotification, AppServerRequest, RequestId, ResponseDecoder } from "../src/backend/protocol";
 import { providerSync } from "../src/backend/provider-client-effects";
 import type { ReadProviderHistory } from "../src/backend/provider-history";
+import { decodeFeedSnapshot } from "../src/preload/feed-decoding";
 
 const OUT = resolve(import.meta.dirname, "../.buildersbot-build/feed-aggregator-e2e");
 const root = await mkdtemp(join(tmpdir(), "buildersbot-feed-e2e-"));
@@ -296,6 +299,7 @@ const report: {
   passed: boolean;
   error?: string;
   turn?: { states: string[]; steps: number; stepTexts: string[]; needLabel: string | null; title: string };
+  handoff?: { delegatedBy: string; kindOnStep: string };
   remoteApproval?: { label: string; approvalKind: string | undefined; states: string[] };
   burst?: {
     events: number;
@@ -580,6 +584,76 @@ try {
     removedInDeltas,
     snapshotTruncated: snapshot.truncated,
   };
+
+  // 4b. The kind of a step and the agent that delegated the run: copied, optional, and cleared by a new run.
+  const handoffServer = "handoff";
+  const handoffId = `${handoffServer}:t:worker:thread-1`;
+  feed.ingest(handoffServer, { type: "turn-started", agentId: "worker", threadId: "thread-1", turnId: "turn-1" });
+  feed.ingest(handoffServer, {
+    type: "turn-progress",
+    agentId: "worker",
+    threadId: "thread-1",
+    turnId: "turn-1",
+    detail: "Making the requested changes…",
+    kind: "write",
+  });
+  await feed.drain();
+  const kindCard = window.cards.get(handoffId);
+  assert.equal(kindCard?.lastStep?.tool, "write", "The step carries the kind that the host sent.");
+  feed.ingest(handoffServer, {
+    type: "turn-progress",
+    agentId: "worker",
+    threadId: "thread-1",
+    turnId: "turn-1",
+    detail: "Reviewing the latest tool result…",
+  });
+  await feed.drain();
+  assert.ok(
+    window.cards.get(handoffId)?.lastStep && !("tool" in (window.cards.get(handoffId)?.lastStep ?? {})),
+    "A step of a host that sends no kind has no kind.",
+  );
+  assert.equal(window.cards.get(handoffId)?.delegatedBy, undefined, "A run nobody delegated has no delegator.");
+  const runningWork = {
+    turnId: "turn-1",
+    agentId: "worker",
+    agentName: "Worker",
+    channelId: "channel-1",
+    channelName: "Ops",
+    topicName: null,
+    taskId: "task-1",
+    title: "Do the thing",
+    startedAt: new Date().toISOString(),
+  };
+  feed.ingestLoad({ running: [{ ...runningWork, parentAgentId: "lead" }], stopped: [] }, handoffServer);
+  await feed.drain();
+  assert.equal(window.cards.get(handoffId)?.delegatedBy, "lead", "The card names the agent that gave the task.");
+  feed.ingestLoad({ running: [runningWork], stopped: [] }, handoffServer);
+  await feed.drain();
+  assert.equal(window.cards.get(handoffId)?.delegatedBy, "lead", "A load that finds no parent keeps the delegator.");
+  const handoffCard = window.cards.get(handoffId);
+  assert.ok(handoffCard && isFeedItem(handoffCard), "A card with both fields is a valid card.");
+  const decoded = decodeFeedSnapshot({ v: 1, cursor: 0, items: [handoffCard], truncated: false }).items[0];
+  assert.equal(decoded?.delegatedBy, "lead", "The window decoder keeps the delegator.");
+  assert.ok(
+    decoded?.steps.some((step) => step.tool === "write"),
+    "The window decoder keeps the kind of a step.",
+  );
+  assert.equal(
+    isFeedItem({ ...handoffCard, delegatedBy: 7 }) || isFeedStep({ ...handoffCard.steps[0], tool: "rm -rf" }),
+    false,
+    "A bad delegator or kind is refused.",
+  );
+  feed.ingest(handoffServer, {
+    type: "turn-completed",
+    agentId: "worker",
+    threadId: "thread-1",
+    turnId: "turn-1",
+    status: "completed",
+  });
+  feed.ingest(handoffServer, { type: "turn-started", agentId: "worker", threadId: "thread-1", turnId: "turn-2" });
+  await feed.drain();
+  assert.equal(window.cards.get(handoffId)?.delegatedBy, undefined, "A new run starts with no delegator.");
+  report.handoff = { delegatedBy: "lead", kindOnStep: "write" };
 
   // 5. No window watches: no delta goes out.
   feed.setWatching(window, false);

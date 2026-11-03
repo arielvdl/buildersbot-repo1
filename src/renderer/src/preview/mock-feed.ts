@@ -12,6 +12,7 @@ import {
   type FeedItemState,
   type FeedNeed,
   type FeedStep,
+  type TurnProgressKind,
 } from "@buildersbot/contracts/ipc";
 import type { Listener } from "./mock-support";
 
@@ -111,6 +112,18 @@ const STATES: readonly FeedItemState[] = [
   "working",
 ];
 
+/** The kind of tool step that each fixture step stands for, in the order of `STEPS`. */
+const MOCK_TOOLS: readonly TurnProgressKind[] = [
+  "read",
+  "other",
+  "check",
+  "other",
+  "write",
+  "search",
+  "other",
+  "check",
+];
+
 function pick<T>(list: readonly T[], index: number): T {
   const value = list[index % list.length];
   if (value === undefined) throw new Error("A fixture list is empty.");
@@ -139,11 +152,14 @@ function mockFeedItem(
     at: iso(started + (step + 1) * 7_000),
     kind: "progress",
     text: pick(STEPS, index + step),
+    tool: pick(MOCK_TOOLS, index + step),
   }));
   const open = state === "working" || state === "needs-you" || state === "waiting";
   const updated = open ? now - (fromEnd % 3) * 20_000 : started + stepCount * 7_000;
   const need = state === "needs-you" ? mockNeed(fromEnd, index, iso(updated)) : null;
   const stopped = state === "stopped";
+  // Some running cards were given by another agent, so the tables show a hand-off.
+  const delegator = pick(agents, index * 7 + 3);
   return {
     v: FEED_CONTRACT_VERSION,
     id: stopped ? `local:task:task-${index}` : `local:t:${agent.id}:thread-${index}`,
@@ -170,6 +186,7 @@ function mockFeedItem(
         : state === "failed"
           ? { reason: "A execução terminou com erro.", source: "error" }
           : null,
+    ...(state === "working" && fromEnd % 4 === 1 && delegator.id !== agent.id ? { delegatedBy: delegator.id } : {}),
     ...(state === "waiting" ? { queued: 2 } : {}),
     ...(state === "working" && fromEnd === 13 ? { quiet: { state: "slow" as const, minutes: 16 } } : {}),
     ...(stopped ? { reassignTo: mockCandidates(agents, agent.id) } : {}),
@@ -407,7 +424,12 @@ export function createMockFeed(options: MockFeedOptions = {}): FeedDesktopApi {
     const working = [...items.values()].reverse().find((item) => item.state === "working" && item.id !== created.id);
     const changed: FeedItem[] = [created];
     if (working) {
-      const step: FeedStep = { at: iso(now), kind: "progress", text: pick(STEPS, working.stepCount) };
+      const step: FeedStep = {
+        at: iso(now),
+        kind: "progress",
+        text: pick(STEPS, working.stepCount),
+        tool: pick(MOCK_TOOLS, working.stepCount),
+      };
       const updated: FeedItem = {
         ...working,
         lastStep: step,

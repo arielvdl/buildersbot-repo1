@@ -19,7 +19,7 @@ import {
 } from "@buildersbot/contracts/ipc";
 
 function copyStep(step: FeedStep): FeedStep {
-  return { at: step.at, kind: step.kind, text: step.text };
+  return { at: step.at, kind: step.kind, text: step.text, ...(step.tool === undefined ? {} : { tool: step.tool }) };
 }
 
 function copyNeed(need: FeedNeed): FeedNeed {
@@ -64,6 +64,7 @@ function copyItem(item: FeedItem): FeedItem {
     updatedAt: item.updatedAt,
     endedAt: item.endedAt,
     lastStep: item.lastStep ? copyStep(item.lastStep) : null,
+    ...(item.delegatedBy === undefined ? {} : { delegatedBy: item.delegatedBy }),
     steps: item.steps.map(copyStep),
     stepCount: item.stepCount,
     need: item.need ? copyNeed(item.need) : null,
