@@ -54,9 +54,25 @@ Each of these is refused as for any hidden agent, because none of them passes `v
 
 - the Team API, for every role, the owner too (`TeamApiServer.hiddenAgentIds` and the blocked set:
   no list, no id route, no event, no push, no live activity);
-- channels, `send_message` of an agent, and external messaging;
+- channels, external messaging, and `send_message` of an agent, except the answer below;
 - the automation server and routines (a routine run for it is refused);
 - the Dynamic Island and the resume offer.
+
+## The answer of an agent
+
+The quick chat agent asks other agents with `send_message`, and the answer comes back the same way. The
+agent is in no list, so the router refuses any other message to it as an unknown agent. One kind passes
+(`BuildersBotToolRouter.#isAnswerToQuickChat`, `MailboxStore.openRequestThread`). All of these must be true, and
+the router reads each one from the mailbox, never from the renderer:
+
+- the message has one recipient, the quick chat agent, and names a `replyToMessageId`;
+- that message is a question that the quick chat agent sent to the caller, from a conversation of its own;
+- the question wants an answer (`expectsReply` is not false), and the caller has not answered it yet (a
+  repeat of the same tool call is not a second answer);
+- the conversation that asked is still open. The answer runs in that conversation, as for any agent.
+
+`list_agents`, `interrupt_agent`, the Team API and every other tool still find no quick chat
+agent. A tool error that names the id is sent to the Team API as an `error` event, as for any unknown id.
 
 `AgentService.listAgents()` leaves the quick chat agent out, so `agent:list`, `agents-changed`,
 `agent:hidden:list`, the mention picker, the counts and the sidebar never carry it. Code that
@@ -152,3 +168,8 @@ quick chat as in any side thread. See `voice-input.md`.
 profile and a fake bundled CLI (`scripts/provider-fakes/agents/cultura-builder-turn.ts`). It checks the
 model rule, `ensure`, the hidden birth, that no list or Team API frame carries the agent, the refusals,
 the way in, the 51st conversation and `warm`. It writes `.buildersbot-build/quick-chat-core-e2e/report.json`.
+
+`bun run test:quick-chat-replies` (`scripts/quick-chat-replies-e2e.ts`) runs the same service, the tool router and
+the MCP bridge. A fake CLI turn calls `send_message` as an agent does. It checks the answer, each message that stays
+unknown, `list_agents` and `interrupt_agent`, and the Team API. It writes
+`.buildersbot-build/quick-chat-replies-e2e/report.json`.

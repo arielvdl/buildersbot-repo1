@@ -502,6 +502,42 @@ export class MailboxStore {
   }
 
   /**
+   * The side thread that a question came from, when it is a question that `requesterAgentId` sent to
+   * `answererAgentId` and the answerer has not answered: the message exists, its sender is the requester,
+   * it wants an answer, the answerer received it, and it was sent from a side thread. Null for any other
+   * message, so a caller cannot answer what it was not asked, or answer twice. A repeat of the same tool
+   * call (`idempotencyKey`) is not a second answer.
+   */
+  openRequestThread(
+    requesterAgentId: string,
+    answererAgentId: string,
+    requestMessageId: string,
+    idempotencyKey?: string,
+  ): string | null {
+    const request = this.#state.messages.find((message) => message.id === requestMessageId);
+    if (
+      !request?.senderTaskId ||
+      request.sender.kind !== "agent" ||
+      request.sender.agentId !== requesterAgentId ||
+      request.expectsReply === false
+    )
+      return null;
+    const received = this.#state.deliveries.some(
+      (delivery) => delivery.messageId === request.id && delivery.recipientAgentId === answererAgentId,
+    );
+    if (!received) return null;
+    const repeated = idempotencyKey === undefined ? undefined : this.#state.idempotency[idempotencyKey];
+    const answered = this.#state.messages.some(
+      (message) =>
+        message.id !== repeated &&
+        message.sender.kind === "agent" &&
+        message.sender.agentId === answererAgentId &&
+        message.replyToMessageId === request.id,
+    );
+    return answered ? null : request.senderTaskId;
+  }
+
+  /**
    * The deliveries of requests that an agent sent from one messaging link, whose answer goes back to
    * it, and that have not ended.
    */
