@@ -12,7 +12,7 @@
  * nothing else: no observer, no animation.
  */
 
-import { For, Show } from "solid-js";
+import { createEffect, createSignal, For, Show } from "solid-js";
 import { useText } from "../../text";
 import { createTaskListPlayState } from "../conversation/TaskList";
 import type { StageActorData } from "../stage/StageActor";
@@ -42,17 +42,52 @@ export interface ChannelStageProps {
   collapsed: boolean;
 }
 
+/** Folding is sequential: the figures fade out, then the panel folds. Unfolding is the reverse. */
+const FIGURES_OUT_MS = 320;
+const PANEL_OPEN_MS = 520;
+
 export function ChannelStage(props: ChannelStageProps) {
   const { t } = useText();
   const playState = createTaskListPlayState();
+  // `folded` drives the panel height, `mounted` the board and its figures, `closing` their fade-out.
+  const [folded, setFolded] = createSignal(props.collapsed);
+  const [mounted, setMounted] = createSignal(!props.collapsed);
+  const [closing, setClosing] = createSignal(false);
+  createEffect(
+    () => props.collapsed,
+    (collapsed) => {
+      const instant = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      if (collapsed) {
+        setClosing(true);
+        timer = setTimeout(
+          () => {
+            setMounted(false);
+            setClosing(false);
+            setFolded(true);
+          },
+          instant ? 0 : FIGURES_OUT_MS,
+        );
+      } else {
+        setClosing(false);
+        setFolded(false);
+        timer = setTimeout(() => setMounted(true), instant ? 0 : PANEL_OPEN_MS);
+      }
+      return () => clearTimeout(timer);
+    },
+  );
   return (
     <div class="channel-stage-frame">
       <section
         class="channel-stage"
         aria-label={t("channel.stage.label")}
-        data-collapsed={props.collapsed ? "" : undefined}
+        data-collapsed={folded() ? "" : undefined}
+        data-closing={closing() ? "" : undefined}
       >
-        <Show when={!props.collapsed} fallback={<p class="channel-stage-strip">{t("channel.stage.empty")}</p>}>
+        <Show when={folded()}>
+          <p class="channel-stage-strip">{t("channel.stage.empty")}</p>
+        </Show>
+        <Show when={mounted()}>
           <StageBoard
             actors={props.actors}
             links={props.links}

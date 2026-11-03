@@ -4,6 +4,8 @@
  */
 
 .channel-stage-frame {
+  --stage-fold-duration: 0.75s;
+  --stage-figures-duration: 0.3s;
   position: relative;
   z-index: 2;
   flex: 0 0 auto;
@@ -29,10 +31,17 @@
     radial-gradient(46% 58% at 50% 56%, color-mix(in srgb, var(--buildersbot-success) 5%, transparent), transparent 70%),
     var(--buildersbot-bg-canvas);
   contain: layout paint;
+  transition: height var(--stage-fold-duration) var(--buildersbot-ease-in-out);
 }
 
 .channel-stage[data-collapsed] {
   height: var(--buildersbot-control-xl);
+}
+
+/* Folding: the figures fade out first (the component then folds the panel); nothing shrinks with it. */
+.channel-stage[data-closing] > :not(.channel-stage-strip) {
+  opacity: 0;
+  transition: opacity var(--stage-figures-duration) var(--buildersbot-ease-in-out);
 }
 
 .channel-stage-strip {
@@ -43,7 +52,7 @@
   justify-content: center;
   color: var(--buildersbot-text-dim);
   font-size: var(--buildersbot-text-sm);
-  animation: agent-stage-fade var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
+  animation: agent-stage-fade var(--buildersbot-duration-normal) var(--buildersbot-ease-out) 0.45s backwards;
 }
 
 /* The request on the table */
