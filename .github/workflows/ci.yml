@@ -1241,7 +1241,7 @@ jobs:
           # address the app uses, but it has no DNS record of its own yet; the route here exists.
           curl --fail --silent --show-error --retry 5 --retry-all-errors https://buildersbot.culturabuilder.com/health/live >/dev/null
           curl --fail --silent --show-error --retry 5 --retry-all-errors https://buildersbot.culturabuilder.com/health/ready >/dev/null
-          site_url=https://deployment-smoke-check.sites.buildersbot.culturabuilder.com/
+          site_url=https://deployment-smoke-check.culturabuilder.com/
           site_status="$(curl --silent --show-error --retry 5 --retry-all-errors \
             --max-redirs 0 --dump-header "$verification_dir/site-router.headers" \
             --output "$verification_dir/site-router.txt" --write-out '%{http_code}' \
