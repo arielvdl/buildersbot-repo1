@@ -1,5 +1,6 @@
 import {
   Button,
+  Checkbox,
   Field,
   Input,
   Item,
@@ -14,7 +15,7 @@ import {
   Textarea,
   Trash2,
 } from "@buildersbot/ui";
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, createUniqueId, For, Show } from "solid-js";
 import { useText } from "../../text";
 import {
   COMPOSER_PRESET_NAME_MAX,
@@ -29,6 +30,7 @@ export interface ComposerPresetInput {
   name: string;
   prompt: string;
   shortcut: string | null;
+  sendOnClick: boolean;
 }
 
 export interface ComposerPresetsSectionProps {
@@ -122,13 +124,16 @@ function PresetForm(props: {
   const [name, setName] = createSignal(props.initial.name);
   const [prompt, setPrompt] = createSignal(props.initial.prompt);
   const [shortcut, setShortcut] = createSignal<string | null>(props.initial.shortcut);
+  const [sendOnClick, setSendOnClick] = createSignal(props.initial.sendOnClick);
+  const sendOnClickId = createUniqueId();
   const valid = () => name().trim().length > 0 && prompt().trim().length > 0;
   return (
     <form
       class="composer-presets-form"
       onSubmit={(event) => {
         event.preventDefault();
-        if (valid()) props.onSave({ name: name().trim(), prompt: prompt(), shortcut: shortcut() });
+        if (valid())
+          props.onSave({ name: name().trim(), prompt: prompt(), shortcut: shortcut(), sendOnClick: sendOnClick() });
       }}
     >
       <Field label={t("settings.presets.name")}>
@@ -151,6 +156,17 @@ function PresetForm(props: {
       <Field label={t("settings.presets.shortcut")}>
         <ShortcutField value={shortcut()} devicePlatform={props.devicePlatform} onChange={setShortcut} />
       </Field>
+      <label class="composer-presets-send" for={sendOnClickId}>
+        <Checkbox
+          id={sendOnClickId}
+          checked={sendOnClick()}
+          onChange={(event) => setSendOnClick(event.currentTarget.checked)}
+        />
+        <span>
+          {t("settings.presets.sendOnClick")}
+          <Text tone="muted">{t("settings.presets.sendOnClickHint")}</Text>
+        </span>
+      </label>
       <div class="composer-presets-form-actions">
         <Button type="submit" size="sm" disabled={!valid()}>
           {t("common.save")}
@@ -185,7 +201,7 @@ export function ComposerPresetsSection(props: ComposerPresetsSectionProps) {
     >
       <Show when={editing() === "new"}>
         <PresetForm
-          initial={{ name: "", prompt: "", shortcut: null }}
+          initial={{ name: "", prompt: "", shortcut: null, sendOnClick: false }}
           devicePlatform={props.devicePlatform}
           onSave={(input) => {
             props.onAdd(input);
@@ -212,6 +228,9 @@ export function ComposerPresetsSection(props: ComposerPresetsSectionProps) {
                     <ItemContent>
                       <ItemTitle>{preset.name}</ItemTitle>
                       <ItemDescription class="composer-presets-preview">{preset.prompt}</ItemDescription>
+                      <Show when={preset.sendOnClick}>
+                        <Text tone="muted">{t("settings.presets.sendOnClickBadge")}</Text>
+                      </Show>
                       <Show when={preset.shortcut}>
                         {(shortcut) => (
                           <kbd class="composer-presets-keys">
@@ -244,7 +263,12 @@ export function ComposerPresetsSection(props: ComposerPresetsSectionProps) {
                 }
               >
                 <PresetForm
-                  initial={{ name: preset.name, prompt: preset.prompt, shortcut: preset.shortcut }}
+                  initial={{
+                    name: preset.name,
+                    prompt: preset.prompt,
+                    shortcut: preset.shortcut,
+                    sendOnClick: preset.sendOnClick,
+                  }}
                   devicePlatform={props.devicePlatform}
                   onSave={(input) => {
                     props.onUpdate(preset.id, input);

@@ -179,6 +179,10 @@ export const messages = {
   "settings.presets.shortcutClear": "Remover teclas",
   "settings.presets.shortcutHint": "Use Ctrl, ⌘ ou Alt com uma tecla. Esc cancela.",
   "settings.presets.shortcutReserved": "Essas teclas já têm outro uso. Tente outras teclas.",
+  "settings.presets.sendOnClick": "Enviar ao clicar",
+  "settings.presets.sendOnClickHint":
+    'Ao escolher este atalho no menu "+" ou pelas teclas, a mensagem é enviada na hora, sem apertar Enviar.',
+  "settings.presets.sendOnClickBadge": "Envia ao clicar",
   "settings.presets.editLabel": "Editar atalho de prompt {name}",
   "settings.presets.deleteLabel": "Excluir atalho de prompt {name}",
   // O revisor de segurança que lê cada mensagem antes do agente.
