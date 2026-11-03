@@ -11,6 +11,7 @@ import { StageActorEffects } from "./StageActorEffects";
 import type { StageActivity } from "./stage-activity";
 import { FIGURE_HEIGHT, FIGURE_WIDTH, type StageGeometry, seatIsFront, seatPoint, seatSide } from "./stage-geometry";
 import { ENTER_EASING, ENTER_MS, FADE_MS, LEAVE_MS, prefersReducedMotion } from "./stage-motion";
+import { Typewriter } from "./Typewriter";
 
 /** One agent on a stage: who it is, what it does, and where it sits. */
 export interface StageActorData {
@@ -273,7 +274,11 @@ export function StageActor(props: {
             <span class="agent-stage-bubble-tone">{t(ACTIVITY_LABEL[props.actor.activity])}</span>
           </Show>
           <Show when={say()} keyed>
-            {(sentence) => <span class="agent-stage-bubble-text">{sentence}</span>}
+            {(sentence) => (
+              <span class="agent-stage-bubble-text">
+                <Typewriter text={sentence} />
+              </span>
+            )}
           </Show>
         </div>
       </Show>

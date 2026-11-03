@@ -217,13 +217,43 @@
   color: var(--buildersbot-success-text);
 }
 
-/* The text of the bubble comes in with a fade. It is not typed letter by letter. */
+/* The text of the bubble is typed letter by letter (`Typewriter`), each time a new line shows. */
 .agent-stage-bubble-text {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  animation: agent-stage-fade var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
+}
+
+/* The caret of the typed text: it blinks while the text types and leaves a moment after the last letter. */
+.agent-stage-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-inline-start: 1px;
+  background: currentcolor;
+  vertical-align: -0.12em;
+  animation: agent-stage-caret-blink 1s steps(1) infinite;
+}
+
+.agent-stage-caret[data-done] {
+  display: none;
+}
+
+.agent-stage-board[data-paused] .agent-stage-caret {
+  animation-play-state: paused;
+}
+
+@keyframes agent-stage-caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-stage-caret {
+    animation: none;
+  }
 }
 
 /* The motion of each activity: one loop on the body, `transform` only */
