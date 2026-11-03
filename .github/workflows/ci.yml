@@ -1108,20 +1108,9 @@ jobs:
             // No OpenPanel secrets: the account Worker sends no account events to the analytics
             // service of the upstream project (phase 0 of .buildersbot-build/bug-reports/DESIGN.md).
             const path = process.env.SECRETS_PATH;
-            if (
-              !smtp ||
-              !skillsAdmin ||
-              !siteReportHash ||
-              !remotePrivateJwk ||
-              !remotePublicJwks ||
-              !remoteWebhookSecret ||
-              !webPushPublicKey ||
-              !webPushPrivateKey ||
-              !webPushSubject ||
-              !path
-            ) {
-              throw new Error("Required production secrets are missing.");
-            }
+            // A new repository starts with none of them. The Worker keeps the secrets it already
+            // has, so only the ones present here are written.
+            if (!path) throw new Error("SECRETS_PATH is missing.");
             // A Stripe or boat key without its webhook secret takes payments or makes sandboxes that
             // the Worker never sees, so each pair is set together or not at all.
             const optional = {};
@@ -1156,17 +1145,17 @@ jobs:
             }
             const secrets = {
               ...optional,
-              EMAIL_SMTP_PASSWORD: smtp,
-              SKILLS_ADMIN_TOKEN: skillsAdmin,
-              SITE_REPORT_HASH_SECRET: siteReportHash,
+              ...(smtp ? { EMAIL_SMTP_PASSWORD: smtp } : {}),
+              ...(skillsAdmin ? { SKILLS_ADMIN_TOKEN: skillsAdmin } : {}),
+              ...(siteReportHash ? { SITE_REPORT_HASH_SECRET: siteReportHash } : {}),
               ...(siteOperationsAdmin ? { SITE_OPERATIONS_ADMIN_TOKEN: siteOperationsAdmin } : {}),
               ...(serverClaimsAdmin ? { SERVER_CLAIMS_ADMIN_TOKEN: serverClaimsAdmin } : {}),
-              REMOTE_TICKET_PRIVATE_JWK: remotePrivateJwk,
-              REMOTE_TICKET_PUBLIC_JWKS: remotePublicJwks,
-              REMOTE_AUTH_WEBHOOK_SECRET: remoteWebhookSecret,
-              WEB_PUSH_PUBLIC_KEY: webPushPublicKey,
-              WEB_PUSH_PRIVATE_KEY: webPushPrivateKey,
-              WEB_PUSH_SUBJECT: webPushSubject,
+              ...(remotePrivateJwk ? { REMOTE_TICKET_PRIVATE_JWK: remotePrivateJwk } : {}),
+              ...(remotePublicJwks ? { REMOTE_TICKET_PUBLIC_JWKS: remotePublicJwks } : {}),
+              ...(remoteWebhookSecret ? { REMOTE_AUTH_WEBHOOK_SECRET: remoteWebhookSecret } : {}),
+              ...(webPushPublicKey ? { WEB_PUSH_PUBLIC_KEY: webPushPublicKey } : {}),
+              ...(webPushPrivateKey ? { WEB_PUSH_PRIVATE_KEY: webPushPrivateKey } : {}),
+              ...(webPushSubject ? { WEB_PUSH_SUBJECT: webPushSubject } : {}),
             };
             await Bun.write(path, JSON.stringify(secrets));
           '
