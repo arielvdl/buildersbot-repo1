@@ -16,6 +16,14 @@ import { startingChannelTask } from "./channel-conversation-rows";
 const STAGE_SEATS = 8;
 /** An agent that is active and has not reported a step for this long is thinking. */
 const STAGE_THINK_AFTER_MS = 1500;
+/**
+ * An agent that has not reported a step yet (the provider starts the session, the first token is
+ * on the way) still moves: its activity changes every beat, so the stage looks alive and not stuck.
+ * It is a pose and not a claim: the bubble says only what the pose is, and the first real step
+ * replaces it.
+ */
+const STAGE_IDLE_BEAT_MS = 2400;
+const STAGE_IDLE_POSES: readonly StageActivity[] = ["thinking", "reading", "thinking", "running"];
 /** How long a finished, failed or delegating agent stays on the stage. */
 const HOLD_MS = { done: 2800, failed: 3000, delegating: 2000 } as const;
 /** The end of the messages that is read for streaming authors and the turn of each member. */
@@ -91,6 +99,17 @@ const ACTIVITY_RANK: Readonly<Record<StageActivity, number>> = {
   thinking: 3,
   done: 4,
 };
+
+/** The pose of an agent with no real step at `now`. Agents start on different poses, not in step. */
+export function idleStagePose(id: string, now: number): { activity: StageActivity; next: number } {
+  let offset = 0;
+  for (let index = 0; index < id.length; index += 1) offset += id.charCodeAt(index);
+  const beat = Math.floor(now / STAGE_IDLE_BEAT_MS);
+  return {
+    activity: STAGE_IDLE_POSES[(beat + offset) % STAGE_IDLE_POSES.length] ?? "thinking",
+    next: (beat + 1) * STAGE_IDLE_BEAT_MS,
+  };
+}
 
 function inTab(page: ChannelPage, task: ChannelTask): boolean {
   return !(task.topicId && page.topicId && task.topicId !== page.topicId);
@@ -230,6 +249,10 @@ export function channelStageModel(input: StageInput): StageModel {
         activity = stageActivityOfLine(last.text, last.kind);
         earlier(last.at + STAGE_THINK_AFTER_MS);
       }
+    } else {
+      const pose = idleStagePose(id, now);
+      activity = pose.activity;
+      earlier(pose.next);
     }
     if (hold) earlier(hold.until);
     const delegatesTo = activity === "delegating" ? (linkTargets.get(id) ?? null) : null;

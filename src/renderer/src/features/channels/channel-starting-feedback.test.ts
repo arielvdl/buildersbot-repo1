@@ -1,7 +1,7 @@
 import type { ChannelPage, ChannelTask } from "@buildersbot/contracts/ipc";
 import { describe, expect, it } from "vitest";
 import { channelWorkers, startingChannelTask } from "./channel-conversation-rows";
-import { channelStageModel } from "./channel-stage-model";
+import { channelStageModel, idleStagePose } from "./channel-stage-model";
 
 const READY: ChannelTask = {
   id: "task-1",
@@ -75,5 +75,32 @@ describe("a channel task that has not started its turn", () => {
     const task: ChannelTask = { ...READY, startRetry: { phase: "retrying", attempt: 1, max: 3, nextAt: null } };
     expect(startingChannelTask(task)).toBe(false);
     expect(workers(task)).toEqual([]);
+  });
+});
+
+describe("an agent on the stage that has reported no step", () => {
+  const poseAt = (now: number) =>
+    channelStageModel({
+      page: pageOf(READY),
+      agents: new Map(),
+      agentFallbackName: "Agent",
+      workingTurns: [],
+      stepLines: {},
+      waitingAgentIds: new Set(),
+      holds: new Map(),
+      now,
+    });
+
+  it("changes its pose on a beat and asks for the next tick at the end of the beat", () => {
+    const first = poseAt(0);
+    const later = poseAt(2400);
+    expect(first.actors[0]?.activity).not.toBe(later.actors[0]?.activity);
+    expect(first.deadline).toBe(2400);
+    expect(later.deadline).toBe(4800);
+  });
+
+  it("starts on a different pose for each agent, so the stage does not move in step", () => {
+    const poses = new Set(["agent-a", "agent-b", "agent-c", "agent-d"].map((id) => idleStagePose(id, 0).activity));
+    expect(poses.size).toBeGreaterThan(1);
   });
 });

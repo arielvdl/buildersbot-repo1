@@ -1,5 +1,5 @@
 import type { AppFormat, AppTranslate } from "@buildersbot/i18n";
-import { createMemo, For } from "solid-js";
+import { createEffect, createMemo, createSignal, For } from "solid-js";
 import { avatarHeadColor } from "../../bloub-avatar";
 import type { AgentProfile } from "../../data";
 import { useText } from "../../text";
@@ -14,6 +14,12 @@ import type { AgentStep } from "../conversation/AgentSteps";
 
 /** The most faces that animate in the row. The names of the other workers show only in the text. */
 const MAX_ANIMATED_FACES = 4;
+
+/**
+ * While the workers have reported no step, the label changes at this pace, so a long start reads as
+ * work in progress and not as a frozen row. A step ends the rotation: the steps are the feedback then.
+ */
+const LABEL_ROTATE_MS = 4500;
 
 /** One agent the channel is waiting on. The profile is missing while the agent list has no such id. */
 export interface ChannelWorker {
@@ -91,12 +97,21 @@ export function ChannelActivityIndicator(props: {
       .join(","),
   );
   let previous: AgentActivityLabel | undefined;
+  const [beat, setBeat] = createSignal(0);
+  const silent = () => (props.steps?.length ?? 0) === 0;
   // A new set of workers is a new turn of the channel, so it gets a label of its own. The same set
-  // keeps what it had, and the row does not flicker as messages arrive.
+  // keeps what it had, and the row does not flicker as messages arrive. With no step yet, the label
+  // also changes on a beat.
   const label = createMemo<AgentActivityLabel>(() => {
     key();
+    beat();
     previous = nextAgentActivityLabel(previous);
     return previous;
+  });
+  createEffect(silent, (quiet) => {
+    if (!quiet) return;
+    const timer = setInterval(() => setBeat((value) => value + 1), LABEL_ROTATE_MS);
+    return () => clearInterval(timer);
   });
   const sentence = () =>
     channelActivitySentence(
