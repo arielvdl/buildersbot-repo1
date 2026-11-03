@@ -163,3 +163,24 @@ no cycle. `scripts/channel-tab-lanes-e2e.ts` checks the rules with the real serv
 This is a local feature. The shared code arrives in a daily merge, so a conflict in any file above
 keeps the tab side of it. A new migration of the shared schema takes the next version number after
 48, never 48 itself, and `buildersbot-database-schema-history.json` keeps its record for 48.
+
+## Close report
+
+When a person closes a tab, Builders Bot asks how the tab ended: `done`, `not-done` or `other`.
+The answer is saved as a record. The record is written with the close.
+
+- The `topic-delete` command takes an optional `report` field: `{ outcome, note? }`. Without
+  `report`, the tab closes as before.
+- `ChannelStore.deleteTopic` writes the record in the same transaction as the deletes. It writes
+  before the DELETE statements. If the write fails, the transaction rolls back. The tab, its
+  messages and its tasks stay.
+- The note and the last result pass through `redactText`. The note is not in the
+  `channel.topic-deleted` event.
+- The table is `channel_tab_reports`. Migration 51 creates it. It has no foreign key, so a record
+  stays after its channel or tab is deleted.
+- `agent.listChannelTabReports` reads the records for a period. It returns a page of 20 records, with
+  a cursor. The maximum is 50. The totals by outcome come with the first page only. This endpoint is
+  local. On a remote server it returns `null`.
+- `agent.deleteChannelTabReport` deletes one record, by `id`.
+- "Continue in a new tab" runs in the renderer only. It opens a new tab and fills the message box
+  with a summary of the record. It sends no message. It does not call a new endpoint.

@@ -116,4 +116,12 @@ export const messages = {
   "channel.stage.flag.scope": "Dotyczy",
   "channel.stage.flag.scopeChannel": "Ten kanał",
   "channel.stage.flag.scopeAll": "Wszystkie kanały",
+  "channel.topic.outcome.label": "Jak poszło?",
+  "channel.topic.outcome.done": "Zrobione",
+  "channel.topic.outcome.notDone": "Niezrobione",
+  "channel.topic.outcome.other": "Inne",
+  "channel.topic.outcome.note": "Notatka (opcjonalnie)",
+  "channel.topic.outcome.noteRequired": "Co się stało? (wymagane)",
+  "channel.topic.outcome.noteCount": "{count}/{max}",
+  "channel.topic.closeRecord": "Krótki zapis zostaje w Twoim Profilu, tylko na tym komputerze.",
 } as const satisfies PartialTranslation<typeof source>;

@@ -101,4 +101,12 @@ export const messages = {
   "channel.stage.flag.scope": "Kapsam",
   "channel.stage.flag.scopeChannel": "Bu kanal",
   "channel.stage.flag.scopeAll": "Tüm kanallar",
+  "channel.topic.outcome.label": "Nasıl geçti?",
+  "channel.topic.outcome.done": "Tamamlandı",
+  "channel.topic.outcome.notDone": "Tamamlanmadı",
+  "channel.topic.outcome.other": "Diğer",
+  "channel.topic.outcome.note": "Not (isteğe bağlı)",
+  "channel.topic.outcome.noteRequired": "Ne oldu? (zorunlu)",
+  "channel.topic.outcome.noteCount": "{count}/{max}",
+  "channel.topic.closeRecord": "Kısa bir kayıt profilinizde kalır, yalnızca bu bilgisayarda.",
 } as const satisfies PartialTranslation<typeof source>;

@@ -116,4 +116,12 @@ export const messages = {
   "channel.stage.flag.scope": "Применять к",
   "channel.stage.flag.scopeChannel": "Этот канал",
   "channel.stage.flag.scopeAll": "Все каналы",
+  "channel.topic.outcome.label": "Как прошло?",
+  "channel.topic.outcome.done": "Выполнено",
+  "channel.topic.outcome.notDone": "Не выполнено",
+  "channel.topic.outcome.other": "Другое",
+  "channel.topic.outcome.note": "Заметка (необязательно)",
+  "channel.topic.outcome.noteRequired": "Что произошло? (обязательно)",
+  "channel.topic.outcome.noteCount": "{count}/{max}",
+  "channel.topic.closeRecord": "Короткая запись останется в вашем профиле, только на этом компьютере.",
 } as const satisfies PartialTranslation<typeof source>;

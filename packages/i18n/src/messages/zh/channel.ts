@@ -101,4 +101,12 @@ export const messages = {
   "channel.stage.flag.scope": "适用范围",
   "channel.stage.flag.scopeChannel": "此频道",
   "channel.stage.flag.scopeAll": "所有频道",
+  "channel.topic.outcome.label": "进展如何？",
+  "channel.topic.outcome.done": "已完成",
+  "channel.topic.outcome.notDone": "未完成",
+  "channel.topic.outcome.other": "其他",
+  "channel.topic.outcome.note": "备注（可选）",
+  "channel.topic.outcome.noteRequired": "发生了什么？（必填）",
+  "channel.topic.outcome.noteCount": "{count}/{max}",
+  "channel.topic.closeRecord": "一条简短记录会保存在你的个人资料中，仅保存在此电脑上。",
 } as const satisfies PartialTranslation<typeof source>;

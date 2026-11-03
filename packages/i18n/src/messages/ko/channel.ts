@@ -104,4 +104,12 @@ export const messages = {
   "channel.stage.flag.scope": "적용 대상",
   "channel.stage.flag.scopeChannel": "이 채널",
   "channel.stage.flag.scopeAll": "모든 채널",
+  "channel.topic.outcome.label": "어떻게 되었나요?",
+  "channel.topic.outcome.done": "완료",
+  "channel.topic.outcome.notDone": "미완료",
+  "channel.topic.outcome.other": "기타",
+  "channel.topic.outcome.note": "메모 (선택)",
+  "channel.topic.outcome.noteRequired": "무슨 일이 있었나요? (필수)",
+  "channel.topic.outcome.noteCount": "{count}/{max}",
+  "channel.topic.closeRecord": "짧은 기록은 프로필에 남습니다. 이 컴퓨터에만 저장됩니다.",
 } as const satisfies PartialTranslation<typeof source>;

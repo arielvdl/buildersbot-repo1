@@ -104,4 +104,12 @@ export const messages = {
   "channel.stage.flag.scope": "適用先",
   "channel.stage.flag.scopeChannel": "このチャンネル",
   "channel.stage.flag.scopeAll": "すべてのチャンネル",
+  "channel.topic.outcome.label": "どうでしたか？",
+  "channel.topic.outcome.done": "完了",
+  "channel.topic.outcome.notDone": "未完了",
+  "channel.topic.outcome.other": "その他",
+  "channel.topic.outcome.note": "メモ（任意）",
+  "channel.topic.outcome.noteRequired": "何があったか？（必須）",
+  "channel.topic.outcome.noteCount": "{count}/{max}",
+  "channel.topic.closeRecord": "短い記録がプロフィールに残ります。このコンピューターにだけ保存されます。",
 } as const satisfies PartialTranslation<typeof source>;

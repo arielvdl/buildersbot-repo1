@@ -105,4 +105,12 @@ export const messages = {
   "channel.stage.flag.scope": "Geldt voor",
   "channel.stage.flag.scopeChannel": "Dit kanaal",
   "channel.stage.flag.scopeAll": "Alle kanalen",
+  "channel.topic.outcome.label": "Hoe ging het?",
+  "channel.topic.outcome.done": "Gedaan",
+  "channel.topic.outcome.notDone": "Niet gedaan",
+  "channel.topic.outcome.other": "Anders",
+  "channel.topic.outcome.note": "Notitie (optioneel)",
+  "channel.topic.outcome.noteRequired": "Wat is er gebeurd? (verplicht)",
+  "channel.topic.outcome.noteCount": "{count}/{max}",
+  "channel.topic.closeRecord": "Een kort verslag blijft in je Profiel, alleen op deze computer.",
 } as const satisfies PartialTranslation<typeof source>;
