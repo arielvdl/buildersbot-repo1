@@ -14,8 +14,11 @@ interface FeedState {
 /**
  * The cards of the feed page while it is on screen. It tells main that the window watches, reads the
  * whole feed once, and then applies the deltas in cursor order. A gap in the cursor reads the whole
- * feed again. While the window is hidden it stops watching, so main sends nothing; it reads again
- * when the window shows.
+ * feed again. It watches for as long as the page is open, also while the window is hidden or covered:
+ * the system can call a window hidden while a person still looks at it, and then no event shows it
+ * again, so the cards stood still. The batch period of main bounds what a hidden window gets. When the
+ * window shows or takes focus the page tells main again and reads the whole feed, which also heals a
+ * watch that main dropped without a word.
  */
 export function createFeedStore(port: () => FeedPort, describeError: (cause: unknown) => string) {
   const [state, setState] = createStore<FeedState>({ items: {}, order: [], loading: true, error: null });
@@ -106,13 +109,33 @@ export function createFeedStore(port: () => FeedPort, describeError: (cause: unk
       });
   }
 
+  /** Watches again and reads the whole feed, also when main already counts this window. */
+  function resync(): void {
+    if (disposed) return;
+    watching = true;
+    void port()
+      .setWatching({ watching: true })
+      .then(() => read())
+      .catch((cause: unknown) => {
+        if (!disposed)
+          setState((draft) => {
+            draft.loading = false;
+            draft.error = describeError(cause);
+          });
+      });
+  }
+
   onSettled(() => {
     const unsubscribe = port().onDelta(apply);
-    const onVisibility = () => watch(document.visibilityState !== "hidden");
-    document.addEventListener("visibilitychange", onVisibility);
-    watch(document.visibilityState !== "hidden");
+    const onShown = () => {
+      if (document.visibilityState !== "hidden") resync();
+    };
+    document.addEventListener("visibilitychange", onShown);
+    window.addEventListener("focus", onShown);
+    watch(true);
     return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("visibilitychange", onShown);
+      window.removeEventListener("focus", onShown);
       unsubscribe();
       watch(false);
       disposed = true;
