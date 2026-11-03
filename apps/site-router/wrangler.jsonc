@@ -6,6 +6,12 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "*.culturabuilder.com/*",
+      "zone_name": "culturabuilder.com"
+    }
+  ],
   "vars": {
     // The account service origin. The report route `/_buildersbot/report` and the links on error pages use it.
     "ACCOUNT_ORIGIN": "https://buildersbot.culturabuilder.com"

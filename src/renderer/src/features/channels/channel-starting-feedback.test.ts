@@ -104,3 +104,28 @@ describe("an agent on the stage that has reported no step", () => {
     expect(poses.size).toBeGreaterThan(1);
   });
 });
+
+describe("the request on the stage table", () => {
+  const titleOf = (instruction: string) =>
+    channelStageModel({
+      page: pageOf({ ...READY, instruction }),
+      agents: new Map(),
+      agentFallbackName: "Agent",
+      workingTurns: [],
+      stepLines: {},
+      waitingAgentIds: new Set(),
+      holds: new Map(),
+      now: 0,
+    }).request?.title;
+
+  it("names the request by its words when an image comes first", () => {
+    expect(titleOf("@[image.png](attachment:03c6c97e-1)\n\nRefazer o topo dos filtros")).toBe(
+      "Refazer o topo dos filtros",
+    );
+    expect(titleOf("@[image.png](attachment:03c6c97e-1) Refazer o topo")).toBe("Refazer o topo");
+  });
+
+  it("shows the file names when the request has only files", () => {
+    expect(titleOf("@[image.png](attachment:03c6c97e-1)")).toBe("image.png");
+  });
+});

@@ -17,7 +17,11 @@ import type { SidebarProps } from "../sidebar-types";
 
 /** What the name dialog does: make a section, with an agent in it when one is given, or rename one. */
 export type SidebarSectionNameDialogTarget =
-  | { kind: "create"; agentId?: string }
+  | {
+      kind: "create";
+      agentId?: string /** Chats picked in the list: all of them go into the new section. */;
+      agentIds?: readonly string[];
+    }
   | { kind: "rename"; sectionId: string };
 
 export function createSidebarSectionRailStore(props: SidebarProps) {
@@ -47,7 +51,12 @@ export function createSidebarSectionRailStore(props: SidebarProps) {
   const [iconEditorSectionId, setIconEditorSectionId] = createSignal<string | null>(null);
   const [nameDialog, setNameDialog] = createSignal<SidebarSectionNameDialogTarget | null>(null);
   /** A section that the name dialog made, until the layout has it and the rail selects it. */
-  const [created, setCreated] = createSignal<{ name: string; before: ReadonlySet<string> } | null>(null);
+  const [created, setCreated] = createSignal<{
+    name: string;
+    before: ReadonlySet<string>;
+    /** Chats to move into the section once it exists. */
+    assign: readonly string[];
+  } | null>(null);
 
   createEffect(
     () => ({ pending: created(), sections: props.layout.sections, select: props.sectionRail?.onSelect }),
@@ -57,6 +66,11 @@ export function createSidebarSectionRailStore(props: SidebarProps) {
       if (!sectionId) return;
       setCreated(null);
       select?.(sectionId);
+      if (pending.assign.length > 0) {
+        void (async () => {
+          for (const agentId of pending.assign) await props.onMutateLayout({ type: "assign", agentId, sectionId });
+        })().catch(() => undefined);
+      }
     },
   );
 
@@ -93,8 +107,8 @@ export function createSidebarSectionRailStore(props: SidebarProps) {
   }
 
   /** The rail selects the section that a create made, once the layout has it. */
-  function selectWhenCreated(name: string, before: ReadonlySet<string>): void {
-    setCreated({ name, before });
+  function selectWhenCreated(name: string, before: ReadonlySet<string>, assign: readonly string[] = []): void {
+    setCreated({ name, before, assign });
   }
 
   return {

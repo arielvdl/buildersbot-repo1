@@ -55,6 +55,7 @@ import {
 } from "./main-window-state";
 import type { RemoteServerManager } from "./remote-server-manager";
 import type { RemoteWorkflowError } from "./remote-service-effects";
+import { watchRendererHalt } from "./renderer-halt-watch";
 import { sendToRenderer } from "./renderer-ipc";
 import { isTrustedRendererUrl } from "./trusted-renderer";
 import type { UpdateService } from "./update-service";
@@ -265,6 +266,7 @@ export function createMainWindowController({
     });
     window.webContents.on("render-process-gone", onRendererGone);
     window.webContents.once("destroyed", onRendererGone);
+    watchRendererHalt(window.webContents);
     attachAppInput(window, getServices, getTranslate, { closesBrowserTabs: true });
     window.webContents.on("will-navigate", (event, targetUrl) => {
       if (!isTrustedRendererUrl(targetUrl)) event.preventDefault();

@@ -138,18 +138,7 @@
   }
 }
 
-/* A small table keeps the names short: the name over the verb, cut with an ellipsis. */
-.feed-table-stage .agent-stage-name {
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  max-width: var(--stage-width, 80px);
-  min-width: 96px;
-}
-
-.feed-table-stage .agent-stage-name-text {
-  display: block;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* A small table keeps the names short: the name above the agent, cut with an ellipsis. */
+.feed-table-stage .agent-stage-model {
+  max-width: max(var(--stage-width, 80px), 96px);
 }

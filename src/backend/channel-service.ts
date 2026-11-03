@@ -2648,6 +2648,57 @@ export class ChannelService {
     }
   }
 
+  /**
+   * The work that a person's new message in a channel finds an agent busy with, for the quick status reply:
+   * the first running task of each agent in the tab that the message goes to, with the text of the task and
+   * the newest messages of the tab. `recipientAgentId` narrows it to one agent. It reads the store only.
+   */
+  runningWork(
+    channelId: string,
+    requestedTopicId: string | undefined,
+    recipientAgentId: string | null,
+  ): { agentId: string; taskId: string; request: string; messages: ChannelMessage["message"][] }[] {
+    if (this.#stopped || this.#deletedChannels.has(channelId)) return [];
+    const topicId = this.#topicId(channelId, requestedTopicId);
+    const seen = new Set<string>();
+    const work: { agentId: string; taskId: string; request: string; messages: ChannelMessage["message"][] }[] = [];
+    for (const task of this.store.tasks(channelId, topicId)) {
+      const agentId = task.ownerAgentId;
+      if (task.state !== "running" || !agentId || seen.has(agentId)) continue;
+      if (recipientAgentId !== null && recipientAgentId !== agentId) continue;
+      seen.add(agentId);
+      work.push({
+        agentId,
+        taskId: task.id,
+        request: task.instruction,
+        messages: this.store.messages(channelId, topicId, undefined, 24).map((item) => item.message),
+      });
+    }
+    return work;
+  }
+
+  /**
+   * The quick status note of an agent in a channel tab, with the agent as author, as the note of a model
+   * switch. It is a system line: the task and the agent's turn do not change.
+   */
+  noteQuickStatus(channelId: string, taskId: string, agentId: string, text: string, itemType: string): void {
+    if (this.#stopped || this.#deletedChannels.has(channelId)) return;
+    const author = { kind: "agent" as const, id: agentId, name: this.memberName(agentId) };
+    const message = this.message(
+      channelId,
+      taskId,
+      author,
+      text,
+      this.#taskTopic(channelId, taskId),
+      undefined,
+      itemType,
+    );
+    this.store.update(this.store.get(channelId), {
+      messages: [{ ...message, message: { ...message.message, source: "system" } }],
+    });
+    this.publish(channelId);
+  }
+
   /** The first task of each channel that `ownsWaitingWork` counts. */
   #waitingWork(agentId: string): ChannelTask[] {
     const archived = this.store.archivedIds();

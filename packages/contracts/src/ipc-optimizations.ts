@@ -19,6 +19,7 @@ export const OPTIMIZATION_IDS = [
   "safe-resume",
   "routing",
   "streaming-checkpoints",
+  "quick-status-reply",
 ] as const;
 export type OptimizationId = (typeof OPTIMIZATION_IDS)[number];
 

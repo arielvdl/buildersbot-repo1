@@ -20,6 +20,7 @@ list is the order of the Settings page.
 | `safe-resume` | A channel task that a brief provider failure stops in the middle of a turn continues by itself in the same session, at most 3 times, only when its effect journal says that nothing can happen twice. See [agents.md](agents.md#safe-turn-resume). |
 | `routing` | The routing of a channel request uses the lowest reasoning effort of the lead's model, a follow-up in Portuguese or Spanish continues the work of its tab, and only a change to the request's tab makes the lead route again (2 times at most). See [channels-and-messaging.md](channels-and-messaging.md#the-routing-optimization). |
 | `streaming-checkpoints` | A reply that streams is written to the database at checkpoints, not at each frame. |
+| `quick-status-reply` | When a turn has run for 5 minutes or more and the person sends another message, a second generation with no tools writes a short note about what the agent does now. See [agents.md](agents.md#quick-status-reply). |
 
 A new switch is one line in `OPTIMIZATION_IDS`, its name and description in the `settings` catalog
 (`settings.optimizations.<name>.title` and `.description`, in English and Portuguese, with the risk
@@ -55,7 +56,7 @@ off. Main gives the same store to the services of main that have a switch, such 
 ## The window
 
 `app:get-optimizations` and `app:set-optimizations` carry the state as `{ on: [ids] }`. A change is
-`{ changes: [{ id, enabled }] }`, with one to eight known ids, each one at most once. Main refuses any
+`{ changes: [{ id, enabled }] }`, with one to nine known ids, each one at most once. Main refuses any
 other payload (`parseSetOptimizationsInput`). The preload leaves out an id of the answer that this
 version does not know (`decodeOptimizationState`). "Turn all on" and "Turn all off" are one change
 each. The switches are of the computer that runs the window, as the task reviewer is: a joined server

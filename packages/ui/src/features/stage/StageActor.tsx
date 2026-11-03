@@ -11,6 +11,7 @@ import { StageActorEffects } from "./StageActorEffects";
 import type { StageActivity } from "./stage-activity";
 import { FIGURE_HEIGHT, FIGURE_WIDTH, type StageGeometry, seatIsFront, seatPoint, seatSide } from "./stage-geometry";
 import { ENTER_EASING, ENTER_MS, FADE_MS, LEAVE_MS, prefersReducedMotion } from "./stage-motion";
+import { Typewriter } from "./Typewriter";
 
 /** One agent on a stage: who it is, what it does, and where it sits. */
 export interface StageActorData {
@@ -226,14 +227,14 @@ export function StageActor(props: {
           figure = node;
         }}
       >
-        <Show when={logo() || modelName()}>
-          <span class="agent-stage-model" aria-hidden="true">
-            <Show when={logo()}>
-              {(provider) => <ProviderLogo class="agent-stage-model-logo" provider={provider()} />}
-            </Show>
-            <span>{modelName()}</span>
-          </span>
-        </Show>
+        {/* The provider logo and the agent's name. The model is the tooltip: the name says who, the logo and the
+            tooltip say what runs it, and the line under the feet keeps only what the agent does. */}
+        <span class="agent-stage-model" aria-hidden="true" title={modelName() || undefined}>
+          <Show when={logo()}>
+            {(provider) => <ProviderLogo class="agent-stage-model-logo" provider={provider()} />}
+          </Show>
+          <span>{props.actor.name}</span>
+        </span>
         <div
           class="agent-stage-hop"
           ref={(node) => {
@@ -273,12 +274,15 @@ export function StageActor(props: {
             <span class="agent-stage-bubble-tone">{t(ACTIVITY_LABEL[props.actor.activity])}</span>
           </Show>
           <Show when={say()} keyed>
-            {(sentence) => <span class="agent-stage-bubble-text">{sentence}</span>}
+            {(sentence) => (
+              <span class="agent-stage-bubble-text">
+                <Typewriter text={sentence} />
+              </span>
+            )}
           </Show>
         </div>
       </Show>
       <span class="agent-stage-name" aria-hidden="true">
-        <span class="agent-stage-name-text">{props.actor.name}</span>
         <span class="agent-stage-verb">{t(ACTIVITY_LABEL[props.actor.activity])}</span>
       </span>
     </li>

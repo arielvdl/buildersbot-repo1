@@ -20,6 +20,7 @@ import { createSidebarLayoutActions } from "./stores/layout-actions";
 import { createSidebarMarkerStore } from "./stores/marker-store";
 import { createSidebarPendingStore } from "./stores/pending-store";
 import { createSidebarSectionColorStore } from "./stores/section-color-store";
+import { createSidebarSelectionStore } from "./stores/selection-store";
 import { createSidebarTabStripStore } from "./stores/tab-strip-store";
 
 export function createSidebarScope(props: SidebarProps) {
@@ -86,6 +87,13 @@ export function createSidebarScope(props: SidebarProps) {
     if (props.sectionRail) sectionRail.openNameDialog({ kind: "create", ...(agentId ? { agentId } : {}) });
     else startInlineCreateSection(agentId);
   };
+  /** The chats in the sections, top to bottom as the list draws them. Markers are not chats. */
+  const selection = createSidebarSelectionStore({
+    visibleChatIds: () =>
+      visibleSectionIds().flatMap((sectionId) =>
+        (filteredChatsBySection().get(sectionId) ?? []).filter((item) => item.kind !== "marker").map((item) => item.id),
+      ),
+  });
   const markers = createSidebarMarkerStore({ props, focus: sectionRail.focus, announceError });
   let agentList: HTMLElement | undefined;
 
@@ -93,6 +101,7 @@ export function createSidebarScope(props: SidebarProps) {
   dragActive = () => dragState.draggingKind() !== undefined;
   const {
     assignChatSection,
+    assignChatsSection,
     commitSidebarDrop,
     duplicateSection,
     movePersonByKeyboard,
@@ -113,6 +122,7 @@ export function createSidebarScope(props: SidebarProps) {
     personById,
     props,
     sectionLabel,
+    selection,
     visiblePinnedKeys,
     visibleSectionIds,
   });
@@ -150,6 +160,19 @@ export function createSidebarScope(props: SidebarProps) {
     visiblePinnedKeys,
     visibleSectionIds,
   });
+
+  // Escape ends a selection, wherever the focus is, and only while there is one.
+  createEffect(
+    () => selection.count() > 0,
+    (selecting) => {
+      if (!selecting) return;
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Escape" && !event.defaultPrevented) selection.clear();
+      };
+      document.addEventListener("keydown", onKeyDown);
+      return () => document.removeEventListener("keydown", onKeyDown);
+    },
+  );
 
   onCleanup(() => {
     stopSidebarDragging();
@@ -240,6 +263,7 @@ export function createSidebarScope(props: SidebarProps) {
     activityHiddenCount,
     listFilter,
     assignChatSection,
+    assignChatsSection,
     cancelSectionEditor,
     closeDelete,
     confirmDelete,
@@ -285,6 +309,7 @@ export function createSidebarScope(props: SidebarProps) {
     saveCustomSectionColor,
     saveSectionEditor,
     scrollFades,
+    selection,
     sectionDeleteTarget,
     sectionDragClasses: dragState.sectionDragClasses,
     sectionIsCollapsed,
