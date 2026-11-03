@@ -5,6 +5,7 @@ import { currentText } from "@buildersbot/ui/text";
 import { createEffect, createStore, flush, onSettled, reconcile, untrack } from "solid-js";
 import { actionToast } from "../../action-toast";
 import { type DesktopAnalyticsProperties, desktopAnalytics } from "../../analytics";
+import { createChangeThrottle } from "./change-throttle";
 import { mergeChannelPage } from "./channel-page-merge";
 import { ChannelReadMarks, channelReadCommand, unreadChannelTabs } from "./channel-tab-reads";
 
@@ -158,8 +159,9 @@ export function createChannelsController(env: ChannelsEnvironment) {
    * channel that is not open. The page of the open channel is read again only when the change is in
    * that channel; for any other channel only the list is read, for its summary and unread count.
    */
+  const changeThrottle = createChangeThrottle((page) => refresh(undefined, { page }));
   function changed(channelId: string): Promise<void> {
-    return refresh(undefined, { page: channelId === state.selectedId });
+    return changeThrottle.request(channelId === state.selectedId);
   }
   /**
    * A read that starts after this call.
@@ -487,6 +489,7 @@ export function createChannelsController(env: ChannelsEnvironment) {
     window.addEventListener("focus", focus);
     return () => {
       disposed = true;
+      changeThrottle.dispose();
       window.removeEventListener("focus", focus);
     };
   });
