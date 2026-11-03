@@ -6,7 +6,10 @@ import {
   type AgentLimitPreference,
   DEFAULT_AGENT_TABS_MODE,
   DEFAULT_AGENTS_PER_TAB,
+  DEFAULT_QUICK_CHAT_THREADS,
   defaultAgentTabs,
+  QUICK_CHAT_THREADS_MAX,
+  QUICK_CHAT_THREADS_MIN,
 } from "@buildersbot/contracts/ipc";
 import {
   Input,
@@ -26,6 +29,12 @@ import { clampAgentTabs } from "./load-view";
 function clampAgentsPerTab(value: number): number {
   if (!Number.isFinite(value)) return DEFAULT_AGENTS_PER_TAB;
   return Math.min(AGENTS_PER_TAB_MAX, Math.max(AGENTS_PER_TAB_MIN, Math.round(value)));
+}
+
+/** The quick chat conversations that run at the same time: whole, from 1 to 16, and 8 for anything else. */
+function clampQuickChatThreads(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_QUICK_CHAT_THREADS;
+  return Math.min(QUICK_CHAT_THREADS_MAX, Math.max(QUICK_CHAT_THREADS_MIN, Math.round(value)));
 }
 
 /** A row with a number: the name and the range at the left, the field at the right, like the other rows. */
@@ -118,6 +127,34 @@ export function AgentLinesSettings(props: {
           const tabsPerAgent = clampAgentTabs(value);
           props.onChange({ ...props.limit, tabsPerAgent });
           return tabsPerAgent;
+        }}
+      />
+    </ItemGroup>
+  );
+}
+
+/**
+ * How many conversations of the quick chat run a turn at the same time. It saves through the same preference as
+ * the other limits, so it keeps their values. A lower number stops no turn that runs: the next message waits.
+ */
+export function QuickChatThreadsSettings(props: {
+  limit: AgentLimitPreference;
+  onChange: (preference: AgentLimitPreference) => void;
+}) {
+  const { t } = useText();
+  return (
+    <ItemGroup class="settings-modal-card">
+      <NumberRow
+        title={t("settings.load.quickChat.label")}
+        description={t("settings.load.quickChat.unit", { suggested: DEFAULT_QUICK_CHAT_THREADS })}
+        hint={t("settings.load.quickChat.hint")}
+        min={QUICK_CHAT_THREADS_MIN}
+        max={QUICK_CHAT_THREADS_MAX}
+        value={props.limit.quickChatThreads ?? DEFAULT_QUICK_CHAT_THREADS}
+        onCommit={(value) => {
+          const quickChatThreads = clampQuickChatThreads(value);
+          props.onChange({ ...props.limit, quickChatThreads });
+          return quickChatThreads;
         }}
       />
     </ItemGroup>

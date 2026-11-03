@@ -82,8 +82,9 @@ function shownInThread(message: AgentMessage): boolean {
 /** Why the next message of a queued thread waits. */
 export function agentThreadHoldText(task: AgentTask, limit: number, t: TextValue["t"]): string | null {
   if (task.state !== "queued") return null;
-  if (task.hold === "task-limit" || task.hold === null)
-    return t("conversation.threads.hold.threadLimit", { count: limit });
+  // A queued thread with no named wait has no text: the limit of threads is named only when it is the reason.
+  if (task.hold === null) return null;
+  if (task.hold === "task-limit") return t("conversation.threads.hold.threadLimit", { count: limit });
   return t(HOLD_TEXT[task.hold]);
 }
 

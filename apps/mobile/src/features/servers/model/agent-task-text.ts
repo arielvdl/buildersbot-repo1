@@ -26,7 +26,8 @@ export function agentTaskStatus(task: AgentTask, t: MobileTranslate): string {
 /** As on desktop: why the next message of a queued task waits. */
 export function agentTaskHoldText(task: AgentTask, limit: number, t: MobileTranslate): string | null {
   if (task.state !== "queued") return null;
-  if (task.hold === "task-limit" || task.hold === null)
-    return t("mobile.server.threads.hold.threadLimit", { count: limit });
+  // A queued thread with no named wait has no text: the limit of threads is named only when it is the reason.
+  if (task.hold === null) return null;
+  if (task.hold === "task-limit") return t("mobile.server.threads.hold.threadLimit", { count: limit });
   return t(HOLD_TEXT[task.hold]);
 }

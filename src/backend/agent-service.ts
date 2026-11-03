@@ -137,6 +137,7 @@ import {
   DEFAULT_CUSTOM_PROVIDER_HARNESS,
   DEFAULT_GUARD_PREFERENCE,
   DEFAULT_PROVIDER_ACCOUNT_ID,
+  DEFAULT_QUICK_CHAT_THREADS,
   DEFAULT_SECURITY_GUARD_PREFERENCE,
   type GuardPreference,
   isContextResetMarker,
@@ -570,6 +571,11 @@ export interface AgentServiceOptions {
    * Omitted: `DEFAULT_AGENTS_PER_TAB`.
    */
   channelParallelLimit?: () => number;
+  /**
+   * The most conversations of the quick chat that run a turn at the same time, as the person set it.
+   * Omitted: `DEFAULT_QUICK_CHAT_THREADS`. The record of the quick chat agent has no limit of its own.
+   */
+  quickChatThreadLimit?: () => number;
 }
 
 /** How long a user send's `clientMessageId` answers a retry. A retry follows a lost reply, not a day. */
@@ -773,6 +779,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       hooks: {
         emit: (event) => this.#emit(event),
         agent: (agentId) => store.list().find((agent) => agent.id === agentId),
+        quickChatThreadLimit: () => options.quickChatThreadLimit?.() ?? DEFAULT_QUICK_CHAT_THREADS,
         // Read late: the drain is built further down this constructor.
         hold: (agentId, taskId) => this.#drain.taskHold(agentId, taskId),
         queued: (agentId) => {

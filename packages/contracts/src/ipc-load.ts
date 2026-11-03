@@ -5,6 +5,7 @@
 
 import { type AgentProviderId, type AgentProviderRef, isAgentProvider, isAgentProviderRef } from "./agent-providers";
 import { type AgentModelId, isAgentModel } from "./ipc-agent-identity";
+import { isQuickChatThreadsLimit } from "./ipc-agent-tasks";
 import { isIdentifier } from "./ipc-bounded-values";
 import { isBoolean, isDynamicRecord, isNumber, isOneOf, isString } from "./runtime-values";
 
@@ -320,6 +321,12 @@ export interface AgentLimitPreference {
    * `DEFAULT_AGENTS_PER_TAB`, also from an older main process.
    */
   agentsPerTab?: number;
+  /**
+   * The most conversations of the quick chat that run a turn at the same time, from 1 to 16. A message over the
+   * limit waits in its conversation and starts when another one ends. Absent: `DEFAULT_QUICK_CHAT_THREADS`
+   * (8), also from an older main process. An older build ignores the field.
+   */
+  quickChatThreads?: number;
 }
 
 export const AGENT_LIMIT_MIN = 1;
@@ -368,7 +375,8 @@ export function isAgentLimitPreference(value: unknown): value is AgentLimitPrefe
     value.max <= AGENT_LIMIT_MAX &&
     (value.tabsPerAgent === undefined || isAgentTabsLimit(value.tabsPerAgent)) &&
     (value.tabsMode === undefined || isAgentTabsMode(value.tabsMode)) &&
-    (value.agentsPerTab === undefined || isAgentsPerTabLimit(value.agentsPerTab))
+    (value.agentsPerTab === undefined || isAgentsPerTabLimit(value.agentsPerTab)) &&
+    (value.quickChatThreads === undefined || isQuickChatThreadsLimit(value.quickChatThreads))
   );
 }
 

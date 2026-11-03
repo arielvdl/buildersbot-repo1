@@ -623,7 +623,11 @@ export class DrainScheduler {
   taskHold(agentId: string, taskId: string): string | null {
     const lane = taskLane(agentId, taskId);
     if (!this.#mailbox.nextQueued(agentId, taskId)) return null;
-    return this.#heldBy(lane) ?? (this.#slotWaiters.has(laneKey(lane)) ? "machine" : null);
+    // The memory of the computer holds every new turn, whatever the limit of threads is. `#heldBy` does not read
+    // it (`#heldByMachine` does), so without this line a thread that waits for memory has no named wait.
+    return (
+      this.#heldBy(lane) ?? (!this.#memory.mayDrain(agentId) || this.#slotWaiters.has(laneKey(lane)) ? "machine" : null)
+    );
   }
 
   /** The agents with a lane that waits for a free turn slot, for the load panel. */

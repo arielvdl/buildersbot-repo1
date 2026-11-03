@@ -651,6 +651,12 @@ export const messages = defineMessages("settings", {
     "The free memory decides how many tabs run, and never more than this number. Where the app cannot read the memory, this number applies as it is.",
   "settings.load.lines.tabsFixedHint":
     "Each tab of a channel is its own line of work: a message waits only for the earlier messages of its tab. With 1, an agent works in one tab at a time.",
+  "settings.load.quickChat.title": "Quick chat threads",
+  "settings.load.quickChat.description": "How many conversations of the quick chat run at the same time.",
+  "settings.load.quickChat.label": "Conversations at the same time",
+  "settings.load.quickChat.unit": "(1 to 16, {suggested} is suggested)",
+  "settings.load.quickChat.hint":
+    "A message in another conversation waits until one of these ends its turn. A lower number stops no turn that runs. Each conversation at work uses memory and the plan of its provider.",
   "settings.loadPanel.title": "Load page",
   "settings.loadPanel.description":
     "The page that the ring in the bar on the left opens: the stopped work, with actions on many runs at once, what runs, and the switches of Resume by itself and of the task reviewer.",

@@ -640,6 +640,12 @@ export const messages = {
     "A memória livre decide quantas abas rodam, e nunca mais do que este número. Onde o app não consegue ler a memória, este número vale como está.",
   "settings.load.lines.tabsFixedHint":
     "Cada aba de um canal é uma linha de trabalho própria: uma mensagem espera só as mensagens anteriores da sua aba. Com 1, um agente trabalha em uma aba por vez.",
+  "settings.load.quickChat.title": "Tópicos do Chat rápido",
+  "settings.load.quickChat.description": "Quantas conversas do Chat rápido rodam ao mesmo tempo.",
+  "settings.load.quickChat.label": "Conversas ao mesmo tempo",
+  "settings.load.quickChat.unit": "(de 1 a 16, sugerido: {suggested})",
+  "settings.load.quickChat.hint":
+    "Uma mensagem em outra conversa espera até que uma destas termine o turno. Um número menor não para nenhum turno em andamento. Cada conversa em andamento usa memória e o plano do provedor.",
   "settings.loadPanel.title": "Página de Carga",
   "settings.loadPanel.description":
     "A página que o anel na barra à esquerda abre: o trabalho parado, com ações em muitas execuções de uma vez, o que roda e as opções de Retomar sozinho e do Fiscal.",

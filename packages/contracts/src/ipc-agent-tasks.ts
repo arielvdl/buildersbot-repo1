@@ -15,6 +15,19 @@ export function isAgentTaskLimit(value: unknown): value is number {
 }
 
 /**
+ * The quick chat keeps its own limit of parallel conversations, which the person sets in Settings > Load
+ * (`AgentLimitPreference.quickChatThreads`): from 1 to this number, 8 when nothing is saved. An ordinary agent
+ * keeps `AGENT_TASK_LIMIT_MAX`, which the released `agent-task-limit-v1` wire freezes.
+ */
+export const QUICK_CHAT_THREADS_MAX = 16;
+export const QUICK_CHAT_THREADS_MIN = 1;
+export const DEFAULT_QUICK_CHAT_THREADS = 8;
+
+export function isQuickChatThreadsLimit(value: unknown): value is number {
+  return integerInRange(value, QUICK_CHAT_THREADS_MIN, QUICK_CHAT_THREADS_MAX);
+}
+
+/**
  * How many tasks of the agent run a turn at the same time. A provider that runs one turn at a time
  * runs one task, and the agent's own chat waits for it.
  */
@@ -239,6 +252,7 @@ export function isAgentTasksSnapshot(value: unknown): value is AgentTasksSnapsho
     Array.isArray(value.tasks) &&
     value.tasks.length <= INPUT_LIMITS.agentTasks &&
     value.tasks.every(isAgentTask) &&
-    isAgentTaskLimit(value.limit)
+    // The limit that a snapshot reports is the one of the agent: the quick chat reports its own, up to 16.
+    isQuickChatThreadsLimit(value.limit)
   );
 }

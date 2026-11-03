@@ -52,6 +52,8 @@ export interface AgentTasksHooks {
   emit(event: AgentEvent): void;
   /** The agent, for its provider and its task limit. */
   agent(agentId: string): AgentSummary | undefined;
+  /** The most conversations of the quick chat that run a turn at the same time, as the person set it. Read at each use. */
+  quickChatThreadLimit(): number;
   /** Why the drain holds the next message of this task, as the drain names it, or null. Read late. */
   hold(agentId: string, taskId: string): string | null;
   /** A message is queued in a task: the queue and the drain take it. */
@@ -138,7 +140,12 @@ export class AgentTasks implements TaskLanes {
 
   limit(agentId: string): number {
     const agent = this.#hooks.agent(agentId);
-    return agent ? agentTaskLimit(agent) : 1;
+    if (!agent) return 1;
+    // The quick chat has no setting on its record: its limit is the one the person sets in Settings > Load. A
+    // provider that runs one turn at a time still runs one.
+    if (agent.quickChat === true)
+      return agentProviderDescriptor(agent.provider).concurrentTurns ? this.#hooks.quickChatThreadLimit() : 1;
+    return agentTaskLimit(agent);
   }
 
   /** Whether the agent's provider runs one turn at a time, across its own chat and its tasks. */

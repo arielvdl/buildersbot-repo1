@@ -96,6 +96,7 @@ import {
   DEFAULT_PROMPT_CACHE_TTL,
   DEFAULT_PROVIDER_ACCOUNT_ID,
   DEFAULT_PROVIDER_DETECTION_SETTINGS,
+  DEFAULT_QUICK_CHAT_THREADS,
   DEFAULT_REMOTE_NETWORK_ROUTE,
   DEFAULT_REMOTE_SESSION_REUSE_PREFERENCE,
   DEFAULT_SECURITY_GUARD_PREFERENCE,
@@ -916,6 +917,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
   function agentTaskLimitOf(agentId: string): number {
     const agent = agents.find((candidate) => candidate.id === agentId);
     // Tasks run on this computer, so an agent on a provider that this build does not know has none.
+    if (agent?.quickChat === true) return previewAgentLimit.quickChatThreads ?? DEFAULT_QUICK_CHAT_THREADS;
     return agent && isAgentSummary(agent) ? agentTaskLimit(agent) : 1;
   }
 
