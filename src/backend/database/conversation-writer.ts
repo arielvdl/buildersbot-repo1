@@ -3,6 +3,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { isDeepStrictEqual } from "node:util";
 import type { ConversationMessage, ConversationSnapshot } from "@buildersbot/contracts/ipc";
 import { isDynamicRecord, isString } from "@buildersbot/contracts/runtime-values";
+import { decodeThreadRuntime } from "../agent-threads/thread-runtime-json";
 import type { AgentRoster } from "./agent-roster";
 import { recordUsageMessage } from "./agent-usage";
 import { type DatabaseCore, deleteReceiptsOf } from "./database-core";
@@ -109,8 +110,9 @@ export class ConversationWriter {
             (attachment_id, owner_kind, owner_id, name, path, metadata_json, created_at, last_event_sequence)
           VALUES (?, 'thread-message', ?, ?, '', ?, ?, ?)
         `);
+        const usage = usageIdentity(db, snapshot.threadId, agent);
         snapshot.messages.forEach((message, ordinal) => {
-          recordUsageMessage(db, agent.id, message, agent.provider, agent.model);
+          recordUsageMessage(db, agent.id, message, ...usage);
           upsert.run(
             snapshot.threadId,
             message.id,
@@ -278,7 +280,7 @@ export class ConversationWriter {
         refreshChangedOrder(db, threadId, orderBefore, [message.id]);
         // A no-op while the message streams - the helper ignores anything but a settled message -
         // and the one call that matters if a flush ever lands on a completed one.
-        recordUsageMessage(db, agent.id, message, agent.provider, agent.model);
+        recordUsageMessage(db, agent.id, message, ...usageIdentity(db, snapshot.threadId, agent));
         db.prepare(
           `UPDATE projection_threads
            SET active_turn_id = ?, updated_at = ?, last_event_sequence = ? WHERE thread_id = ?`,
@@ -346,7 +348,7 @@ export class ConversationWriter {
           sequence,
         );
         refreshChangedOrder(db, input.threadId, new Map(), [input.message.id]);
-        recordUsageMessage(db, agent.id, input.message, agent.provider, agent.model);
+        recordUsageMessage(db, agent.id, input.message, ...usageIdentity(db, input.threadId, agent));
         for (const attachment of input.message.attachments ?? []) {
           db.prepare(
             `INSERT INTO projection_attachments
@@ -489,6 +491,7 @@ export class ConversationWriter {
             (attachment_id, owner_kind, owner_id, name, path, metadata_json, created_at, last_event_sequence)
           VALUES (?, 'thread-message', ?, ?, '', ?, ?, ?)
         `);
+        const usage = usageIdentity(db, input.threadId, agent);
         for (const imported of input.changedMessages) {
           const existingRow = databaseRow(findOrdinal.get(input.threadId, imported.id));
           const existing = existingRow
@@ -513,7 +516,7 @@ export class ConversationWriter {
             JSON.stringify(message),
             sequence,
           );
-          recordUsageMessage(db, agent.id, message, agent.provider, agent.model);
+          recordUsageMessage(db, agent.id, message, ...usage);
           deleteAttachments.run(`${input.threadId}:${message.id}`);
           for (const attachment of message.attachments ?? []) {
             insertAttachment.run(
@@ -727,7 +730,7 @@ export class ConversationWriter {
           sequence,
         );
         refreshChangedOrder(db, input.threadId, orderBefore, [message.id]);
-        recordUsageMessage(db, agent.id, message, agent.provider, agent.model);
+        recordUsageMessage(db, agent.id, message, ...usageIdentity(db, input.threadId, agent));
         for (const attachment of message.attachments ?? []) {
           db.prepare(
             `INSERT OR REPLACE INTO projection_attachments
@@ -910,4 +913,20 @@ function pruneConversationSnapshots(db: DatabaseSync, threadId: string, retained
       .all(threadId, retainedSequence),
   ).map((row) => requiredStringColumn(row, "command_id"));
   deleteReceiptsOf(db, supersededCommandIds);
+}
+
+/**
+ * The provider and model that a message counts under in the usage activity: the model of the conversation
+ * when it has its own (a quick chat conversation), else the agent's. The agent's own chat and every thread of
+ * every other agent have none, so they count under the agent as before.
+ */
+function usageIdentity(
+  db: DatabaseSync,
+  threadId: string | null,
+  agent: { provider: string; model: string },
+): [provider: string, model: string] {
+  if (threadId === null) return [agent.provider, agent.model];
+  const row = db.prepare("SELECT runtime_json FROM projection_agent_threads WHERE thread_id = ?").get(threadId);
+  const runtime = decodeThreadRuntime(row?.runtime_json);
+  return runtime ? [runtime.provider, runtime.model] : [agent.provider, agent.model];
 }

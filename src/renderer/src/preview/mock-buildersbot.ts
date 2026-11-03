@@ -968,10 +968,21 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
     };
   }
 
+  function quickChatRuntimeOfAgent(agent: AgentSummary): QuickChatRuntime {
+    return {
+      provider: agent.provider,
+      model: agent.model,
+      reasoningEffort: agent.reasoningEffort,
+      ...(agent.fastMode === undefined ? {} : { fastMode: agent.fastMode }),
+    };
+  }
+
   /** The model of the last conversation is the default of the next one: the record of the quick chat agent. */
   function rememberQuickChatDefault(runtime: QuickChatRuntime): AgentSummary {
     const held = agents.find((agent) => agent.quickChat === true);
     if (!held || !isAgentSummary(held)) throw new Error(sourceText("error.provider.noneReady"));
+    // A conversation with no model of its own keeps the model of the record, before the default moves.
+    for (const task of tasks.get(held.id) ?? []) task.runtime ??= quickChatRuntimeOfAgent(held);
     const next = {
       ...held,
       provider: runtime.provider,
@@ -3142,7 +3153,12 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
         const held = agents.find((agent) => agent.id === input.agentId);
         if (input.runtime && held?.quickChat !== true)
           throw new Error(sourceText("error.backend.quickChatRuntimeOnly"));
-        const runtime = input.runtime ? checkQuickChatRuntime(input.runtime) : undefined;
+        // As the host does: no choice made starts on the model of the agent record, stored on the conversation.
+        const runtime = input.runtime
+          ? checkQuickChatRuntime(input.runtime)
+          : held?.quickChat === true && isAgentSummary(held)
+            ? quickChatRuntimeOfAgent(held)
+            : undefined;
         const task = createTask(input.agentId, input.text);
         if (runtime) {
           task.runtime = runtime;

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { INPUT_LIMITS } from "@buildersbot/contracts/input-limits";
-import type { AgentContextCategoryUsage, AgentContextState } from "@buildersbot/contracts/ipc";
+import type { AgentContextCategoryUsage, AgentContextState, AgentSummary } from "@buildersbot/contracts/ipc";
 import { Effect, Schema } from "effect";
 import type { AgentClient } from "../agent-client";
 import type { AgentStore } from "../agent-store";
@@ -50,6 +50,11 @@ export interface ContextCompactionOptions {
   rotatesSession(agentId: string, threadId: string): boolean;
   /** The service stops: its database can close before a provider stops reporting usage. */
   isStopping(): boolean;
+  /**
+   * The agent as the session of this thread runs it: a quick chat conversation can run on another provider
+   * than the agent record names. `kind` says whether `threadId` is the public thread or the provider's own id.
+   */
+  agentOfThread?(agent: AgentSummary, threadId: string, kind: "public" | "external"): AgentSummary;
   changed?(): void;
   /** A provider session finished a compaction: its summary replaces what it read before. */
   compacted?(threadId: string): void;
@@ -89,6 +94,7 @@ export class ContextCompaction {
   readonly #rotateSession: ContextCompactionOptions["rotateSession"];
   readonly #rotatesSession: ContextCompactionOptions["rotatesSession"];
   readonly #isStopping: () => boolean;
+  readonly #agentOfThread: NonNullable<ContextCompactionOptions["agentOfThread"]>;
   readonly #budgets = new Map<string, ThreadContextBudget>();
   /** The agent of each provider thread that compacts, and the client that runs it once `request` sends it. */
   readonly #compacting = new Map<string, { agentId: string; client: AgentClient | null }>();
@@ -119,6 +125,7 @@ export class ContextCompaction {
     this.#rotateSession = options.rotateSession;
     this.#rotatesSession = options.rotatesSession;
     this.#isStopping = options.isStopping;
+    this.#agentOfThread = options.agentOfThread ?? ((agent) => agent);
   }
 
   /** Only personal sessions appear in the desktop snapshot; execution threads remain separate. */
@@ -138,7 +145,8 @@ export class ContextCompaction {
     const agents = new Map(this.#store.list().map((agent) => [agent.id, agent]));
     return threads
       .flatMap(({ id: agentId, threadId }) => {
-        const agent = agents.get(agentId);
+        const stored = agents.get(agentId);
+        const agent = stored && this.#agentOfThread(stored, threadId, "public");
         const session = agent ? this.#store.database.activeProviderSession(threadId, agent.provider) : null;
         const display = session ? this.#display.get(session.externalSessionId) : null;
         if (!agent || !display) return [];
@@ -297,7 +305,8 @@ export class ContextCompaction {
 
   /** `manual`: the user asked, so the thread compacts below the threshold too. */
   reserve(agentId: string, threadId: string, manual = false): boolean {
-    const agent = this.#store.list().find((candidate) => candidate.id === agentId);
+    const stored = this.#store.list().find((candidate) => candidate.id === agentId);
+    const agent = stored && this.#agentOfThread(stored, threadId, "external");
     const mode = agent ? this.#providers.clientForAgent(agent)?.contextCompaction : undefined;
     if (!agent || !compactsOnRequest(mode)) return false;
     if (mode === "handoff" && !this.#rotatesSession(agentId, threadId)) return false;
@@ -317,7 +326,8 @@ export class ContextCompaction {
     threadId: string,
   ) {
     const budget = this.#budgets.get(threadId);
-    const agent = this.#store.list().find((candidate) => candidate.id === agentId);
+    const stored = this.#store.list().find((candidate) => candidate.id === agentId);
+    const agent = stored && this.#agentOfThread(stored, threadId, "external");
     const client = agent ? this.#providers.clientForAgent(agent) : null;
     if (
       budget?.phase !== "requested" ||

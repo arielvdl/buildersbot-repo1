@@ -26,6 +26,7 @@ import type { ProviderRuntime } from "./provider-runtime";
 import { type LaneTurn, QueueForce, QueueForceRefused } from "./queue-force";
 import type { RoutineScheduler } from "./routine-scheduler";
 import { providerForAgent } from "./thread-items";
+import type { ThreadRuntimes } from "./thread-runtime";
 
 export interface QueueControlsHooks {
   /** The channel task that owns a delivery. Read late: the channel service is built after this. */
@@ -58,6 +59,8 @@ export interface QueueControlsOptions {
   endpoints: CustomEndpoints;
   drain: DrainScheduler;
   routines: RoutineScheduler;
+  /** The model of each quick chat conversation (`thread-runtime.ts`). Identity for every other agent. */
+  runtimes: ThreadRuntimes;
   hooks: QueueControlsHooks;
 }
 
@@ -77,6 +80,7 @@ export class QueueControls {
   readonly #endpoints: CustomEndpoints;
   readonly #drain: DrainScheduler;
   readonly #routines: RoutineScheduler;
+  readonly #runtimes: ThreadRuntimes;
   readonly #hooks: QueueControlsHooks;
   readonly #force: QueueForce;
 
@@ -89,6 +93,7 @@ export class QueueControls {
     this.#endpoints = options.endpoints;
     this.#drain = options.drain;
     this.#routines = options.routines;
+    this.#runtimes = options.runtimes;
     this.#hooks = options.hooks;
     this.#force = new QueueForce({
       requireForceable: (agentId, deliveryId) => this.#requireForceable(agentId, deliveryId),
@@ -314,11 +319,13 @@ export class QueueControls {
   }, Effect.uninterruptible);
 
   readonly steer = Effect.fn("QueueControls.steer")(function* (this: QueueControls, input: SteerQueuedMessageInput) {
-    const agent = yield* this.#store.existing(input.agentId).pipe(toQueueOperationFailed);
-    const { client, session, snapshot, context, turnId, taskThreadId } = yield* queueStep(() => {
+    const stored = yield* this.#store.existing(input.agentId).pipe(toQueueOperationFailed);
+    // A task message steers the task's turn, in the task's own provider session. A quick chat conversation
+    // runs that turn on the session that is open on it, which a later choice of model does not change yet.
+    const taskThreadId = yield* queueStep(() => this.#hooks.taskThreadId(input.deliveryId));
+    const agent = this.#runtimes.runningAs(stored, taskThreadId);
+    const { client, session, snapshot, context, turnId } = yield* queueStep(() => {
       const client = this.#providers.requireReadyClientForAgent(agent);
-      // A task message steers the task's turn, in the task's own provider session.
-      const taskThreadId = this.#hooks.taskThreadId(input.deliveryId);
       const session = taskThreadId
         ? this.#store.database.activeProviderSession(taskThreadId, agent.provider)?.externalSessionId
         : this.#store.activeProviderSession(agent.id)?.externalSessionId;
@@ -334,7 +341,7 @@ export class QueueControls {
       // Steering uses the running turn's endpoint even when the saved model has changed.
       if (!this.#endpoints.serves(this.#drain.modelForTurn(agent.id, turnId) ?? agent.model, client.provider))
         throw new Error(REMOVED_ENDPOINT_MESSAGE);
-      return { client, session, snapshot, context, turnId, taskThreadId };
+      return { client, session, snapshot, context, turnId };
     });
     // A routine run in the agent's chat has its own session, which ends with the run. A message
     // steered into it would not stay in the chat's session, so it waits for the next turn.

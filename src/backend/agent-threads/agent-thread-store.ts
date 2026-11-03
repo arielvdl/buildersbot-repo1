@@ -5,7 +5,6 @@ import {
   type AgentTaskOutcome,
   type AttachmentSummary,
   type ConversationMessage,
-  isQuickChatRuntime,
   type QuickChatRuntime,
 } from "@buildersbot/contracts/ipc";
 import { type DynamicRecord, isDynamicRecord, isOneOf, isString } from "@buildersbot/contracts/runtime-values";
@@ -21,6 +20,7 @@ import {
 } from "../database/database-rows";
 import { refreshThreadOrder } from "../database/thread-message-order";
 import { messageExcerpt } from "../message-excerpt";
+import { decodeThreadRuntime, encodeThreadRuntime } from "./thread-runtime-json";
 
 const AGENT_THREAD_ORIGINS = ["user", "agent"] as const;
 export type AgentThreadOrigin = (typeof AGENT_THREAD_ORIGINS)[number];
@@ -405,7 +405,7 @@ export class AgentThreadStore {
           now,
           now,
           sequence,
-          input.runtime ? encodeRuntime(input.runtime) : null,
+          input.runtime ? encodeThreadRuntime(input.runtime) : null,
         );
         return null;
       },
@@ -467,7 +467,7 @@ export class AgentThreadStore {
         .prepare(`SELECT runtime_json FROM projection_agent_threads WHERE ${BY_TASK_ID}`)
         .get(taskId, taskId),
     );
-    return row ? decodeRuntime(row.runtime_json) : null;
+    return row ? decodeThreadRuntime(row.runtime_json) : null;
   }
 
   /**
@@ -477,8 +477,21 @@ export class AgentThreadStore {
   setRuntime(taskId: string, runtime: QuickChatRuntime | null): boolean {
     const result = this.#database.connection
       .prepare(`UPDATE projection_agent_threads SET runtime_json = ? WHERE ${BY_TASK_ID}`)
-      .run(runtime ? encodeRuntime(runtime) : null, taskId, taskId);
+      .run(runtime ? encodeThreadRuntime(runtime) : null, taskId, taskId);
     return Number(result.changes) > 0;
+  }
+
+  /**
+   * Gives `runtime` to every thread of the agent that has none, open or archived, and answers how many it
+   * changed. A thread with a model keeps it, so a second call changes nothing. It does not touch
+   * `updated_at`. The quick chat pins its conversations with it before the default model of the agent
+   * moves, so that no conversation changes model because the default did.
+   */
+  fillMissingRuntimes(agentId: string, runtime: QuickChatRuntime): number {
+    const result = this.#database.connection
+      .prepare("UPDATE projection_agent_threads SET runtime_json = ? WHERE agent_id = ? AND runtime_json IS NULL")
+      .run(encodeThreadRuntime(runtime), agentId);
+    return Number(result.changes);
   }
 
   /** Keeps the error of the thread's last turn, or clears it when a turn starts. */
@@ -631,31 +644,6 @@ function deleteThreadRows(db: Connection, threads: readonly AgentThreadRecord[])
   }
 }
 
-/** The stored form of a model. `v` lets a later build change the shape without a migration. */
-function encodeRuntime(runtime: QuickChatRuntime): string {
-  return JSON.stringify({
-    v: 1,
-    provider: runtime.provider,
-    model: runtime.model,
-    ...(runtime.reasoningEffort === undefined ? {} : { reasoningEffort: runtime.reasoningEffort }),
-    ...(runtime.fastMode === undefined ? {} : { fastMode: runtime.fastMode }),
-  });
-}
-
-/** A value that is not text, is not valid JSON, or has another version or shape reads as null, so no row stops a read. */
-function decodeRuntime(stored: unknown): QuickChatRuntime | null {
-  if (!isString(stored)) return null;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(stored);
-  } catch {
-    return null;
-  }
-  if (!isDynamicRecord(parsed) || parsed.v !== 1) return null;
-  const { v: _version, ...runtime } = parsed;
-  return isQuickChatRuntime(runtime) ? runtime : null;
-}
-
 function decodeThread(row: DynamicRecord): AgentThreadRecord {
   const origin = requiredStringColumn(row, "origin");
   const titleSource = requiredStringColumn(row, "title_source");
@@ -686,6 +674,6 @@ function decodeThread(row: DynamicRecord): AgentThreadRecord {
       sourceThreadId !== null && sourceMessageId !== null && throughMessageId !== null
         ? { sourceThreadId, sourceMessageId, throughMessageId }
         : null,
-    runtime: decodeRuntime(row.runtime_json),
+    runtime: decodeThreadRuntime(row.runtime_json),
   };
 }

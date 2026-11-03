@@ -210,6 +210,21 @@ export class AgentTasks implements TaskLanes {
     return this.#store.runtimeOf(taskId);
   }
 
+  /** The model of the side thread with this public thread id, or null. */
+  runtimeOfThread(threadId: string): QuickChatRuntime | null {
+    return this.#store.taskForThread(threadId)?.runtime ?? null;
+  }
+
+  /** The models of the open conversations of the agent that have one. */
+  openRuntimes(agentId: string): QuickChatRuntime[] {
+    return this.#store.list(agentId).flatMap((task) => (task.closedAt === null && task.runtime ? [task.runtime] : []));
+  }
+
+  /** Gives `runtime` to each conversation of the agent that has none (`AgentThreadStore.fillMissingRuntimes`). */
+  fillMissingRuntimes(agentId: string, runtime: QuickChatRuntime): number {
+    return this.#store.fillMissingRuntimes(agentId, runtime);
+  }
+
   /** Sets the model of a conversation of the agent. The caller checked the model. */
   setRuntime(agentId: string, taskId: string, runtime: QuickChatRuntime | null): AgentThreadRecord {
     this.require(agentId, taskId);

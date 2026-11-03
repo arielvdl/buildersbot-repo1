@@ -22,6 +22,19 @@
 // Part 3 starts the service with no provider running and a memory level of its own:
 //  12. `warmQuickChat` does nothing before the agent exists and nothing while the memory is low; at `ok` it starts the
 //      provider process once, however many calls come at once, and opens no session, no conversation and no model call.
+// Part 4 gives each conversation its own model, on a fake bundled CLI that runs as two providers (Cultura Builder
+// and OpenCode) and logs the provider, session and model of every prompt (`provider-fakes/agents/quick-chat-models.ts`):
+//  13. Two conversations run at once on two models; the default of the agent does not leak into either.
+//  14. A change in the middle: the turn that runs ends on its model, the next message starts on the new one, the
+//      other conversation does not change, and the agent never holds a `pendingRuntime`.
+//  15. A change of provider retires the sessions of the old one and opens a new one with the history; going back
+//      does not resume the old session; each turn gets the instructions of its own provider.
+//  16. A new conversation starts on the last model used and stores it; a conversation with no model of its own
+//      runs on the one of the agent, and `ensureQuickChat` fills it, once.
+//  17. A refused choice changes nothing and says why; a provider that goes off after the choice fails the send
+//      with the reason and leaves the model of the conversation alone; `updateAgent` refuses the model of the
+//      agent, and other agents keep their rules.
+//  18. A restart keeps the model and the session of each conversation; usage rows count under the model of each one.
 // `bun run test:quick-chat-core`. Writes .buildersbot-build/quick-chat-core-e2e/report.json.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -35,8 +48,10 @@ import {
   type AgentModelOption,
   type AgentProviderId,
   type AgentStatus,
+  type QuickChatRuntime,
 } from "@buildersbot/contracts/ipc";
 import { QUICK_CHAT_FAST_MODEL, quickChatDefaultModel } from "@buildersbot/contracts/quick-chat-model";
+import { isDynamicRecord } from "@buildersbot/contracts/runtime-values";
 import { TEAM_API_ROUTES } from "@buildersbot/contracts/team-api-routes";
 import {
   TEAM_APP_VERSION_HEADER,
@@ -770,6 +785,373 @@ async function runWarmPart(): Promise<void> {
   }
 }
 
+// ---------------------------------------------------------------------------------------------------
+// Part 4: the model of each conversation
+
+interface FakeEntry {
+  event: string;
+  role?: string;
+  sessionId?: string;
+  modelId?: string;
+  model?: string | null;
+  text?: string;
+}
+
+/** The message of a failure of the service, whose cause holds the text that a person reads. */
+function failureText(error: unknown): string {
+  const cause = isDynamicRecord(error) ? error.cause : undefined;
+  return cause instanceof Error ? cause.message : String(error);
+}
+
+async function runPart4(): Promise<void> {
+  // The real provider runtime: the fake CLI is the catalog, and it is the one that answers a prompt.
+  ProviderRuntime.prototype.listModels = realListModels;
+  ProviderRuntime.prototype.catalogRead = realCatalogRead;
+  ProviderRuntime.prototype.createProfileClient = realCreateProfileClient;
+  const profile = join(root, "part4");
+  const executable = join(root, "models", "bin", "opencode");
+  const log = join(root, "models.jsonl");
+  process.env.FAKE_LOG = log;
+  await installFakeAgent(executable, "quick-chat-models");
+  const session = serializeCulturaBuilderSession({
+    access: ACCESS,
+    refresh: "refresh-quick-chat",
+    expires: Date.now() + 3_600_000,
+    empresa: COMPANY,
+  });
+  const prompts = async () => (await readJsonl<FakeEntry>(log)).filter((entry) => entry.event === "prompt");
+  const promptOf = async (text: string) => {
+    const found = (await prompts()).filter((entry) => entry.text?.includes(text));
+    // The title that the quick chat writes after a first turn is a prompt too, and it quotes the first message:
+    // the turn of the conversation is the first one that holds the text.
+    assert.ok(found.length >= 1, `No prompt with "${text}".`);
+    const only = found[0];
+    assert.ok(only);
+    return only;
+  };
+
+  const AUTO: QuickChatRuntime = { provider: "cultura-builder", model: "cultura-builder/builder-auto" };
+  const FAST: QuickChatRuntime = { provider: "cultura-builder", model: "cultura-builder/builder-fast" };
+  const PICKLE: QuickChatRuntime = { provider: "opencode", model: "opencode/big-pickle" };
+
+  const open = async () => {
+    const database = new BuildersBotDatabase(join(profile, "user-data"));
+    const store = new AgentStore(join(profile, "user-data"), join(profile, "home"), database);
+    const mailbox = new MailboxStore(join(profile, "user-data"), store.sharedRoot, store.database);
+    const sidebar = new SidebarLayoutStore(join(profile, "user-data", "sidebar-layout.json"));
+    await runCauseEffect(sidebar.initialize());
+    const agents = new AgentService({
+      store,
+      mailbox,
+      browser: agentBrowser,
+      sidebarLayout: sidebar,
+      preferredProvider: "cultura-builder",
+      offProviders: AGENT_PROVIDERS.filter((provider) => provider !== "cultura-builder" && provider !== "opencode"),
+      bundledExecutables: { opencode: executable },
+      credentials: {
+        ...NO_PROVIDER_CREDENTIALS,
+        apiKey: (provider) => (provider === "cultura-builder" ? session : null),
+      },
+      securityGuard: () => ({
+        enabled: false,
+        scope: "all",
+        mode: "annotate",
+        minLevel: "suspicious",
+        model: null,
+        timeoutMs: 20_000,
+      }),
+    });
+    await runCauseEffect(agents.initialize());
+    return { database, store, agents };
+  };
+
+  let host = await open();
+  const close = async () => {
+    await runCauseEffect(host.agents.stop()).catch(() => undefined);
+    host.database.close();
+  };
+  const { AgentThreadStore } = await import("../src/backend/agent-threads/agent-thread-store");
+  const threads = () => new AgentThreadStore(host.database);
+  const runtimeOf = (taskId: string) => threads().runtimeOf(taskId);
+  const threadOf = (taskId: string) => threads().task(taskId)?.threadId ?? "";
+  const quick = () => {
+    const agent = host.store.quickChatAgent();
+    assert.ok(agent, "The quick chat agent is missing.");
+    return agent;
+  };
+  const taskRow = (taskId: string) => host.agents.listTasks(quick().id).tasks.find((one) => one.id === taskId);
+
+  /** Polls a state, not a clock: it fails after `WAIT_MS` with the last value it saw. */
+  async function until<T>(what: string, read: () => Promise<T> | T, accept: (value: T) => boolean): Promise<T> {
+    const deadline = Date.now() + WAIT_MS;
+    let last: T = await read();
+    while (!accept(last)) {
+      if (Date.now() > deadline) throw new Error(`${what}: not reached. Last: ${JSON.stringify(last)}`);
+      await new Promise((resolveWait) => setTimeout(resolveWait, 40));
+      last = await read();
+    }
+    return last;
+  }
+  /** The conversation has answered `count` times and rests. */
+  const answered = (taskId: string, count: number) =>
+    until(
+      `conversation ${taskId} answered ${count}`,
+      () => {
+        const replies = host.agents
+          .readTask(quick().id, taskId)
+          .messages.filter((message) => message.author === "assistant" && message.text.startsWith("Done from"));
+        return { state: taskRow(taskId)?.state, replies: replies.length };
+      },
+      (value) => value.state === "idle" && value.replies >= count,
+    );
+  const start = (text: string, runtime?: QuickChatRuntime) =>
+    runCauseEffect(
+      host.agents.startTask(
+        { agentId: quick().id, text, ...(runtime ? { runtime } : {}) },
+        undefined,
+        undefined,
+        "quick-chat",
+      ),
+    );
+  const send = (taskId: string, text: string) =>
+    runCauseEffect(host.agents.sendMessage({ agentId: quick().id, text, taskId }, undefined, undefined, "quick-chat"));
+  const choose = (taskId: string, runtime: QuickChatRuntime) =>
+    runCauseEffect(host.agents.setQuickChatConversationRuntime({ agentId: quick().id, taskId, runtime }));
+  const runtimeRows = () =>
+    host.database.connection
+      .prepare("SELECT thread_id, runtime_json FROM projection_agent_threads ORDER BY thread_id")
+      .all();
+
+  try {
+    await step("part 4: both providers are up, and the agent starts on the fast model", async () => {
+      const providers = host.agents.getStatus().providers ?? [];
+      for (const id of ["cultura-builder", "opencode"] as const)
+        assert.ok(
+          providers.some((row) => row.id === id && row.state === "available"),
+          `The fake ${id} provider is not available: ${JSON.stringify(providers)}.`,
+        );
+      const made = await runCauseEffect(host.agents.ensureQuickChat());
+      assert.equal(made.agent.model, QUICK_CHAT_FAST_MODEL);
+      return { model: made.agent.model };
+    });
+
+    // ---- 13. Two conversations, two models, at the same time.
+    const ids = await step("13: two conversations run at once, each on its own model", async () => {
+      const first = await start("ONE SLOW question", AUTO);
+      const second = await start("TWO SLOW question", FAST);
+      await Promise.all([answered(first.id, 1), answered(second.id, 1)]);
+      const one = await promptOf("ONE SLOW");
+      const other = await promptOf("TWO SLOW");
+      assert.equal(one.model, AUTO.model, "The first conversation did not run on its own model.");
+      assert.equal(other.model, FAST.model, "The second conversation did not run on its own model.");
+      assert.notEqual(one.sessionId, other.sessionId);
+      assert.equal(runtimeOf(first.id)?.model, AUTO.model);
+      assert.equal(quick().pendingRuntime, undefined, "The agent holds a pendingRuntime.");
+      return { oneId: first.id, twoId: second.id, first: one.model, second: other.model };
+    });
+    const { oneId, twoId } = ids;
+
+    // ---- 14. A change in the middle of a turn.
+    await step(
+      "14: a change while the turn runs: this turn ends on its model, the next starts on the new one",
+      async () => {
+        await send(oneId, "ONE SLOW again");
+        // The model is read when the turn starts, so the choice waits until the provider has the prompt.
+        await until(
+          "the provider reads the prompt of conversation one",
+          async () => (await prompts()).some((entry) => entry.text?.includes("ONE SLOW again")),
+          Boolean,
+        );
+        const result = await choose(oneId, FAST);
+        assert.equal(result.task.runtime?.model, FAST.model);
+        await answered(oneId, 2);
+        const running = await promptOf("ONE SLOW again");
+        assert.equal(running.model, AUTO.model, "The running turn did not end on its own model.");
+        await send(oneId, "ONE after the change");
+        await answered(oneId, 3);
+        const next = await promptOf("ONE after the change");
+        assert.equal(next.model, FAST.model, "The next message did not start on the new model.");
+        assert.equal(next.sessionId, running.sessionId, "A change of model in the same provider opened a new session.");
+        assert.equal(runtimeOf(twoId)?.model, FAST.model, "The other conversation changed.");
+        assert.equal(quick().pendingRuntime, undefined);
+        return { running: running.model, next: next.model };
+      },
+    );
+
+    // ---- 15. A change of provider in the middle of a conversation.
+    await step(
+      "15: a change of provider retires the old sessions, opens a new one with the history, and back does not resume",
+      async () => {
+        const active = () =>
+          host.database.listProviderSessions(threadOf(oneId)).filter((one) => one.state === "active");
+        const oldSession = active()[0];
+        assert.ok(oldSession && active().length === 1, "The conversation has no single active session.");
+        await choose(oneId, PICKLE);
+        assert.equal(
+          active().length,
+          0,
+          "A conversation at rest kept the session of the old provider after the choice.",
+        );
+        await send(oneId, "ONE on the other provider");
+        await answered(oneId, 4);
+        const moved = await promptOf("ONE on the other provider");
+        assert.ok(moved.sessionId?.startsWith("s-opencode-"), `The turn ran on ${moved.sessionId}.`);
+        assert.equal(moved.model, PICKLE.model);
+        assert.ok(
+          moved.text?.includes("ONE after the change") || moved.text?.includes("ONE SLOW question"),
+          "The first prompt of the new session carries no history of the earlier turns.",
+        );
+        assert.equal(
+          active()
+            .map((one) => one.provider)
+            .join(),
+          "opencode",
+        );
+        await choose(oneId, AUTO);
+        await send(oneId, "ONE back on the first provider");
+        await answered(oneId, 5);
+        const back = await promptOf("ONE back on the first provider");
+        assert.ok(back.sessionId?.startsWith("s-cultura-builder-"), `The turn ran on ${back.sessionId}.`);
+        assert.notEqual(back.sessionId, oldSession.externalSessionId, "Going back resumed the old session.");
+        assert.equal(back.model, AUTO.model);
+        return { moved: moved.sessionId, back: back.sessionId };
+      },
+    );
+
+    // ---- 16. New conversations, old conversations.
+    await step(
+      "16: a new conversation starts on the last model used, and one with no model runs on the agent's",
+      async () => {
+        assert.equal(quick().model, AUTO.model, "The default of the agent is not the last model used.");
+        const fresh = await start("THREE new conversation");
+        await answered(fresh.id, 1);
+        assert.equal(runtimeOf(fresh.id)?.model, AUTO.model, "The new conversation did not store the last model.");
+        assert.equal((await promptOf("THREE new")).model, AUTO.model);
+        // A conversation from before the change: no model of its own. It runs on the model of the agent.
+        host.database.connection
+          .prepare("UPDATE projection_agent_threads SET runtime_json = NULL WHERE thread_id = ?")
+          .run(threadOf(twoId));
+        assert.equal(runtimeOf(twoId), null);
+        await send(twoId, "TWO with no model of its own");
+        await answered(twoId, 2);
+        assert.equal(
+          (await promptOf("TWO with no model")).model,
+          AUTO.model,
+          "A conversation with no model ran elsewhere.",
+        );
+        // `ensureQuickChat` fills it with the model of the agent, and a second call changes nothing.
+        await runCauseEffect(host.agents.ensureQuickChat());
+        assert.equal(runtimeOf(twoId)?.model, AUTO.model);
+        const filled = runtimeRows();
+        await runCauseEffect(host.agents.ensureQuickChat());
+        assert.deepEqual(runtimeRows(), filled, "A second ensureQuickChat changed a conversation.");
+        // The repro of the person: a change in one conversation moves no other conversation.
+        const before = runtimeOf(fresh.id);
+        await choose(oneId, PICKLE);
+        assert.deepEqual(runtimeOf(fresh.id), before, "A choice in one conversation moved another one.");
+        assert.equal(runtimeOf(twoId)?.model, AUTO.model);
+        assert.equal(quick().model, PICKLE.model, "The last model used is not the default of the next conversation.");
+        return { model: AUTO.model };
+      },
+    );
+
+    // ---- 17. Errors are never silent.
+    await step(
+      "17: a refused choice changes nothing and says why; a provider off after the choice fails the send",
+      async () => {
+        const before = runtimeOf(twoId);
+        await assert.rejects(
+          () => choose(twoId, { provider: "cultura-builder", model: "cultura-builder/not-listed" }),
+          /not available/i,
+          "A model out of the list was accepted.",
+        );
+        assert.deepEqual(runtimeOf(twoId), before, "A refused choice changed the model.");
+        // The record of the agent is the default of a new conversation; a provider is "in use" while the record names
+        // it, so the default goes back to Cultura Builder before the provider is turned off.
+        await choose(oneId, AUTO);
+        assert.notEqual(quick().provider, "opencode");
+        await runCauseEffect(host.agents.setProviderOn("opencode", false));
+        await assert.rejects(() => choose(twoId, PICKLE), /off|not available/i, "A provider that is off was accepted.");
+        assert.deepEqual(runtimeOf(twoId), before, "A refused choice changed the model.");
+        await runCauseEffect(host.agents.setProviderOn("opencode", true));
+        // Chosen while the provider is on, and the provider goes off before the send: the delivery fails with the
+        // reason, and the model of the conversation stays where the person put it.
+        await choose(twoId, PICKLE);
+        await choose(oneId, AUTO);
+        await runCauseEffect(host.agents.setProviderOn("opencode", false));
+        await send(twoId, "TWO after the provider went off");
+        // The start fails as any start does: the message of the person stays in the conversation, marked failed, with the reason.
+        const failed = await until(
+          "the send fails",
+          () =>
+            host.database.connection
+              .prepare(
+                `SELECT delivery.status, delivery.error FROM projection_deliveries AS delivery
+                 JOIN projection_mailbox_messages AS message ON message.message_id = delivery.message_id
+                 WHERE message.text = ?`,
+              )
+              .get("TWO after the provider went off"),
+          (row) => row?.status === "failed",
+        );
+        assert.match(String(failed?.error ?? ""), /off/i, "The failure does not name the provider that is off.");
+        assert.equal(runtimeOf(twoId)?.model, PICKLE.model, "The failed send changed the model.");
+        await runCauseEffect(host.agents.setProviderOn("opencode", true));
+        // The record of the agent takes no model any more, and no other agent takes a model for one conversation.
+        await assert.rejects(
+          () => runCauseEffect(host.agents.updateAgent({ agentId: quick().id, model: AUTO.model })),
+          (error: unknown) => failureText(error).includes("each conversation"),
+        );
+        const ordinary = await runCauseEffect(
+          host.store.createAgent({ name: "Ordinary", description: "", avatarSeed: "ordinary", avatarHue: null }),
+        );
+        await assert.rejects(
+          () => runCauseEffect(host.agents.startTask({ agentId: ordinary.id, text: "x", runtime: AUTO })),
+          (error: unknown) => failureText(error).includes("quick chat"),
+        );
+        return { failedWith: String(failed?.error ?? "").slice(0, 80) };
+      },
+    );
+
+    // ---- 18. A restart, and the usage rows.
+    await step(
+      "18: a restart keeps the model and the session of each conversation, and usage counts under each model",
+      async () => {
+        const before = {
+          one: runtimeOf(oneId),
+          two: runtimeOf(twoId),
+          sessions: host.database.listProviderSessions(threadOf(oneId)).map((one) => one.externalSessionId),
+        };
+        await close();
+        host = await open();
+        assert.deepEqual(runtimeOf(oneId), before.one);
+        assert.deepEqual(runtimeOf(twoId), before.two);
+        assert.deepEqual(
+          host.database.listProviderSessions(threadOf(oneId)).map((one) => one.externalSessionId),
+          before.sessions,
+        );
+        await choose(oneId, FAST);
+        await send(oneId, "ONE after the restart");
+        await answered(oneId, 6);
+        assert.equal((await promptOf("ONE after the restart")).model, FAST.model);
+        const rows = host.database.connection
+          .prepare(`SELECT activity_id, provider, model FROM agent_usage_activity WHERE agent_id = ? AND kind = 'user'`)
+          .all(quick().id);
+        const messages = host.agents.readTask(quick().id, oneId).messages;
+        const rowOf = (needle: string) => {
+          const message = messages.find((one) => one.author === "user" && one.text.includes(needle));
+          return rows.find((row) => row.activity_id === `message:${message?.id}`);
+        };
+        assert.equal(rowOf("ONE after the change")?.model, FAST.model);
+        assert.equal(rowOf("ONE on the other provider")?.provider, "opencode");
+        assert.equal(rowOf("ONE SLOW question")?.model, AUTO.model);
+        return { restartedWith: before.one?.model };
+      },
+    );
+  } finally {
+    await close();
+  }
+}
+
 let running: Host | null = null;
 /** The text of a failure and of its cause, wherever the effect library put it. */
 function messageOf(error: unknown): string {
@@ -959,8 +1341,9 @@ try {
     const current = host();
     catalog = [BUILDER_AUTO, BUILDER_CODE, CODEX_MODEL, CLAUDE_MODEL];
     available = new Set<AgentProviderId>(["cultura-builder", "codex", "claude"]);
+    // The record of the agent is only the default of a new conversation now, and `updateAgent` refuses it (part 4).
     const chosen = await runCauseEffect(
-      current.agents.updateAgent({ agentId: made.id, provider: "cultura-builder", model: BUILDER_CODE.id }),
+      current.store.updateAgent({ agentId: made.id, provider: "cultura-builder", model: BUILDER_CODE.id }),
     );
     assert.equal(chosen.model, BUILDER_CODE.id);
     await stopHost(current);
@@ -1030,6 +1413,7 @@ try {
   running = null;
   await runPart2();
   await runWarmPart();
+  await runPart4();
 
   report.passed = true;
 } finally {
