@@ -7,19 +7,23 @@ quando refeita.
 
 ## Upgrade por cima de uma instalação antiga
 
-- **Perfil:** `src/main/legacy-profile.ts` copia a pasta de perfil do nome anterior para a pasta
-  atual na primeira execução que não acha perfil próprio, e deixa a pasta antiga no lugar. Agentes,
-  servidores, conversas, banco e preferências chegam inteiros; nada é apagado.
-- **Segredos:** o item de Keychain do `safeStorage` tem o nome do aplicativo, então os arquivos
-  cifrados chegam ilegíveis. O leitor já trata valor ilegível como ausente: o usuário entra de novo e
-  re-digita as chaves de provedor. Migrar o item de Keychain exigiria chamada nativa; só vale se o
-  re-login incomodar na prática.
-- **Deep link:** `openbot://` continua registrado e o leitor aceita os dois esquemas, para um convite
-  já enviado ainda abrir. Nada novo é escrito com ele.
+A decisão é que nada do nome anterior fique no código, nem como compatibilidade. O custo está
+abaixo e é consciente.
+
+- **Perfil:** a pasta de perfil é a do nome atual, então um upgrade abre um perfil novo e vazio. O
+  dado antigo continua em disco, intocado, mas não é lido. Copiar a pasta de volta é um arquivo só e
+  custa voltar a citar o nome antigo.
+- **Segredos:** o item de Keychain do `safeStorage` tem o nome do aplicativo, então mesmo copiando a
+  pasta os arquivos cifrados não abrem. O leitor trata valor ilegível como ausente: o usuário entra
+  de novo e re-digita as chaves de provedor.
+- **Deep link:** só `buildersbot://` está registrado. Um convite antigo não abre a build nova.
+- **Instalação anterior no macOS:** o `preinstall` não apaga mais a pasta, o comando e o LaunchAgent
+  do nome antigo, porque apagá-los custa escrever o nome. Quem atualiza fica com os três em disco; o
+  agente só age quando o app antigo é aberto, então na prática é lixo parado. Limpar é um `rm` de três
+  linhas no fim do mesmo script, e o nome volta a aparecer nele.
+- **Site publicado:** só `<slug>.culturabuilder.com` resolve. Site antigo precisa de 301.
 - **`appId`:** mudou junto com o nome, então o macOS e o Windows tratam a build nova como outro
-  aplicativo. Como `publish` é nulo (não há feed), o custo fica restrito ao re-login acima. Se um
-  feed for ligado antes de a base antiga sumir, o `appId` precisa voltar ou o feed precisa aceitar os
-  dois.
+  aplicativo. Como `publish` é nulo (não há feed), o custo fica restrito ao re-login acima.
 
 ## Repositório e contas
 
@@ -53,6 +57,8 @@ quando refeita.
   | `bb-updates` | CNAME | `buildersbot` | proxied |
   | `bb-discord` | CNAME | `buildersbot` | proxied |
   | `*` | CNAME | `buildersbot` | proxied |
+
+  O analytics não ganhou host próprio: o serviço de conta fala direto com a API do OpenPanel.
 
   O `*` serve os sites publicados (`<slug>.culturabuilder.com`) e foi reaproveitado do antigo
   CloudFront, que respondia 403 em todo nome sem registro. Como os sites agora dividem

@@ -253,9 +253,7 @@ function hasBody(object: R2Object | R2ObjectBody): object is R2ObjectBody {
 }
 
 function isHostedSiteHostname(hostname: string): boolean {
-  // `openbot.site` is the legacy zone of a site published before the rename. The wildcard DNS
-  // records of both zones point here, so a published site keeps resolving under either name.
-  return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.(?:culturabuilder\.com|openbot\.site)$/u.test(hostname);
+  return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.culturabuilder\.com$/u.test(hostname);
 }
 
 function requestPath(pathname: string): string | null {

@@ -4,16 +4,16 @@
 // - `polyform`, `polyformproject.org`, `synthetify`, `nightly-labs`, `Required Notice`, `derivado`,
 //   `derived` and `proprietary`: the legal trail. Outside the historical files the allow-list
 //   for these terms must end empty, so a new occurrence is a regression, not a chore;
-// - `openbot`: the product name. It survives on purpose in a few compatibility surfaces (hosts,
-//   paths, a service name, a database file, an environment prefix) and, as debt, in identifiers that
-//   F4 renames. Each allowed line names the reason.
+// - `openbot`: the product name. The product keeps none of it, not even as compatibility: it
+//   survives only in this guard and in the update feed guard, which must match the term to refuse it.
+//   Each allowed line names the reason.
 //
 // The match ignores case. A binary file is not searched. The historical files are searched by the
 // allow-list, not skipped, so an entry there still has to name its reason.
 //
 // The repair, when a line fails:
 //   - a compatibility surface (a host, a path, a service, a database file, an environment prefix):
-//     add the shape to COMPATIBILITY with the surface it keeps working;
+//     add the shape to COMPATIBILITY with the surface it keeps working. Nothing is there today;
 //   - debt that a later phase removes: add a file entry with the token and the phase. Write the
 //     identifier family, not the whole file, so an unrelated new term in the same file still fails;
 //   - a file that is history and stays history (a changelog, the plan, a vendor patch): add it to
@@ -70,65 +70,11 @@ interface Allowance {
 }
 
 /**
- * Compatibility surfaces. The new name writes, the old name reads: a link already sent, a published
- * site, an installed host and an existing profile must keep working. The plan calls these out by
- * name (section 3, "what cannot break").
+ * Compatibility surfaces. The new name writes, the old name reads: an installed host, an existing
+ * profile and a link already sent must keep working. Everything else in the product was renamed
+ * outright, so this list is short on purpose.
  */
 const COMPATIBILITY: readonly Allowance[] = [
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /app\.openbot\.desktop/iu,
-    reason:
-      "the relaunch agent label of an install made before the rename, which the host preinstall boots out and removes",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /\.openbot\b/iu,
-    reason: "the profile directory, the state files and the log folder of an existing install",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /OPENBOT_/u,
-    reason: "the environment prefix that a deployment and a shell already set",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /openbot:\/\//iu,
-    reason: "the deep-link scheme of an invitation that was already sent",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /Support\/OpenBot/u,
-    reason: "the macOS Application Support folder of an existing install",
-  },
-  {
-    file: /.*/u,
-    tokens: ["openbot"],
-    line: /\/usr\/local\/bin\/openbot(?:-host)?\b/u,
-    reason:
-      "the administrator and terminal commands that an install of the old name made, and the migration now removes",
-  },
-  {
-    file: /^src\/backend\/contracts-legacy-names\.test\.ts$|^electron-builder\.yml$/u,
-    tokens: ["openbot"],
-    reason: "the protocol name that a released client still reads, and the link scheme it registered",
-  },
-  {
-    file: /^apps\/site-router\/src\/index\.ts$/u,
-    tokens: ["openbot"],
-    line: /openbot\\?\.site/u,
-    reason: "the zone of a site published before the rename, which the site router still serves",
-  },
-  {
-    file: /^src\/main\/legacy-profile(?:\.test)?\.ts$/u,
-    tokens: ["openbot"],
-    reason: "the migration reads the application name, the profile folder and the file prefix of an existing profile",
-  },
   {
     file: /.*/u,
     tokens: ["derived", "derivado"],
@@ -138,23 +84,6 @@ const COMPATIBILITY: readonly Allowance[] = [
     file: /.*/u,
     tokens: ["proprietary"],
     reason: "the word that describes the licence of this product, used by the licence, the site and the docs",
-  },
-  {
-    file: "apps/auth-api/test/phone-web-app-pages.test.ts",
-    tokens: ["nightly-labs"],
-    line: /not\.toMatch\(\/nightly-labs/u,
-    reason: "the test names the previous repository on purpose, to assert that it does not come back",
-  },
-  {
-    file: "packages/contracts/src/app-scheme.ts",
-    tokens: ["openbot"],
-    reason: "the deep-link scheme an installation made before the rename registered, which the reader still accepts",
-  },
-  {
-    file: "resources/cli/buildersbot-cli.mjs",
-    tokens: ["openbot"],
-    line: /replace\("Builders Bot", "OpenBot"\)/u,
-    reason: "the automation folder an installation made before the rename wrote to",
   },
 ];
 

@@ -504,8 +504,8 @@ export function PrivacyPolicy() {
       <h2>Product Analytics</h2>
       <p>
         Builders Bot does not use a third-party product analytics service, and its applications send no product usage
-        events or error reports. The central account service reports account, subscription, payment, and email events to
-        OpenPanel, running at <code>bb-analytics.culturabuilder.com</code> for Cultura Builder.
+        events or error reports. Once the account service has the OpenPanel keys, it reports account, subscription,
+        payment, and email events to OpenPanel, the analytics service, at <code>api.openpanel.dev</code>.
       </p>
       <p>
         Certain information remains identifiable where necessary for account authentication, security, and payment or

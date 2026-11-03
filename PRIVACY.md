@@ -62,10 +62,10 @@ of the browser, described in "Product analytics", to the account service, when t
 email codes, credentials, message content, file content, or search queries to telemetry.
 
 Builders Bot desktop, the browser client at `/app`, the mobile app, and the website send no product analytics and no
-error reports. The destination of the events below is the service at `bb-analytics.culturabuilder.com`, and they
+error reports. The destination of the events below is the service at `api.openpanel.dev`, and they
 describe what a build sends once a client runs again.
 
-The events below are the contract of the analytics service at `bb-analytics.culturabuilder.com`. The account service would
+The events below are the contract of the analytics service at `api.openpanel.dev`. The account service would
 send them if the Worker had the `OPENPANEL_CLIENT_ID` and `OPENPANEL_CLIENT_SECRET` secrets.
 
 The account service reports an event to OpenPanel when a paid plan or a hosted server
@@ -203,7 +203,7 @@ the account. On start, the desktop app deletes the failure report queue and the 
 analytics service, so an older build that opens the same profile cannot send them.
 
 This section describes the contract of that service. It receives these events, the error reports, and
-the account ID and normalized email of a signed-in user. The service runs at `bb-analytics.culturabuilder.com`,
+the account ID and normalized email of a signed-in user. The service runs at `api.openpanel.dev`,
 apart from the app.
 
 The production website records anonymous page views using only fixed paths: `/`, `/join`, the
@@ -282,7 +282,7 @@ browser, the browser sends it to the account service. The account service keeps 
 it gets on your account and sends it to OpenPanel with your account ID. To remove it from a
 browser, clear the site data of buildersbot.culturabuilder.com. OpenPanel can also derive
 session, device, browser, operating-system, network, and approximate geographic metadata from a
-request. That service runs apart from Builders Bot and receives the events through `bb-analytics.culturabuilder.com`.
+request. That service runs apart from Builders Bot and receives the events through `api.openpanel.dev`.
 Desktop and web have no analytics switch, because no client sends: **Settings → General → Permissions →
 Usage analytics** shows a note that reads "Off". The saved preference still decides what a build sends
 when a client returns. It is stored locally and disables both UI analytics and lifecycle analytics

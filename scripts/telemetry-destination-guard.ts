@@ -57,26 +57,20 @@ const GUARD_FILE = "scripts/telemetry-destination-guard.ts";
  */
 const ALLOWED_MENTIONS: ReadonlyArray<{ file: string | RegExp; line: RegExp; reason: string }> = [
   {
-    file: /.*/u,
-    line: /bb-analytics\.culturabuilder\.com/iu,
-    reason:
-      "our own analytics destination on the Cultura Builder zone; the account Worker sends to it, the clients do not yet",
-  },
-  {
     file: "scripts/telemetry-destinations.ts",
     line: /^(?: {2}"[^"]+",|export const BLOCKED_[A-Z_]+ = \[.*\] as const;)$/u,
     reason: "the list of blocked destinations and texts that the guard and the package checks read",
-  },
-  {
-    file: /^(?:ANALYTICS|PRIVACY)\.md$|^docs\/architecture\/analytics\.md$|^apps\/mobile\/README\.md$|^plans\/legal\/purga-de-autoria\.md$|^apps\/auth-api\/src\/content\/privacy-policy\.tsx$/u,
-    line: /bb-analytics\.culturabuilder\.com/u,
-    reason: "documentation of the analytics service that runs at that address",
   },
   {
     file: /^(?:plans\/legal\/purga-de-autoria\.md|scripts\/network-policy\.ts|scripts\/network-egress-guard\.ts)$/u,
     line: /openpanel\.dev/u,
     reason:
       "the network policy names the SDK default host; the plan lists the blocked level; the guard checks the level",
+  },
+  {
+    file: /^(?:PRIVACY|ANALYTICS)\.md$|^docs\/architecture\/analytics\.md$|^apps\/mobile\/README\.md$|^apps\/auth-api\/src\/content\/privacy-policy\.tsx$|^changelog\.d\/fix-copy-checks\.md$/u,
+    line: /openpanel\.dev/u,
+    reason: "documentation of the analytics the account service reports to",
   },
   {
     file: "plans/legal/purga-de-autoria.md",

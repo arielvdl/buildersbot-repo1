@@ -524,7 +524,7 @@ have the version in `apps/mobile/CHANGELOG.md`, and the file must be for that ve
 ## OpenPanel product analytics
 
 > **The app sends no product analytics and no error reports.** The destination is the OpenPanel service
-> that runs apart from the app (`bb-analytics.culturabuilder.com`), which Builders Bot does not control. The
+> that runs apart from the app (`api.openpanel.dev`), which Builders Bot does not control. The
 > analytics folder still defines every event, but the module has no SDK client and no error report
 > queue, so it drops each event. The EAS variables below have no effect. The telemetry destination
 > guard (`bun run test:telemetry-guard`) fails when a client or transport comes back. The rest of this
@@ -532,7 +532,7 @@ have the version in `apps/mobile/CHANGELOG.md`, and the file must be for that ve
 > receive them.
 
 The client is the official OpenPanel React Native SDK with `expo-application`, with the endpoint fixed
-to `https://bb-analytics.culturabuilder.com/api`, the central analytics service. No analytics credentials are committed.
+to `https://api.openpanel.dev/api`, the central analytics service. No analytics credentials are committed.
 
 ### Production configuration
 

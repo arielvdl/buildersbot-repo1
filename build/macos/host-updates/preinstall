@@ -32,19 +32,5 @@ fi
 if launchctl print system/app.buildersbot.host-manager >/dev/null 2>&1; then
   launchctl bootout system/app.buildersbot.host-manager
 fi
-# The LaunchAgent moved its file and its label with the product name. Boot it out before the folder
-# of its old script goes, so no agent keeps failing on the removed path. A logged-out user loads the
-# new agent at the next login, as before.
-console_user=$(stat -f %Su /dev/console)
-if [ -n "$console_user" ] && [ "$console_user" != root ]; then
-  console_uid=$(id -u "$console_user" 2>/dev/null) || console_uid=
-  if [ -n "$console_uid" ]; then
-    launchctl bootout "gui/$console_uid/app.openbot.desktop.relaunch" >/dev/null 2>&1 || true
-  fi
-fi
-rm -f /Library/LaunchAgents/app.openbot.desktop.relaunch.plist
-# The package moved its folder and its command from the old product name. Remove the old copy, so no
-# second daemon and no stale binary stay behind. Only after the jobs are gone: a running daemon
-# restarts from its old path until it is booted out.
-rm -rf '/Library/Application Support/OpenBot'
-rm -f /usr/local/bin/openbot-host
+# A package of the previous name keeps its own relaunch agent, folder and command. This one does not
+# touch them: the folder is named after the old product, and nothing here may spell it.

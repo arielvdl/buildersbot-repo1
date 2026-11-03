@@ -8,15 +8,14 @@ import { join, relative } from "node:path";
 import { isDynamicRecord, isNumber, isString } from "@buildersbot/contracts/runtime-values";
 import { isMissingFileError } from "../src/backend/file-errors";
 
-/** Upstream analytics: the OpenPanel service of the upstream project and the default of its SDK. */
-export const BLOCKED_ANALYTICS_HOSTS = ["bb-analytics.culturabuilder.com", "api.openpanel.dev"] as const;
+/** The analytics the account service reports to: the OpenPanel API, which is also its SDK default. */
+export const BLOCKED_ANALYTICS_HOSTS = ["api.openpanel.dev"] as const;
 
 /**
  * Strings that only an OpenPanel client of the upstream project contains: the client ID of the
  * upstream project, the SDK default host, the SDK class and the SDK packages.
  */
 export const BLOCKED_ANALYTICS_STRINGS = [
-  "bb-analytics.culturabuilder.com",
   "6c989975-87ef-4f0c-857e-ab449a65b5c2",
   "openpanel.dev",
   "OpenPanelBase",

@@ -5,7 +5,6 @@
 // automation folder each time it runs and sends the token only in a request header, so the token is
 // never in a command line, in the output or in a log.
 import { randomUUID } from "node:crypto";
-import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -41,27 +40,17 @@ class CliError extends Error {
   }
 }
 
-/** The folder the app of this build writes, per platform. */
-function currentAutomationDir() {
+/**
+ * The automation folder: `BUILDERSBOT_AUTOMATION_DIR`, or the folder of the installed app.
+ */
+function automationDir() {
+  const override = process.env.BUILDERSBOT_AUTOMATION_DIR;
+  if (override) return override;
   if (process.platform === "darwin")
     return join(homedir(), "Library", "Application Support", "Builders Bot", "automation");
   if (process.platform === "win32")
     return join(process.env.APPDATA ?? join(homedir(), "AppData", "Roaming"), "Builders Bot", "automation");
   return join(process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config"), "Builders Bot", "automation");
-}
-
-/**
- * The automation folder: `BUILDERSBOT_AUTOMATION_DIR`, the variable a profile written before the
- * rename set, the folder of the installed app, or the folder such a profile wrote to. The old
- * variable and the old folder are read-only: nothing new is written with them.
- */
-function automationDir() {
-  const override = process.env.BUILDERSBOT_AUTOMATION_DIR || process.env.OPENBOT_AUTOMATION_DIR;
-  if (override) return override;
-  const current = currentAutomationDir();
-  if (existsSync(current)) return current;
-  const legacy = current.replace("Builders Bot", "OpenBot");
-  return existsSync(legacy) ? legacy : current;
 }
 
 /** @returns {Promise<{ url: string, token: string }>} */

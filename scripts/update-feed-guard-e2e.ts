@@ -72,12 +72,6 @@ const ALLOWED_MENTIONS: ReadonlyArray<{ file: string; line: RegExp; reason: stri
   },
   { file: "src/main/github-connector-config.ts", line: /^\s*\/\*\*/u, reason: "comment" },
   {
-    // The scheme an installation made before the rename registered, kept in the package config.
-    file: "electron-builder.yml",
-    line: /^\s*- openbot$/u,
-    reason: "deep-link scheme of an installation made before the rename",
-  },
-  {
     // The image label that links the package to its repository.
     file: "docker/Dockerfile",
     line: /org\.opencontainers\.image\.source=https:\/\/github\.com\/nextlevelcommunity\/buildersbot/u,
@@ -88,13 +82,6 @@ const ALLOWED_MENTIONS: ReadonlyArray<{ file: string; line: RegExp; reason: stri
     file: "scripts/nix-sources.ts",
     line: /has no releases of Builders Bot/u,
     reason: "error message of the nix source check",
-  },
-  {
-    // The profile folder an installation made before the rename keeps. Read-only: the migration
-    // copies it once and nothing is written there again.
-    file: "src/main/legacy-profile.ts",
-    line: /OpenBot|previous name|previous product name/u,
-    reason: "profile folder of an installation made before the rename",
   },
   {
     // The deep-link scheme such an installation registered. Read-only: nothing new is built with it.

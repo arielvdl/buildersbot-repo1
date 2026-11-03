@@ -187,7 +187,7 @@ Mapa de domínios:
 | Docs | `buildersbot.culturabuilder.com/docs` | `buildersbot.culturabuilder.com/docs` |
 | Convite | `buildersbot.culturabuilder.com/join` | `buildersbot.culturabuilder.com/join` |
 | E-mail | domínio deles | `send.buildersbot.culturabuilder.com` |
-| Analytics | OpenPanel deles | `bb-analytics.culturabuilder.com` (próprio) ou desligado |
+| Analytics | OpenPanel deles | `api.openpanel.dev` (próprio) ou desligado |
 | Firebase | `buildersbot-9f2c1` | projeto novo nosso |
 
 Ordem: DNS/certificados → Signal/TURN próprios → feed assinado → wildcard de sites com 301 → analytics → status/docs/links/e-mail → Firebase. Dupla escrita e rollback por serviço em cada passo.

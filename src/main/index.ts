@@ -111,7 +111,6 @@ import { voiceIpcHandlers } from "./ipc/voice-handlers";
 import { whatsAppAccountsIpcHandlers } from "./ipc/whatsapp-accounts-handlers";
 import { workflowIpcHandlers } from "./ipc/workflow-handlers";
 import { KeepAwake } from "./keep-awake";
-import { carryOverLegacyProfile, legacyProfilePath } from "./legacy-profile";
 import { LidAwakeRoutines } from "./lid-awake-routines";
 import { readSleepWakeTimes } from "./lid-awake-service";
 import { stopAppImageCrashpadHandlerAtExit } from "./linux-appimage-crashpad";
@@ -266,14 +265,6 @@ if (process.platform === "win32") app.setAppUserModelId("app.buildersbot.desktop
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 // A second launch exits at once and must not write into the files of the instance that runs.
 if (hasSingleInstanceLock) {
-  // An installation made under the previous name keeps its profile in another folder, named after
-  // the old one. Copy it once, before any service reads the folder; a command-line directory and the
-  // development profile are explicit and need nothing.
-  if (app.isPackaged && !commandLineUserDataDirectory) {
-    const carried = carryOverLegacyProfile(legacyProfilePath(app.getPath("appData")), app.getPath("userData"));
-    if (carried.carried) logger.info(`Carried the profile over from ${carried.from}.`);
-    else if (carried.reason === "failed") logger.info(`Could not carry the profile over from ${carried.from}.`);
-  }
   startMainLog(join(app.getPath("userData"), "logs"));
   // Crash dumps stay in `crashDumps` on this computer. Crashpad removes old reports itself. Without
   // them, a window that disappeared on Windows left nothing to tell a crash from a quit (#2675).

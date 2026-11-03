@@ -5,9 +5,6 @@ protocols:
   - name: Builders Bot invitations
     schemes:
       - buildersbot
-      # The scheme an installation made before the rename registered. A link already sent keeps
-      # opening this build; nothing new is built with it.
-      - openbot
 asar: true
 artifactName: ${productName}-${version}-${arch}.${ext}
 electronUpdaterCompatibility: ">=2.16"
