@@ -4,6 +4,7 @@ import { createSignal } from "solid-js";
 import { formatMessageTime } from "./app-message-projection";
 import { agentConversationKey } from "./features/conversation/conversation-keys";
 import { createSimpleContext } from "./simple-context";
+import { withUiError } from "./ui-error-feed";
 
 /**
  * The inline error feed of an agent's message list.
@@ -27,20 +28,17 @@ const UiErrors = createSimpleContext({
       const { t, errorMessage } = currentText();
       const body = errorMessage(error, t("app.error.actionFailed"));
       const errorKey = agentConversationKey(serverId, agentId);
-      // The same failure again replaces the earlier one, so a server that is down shows it once.
+      const entry: AgentMessage = {
+        id: `ui-${Date.now()}-${Math.random()}`,
+        author: "agent",
+        body,
+        time: formatMessageTime(new Date().toISOString()),
+        kind: "error",
+        status,
+      };
       setUiErrors((current) => ({
         ...current,
-        [errorKey]: [
-          ...(current[errorKey] ?? []).filter((entry) => entry.status !== status || entry.body !== body),
-          {
-            id: `ui-${Date.now()}-${Math.random()}`,
-            author: "agent",
-            body,
-            time: formatMessageTime(new Date().toISOString()),
-            kind: "error",
-            status,
-          },
-        ],
+        [errorKey]: withUiError(current[errorKey], entry),
       }));
     }
 
