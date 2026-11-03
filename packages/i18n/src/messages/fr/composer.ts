@@ -39,6 +39,8 @@ export const messages = {
   "composer.picker.badge.store": "Boutique",
   "composer.picker.option.tool": "Outil de la boutique {name}",
   "composer.picker.toolMaxCost": "jusqu’à {amount} par appel",
+  "composer.picker.storeLabel": "Insérer un outil de la boutique",
+  "composer.token.storeTool": "Outil de la boutique {name}",
   "composer.picker.badge.channel": "Canal",
   "composer.picker.skillLabel": "Insérer une compétence ou un serveur MCP",
   "composer.picker.mentionLabel": "Insérer une mention",

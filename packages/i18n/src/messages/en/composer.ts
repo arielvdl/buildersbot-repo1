@@ -35,6 +35,8 @@ export const messages = defineMessages("composer", {
   "composer.picker.badge.store": "Store",
   "composer.picker.option.tool": "Store tool {name}",
   "composer.picker.toolMaxCost": "up to {amount} per call",
+  "composer.picker.storeLabel": "Insert store tool",
+  "composer.token.storeTool": "Store tool {name}",
   "composer.picker.badge.channel": "Channel",
   "composer.picker.skillLabel": "Insert skill or MCP server",
   "composer.picker.mentionLabel": "Insert mention",

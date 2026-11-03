@@ -6,6 +6,7 @@ import { createStaticAvatarSvg } from "../../bloub-avatar";
 import type { ComposerAgent, ComposerMcpServer, ComposerSkill } from "../../data";
 import { currentText } from "../../text";
 import { appendAttachmentReferenceVisual } from "./AttachmentReference";
+import { STORE_TOOL_PATTERN, storeToolTitle } from "./composer-store-tool";
 
 export const MENTION_PATTERN = /@\[([^\]]+)]\(([^)]+)\)/g;
 
@@ -178,6 +179,17 @@ const BLOCKS_GLYPH: GlyphShape[] = [
   ["rect", { x: "14", y: "2", width: "8", height: "8", rx: "1" }],
 ];
 
+const STORE_GLYPH: GlyphShape[] = [
+  ["path", { d: "M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5" }],
+  [
+    "path",
+    {
+      d: "M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244",
+    },
+  ],
+  ["path", { d: "M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05" }],
+];
+
 const TEXT_QUOTE_GLYPH: GlyphShape[] = [
   ["path", { d: "M17 5H3" }],
   ["path", { d: "M21 12H8" }],
@@ -207,6 +219,28 @@ function createChipGlyph(name: string, shapes: GlyphShape[]): SVGSVGElement {
     svg.append(shape);
   }
   return svg;
+}
+
+/** A tool of the store as a chip. It serializes to `storeToolText`, so only text is sent. */
+export function createStoreToolToken(rawTitle: string, endpointId: string): HTMLSpanElement {
+  const title = storeToolTitle(rawTitle);
+  const token = document.createElement("span");
+  token.className = `composer-mention-token ${referenceChipClasses.root}`;
+  token.dataset.kind = "store-tool";
+  token.title = title;
+  token.contentEditable = "false";
+  token.dataset.storeEndpointId = endpointId;
+  token.dataset.storeTitle = title;
+  token.setAttribute("aria-label", currentText().t("composer.token.storeTool", { name: title }));
+  const iconWrap = document.createElement("span");
+  iconWrap.className = referenceChipClasses.icon;
+  iconWrap.setAttribute("aria-hidden", "true");
+  iconWrap.append(createChipGlyph("store", STORE_GLYPH));
+  const name = document.createElement("span");
+  name.className = referenceChipClasses.name;
+  name.textContent = title;
+  token.replaceChildren(iconWrap, name);
+  return token;
 }
 
 export function createMcpToken(server: ComposerMcpServer): HTMLSpanElement {
@@ -332,7 +366,7 @@ export function renderEditorValue(
   let cursor = 0;
   for (const match of value.matchAll(MENTION_PATTERN)) {
     const index = match.index ?? 0;
-    if (index > cursor) editor.append(document.createTextNode(value.slice(cursor, index)));
+    if (index > cursor) appendTextWithStoreTools(editor, value.slice(cursor, index));
     const semanticReference = chatTagReferences(match[0])[0];
     const name = semanticReference?.name ?? match[1] ?? "Agent";
     const target = semanticReference ? `${semanticReference.kind}:${semanticReference.id}` : (match[2] ?? "");
@@ -371,7 +405,7 @@ export function renderEditorValue(
     editor.append(agent ? createMentionToken(agent) : createUnavailableTagToken("agent", id, name));
     cursor = index + match[0].length;
   }
-  if (cursor < value.length) editor.append(document.createTextNode(value.slice(cursor)));
+  if (cursor < value.length) appendTextWithStoreTools(editor, value.slice(cursor));
   if (value.endsWith("\n")) editor.append(document.createElement("br"));
 }
 
@@ -380,4 +414,18 @@ function scheduleStaticMentionAvatar(avatar: HTMLElement, agent: ComposerAgent):
     if (!avatar.isConnected) return;
     avatar.replaceChildren(createStaticAvatarSvg(agent.avatarSeed, agent.avatarHue, agent.title));
   });
+}
+
+/** Text, with each `[tool-catalog: title (id)]` shown as its chip. */
+function appendTextWithStoreTools(editor: HTMLDivElement, text: string): void {
+  let cursor = 0;
+  for (const match of text.matchAll(STORE_TOOL_PATTERN)) {
+    const index = match.index ?? 0;
+    const [whole, title, endpointId] = match;
+    if (!title || !endpointId) continue;
+    if (index > cursor) editor.append(document.createTextNode(text.slice(cursor, index)));
+    editor.append(createStoreToolToken(title, endpointId));
+    cursor = index + whole.length;
+  }
+  if (cursor < text.length) editor.append(document.createTextNode(text.slice(cursor)));
 }

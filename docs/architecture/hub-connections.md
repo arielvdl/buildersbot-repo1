@@ -274,7 +274,10 @@ characters and waits 350 ms, so `$5` in a sentence goes nowhere. Choosing a resu
 the cost card and Hub approval do not change. A chat and a channel of this computer get it (`storeSearch` is
 absent on a joined server); the "+" menu has a "Store tool" item that opens the same `$` picker. In a channel the
 `$` lists the skills of the agents that the draft tags (`createChannelSkills`), or of its only agent. The Hub may charge for a search: confirm before relying
-on it.
+on it. A `/` at the start of a message or line opens the same search with the store's tools only. A chosen tool
+shows as a chip (`createStoreToolToken`) and serializes to the same text; a draft that holds that text shows the chip
+again (`STORE_TOOL_PATTERN`). A query goes to the Hub only when it reads as words (`isStoreQuery`: a letter first, then
+letters, digits, spaces, `_` or `-`, at least 3), never as a price or a path.
 
 ### Marketplace
 

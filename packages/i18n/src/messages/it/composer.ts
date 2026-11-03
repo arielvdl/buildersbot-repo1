@@ -36,6 +36,8 @@ export const messages = {
   "composer.picker.badge.store": "Store",
   "composer.picker.option.tool": "Strumento dello store {name}",
   "composer.picker.toolMaxCost": "fino a {amount} per chiamata",
+  "composer.picker.storeLabel": "Inserisci strumento dello store",
+  "composer.token.storeTool": "Strumento dello store {name}",
   "composer.picker.badge.channel": "Canale",
   "composer.picker.skillLabel": "Inserisci skill o server MCP",
   "composer.picker.mentionLabel": "Inserisci menzione",

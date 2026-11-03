@@ -38,6 +38,8 @@ export const messages = {
   "composer.picker.badge.store": "Mağaza",
   "composer.picker.option.tool": "Mağaza aracı {name}",
   "composer.picker.toolMaxCost": "çağrı başına en fazla {amount}",
+  "composer.picker.storeLabel": "Mağaza aracı ekle",
+  "composer.token.storeTool": "Mağaza aracı {name}",
   "composer.picker.badge.channel": "Kanal",
   "composer.picker.skillLabel": "Beceri veya MCP sunucusu ekle",
   "composer.picker.mentionLabel": "Bahsetme ekle",

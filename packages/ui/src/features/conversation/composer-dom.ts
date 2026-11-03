@@ -1,6 +1,7 @@
 import { serializeAttachmentReference } from "@buildersbot/contracts/attachment-references";
 import { serializeChatTagReference } from "@buildersbot/contracts/chat-tag-references";
 import { markdownListLineBreak } from "@buildersbot/contracts/markdown-lists";
+import { storeToolText } from "./composer-store-tool";
 
 export function serializeEditor(editor: HTMLDivElement): string {
   return Array.from(editor.childNodes).map(serializeNode).join("");
@@ -71,6 +72,9 @@ function serializeNode(node: Node): string {
   const mcpId = node.dataset.mcpId;
   const mcpName = node.dataset.mcpName;
   if (mcpId && mcpName) return serializeChatTagReference("mcp", mcpName, mcpId);
+  const storeEndpointId = node.dataset.storeEndpointId;
+  const storeTitle = node.dataset.storeTitle;
+  if (storeEndpointId && storeTitle) return storeToolText({ title: storeTitle, endpointId: storeEndpointId });
   const quoteMessageId = node.dataset.quoteMessageId;
   const quoteText = node.dataset.quoteText;
   if (quoteMessageId && quoteText) return serializeChatTagReference("quote", quoteText, quoteMessageId);
@@ -272,7 +276,9 @@ export function mentionTokenAtCaretBoundary(
 function closestMentionToken(node: Node, editor: HTMLDivElement): HTMLElement | null {
   const element = node instanceof HTMLElement ? node : node.parentElement;
   const token =
-    element?.closest<HTMLElement>("[data-mention-id], [data-skill-id], [data-mcp-id], [data-quote-message-id]") ?? null;
+    element?.closest<HTMLElement>(
+      "[data-mention-id], [data-skill-id], [data-mcp-id], [data-store-endpoint-id], [data-quote-message-id]",
+    ) ?? null;
   return token && editor.contains(token) ? token : null;
 }
 

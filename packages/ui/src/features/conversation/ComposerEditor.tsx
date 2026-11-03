@@ -52,8 +52,8 @@ import {
   pickerOptionName,
   pickerOptionText,
   skillMatchRank,
-  storeToolText,
 } from "./composer-picker";
+import { isStoreQuery } from "./composer-store-tool";
 import {
   type AttachmentTokenActions,
   createAttachmentToken,
@@ -61,6 +61,7 @@ import {
   createMentionToken,
   createQuoteToken,
   createSkillToken,
+  createStoreToolToken,
   MENTION_PATTERN,
   renderEditorValue,
   syncAttachmentTokens,
@@ -151,12 +152,12 @@ interface MentionContext {
   query: string;
   start: number;
   end: number;
-  trigger: "@" | "$";
+  /** `/` at the start of a message or line: the store's tools only. */
+  trigger: "@" | "$" | "/";
 }
 
 const DICTATION_INTERIM_WORDS = 2;
-/** The fewest characters, and the pause in typing, before the words after a `$` go to the store's search. */
-const STORE_QUERY_MIN = 3;
+/** The pause in typing before the words after a `$` or `/` go to the store's search. */
 const STORE_SEARCH_DELAY_MS = 350;
 
 export function expandComposerMentions(value: string): string {
@@ -240,8 +241,8 @@ export function ComposerEditor(props: ComposerEditorProps) {
   const [storeHits, setStoreHits] = createSignal<{ query: string; hits: HubEndpointHit[] }>({ query: "", hits: [] });
   const storeQuery = createMemo(() => {
     const context = mention();
-    const query = context?.trigger === "$" ? context.query.trim() : "";
-    return props.storeSearch && query.length >= STORE_QUERY_MIN && /^\p{L}/u.test(query) ? query : "";
+    const query = context && context.trigger !== "@" ? context.query.trim() : "";
+    return props.storeSearch && isStoreQuery(query) ? query : "";
   });
   createEffect(storeQuery, (query) => {
     const search = props.storeSearch;
@@ -275,6 +276,7 @@ export function ComposerEditor(props: ComposerEditorProps) {
         ...matchingMcpServers().map((server) => ({ type: "mcp" as const, server })),
         ...matchingTools().map((hit) => ({ type: "tool" as const, hit })),
       ];
+    if (trigger === "/") return matchingTools().map((hit) => ({ type: "tool" as const, hit }));
     if (trigger !== "@") return [];
     return [
       ...matchingAgents().map((agent) => ({ type: "agent" as const, agent })),
@@ -598,9 +600,12 @@ export function ComposerEditor(props: ComposerEditorProps) {
     const selection = readEditorSelection(editor);
     if (!selection || selection.anchor !== selection.focus) return null;
     const beforeCaret = editorText(editor).slice(0, selection.focus);
-    const match = beforeCaret.match(/(?:^|\s)([@$])([^@$\n\uFFFC]{0,60})$/u);
+    // A `/` counts only at the start of the message or of a line, so a path in the middle of a sentence stays text.
+    const match =
+      beforeCaret.match(/(?:^|\s)([@$])([^@$\n\uFFFC]{0,60})$/u) ??
+      beforeCaret.match(/(?:^|\n)(\/)([^@$/\n\uFFFC]{0,60})$/u);
     if (!match) return null;
-    const trigger = match[1] === "$" ? "$" : "@";
+    const trigger = match[1] === "$" ? "$" : match[1] === "/" ? "/" : "@";
     const query = match[2] ?? "";
     return { query, start: beforeCaret.length - query.length - 1, end: beforeCaret.length, trigger };
   }
@@ -656,7 +661,7 @@ export function ComposerEditor(props: ComposerEditorProps) {
             : option.type === "mcp"
               ? createMcpToken(option.server)
               : option.type === "tool"
-                ? document.createTextNode(storeToolText(option.hit))
+                ? createStoreToolToken(option.hit.title, option.hit.endpointId)
                 : createAttachmentToken(option.attachment, attachmentTokenActions);
     const trailingSpace = document.createTextNode(" ");
     range.insertNode(trailingSpace);
@@ -1067,7 +1072,11 @@ export function ComposerEditor(props: ComposerEditorProps) {
                 class={["mention-picker-list", pickerFades.classes()]}
                 onScroll={pickerFades.measure}
                 aria-label={t(
-                  mention()?.trigger === "$" ? "composer.picker.skillLabel" : "composer.picker.mentionLabel",
+                  mention()?.trigger === "$"
+                    ? "composer.picker.skillLabel"
+                    : mention()?.trigger === "/"
+                      ? "composer.picker.storeLabel"
+                      : "composer.picker.mentionLabel",
                 )}
                 options={matchingOptions()}
                 optionValue={pickerOptionKey}

@@ -7,3 +7,5 @@
 - The "+" menu and the `$` picker of a channel now offer skills and store tools, as a chat does. Skills
   come from the agent you tag with `@` (or the channel's only agent). The store works in a channel while
   only you write in the channels; a channel with a team member keeps it closed.
+- A store tool you choose shows as a chip in the message box, and a `/` at the start of a message
+  opens the store's tools directly.
