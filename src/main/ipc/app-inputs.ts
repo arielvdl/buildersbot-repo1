@@ -133,7 +133,7 @@ export function parseBusyMessageModePreference(input: unknown): BusyMessageModeP
   return { mode: input.mode };
 }
 
-/** One to eight known switches, each one at most once, each with a boolean. Anything else is refused. */
+/** One to nine known switches, each one at most once, each with a boolean. Anything else is refused. */
 export function parseSetOptimizationsInput(input: unknown): SetOptimizationsInput {
   if (!isSetOptimizationsInput(input)) throw new Error("Optimization changes are not valid.");
   return { changes: input.changes.map(({ id, enabled }) => ({ id, enabled })) };

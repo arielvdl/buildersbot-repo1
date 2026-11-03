@@ -50,6 +50,10 @@ const OPTIMIZATION_TEXT = {
     title: "settings.optimizations.streamingCheckpoints.title",
     description: "settings.optimizations.streamingCheckpoints.description",
   },
+  "quick-status-reply": {
+    title: "settings.optimizations.quickStatusReply.title",
+    description: "settings.optimizations.quickStatusReply.description",
+  },
 } as const satisfies Record<OptimizationId, { title: AppTextKey; description: AppTextKey }>;
 
 interface OptimizationSettingsState {

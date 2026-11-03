@@ -760,6 +760,37 @@ change, because the remote client cannot see it. The channel threads of the agen
 (`ChannelStore.contextThreadsForAgent`) are retired too, and their work steps are saved. A channel
 turn also carries its own self-contained context packet. The instance transfer file keeps `taskLimit`.
 
+## Quick status reply
+
+A turn can run for a long time, and a person who writes again hears nothing until it ends. The advanced
+optimization `quick-status-reply` (off by default, see [optimizations](optimizations.md)) adds a short
+note for that case. When a person's message arrives and the oldest running turn of the agent began
+5 minutes ago or more (`QUICK_STATUS_AFTER_MS`), `AgentService.#replyQuickStatus` runs a second generation in
+the background and writes its answer as a system line (`QUICK_STATUS_ITEM_TYPE`, `quick-status`).
+
+- Where it starts: `#sendUserMessage` (the agent's own chat and its tasks, by the turn of that thread) and
+  `ChannelService.observeCommands` for a `send` in a channel (the agents with a running task in that tab, or
+  the one the message names, by their oldest running turn). Routine, request, agent and Team API
+  deliveries to a busy agent start nothing: only a person's message.
+- The generation (`src/backend/agent/quick-status.ts`) has no tools, no session and no thread. It uses the
+  agent's own provider and model at the lowest effort the model takes, through `generateWorkflowText`, so it
+  reads the same data that the agent's provider already holds and no other provider does. The prompt has the
+  agent's profile, the minutes of the turn, the text of the channel task, the newest 14 items of the chat or tab and
+  the new message. Data in it is data: the note answers none of it. It leaves one disposable-client
+  place for a person's own generation (`ProfileClients.hasSpare`), and a generation that passes 45 seconds
+  writes nothing.
+- The running turn, the queue and the message do not change. The message still waits or steers as the
+  busy-message mode says. The note is one more line, in the chat or in the tab of the task, with the agent as
+  author in a channel.
+- Limits: one note at a time for an agent, and at least 3 minutes between two notes
+  (`QuickStatusGate`, in memory; a restart forgets it). A failed generation does not start the pause.
+- Tracking: each decision that is not "not busy" or "under 5 minutes", and each end, goes to the
+  `agent-service` log as `Quick status skipped.` or `A quick status ended.` with the agent id, the place
+  (`chat`, `task` or `channel`), the outcome (`written`, `timeout`, `empty`, `failed`, `no-spare-place`,
+  `agent-gone`), the minutes the turn had run, and the time of the generation. It has no text.
+- Checks: `scripts/quick-status-e2e.ts` (the decision, the pause, the prompt and the cleaning of the note).
+  The generation itself was not run against a real provider in that script.
+
 ## Forced queued messages
 
 Each row of the queue above the composer has "Force now" (bolt icon) beside steer, "Run in new thread",
