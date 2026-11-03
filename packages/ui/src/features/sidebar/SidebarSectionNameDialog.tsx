@@ -64,9 +64,11 @@ function SectionNameForm(formProps: {
   setInput: (element: HTMLInputElement) => void;
   onClose: () => void;
 }) {
-  const { props, sectionRail } = useSidebarScope();
+  const { props, sectionRail, selection } = useSidebarScope();
   const { t, errorMessage } = useText();
   const target = formProps.target;
+  // Chats picked in the list: the first one makes the section, the rest follow once it exists.
+  const picked = target.kind === "create" ? (target.agentIds ?? []) : [];
   // The section as the dialog opened on it. A save sends a new layout, which must not reset the draft.
   const renamed = untrack(() =>
     target.kind === "rename" ? props.layout.sections.find((section) => section.id === target.sectionId) : undefined,
@@ -99,10 +101,13 @@ function SectionNameForm(formProps: {
           : {
               type: "create",
               name,
-              ...(target.kind === "create" && target.agentId ? { agentId: target.agentId } : {}),
+              ...(target.kind === "create" && (picked[0] ?? target.agentId)
+                ? { agentId: picked[0] ?? target.agentId }
+                : {}),
             },
       );
-      if (!renamed) sectionRail.selectWhenCreated(name, before);
+      if (!renamed) sectionRail.selectWhenCreated(name, before, picked.slice(1));
+      if (picked.length > 0) selection.clear();
       formProps.onClose();
     } catch (cause) {
       setDraft((state) => {

@@ -1,6 +1,6 @@
 import { CHANNEL_TAB_NOTE_LIMIT, type ChannelTabOutcome } from "@buildersbot/contracts/ipc";
-import { Check, Field, RadioGroup, Text, Textarea } from "@buildersbot/ui";
-import { For } from "solid-js";
+import { Field, RadioGroup, Text, Textarea } from "@buildersbot/ui";
+import { For, Show } from "solid-js";
 import { useText } from "../../text";
 
 /** The three answers, in the order they show. The text of each is an interface key. */
@@ -10,7 +10,17 @@ const OUTCOMES = [
   { value: "other", label: "channel.topic.outcome.other" },
 ] as const satisfies readonly { value: ChannelTabOutcome; label: string }[];
 
+/** One figure of the tab being closed, already written for the person (the caller owns the text and the numbers). */
+export interface ChannelTabCloseStat {
+  label: string;
+  value: string;
+  /** `working` marks a tab that still has agents at work; the figure then takes the warning colour. */
+  tone?: "idle" | "working";
+}
+
 export interface ChannelTabCloseOutcomeProps {
+  /** The tab's name and figures, shown above the question so the person sees what goes away. */
+  summary?: { name: string; stats: readonly ChannelTabCloseStat[] } | undefined;
   /** The answer, or null while the person has not chosen: no option starts selected. */
   outcome: ChannelTabOutcome | null;
   note: string;
@@ -29,6 +39,25 @@ export function ChannelTabCloseOutcome(props: ChannelTabCloseOutcomeProps) {
   const noteLabel = () => t(noteRequired() ? "channel.topic.outcome.noteRequired" : "channel.topic.outcome.note");
   return (
     <div class="channel-tab-outcome">
+      <Show when={props.summary}>
+        {(summary) => (
+          <div class="channel-tab-outcome-summary">
+            <Text as="p" variant="caption" class="channel-tab-outcome-tab">
+              {summary().name}
+            </Text>
+            <dl class="channel-tab-outcome-stats">
+              <For each={summary().stats}>
+                {(stat) => (
+                  <div class="channel-tab-outcome-stat" data-tone={stat.tone}>
+                    <dt>{stat.label}</dt>
+                    <dd>{stat.value}</dd>
+                  </div>
+                )}
+              </For>
+            </dl>
+          </div>
+        )}
+      </Show>
       <RadioGroup.Root
         class="channel-tab-outcome-options"
         aria-label={t("channel.topic.outcome.label")}
@@ -45,9 +74,6 @@ export function ChannelTabCloseOutcome(props: ChannelTabCloseOutcomeProps) {
               <RadioGroup.ItemInput />
               <RadioGroup.ItemControl class="channel-tab-outcome-control">
                 <RadioGroup.ItemLabel class="channel-tab-outcome-option-label">{t(item.label)}</RadioGroup.ItemLabel>
-                <RadioGroup.ItemIndicator class="channel-tab-outcome-check">
-                  <Check aria-hidden="true" />
-                </RadioGroup.ItemIndicator>
               </RadioGroup.ItemControl>
             </RadioGroup.Item>
           )}

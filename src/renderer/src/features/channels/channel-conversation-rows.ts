@@ -119,9 +119,20 @@ export function firstUnreadChannelMessageId(
 }
 
 /**
- * Everyone the channel waits on: the owner of a running task, the author of a message that is still
- * arriving, and the lead while it chooses an owner. They read as one row under the transcript,
- * because a channel runs several agents at once and a row for each would push the messages away.
+ * A task that is ready and has an owner but has not started its turn: the provider boots the session
+ * or opens the turn. It stays `queued` until then, which can take many seconds, and it has no `wait`
+ * (a reason the reader can follow) and no `startRetry` (a start that failed). Without a row for it the
+ * channel shows nothing while the Stop button is already on, and the request reads as dropped.
+ */
+export function startingChannelTask(task: ChannelTask): boolean {
+  return task.state === "queued" && task.wait === undefined && task.startRetry === undefined;
+}
+
+/**
+ * Everyone the channel waits on: the owner of a running task, the owner of a task that starts, the
+ * author of a message that is still arriving, and the lead while it chooses an owner. They read as
+ * one row under the transcript, because a channel runs several agents at once and a row for each
+ * would push the messages away.
  *
  * The lead's routing turn moves no task out of `queued` and writes no message of its own. Without
  * it the transcript stands still while the coordinator thinks, which reads as a dropped request.
@@ -136,7 +147,8 @@ export function channelWorkers(
   hiddenAgentIds: ReadonlySet<string>,
 ): ChannelWorker[] {
   const ids = new Set<string>();
-  for (const task of page.tasks) if (task.state === "running" && task.ownerAgentId) ids.add(task.ownerAgentId);
+  for (const task of page.tasks)
+    if ((task.state === "running" || startingChannelTask(task)) && task.ownerAgentId) ids.add(task.ownerAgentId);
   for (const entry of page.messages)
     if (entry.message.status === "streaming" && entry.author.kind !== "member") ids.add(entry.author.id);
   const lead = page.channel.leadAgentId;

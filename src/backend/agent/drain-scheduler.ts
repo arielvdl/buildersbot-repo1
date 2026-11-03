@@ -306,8 +306,11 @@ export class DrainScheduler {
    * forced message starts as any other message at the head of the queue.
    */
   readonly #startsAlone = new Set<string>();
-  /** The last hold `#reportHold` logged per lane, so a waiting queue logs once per reason. */
-  readonly #reportedHolds = new Map<string, string>();
+  /**
+   * The last hold `#reportHold` logged per lane, so a waiting queue logs once per reason, and when the
+   * wait began, so the line that ends it says how long the message waited.
+   */
+  readonly #reportedHolds = new Map<string, { reason: string; since: number }>();
   /**
    * The model each lane's running turn was started with, by lane key. The agent record can be moved
    * to another model while that turn runs, but the CLI keeps the session it opened, so this is the
@@ -603,9 +606,9 @@ export class DrainScheduler {
    */
   #reportHold(lane: Lane, reason: string): void {
     const key = laneKey(lane);
-    if (this.#reportedHolds.get(key) === reason || !this.#mailbox.nextQueued(lane.agentId, lane.taskId, lane.tab))
-      return;
-    this.#reportedHolds.set(key, reason);
+    const next = this.#mailbox.nextQueued(lane.agentId, lane.taskId, lane.tab);
+    if (this.#reportedHolds.get(key)?.reason === reason || !next) return;
+    this.#reportedHolds.set(key, { reason, since: this.#now() });
     const working =
       reason === "active-turn" && lane.taskId === null && lane.tab === null
         ? this.#conversation.workingSnapshot(lane.agentId)
@@ -614,8 +617,27 @@ export class DrainScheduler {
       agentId: lane.agentId,
       ...(lane.taskId === null ? {} : { taskId: lane.taskId }),
       ...(lane.tab === null ? {} : { channelTab: true }),
+      deliveryId: next.delivery.id,
+      sender: next.delivery.sender.kind,
       reason,
+      // `machine` is two clauses: the memory of the computer, or the cap on turns and agents.
+      ...(reason === "machine" ? { machine: this.#memory.mayDrain(lane.agentId) ? "turn-slots" : "memory" } : {}),
       ...(working ? { threadId: working.threadId, turnId: working.activeTurnId } : {}),
+    });
+  }
+
+  /** Logs how long a held message waited, when the lane is free to start it. */
+  #reportHoldEnded(lane: Lane): void {
+    const key = laneKey(lane);
+    const held = this.#reportedHolds.get(key);
+    this.#reportedHolds.delete(key);
+    if (!held) return;
+    logger.info("A held message may start.", {
+      agentId: lane.agentId,
+      ...(lane.taskId === null ? {} : { taskId: lane.taskId }),
+      ...(lane.tab === null ? {} : { channelTab: true }),
+      reason: held.reason,
+      heldMs: Math.max(0, this.#now() - held.since),
     });
   }
 
@@ -934,7 +956,7 @@ export class DrainScheduler {
       this.#reportHold(lane, hold);
       return;
     }
-    this.#reportedHolds.delete(key);
+    this.#reportHoldEnded(lane);
     this.#drainingLanes.add(key);
     yield* Effect.gen({ self: this }, function* () {
       if (this.#laneTurnActive(lane)) return;

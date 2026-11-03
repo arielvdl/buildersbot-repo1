@@ -6,6 +6,9 @@ export const messages = {
   "billing.description": "Cada servidor tem seu próprio plano. A Stripe processa o pagamento.",
   "billing.loading": "Carregando cobrança…",
   "billing.unavailable": "A cobrança não está disponível neste servidor de contas.",
+  "billing.enterprise.title": "Conta Enterprise",
+  "billing.enterprise.description":
+    "Esta conta foi definida como Enterprise. Entre em contato com a equipe comercial da Cultura Builder, que vai administrar sua conta e a cobrança com você.",
   "billing.loadFailed": "Não foi possível carregar a cobrança.",
   "billing.portalFailed": "Não foi possível abrir o gerenciamento de cobrança.",
   "billing.servers.title": "Planos dos servidores",

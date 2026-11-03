@@ -20,6 +20,19 @@ export const FIGURE_HEIGHT = 108;
 export const TABLE_RATIO = 0.5774;
 export const TABLE_DEPTH = 16;
 export const TABLE_GRID = 6;
+/** A stage of a channel wider than this grows its agents, up to `WIDE_STAGE_GROWTH` at `WIDE_STAGE_FULL`. */
+const WIDE_STAGE_FROM = 1200;
+const WIDE_STAGE_FULL = 1600;
+const WIDE_STAGE_GROWTH = 0.15;
+
+/**
+ * How much bigger the agents of a wide stage are: 1 up to 1200 px, then a steady rise to 1.15 at 1600 px,
+ * so a resize never makes them jump. Without this, a big window leaves small agents on a big floor.
+ */
+function wideStageGrowth(width: number): number {
+  const reach = (width - WIDE_STAGE_FROM) / (WIDE_STAGE_FULL - WIDE_STAGE_FROM);
+  return 1 + WIDE_STAGE_GROWTH * Math.max(0, Math.min(1, reach));
+}
 
 export interface StageGeometry {
   width: number;
@@ -49,9 +62,18 @@ export function stageGeometry(width: number, height: number, maxTable = 380): St
     tableHeight: tableWidth * TABLE_RATIO,
     centerX: width / 2,
     centerY: height * (small ? 0.485 : 0.52),
-    fit: small ? unit : Math.max(0.62, Math.min(1, height / 380)),
+    fit: small ? unit : stageFit(width, height),
     reach: small ? { x: 36 * unit, y: 34 * unit } : { x: 44, y: 18 },
   };
+}
+
+/**
+ * The size of every figure on the stage of a channel. A short stage shrinks it to keep the agents apart. A
+ * wide one grows it, but never past what the height holds, so a wide and short stage does not crowd.
+ */
+function stageFit(width: number, height: number): number {
+  const base = Math.max(0.62, Math.min(1, height / 380));
+  return Math.min(base * wideStageGrowth(width), Math.max(base, height / 380));
 }
 
 export interface SeatPoint {

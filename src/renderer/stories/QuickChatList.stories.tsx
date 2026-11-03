@@ -48,6 +48,8 @@ const meta = {
     onNew: fn(),
     onArchive: fn(),
     onRestore: fn(),
+    onRestoreMany: fn(async () => {}),
+    onDeleteMany: fn(async () => {}),
     onDelete: fn(),
   },
   decorators: [
@@ -102,13 +104,22 @@ export const Statuses: Story = {
   },
 };
 
-/** The archived conversations are folded under the list. Open the row to see them. */
+/** The archived conversations open in a dialog from the row under the list. */
 export const Archived: Story = {
   args: {
     archived: [
       row("x", "Old idea", "A list of ideas for the launch", 40 * DAY),
       row("y", "Draft of a post", "Draft a post", 50 * DAY),
     ],
+  },
+};
+
+/** A long archive: the dialog draws one page and "Show more" adds the next. */
+export const LongArchive: Story = {
+  args: {
+    archived: Array.from({ length: 300 }, (_, index) =>
+      row(`old-${index}`, `Old conversation ${index + 1}`, "A list of ideas for the launch", (index + 8) * DAY),
+    ),
   },
 };
 

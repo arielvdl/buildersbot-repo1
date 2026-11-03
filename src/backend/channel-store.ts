@@ -240,14 +240,15 @@ export class ChannelStore {
     for (const row of databaseRows(
       this.database.connection
         .prepare(
-          "SELECT channel_id, agent_id, thread_id FROM projection_channel_contexts ORDER BY channel_id, agent_id",
+          "SELECT channel_id, topic_id, agent_id, thread_id FROM projection_channel_contexts ORDER BY channel_id, agent_id",
         )
         .all(),
     )) {
       const channelId = requiredStringColumn(row, "channel_id");
-      const thread = {
+      const thread: ChannelThread = {
         agentId: requiredStringColumn(row, "agent_id"),
         threadId: requiredStringColumn(row, "thread_id"),
+        topicId: requiredStringColumn(row, "topic_id"),
       };
       threads.set(channelId, [...(threads.get(channelId) ?? []), thread]);
     }
@@ -367,6 +368,19 @@ export class ChannelStore {
         .prepare("SELECT * FROM projection_channel_topics WHERE channel_id = ? ORDER BY created_at, topic_id")
         .all(channelId),
     ).map((row) => decodeTopic(row));
+  }
+
+  /** How many messages with text a person wrote in the channel, in every tab. */
+  personMessageCount(channelId: string): number {
+    const [row] = databaseRows(
+      this.database.connection
+        .prepare(
+          `SELECT COUNT(*) AS total FROM projection_channel_messages m
+            WHERE m.channel_id = ? AND ${PERSON_TEXT("m.message_json")}`,
+        )
+        .all(channelId),
+    );
+    return Number(row?.total ?? 0);
   }
 
   /** The id of the first tab, which every channel has. */

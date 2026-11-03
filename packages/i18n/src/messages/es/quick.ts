@@ -8,6 +8,8 @@ export const messages = {
   "quick.page.loading": "Cargando el chat rápido",
   "quick.owner.name": "Rápido",
   "quick.empty.title": "¿Qué quieres resolver?",
+  "quick.empty.hint":
+    "El chat rápido no guarda la memoria de los proyectos. Para recordar cosas o continuar un proyecto, usa un canal: mantiene el historial y la coherencia de tus datos.",
   "quick.list.label": "Conversaciones del chat rápido",
   "quick.list.title": "Chat rápido",
   "quick.list.new": "Nueva",

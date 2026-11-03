@@ -106,7 +106,7 @@ jobs:
     #
     # They run on a pull request and on a push to main, and on a manual run. `check` needs this job,
     # and `all-checks-pass` needs both, so a red guard keeps the deploy.
-    name: Guards
+    name: guards
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -160,7 +160,7 @@ jobs:
     # Branch protection requires this job, and a skipped required check counts as passed. So it
     # runs when `detect` did not succeed, and it skips only when `detect` found no code change and
     # no Markdown change. A Markdown-only change runs only the link check.
-    name: Check
+    name: check
     needs: [detect, guards]
     if: ${{ !cancelled() && (needs.detect.result != 'success' || needs.detect.outputs.code == 'true' || needs.detect.outputs.docs == 'true') }}
     runs-on: ubuntu-latest
@@ -1171,7 +1171,9 @@ jobs:
       - name: Deploy public site router
         working-directory: apps/site-router
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_SITE_ROUTER_DEPLOY_TOKEN }}
+          # The dedicated token is optional: production already holds a token with Workers Scripts
+          # and the zone, so a repository that has only that one still deploys the router.
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_SITE_ROUTER_DEPLOY_TOKEN || secrets.CLOUDFLARE_PRODUCTION_DEPLOY_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: ../../node_modules/.bin/wrangler deploy --config wrangler.jsonc --keep-vars
 
@@ -1235,9 +1237,11 @@ jobs:
             echo
             fail "$association_url does not have the expected applinks.details."
           fi
-          curl --fail --silent --show-error --retry 5 --retry-all-errors https://api.buildersbot.culturabuilder.com/health/live >/dev/null
-          curl --fail --silent --show-error --retry 5 --retry-all-errors https://api.buildersbot.culturabuilder.com/health/ready >/dev/null
-          site_url=https://deployment-smoke-check.sites.buildersbot.culturabuilder.com/
+          # The account Worker answers on this host. `api.buildersbot.culturabuilder.com` is the
+          # address the app uses, but it has no DNS record of its own yet; the route here exists.
+          curl --fail --silent --show-error --retry 5 --retry-all-errors https://buildersbot.culturabuilder.com/health/live >/dev/null
+          curl --fail --silent --show-error --retry 5 --retry-all-errors https://buildersbot.culturabuilder.com/health/ready >/dev/null
+          site_url=https://deployment-smoke-check.culturabuilder.com/
           site_status="$(curl --silent --show-error --retry 5 --retry-all-errors \
             --max-redirs 0 --dump-header "$verification_dir/site-router.headers" \
             --output "$verification_dir/site-router.txt" --write-out '%{http_code}' \

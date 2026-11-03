@@ -984,3 +984,53 @@
     stroke-dashoffset: -20;
   }
 }
+
+/*
+ * The symbol on the lid of a mark with an activity works too: the dots of a thought go on one after the
+ * other, and a code, a command or a hand-off flickers. `[data-paused]` on an ancestor (the stage while
+ * it is off screen) pauses it, and a reader who asks for less motion gets none.
+ */
+.agent-mark[data-activity="thinking"] .agent-mark-lid circle {
+  animation: agent-mark-lid-dots 1.2s ease-in-out infinite;
+}
+
+.agent-mark[data-activity="thinking"] .agent-mark-lid circle:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.agent-mark[data-activity="thinking"] .agent-mark-lid circle:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.agent-mark:is([data-activity="editing"], [data-activity="running"], [data-activity="delegating"])
+  .agent-mark-lid
+  path {
+  animation: agent-mark-lid-flicker 1s steps(2) infinite;
+}
+
+[data-paused] .agent-mark[data-activity] .agent-mark-lid * {
+  animation-play-state: paused;
+}
+
+@keyframes agent-mark-lid-dots {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes agent-mark-lid-flicker {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-mark[data-activity] .agent-mark-lid * {
+    animation: none;
+  }
+}

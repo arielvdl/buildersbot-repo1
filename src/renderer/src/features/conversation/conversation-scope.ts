@@ -47,6 +47,7 @@ import {
   stopRevealingFileQuote,
   workspaceAgentOfPath,
 } from "./quoted-text";
+import { watchReaderAway } from "./reader-away";
 import { createActivityStore } from "./stores/activity-store";
 import { createBrowserStore } from "./stores/browser-store";
 import { createComposerActions } from "./stores/composer-actions";
@@ -68,6 +69,11 @@ import { createVoiceStore } from "./stores/voice-store";
 
 /** A keyboard or wheel scroll moves the chat within a few frames of its input. */
 const READER_INPUT_WINDOW_MS = 250;
+/** Within this distance of the end, the reader is back at the latest message. */
+const READER_AT_LATEST_PX = 80;
+/** A reader who scrolled up this share of the view, or this many pixels, is reading older messages. */
+const READER_AWAY_SHARE = 0.1;
+const READER_AWAY_MIN_PX = 48;
 
 /**
  * Settings requests that a chat has already opened. The request stays set after it is handled, and the
@@ -965,6 +971,9 @@ export function createConversationViewScope(props: ConversationProps) {
   let latestScrollSettleFrame: number | undefined;
   let lastScrollTop = 0;
   let readerLeftLatest = false;
+  /** The reader scrolled up to older messages and has not come back to the end. A host can fold what covers the view. */
+  const [readerAway, setReaderAway] = createSignal(false);
+  watchReaderAway(readerAway, (away) => props.onReaderAwayChange?.(away));
   let readerDragging = false;
   let readerIntent: { up: boolean; at: number } | undefined;
   let lastTouchY: number | undefined;
@@ -1761,6 +1770,7 @@ export function createConversationViewScope(props: ConversationProps) {
     stickToLatest = true;
     readerLeftLatest = false;
     unreadOpening.holding = false;
+    setReaderAway(false);
   }
   /**
    * The reader moved up, so the chat stops following new content until the reader moves down again
@@ -1804,18 +1814,35 @@ export function createConversationViewScope(props: ConversationProps) {
     const moved = element.scrollTop - lastScrollTop;
     lastScrollTop = element.scrollTop;
     const intent = readerIntent && performance.now() - readerIntent.at < READER_INPUT_WINDOW_MS ? readerIntent : null;
-    if (moved < 0 && (readerDragging || intent?.up === true)) leaveLatest();
-    else if (moved > 0 && (readerDragging || intent?.up === false)) {
+    const remaining = element.scrollHeight - element.scrollTop - element.clientHeight;
+    if (moved < 0 && (readerDragging || intent?.up === true)) {
+      leaveLatest();
+      // Only the reader's own scroll up counts: a fold of the stage grows the view and can move the offset.
+      if (remaining > Math.max(READER_AWAY_MIN_PX, element.clientHeight * READER_AWAY_SHARE)) setReaderAway(true);
+    } else if (moved > 0 && (readerDragging || intent?.up === false)) {
       readerLeftLatest = false;
       // A scroll up ends the hold at the unread divider in `leaveLatest`; a scroll down ends it here.
       unreadOpening.holding = false;
+      if (remaining <= READER_AT_LATEST_PX) setReaderAway(false);
     }
     // Distance only rejoins. A follow that has not yet landed, or a correction to the last row
     // above the activity line, can sit more than 80px from the real bottom while a turn runs.
-    if (!readerLeftLatest && element.scrollHeight - element.scrollTop - element.clientHeight <= 80) {
+    if (!readerLeftLatest && remaining <= READER_AT_LATEST_PX) {
       stickToLatest = true;
+      setReaderAway(false);
     }
   };
+  /**
+   * A wheel or key press down while the view already sits at the end moves nothing, so no scroll event
+   * tells that the reader is back. The reader asked for the latest message: follow it again.
+   */
+  function reachLatestFromEnd() {
+    const element = scrollElement;
+    if (!element || !readerAway()) return;
+    if (element.scrollHeight - element.scrollTop - element.clientHeight > READER_AT_LATEST_PX) return;
+    setStickToLatest(true);
+    setReaderAway(false);
+  }
   function noteReaderIntent(up: boolean) {
     readerIntent = { up, at: performance.now() };
   }
@@ -1823,6 +1850,7 @@ export function createConversationViewScope(props: ConversationProps) {
     // Ctrl with the wheel zooms, and a sideways swipe can report a small vertical delta.
     if (event.ctrlKey || event.deltaY === 0 || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
     noteReaderIntent(event.deltaY < 0);
+    if (event.deltaY > 0) reachLatestFromEnd();
   }
   function readerKeyDown(event: KeyboardEvent) {
     // A control that used the key, such as the rows of a trace dialog, did not scroll the chat. A key in
@@ -1837,8 +1865,10 @@ export function createConversationViewScope(props: ConversationProps) {
     )
       return;
     if (event.key === "ArrowUp" || event.key === "PageUp" || event.key === "Home") noteReaderIntent(true);
-    else if (event.key === "ArrowDown" || event.key === "PageDown" || event.key === "End") noteReaderIntent(false);
-    else if (event.key === " ") noteReaderIntent(event.shiftKey);
+    else if (event.key === "ArrowDown" || event.key === "PageDown" || event.key === "End") {
+      noteReaderIntent(false);
+      reachLatestFromEnd();
+    } else if (event.key === " ") noteReaderIntent(event.shiftKey);
   }
   function readerTouchMove(event: TouchEvent) {
     const y = event.touches.length === 1 ? event.touches[0]?.clientY : undefined;

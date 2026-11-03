@@ -57,6 +57,12 @@ const GUARD_FILE = "scripts/telemetry-destination-guard.ts";
  */
 const ALLOWED_MENTIONS: ReadonlyArray<{ file: string | RegExp; line: RegExp; reason: string }> = [
   {
+    file: /.*/u,
+    line: /bb-analytics\.culturabuilder\.com/iu,
+    reason:
+      "our own analytics destination on the Cultura Builder zone; the account Worker sends to it, the clients do not yet",
+  },
+  {
     file: "scripts/telemetry-destinations.ts",
     line: /^(?: {2}"[^"]+",|export const BLOCKED_[A-Z_]+ = \[.*\] as const;)$/u,
     reason: "the list of blocked destinations and texts that the guard and the package checks read",
@@ -249,19 +255,19 @@ await check("no interface text or served page promises an analytics service or s
 await check("the matcher ignores case and refuses a Markdown paragraph that does not name the upstream project", () => {
   const capitals = findMentionsInText(
     "src/sample.ts",
-    'const url = "https://BB-ANALYTICS.CULTURABUILDER.COM/api";',
+    'const url = "https://API.OPENPANEL.DEV/api";',
     BLOCKED_ANALYTICS_STRINGS,
   );
   if (capitals.length !== 1 || capitals[0]?.allowed !== null) fail("A host in capital letters was not refused.");
   const table = findMentionsInText(
     "docs/sample.md",
-    "| Host | Use |\n| --- | --- |\n| `*.buildersbot.culturabuilder.com` | Sites, and `bb-analytics.culturabuilder.com` |\n",
+    "| Host | Use |\n| --- | --- |\n| `*.buildersbot.culturabuilder.com` | Sites, and `api.openpanel.dev` |\n",
     BLOCKED_ANALYTICS_STRINGS,
   );
   if (table.length !== 1 || table[0]?.allowed !== null) fail("A Markdown table that allows the host was not refused.");
   const history = findMentionsInText(
     "docs/sample.md",
-    "Earlier versions sent events to the upstream\nproject (`bb-analytics.culturabuilder.com`).\n",
+    "Earlier versions sent events to the upstream\nproject (`api.openpanel.dev`).\n",
     BLOCKED_ANALYTICS_STRINGS,
   );
   if (history.length !== 1 || history[0]?.allowed !== MARKDOWN_UPSTREAM_REASON) {

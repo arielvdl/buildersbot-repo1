@@ -224,6 +224,7 @@ export const messages = defineMessages("sidebar", {
   "sidebar.channel.workingPreview": "Working · {preview}",
   "sidebar.channel.unread": { one: "{count} unread message", other: "{count} unread messages" },
   "sidebar.tabs.show": "Show tabs ({count})",
+  "sidebar.tabs.close": "Close tab",
   "sidebar.tabs.hide": "Hide tabs",
   "sidebar.tabs.main": "Main chat",
   "sidebar.tabs.thread": "Thread",
@@ -305,4 +306,14 @@ export const messages = defineMessages("sidebar", {
   "sidebar.community.joinDiscord": "Join the Discord",
   "sidebar.community.followX": "Follow Builders Bot on X",
   "sidebar.community.dismiss": "Dismiss the community invitation",
+  "sidebar.selection.label": "Picked chats",
+  "sidebar.selection.count": { one: "{count} picked", other: "{count} picked" },
+  "sidebar.selection.moveCount": { one: "Move {count} chat to", other: "Move {count} chats to" },
+  "sidebar.selection.newSection": "New section with them",
+  "sidebar.selection.hide": "Hide agents",
+  "sidebar.selection.clear": "Clear selection",
+  "sidebar.announce.movedManyTo": {
+    one: "Moved {count} chat to {section}.",
+    other: "Moved {count} chats to {section}.",
+  },
 });

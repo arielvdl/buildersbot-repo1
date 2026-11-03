@@ -86,6 +86,8 @@ export interface SidebarChatTab {
   working?: boolean | undefined;
   /** A message of the tab waits for a free turn. */
   queued?: boolean | undefined;
+  /** Whether the tab can be closed from the list. The agent's own chat cannot; without the field, it can. */
+  closable?: boolean | undefined;
 }
 
 /**
@@ -139,6 +141,8 @@ export interface SidebarProps {
   chatTabs?: Record<string, SidebarChatTabs> | undefined;
   /** Opens one tab of a chat: a side thread of the agent, or a tab of the channel. */
   onOpenChatTab?: ((kind: SidebarChatRowItem["kind"], chatId: string, tabId: string) => void) | undefined;
+  /** Closes one tab of a chat. Without it, a tab of the list has no menu. */
+  onCloseChatTab?: ((kind: SidebarChatRowItem["kind"], chatId: string, tabId: string) => void) | undefined;
   showingArchivedChannels?: boolean | undefined;
   onToggleArchivedChannels?: (() => void) | undefined;
   onCreateChannel?: (() => void) | undefined;
@@ -267,7 +271,13 @@ export type SidebarWaitReason = "question" | "approval" | "takeover";
 
 export type SidebarAgentState =
   /** `detail` is the question or the command, for the row tooltip. `null` when there is none. */
-  | { kind: "waiting"; reason: SidebarWaitReason; detail: string | null }
+  | {
+      kind: "waiting";
+      reason: SidebarWaitReason;
+      detail: string | null;
+      /** For a channel: the tab whose thread waits, so a click opens it. */
+      topicId?: string | undefined;
+    }
   | { kind: "working" }
   | { kind: "responded" }
   | { kind: "unread"; count: number }

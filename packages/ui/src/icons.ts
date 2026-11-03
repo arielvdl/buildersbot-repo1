@@ -154,6 +154,7 @@ export { default as Square } from "lucide-solid/icons/square";
 export { default as StickyNote } from "lucide-solid/icons/sticky-note";
 export { default as Store } from "lucide-solid/icons/store";
 export { default as Table2 } from "lucide-solid/icons/table-2";
+export { default as Tag } from "lucide-solid/icons/tag";
 export { default as TextAlignCenter } from "lucide-solid/icons/text-align-center";
 export { default as TextAlignEnd } from "lucide-solid/icons/text-align-end";
 export { default as TextAlignJustify } from "lucide-solid/icons/text-align-justify";

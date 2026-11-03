@@ -55,7 +55,7 @@ interface Harness {
 }
 
 async function harness(
-  options: { naming?: () => Effect.Effect<string, ChannelOperationError> } = {},
+  options: { naming?: (prompt: string) => Effect.Effect<string, ChannelOperationError> } = {},
 ): Promise<Harness> {
   const root = await mkdtemp(join(tmpdir(), "channel-summary-"));
   roots.push(root);
@@ -69,7 +69,7 @@ async function harness(
     agents: () => members,
     generate: (_lead, prompt) =>
       prompt.startsWith("Name this channel tab")
-        ? (options.naming?.() ?? Effect.succeed("Resumo Curto"))
+        ? (options.naming?.(prompt) ?? Effect.succeed("Resumo Curto"))
         : Effect.succeed("{}"),
     schedule: () => {},
     interrupt: () => Effect.void,
@@ -329,6 +329,35 @@ describe("a tab named by its first message", () => {
     release('"Lançamento do login"');
     await until(() => service.store.topic(channelId, "topic-second")?.name === "Lançamento do login");
     expect(service.store.topic(channelId, "topic-second")?.revision).toBe(2);
+    await cleanup();
+  });
+
+  it("names a tab by the words, not by the attachment marker of an image sent first", async () => {
+    let prompt = "";
+    let release: (value: string) => void = () => {};
+    const held = new Promise<string>((resolve) => {
+      release = resolve;
+    });
+    const { service, channelId, cleanup } = await harness({
+      naming: (text) => {
+        prompt = text;
+        return Effect.promise(() => held);
+      },
+    });
+    await addTopic(service, channelId, "topic-second", "Aba 2");
+    await send(service, channelId, "@[image.png](attachment:eb5126a2)O resumo da aba vem com a imagem", {
+      topicId: "topic-second",
+      operationId: "send:image",
+    });
+
+    const placeholder = service.store.topic(channelId, "topic-second")?.name ?? "";
+    expect(placeholder).toBe("O resumo da aba vem com a imagem");
+    expect(placeholder).not.toContain("attachment:");
+    expect(prompt).not.toContain("attachment:");
+    expect(prompt).toContain("O resumo da aba vem com a imagem");
+
+    release("Resumo da aba");
+    await until(() => service.store.topic(channelId, "topic-second")?.name === "Resumo da aba");
     await cleanup();
   });
 

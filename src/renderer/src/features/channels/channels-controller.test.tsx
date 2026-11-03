@@ -267,3 +267,28 @@ describe("the announcement of a new channel", () => {
     expect(created).toEqual([]);
   });
 });
+
+describe("a request from the sidebar to close a tab", () => {
+  it("opens the channel on that tab and holds the request for its tab bar", async () => {
+    const fake = host();
+    const channels = await mount(fake.port);
+
+    await channels.requestTopicClose(CHANNEL, SECOND);
+
+    expect(channels.state.selectedId).toBe(CHANNEL);
+    expect(channels.state.topicId).toBe(SECOND);
+    expect(channels.state.closeRequest).toBe(SECOND);
+    channels.clearCloseRequest();
+    expect(channels.state.closeRequest).toBeNull();
+  });
+
+  it("is dropped when the channel opens again", async () => {
+    const fake = host();
+    const channels = await mount(fake.port);
+
+    await channels.requestTopicClose(CHANNEL, SECOND);
+    await channels.open(CHANNEL, MAIN);
+
+    expect(channels.state.closeRequest).toBeNull();
+  });
+});

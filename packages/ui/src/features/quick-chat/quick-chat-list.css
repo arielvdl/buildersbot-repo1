@@ -86,6 +86,53 @@
   position: relative;
   display: flex;
   align-items: center;
+  overflow: hidden;
+  border-radius: var(--buildersbot-radius-md, 6px);
+}
+
+/* The row slides over its two buttons. A swipe to the left (or a sideways trackpad swipe) shows them. */
+.quick-list-slide {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  touch-action: pan-y;
+  transition: transform var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
+}
+
+.quick-list-slide[data-dragging],
+.quick-list-swipe-actions[data-dragging] {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-list-slide,
+  .quick-list-swipe-actions {
+    transition: none;
+  }
+}
+
+.quick-list-swipe-actions {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  display: flex;
+  width: var(--quick-swipe-reveal, 112px);
+  /* The buttons fade in with the swipe: the row is see-through, so at rest they must not show. */
+  transition: opacity var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
+}
+
+.quick-list-swipe-actions .quick-list-swipe-button.ui-button {
+  height: 100%;
+  min-width: 0;
+  flex: 1;
+  border-radius: 0;
+}
+
+.quick-list-swipe-button svg {
+  width: 16px;
+  height: 16px;
 }
 
 .quick-list-row.ui-button {
@@ -329,4 +376,242 @@
 
 .quick-list-item[draggable="true"] {
   cursor: grab;
+}
+
+/* A swipe opens the row: the menu button and the time give way, and the selected look stays on the row. */
+.quick-list-item[data-swipe-open] .quick-list-actions {
+  opacity: 0;
+}
+
+/* The tag, before the bolt: a small chip in the color that the person chose. */
+.quick-list-tag {
+  display: inline-block;
+  max-width: 6.5rem;
+  margin-right: var(--buildersbot-space-1);
+  padding: 0 var(--buildersbot-space-1);
+  overflow: hidden;
+  border-radius: var(--buildersbot-radius-pill);
+  background: color-mix(in srgb, var(--quick-tag-color) 20%, transparent);
+  color: color-mix(in srgb, var(--quick-tag-color) 70%, var(--buildersbot-text-primary));
+  font-size: var(--buildersbot-text-xs, 11px);
+  font-weight: var(--buildersbot-weight-medium);
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+.quick-tag-swatch {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin: 1px;
+  border-radius: var(--buildersbot-radius-pill);
+  box-shadow: inset 0 0 0 1px var(--buildersbot-border-strong);
+}
+
+.quick-tag-menu-name {
+  min-width: 0;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-tag-check {
+  margin-inline-start: auto;
+}
+
+/* The dialog that names a tag and picks its color. */
+.quick-tag-dialog {
+  width: min(22rem, calc(100vw - 2rem));
+}
+
+.quick-tag-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--buildersbot-space-3);
+}
+
+.quick-tag-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-2);
+}
+
+.quick-tag-title {
+  margin: 0;
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-medium);
+}
+
+.quick-tag-colors {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  flex-wrap: wrap;
+  gap: var(--buildersbot-space-2);
+}
+
+.quick-tag-color.ui-button {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--buildersbot-radius-pill);
+  box-shadow: inset 0 0 0 1px var(--buildersbot-border-strong);
+  color: var(--buildersbot-text-primary);
+  cursor: pointer;
+}
+
+.quick-tag-color svg {
+  width: 14px;
+  height: 14px;
+}
+
+.quick-tag-color:focus-visible {
+  outline: 2px solid var(--buildersbot-text-primary);
+  outline-offset: 2px;
+}
+
+.quick-tag-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--buildersbot-space-2);
+}
+
+.quick-tag-delete.ui-button {
+  margin-right: auto;
+}
+
+/* The archived conversations: a dialog with a search, a page of rows, and bulk actions. It has the
+ * surface of the confirmation dialog (`primitives.css`). */
+.ui-dialog-overlay .quick-archived-dialog {
+  display: flex;
+  width: min(36rem, 100%);
+  height: min(40rem, calc(100dvh - 2 * var(--buildersbot-space-6)));
+  flex-direction: column;
+  gap: var(--buildersbot-space-3);
+  box-sizing: border-box;
+  padding: var(--buildersbot-space-4);
+  overflow: hidden;
+  outline: 0;
+  border: 1px solid var(--buildersbot-dialog-ring);
+  border-radius: var(--buildersbot-radius-xl);
+  background: var(--buildersbot-bg-sidebar);
+  box-shadow: none;
+  color: var(--buildersbot-text-primary);
+  animation: ui-confirm-dialog-in var(--buildersbot-duration-slow) var(--buildersbot-ease-out);
+}
+
+.quick-archived-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-2);
+}
+
+.quick-archived-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--buildersbot-space-2);
+  margin: 0;
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-medium);
+}
+
+.quick-archived-toolbar {
+  display: flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-2);
+  padding-inline: var(--buildersbot-space-2);
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.quick-archived-all {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+}
+
+.quick-archived-bulk {
+  display: flex;
+  gap: var(--buildersbot-space-1);
+}
+
+.quick-archived-delete.ui-button {
+  color: var(--buildersbot-danger);
+}
+
+.quick-archived-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-lg);
+}
+
+.quick-archived-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quick-archived-row {
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  padding: 0 var(--buildersbot-space-2);
+  border-bottom: 1px solid var(--buildersbot-border);
+  /* A long archive stays cheap: the browser skips the rows that are out of view. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3.25rem;
+}
+
+.quick-archived-row[data-selected] {
+  background: var(--buildersbot-bg-control-hover);
+}
+
+.quick-archived-open.ui-button {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 2px;
+  height: auto;
+  padding: var(--buildersbot-space-2);
+  text-align: left;
+}
+
+.quick-archived-time {
+  flex: none;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.quick-archived-preview {
+  overflow: hidden;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-archived-more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-2);
+  padding: var(--buildersbot-space-2);
 }

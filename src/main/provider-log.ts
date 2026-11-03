@@ -47,6 +47,26 @@ export function startAgentLog(logsDirectory: string): () => void {
 }
 
 /**
+ * The loggers whose lines also go to the queue log: why a queued message waits and when it may start
+ * (`drain-scheduler`), how long each turn waited and ran (`turn-lifecycle`), and the provider sessions
+ * that start for it (`thread-lifecycle`).
+ */
+const QUEUE_LOG_PREFIXES = ["drain-scheduler", "turn-lifecycle", "thread-lifecycle"] as const;
+
+/**
+ * Keeps the queue lines in `<logs>/queue/queue.log`, with the same size limit. These loggers wrote to
+ * stdout only, which an app started from the Dock does not keep: on 3 November 2026 a message to a
+ * busy channel showed only the Stop button, and nothing on the computer said which clause held it.
+ * The lines name ids, reasons and milliseconds, never the text of a message. Returns the removal.
+ */
+export function startQueueLog(logsDirectory: string): () => void {
+  const directory = join(logsDirectory, "queue");
+  return teeLogLines(QUEUE_LOG_PREFIXES, (line) => {
+    Effect.runFork(appendRemoteDiagnosticLog(directory, "queue", `${line}\n`));
+  });
+}
+
+/**
  * The loggers whose lines also go to the log of the task reviewer: its looks and decisions
  * (`task-watch`), the actions of "Resume by itself" and the commands of both that failed
  * (`auto-recovery`), and the memory level of the Mac that holds them (`mac-memory`).

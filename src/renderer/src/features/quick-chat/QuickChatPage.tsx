@@ -11,6 +11,7 @@ import {
 import { useText } from "@buildersbot/ui/text";
 import { createEffect, createMemo, createSignal, Match, onCleanup, onSettled, Show, Switch, untrack } from "solid-js";
 import { actionToast } from "../../action-toast";
+import { useNewTabShortcut } from "../../new-tab-shortcut";
 import { useAgentTasks } from "../agent-tasks/agent-tasks-context";
 import { useAgentThreads } from "../agent-threads/agent-threads-context";
 import { useAgents } from "../agents/agents-context";
@@ -36,6 +37,13 @@ import {
 import { quickChatPort } from "./quick-chat-port";
 import { createQuickChatRuntime, type QuickChatAgentUpdate, touchesQuickChatRuntime } from "./quick-chat-runtime";
 import { createQuickChat } from "./quick-chat-state";
+import {
+  addQuickChatTag,
+  editQuickChatTag,
+  readQuickChatTags,
+  removeQuickChatTag,
+  setQuickChatRowTag,
+} from "./quick-chat-tags";
 
 /** What owns the focus while it is open: a popover, a menu, a dialog, or the header with the model picker. */
 const FOCUS_OWNER = "[role=dialog], [role=menu], [role=listbox], [data-popper-positioner], .conversation-header";
@@ -99,6 +107,17 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   onCleanup(quick.close);
 
   const agentId = () => quick.agent()?.id;
+  /** Opens a new conversation of the Quick chat agent. */
+  const startNewConversation = () => {
+    const id = agentId();
+    if (!id) return;
+    setCalled(null);
+    runtime.resetDraft();
+    tabs.startNew(id);
+  };
+  // The key of a new tab in other browsers, as in the full browser view.
+  useNewTabShortcut(startNewConversation);
+
   /** The agents that a message can call: the ones that the person sees. The Quick chat agent is in no list. */
   const mentionable = () => agentList().filter((agent) => !userHiddenAgentIds().has(agent.id));
 
@@ -106,6 +125,7 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   const [called, setCalled] = createSignal<QuickChatPointer | null>(null);
   const [pointers, setPointers] = createSignal<QuickChatPointer[]>(readQuickChatPointers(activeServerId()));
   const [folderState, setFolderState] = createSignal(readQuickChatFolders(activeServerId()));
+  const [tagState, setTagState] = createSignal(readQuickChatTags(activeServerId()));
   /** The agent that owns the open conversation. */
   const owner = createMemo(() => {
     const open = called();
@@ -368,21 +388,35 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
               setCalled(item.agentId === agentId() ? null : { agentId: item.agentId, taskId: item.taskId });
               tabs.open(item.agentId, item.taskId);
             }}
-            onNew={() => {
-              const id = agentId();
-              if (!id) return;
-              setCalled(null);
-              runtime.resetDraft();
-              tabs.startNew(id);
-            }}
+            onNew={startNewConversation}
             onArchive={(item) => void tabs.archive(item.agentId, item.taskId)}
             onRestore={(item) => void tabs.restore(item.agentId, item.taskId)}
+            onRestoreMany={async (items) => {
+              const done = await tabs.restoreMany(items.map((item) => ({ agentId: item.agentId, id: item.taskId })));
+              if (done > 0) actionToast.success(t("quick.archived.restored", { count: done }));
+            }}
+            onDeleteMany={
+              tasks.editable()
+                ? async (items) => {
+                    const done = await tabs.removeMany(
+                      items.map((item) => ({ agentId: item.agentId, id: item.taskId })),
+                    );
+                    if (done > 0) actionToast.success(t("quick.archived.deleted", { count: done }));
+                  }
+                : undefined
+            }
             folders={folderState().folders}
             assignments={folderState().assignments}
             onCreateFolder={(name) => setFolderState(addQuickChatFolder(activeServerId(), name))}
             onRenameFolder={(folder, name) => setFolderState(renameQuickChatFolder(activeServerId(), folder.id, name))}
             onDeleteFolder={(folder) => setFolderState(removeQuickChatFolder(activeServerId(), folder.id))}
             onMove={(item, folderId) => setFolderState(moveQuickChatRow(activeServerId(), item.key, folderId))}
+            tags={tagState().tags}
+            tagAssignments={tagState().assignments}
+            onCreateTag={(item, name, color) => setTagState(addQuickChatTag(activeServerId(), item.key, name, color))}
+            onEditTag={(tag, name, color) => setTagState(editQuickChatTag(activeServerId(), tag.id, name, color))}
+            onDeleteTag={(tag) => setTagState(removeQuickChatTag(activeServerId(), tag.id))}
+            onSetTag={(item, tagId) => setTagState(setQuickChatRowTag(activeServerId(), item.key, tagId))}
             onDelete={tasks.editable() ? (item) => void tabs.remove(item.agentId, item.taskId) : undefined}
           />
           <div
@@ -398,6 +432,8 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
                 <Zap class="quick-page-bolt" />
                 <h2 class="quick-page-title">{t("quick.empty.title")}</h2>
               </div>
+              {/* Quick chat keeps no project memory: a quiet pointer to channels, which do. */}
+              <p class="quick-page-hint">{t("quick.empty.hint")}</p>
             </Show>
             <Show
               when={quick.phase() === "ready"}

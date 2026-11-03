@@ -6,15 +6,25 @@
  */
 
 import type { AgentProviderRef } from "@buildersbot/contracts/agent-providers";
+import { expandAttachmentReferences, stripAttachmentReferences } from "@buildersbot/contracts/attachment-references";
 import type { AvatarHue, ChannelPage, ChannelTask } from "@buildersbot/contracts/ipc";
 import type { AgentProfile } from "@buildersbot/ui/data";
 import { type StageActivity, stageActivityOfLine } from "@buildersbot/ui/features/stage/stage-activity";
 import type { TurnStepLines } from "../conversation/turn-step-lines";
+import { startingChannelTask } from "./channel-conversation-rows";
 
 /** The seats round the table. More agents than this wait in a "+N" chip. */
 const STAGE_SEATS = 8;
 /** An agent that is active and has not reported a step for this long is thinking. */
 const STAGE_THINK_AFTER_MS = 1500;
+/**
+ * An agent that has not reported a step yet (the provider starts the session, the first token is
+ * on the way) still moves: its activity changes every beat, so the stage looks alive and not stuck.
+ * It is a pose and not a claim: the bubble says only what the pose is, and the first real step
+ * replaces it.
+ */
+const STAGE_IDLE_BEAT_MS = 2400;
+const STAGE_IDLE_POSES: readonly StageActivity[] = ["thinking", "reading", "thinking", "running"];
 /** How long a finished, failed or delegating agent stays on the stage. */
 const HOLD_MS = { done: 2800, failed: 3000, delegating: 2000 } as const;
 /** The end of the messages that is read for streaming authors and the turn of each member. */
@@ -91,6 +101,17 @@ const ACTIVITY_RANK: Readonly<Record<StageActivity, number>> = {
   done: 4,
 };
 
+/** The pose of an agent with no real step at `now`. Agents start on different poses, not in step. */
+export function idleStagePose(id: string, now: number): { activity: StageActivity; next: number } {
+  let offset = 0;
+  for (let index = 0; index < id.length; index += 1) offset += id.charCodeAt(index);
+  const beat = Math.floor(now / STAGE_IDLE_BEAT_MS);
+  return {
+    activity: STAGE_IDLE_POSES[(beat + offset) % STAGE_IDLE_POSES.length] ?? "thinking",
+    next: (beat + 1) * STAGE_IDLE_BEAT_MS,
+  };
+}
+
 function inTab(page: ChannelPage, task: ChannelTask): boolean {
   return !(task.topicId && page.topicId && task.topicId !== page.topicId);
 }
@@ -132,7 +153,8 @@ export function nextStageHolds(
 function activeAgentIds(page: ChannelPage, inChannel: (id: string) => boolean): Set<string> {
   const ids = new Set<string>();
   for (const task of page.tasks)
-    if (task.state === "running" && task.ownerAgentId && inTab(page, task)) ids.add(task.ownerAgentId);
+    if ((task.state === "running" || startingChannelTask(task)) && task.ownerAgentId && inTab(page, task))
+      ids.add(task.ownerAgentId);
   const start = Math.max(0, page.messages.length - MESSAGE_TAIL);
   for (let index = start; index < page.messages.length; index += 1) {
     const entry = page.messages[index];
@@ -169,7 +191,10 @@ function requestOf(page: ChannelPage, relevant: ReadonlySet<string>): StageReque
   if (!root) return null;
   const rootId = root.id;
   const parts = page.tasks.filter((task) => task.parentTaskId === rootId);
-  const text = root.instruction.trim().split("\n")[0] ?? "";
+  // The words, not the markers: an image sent first would otherwise show as `@[image.png](attachment:id)`.
+  // A request of only files shows their names.
+  const words = stripAttachmentReferences(root.instruction) || expandAttachmentReferences(root.instruction);
+  const text = words.split("\n").find((line) => line.trim().length > 0) ?? "";
   const title = text.length > REQUEST_TITLE_LIMIT ? `${text.slice(0, REQUEST_TITLE_LIMIT - 1)}…` : text;
   return {
     title,
@@ -209,6 +234,14 @@ export function channelStageModel(input: StageInput): StageModel {
     links.push({ key: task.id, from: parentOwner, to: task.ownerAgentId });
     linkTargets.set(parentOwner, task.ownerAgentId);
   }
+  // An agent that gave work away and waits for it ends its own turn, so no task of it runs. It stays
+  // on the stage as long as a hand-off from it is open, or the line of that hand-off has no start.
+  const handingOff = new Set<string>();
+  for (const link of links) {
+    if (ids.has(link.from) || !inChannel(link.from)) continue;
+    ids.add(link.from);
+    handingOff.add(link.from);
+  }
 
   const actors: StageActor[] = [];
   for (const id of ids) {
@@ -221,13 +254,17 @@ export function channelStageModel(input: StageInput): StageModel {
     if (input.waitingAgentIds.has(id)) activity = "waiting";
     else if (hold?.activity === "failed") activity = "failed";
     else if (hold?.activity === "done") activity = "done";
-    else if (hold?.activity === "delegating") activity = "delegating";
+    else if (hold?.activity === "delegating" || handingOff.has(id)) activity = "delegating";
     else if (last) {
       const age = now - last.at;
       if (age < STAGE_THINK_AFTER_MS) {
         activity = stageActivityOfLine(last.text, last.kind);
         earlier(last.at + STAGE_THINK_AFTER_MS);
       }
+    } else {
+      const pose = idleStagePose(id, now);
+      activity = pose.activity;
+      earlier(pose.next);
     }
     if (hold) earlier(hold.until);
     const delegatesTo = activity === "delegating" ? (linkTargets.get(id) ?? null) : null;

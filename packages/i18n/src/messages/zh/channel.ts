@@ -78,6 +78,12 @@ export const messages = {
   "channel.topic.outcome.noteRequired": "发生了什么？（必填）",
   "channel.topic.outcome.noteCount": "{count}/{max}",
   "channel.topic.closeRecord": "一条简短记录会保存在你的个人资料中，仅保存在此电脑上。",
+  // What goes away with the tab, shown above the question in the close dialog.
+  "channel.topic.summary.messages": "消息",
+  "channel.topic.summary.age": "创建时间",
+  "channel.topic.summary.status": "状态",
+  "channel.topic.summary.idle": "空闲",
+  "channel.topic.summary.working": "进行中",
   "channel.stage.label": "助手舞台",
   "channel.stage.fold": "折叠助手舞台",
   "channel.stage.unfold": "展开助手舞台",

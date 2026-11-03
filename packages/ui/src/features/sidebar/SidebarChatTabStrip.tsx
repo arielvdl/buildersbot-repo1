@@ -8,11 +8,11 @@
  * drawing and no tap cue, as they had as plain buttons.
  */
 
-import { Button } from "@buildersbot/ui";
+import { Button, ContextMenu, X } from "@buildersbot/ui";
 import { For, Show } from "solid-js";
 import { useText } from "../../text";
 import { useSidebarScope } from "./sidebar-scope";
-import { type SidebarChatItem, type SidebarChatTabs, sidebarChatTabsKey } from "./sidebar-types";
+import { type SidebarChatRowItem, type SidebarChatTabs, sidebarChatTabsKey } from "./sidebar-types";
 import { visibleSidebarChatTabs } from "./stores/tab-strip-store";
 
 /** A click inside the avatar of a row, which is where the tabs of a chat open. */
@@ -21,11 +21,11 @@ export function clickIsOnAvatar(event: MouseEvent): boolean {
 }
 
 export function SidebarChatTabStrip(props: {
-  chat: SidebarChatItem;
+  chat: SidebarChatRowItem;
   tabs: SidebarChatTabs;
   onOpen: (tabId: string) => void;
 }) {
-  const { tabStrips } = useSidebarScope();
+  const { props: sidebar, tabStrips } = useSidebarScope();
   const { t } = useText();
   const key = () => sidebarChatTabsKey(props.chat);
   const open = () => tabStrips.isOpen(key());
@@ -55,29 +55,44 @@ export function SidebarChatTabStrip(props: {
             <For each={visibleSidebarChatTabs(props.tabs.tabs, props.tabs.activeId)}>
               {(tab) => (
                 <li>
-                  <Button
-                    variant="unstyled"
-                    data-cuelume-tap={undefined}
-                    class="sidebar-chat-tab"
-                    aria-current={props.tabs.activeId === tab.id ? "true" : undefined}
-                    title={tab.title}
-                    onClick={() => props.onOpen(tab.id)}
-                  >
-                    <span class="sidebar-chat-tab-mark" aria-hidden="true" />
-                    <span class="sidebar-chat-tab-title">{tab.title}</span>
-                    <Show when={(tab.unread ?? 0) > 0}>
-                      <span class="sidebar-chat-tab-unread" aria-hidden="true">
-                        {unread(tab.unread)}
-                      </span>
+                  <ContextMenu.Root modal={false}>
+                    <ContextMenu.Trigger
+                      as={Button}
+                      variant="unstyled"
+                      data-cuelume-tap={undefined}
+                      class="sidebar-chat-tab"
+                      aria-current={props.tabs.activeId === tab.id ? "true" : undefined}
+                      title={tab.title}
+                      onClick={() => props.onOpen(tab.id)}
+                    >
+                      <span class="sidebar-chat-tab-mark" aria-hidden="true" />
+                      <span class="sidebar-chat-tab-title">{tab.title}</span>
+                      <Show when={(tab.unread ?? 0) > 0}>
+                        <span class="sidebar-chat-tab-unread" aria-hidden="true">
+                          {unread(tab.unread)}
+                        </span>
+                      </Show>
+                      <Show when={tab.working || tab.queued}>
+                        <span
+                          class="sidebar-chat-tab-work"
+                          data-queued={tab.queued && !tab.working ? "" : undefined}
+                          aria-hidden="true"
+                        />
+                      </Show>
+                    </ContextMenu.Trigger>
+                    <Show when={sidebar.onCloseChatTab && tab.closable !== false}>
+                      <ContextMenu.Portal>
+                        <ContextMenu.Content class="agent-context-menu" aria-label={tab.title}>
+                          <ContextMenu.Item
+                            onSelect={() => sidebar.onCloseChatTab?.(props.chat.kind, props.chat.id, tab.id)}
+                          >
+                            <X class="agent-context-icon size-4" aria-hidden="true" />
+                            <span>{t("sidebar.tabs.close")}</span>
+                          </ContextMenu.Item>
+                        </ContextMenu.Content>
+                      </ContextMenu.Portal>
                     </Show>
-                    <Show when={tab.working || tab.queued}>
-                      <span
-                        class="sidebar-chat-tab-work"
-                        data-queued={tab.queued && !tab.working ? "" : undefined}
-                        aria-hidden="true"
-                      />
-                    </Show>
-                  </Button>
+                  </ContextMenu.Root>
                 </li>
               )}
             </For>

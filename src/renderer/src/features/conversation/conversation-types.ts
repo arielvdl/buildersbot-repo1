@@ -140,6 +140,8 @@ export interface ConversationProps {
   notice?: JSX.Element | undefined;
   /** The agent stage of a channel, above the messages. Absent with the stage off, which leaves the view as it is. */
   stage?: JSX.Element | undefined;
+  /** Tells that the reader scrolled up to older messages (true) or came back to the end (false). */
+  onReaderAwayChange?: ((away: boolean) => void) | undefined;
   onOpenUsage?: ((trigger: HTMLButtonElement) => void) | undefined;
   onOpenMarketplace?: (() => void) | undefined;
   /**

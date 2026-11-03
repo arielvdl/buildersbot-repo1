@@ -128,6 +128,16 @@ export interface QuickChatFolder {
   name: string;
 }
 
+/** A tag that a conversation can carry: a short name and a `#rrggbb` color. A conversation has none or one. */
+export interface QuickChatTag {
+  id: string;
+  name: string;
+  color: string;
+}
+
+/** Row key → tag id. A row with no entry has no tag. */
+export type QuickChatTagAssignments = Readonly<Record<string, string>>;
+
 /** Row key → folder id. A row with no entry is in no folder. */
 export type QuickChatFolderAssignments = Readonly<Record<string, string>>;
 

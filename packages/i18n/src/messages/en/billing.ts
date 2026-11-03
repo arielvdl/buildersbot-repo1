@@ -6,6 +6,9 @@ export const messages = defineMessages("billing", {
   "billing.description": "Each server has its own plan. Stripe handles the payment.",
   "billing.loading": "Loading billing…",
   "billing.unavailable": "Billing is not available on this account server.",
+  "billing.enterprise.title": "Enterprise account",
+  "billing.enterprise.description":
+    "This account is set up as Enterprise. Contact the Cultura Builder sales team, who will manage your account and billing with you.",
   "billing.loadFailed": "Could not load billing.",
   "billing.portalFailed": "Could not open billing management.",
   "billing.servers.title": "Server plans",

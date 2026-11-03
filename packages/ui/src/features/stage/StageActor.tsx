@@ -7,9 +7,11 @@ import { Button } from "@buildersbot/ui";
 import { createMemo, onSettled, Show } from "solid-js";
 import { useText } from "../../text";
 import { orbitFamily } from "../agents/agent-model-family";
+import { StageActorEffects } from "./StageActorEffects";
 import type { StageActivity } from "./stage-activity";
 import { FIGURE_HEIGHT, FIGURE_WIDTH, type StageGeometry, seatIsFront, seatPoint, seatSide } from "./stage-geometry";
 import { ENTER_EASING, ENTER_MS, FADE_MS, LEAVE_MS, prefersReducedMotion } from "./stage-motion";
+import { Typewriter } from "./Typewriter";
 
 /** One agent on a stage: who it is, what it does, and where it sits. */
 export interface StageActorData {
@@ -214,6 +216,7 @@ export function StageActor(props: {
         "z-index": place().y,
         "--stage-width": `${Math.round(FIGURE_WIDTH * place().scale)}px`,
         "--stage-height": `${Math.round(FIGURE_HEIGHT * place().scale)}px`,
+        "--stage-scale": String(place().scale),
         "--stage-accent": avatarMarkAccent(props.actor.hue),
         "--stage-bubble-max": `${bubbleMax()}px`,
       }}
@@ -224,14 +227,14 @@ export function StageActor(props: {
           figure = node;
         }}
       >
-        <Show when={logo() || modelName()}>
-          <span class="agent-stage-model" aria-hidden="true">
-            <Show when={logo()}>
-              {(provider) => <ProviderLogo class="agent-stage-model-logo" provider={provider()} />}
-            </Show>
-            <span>{modelName()}</span>
-          </span>
-        </Show>
+        {/* The provider logo and the agent's name. The model is the tooltip: the name says who, the logo and the
+            tooltip say what runs it, and the line under the feet keeps only what the agent does. */}
+        <span class="agent-stage-model" aria-hidden="true" title={modelName() || undefined}>
+          <Show when={logo()}>
+            {(provider) => <ProviderLogo class="agent-stage-model-logo" provider={provider()} />}
+          </Show>
+          <span>{props.actor.name}</span>
+        </span>
         <div
           class="agent-stage-hop"
           ref={(node) => {
@@ -247,6 +250,7 @@ export function StageActor(props: {
               accent={avatarMarkAccent(props.actor.hue)}
               style={{ "--agent-mark-eyelid": String(ACTIVITY_EYELID[props.actor.activity]) }}
             />
+            <StageActorEffects activity={props.actor.activity} />
           </div>
         </div>
       </div>
@@ -270,12 +274,15 @@ export function StageActor(props: {
             <span class="agent-stage-bubble-tone">{t(ACTIVITY_LABEL[props.actor.activity])}</span>
           </Show>
           <Show when={say()} keyed>
-            {(sentence) => <span class="agent-stage-bubble-text">{sentence}</span>}
+            {(sentence) => (
+              <span class="agent-stage-bubble-text">
+                <Typewriter text={sentence} />
+              </span>
+            )}
           </Show>
         </div>
       </Show>
       <span class="agent-stage-name" aria-hidden="true">
-        <span class="agent-stage-name-text">{props.actor.name}</span>
         <span class="agent-stage-verb">{t(ACTIVITY_LABEL[props.actor.activity])}</span>
       </span>
     </li>

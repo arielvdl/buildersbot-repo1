@@ -11,6 +11,8 @@ import {
 } from "@buildersbot/ui/features/sidebar/SidebarAgentIndicator";
 import { useText } from "@buildersbot/ui/text";
 import { createEffect, createMemo, createSignal, createStore, For, flush, Show } from "solid-js";
+import { useNewTabShortcut } from "../../new-tab-shortcut";
+import { channelTabAgeLabel } from "./channel-tab-age-label";
 import {
   channelTabClose,
   channelTabDetails,
@@ -42,7 +44,8 @@ const TAB_DRAG_TYPE = "application/x-buildersbot-channel-tab";
  */
 export function ChannelTabs(props: { channelId: string; archived: boolean }) {
   const channels = useChannels();
-  const { t, sourceText } = useText();
+  const text = useText();
+  const { t, sourceText } = text;
   const [renaming, setRenaming] = createSignal<string | null>(null);
   const [orders, setOrders] = createSignal(readChannelTabOrders());
   /** The tab that the pointer drags, and the gap it would be dropped in. */
@@ -80,6 +83,25 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
     const topic = closingTopic();
     return topic !== undefined && channelTabClose(topic) === "confirm-work";
   };
+  /** What goes away with the tab, for the dialog: its name, how many messages, how old, and whether agents still work. */
+  const closingSummary = () => {
+    const topic = closingTopic();
+    if (!topic) return undefined;
+    return {
+      name: topic.name,
+      stats: [
+        { label: t("channel.topic.summary.messages"), value: String(topic.messageCount ?? 0) },
+        { label: t("channel.topic.summary.age"), value: channelTabAgeLabel(text, topic.createdAt) },
+        working(topic)
+          ? {
+              label: t("channel.topic.summary.status"),
+              value: t("channel.topic.summary.working"),
+              tone: "working" as const,
+            }
+          : { label: t("channel.topic.summary.status"), value: t("channel.topic.summary.idle"), tone: "idle" as const },
+      ],
+    };
+  };
   /** Other needs a note that says what happened; Done and Not done need only the choice. */
   const closeAnswered = () => closing.outcome !== null && (closing.outcome !== "other" || closing.note.trim() !== "");
 
@@ -101,10 +123,29 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
     },
   );
 
+  // The sidebar asks to close a tab of this channel: it closes as the cross of the tab does. A request for
+  // a tab that is gone, or for a read that is not here yet, waits for the tabs and is dropped by the next open.
+  createEffect(
+    () => ({ topicId: channels.state.closeRequest, topics: topics(), archived: props.archived }),
+    ({ topicId, topics: current, archived }) => {
+      if (!topicId) return;
+      const topic = current.find((candidate) => candidate.id === topicId);
+      if (!topic) return;
+      channels.clearCloseRequest();
+      if (!archived) close(topic);
+    },
+  );
+
   async function add(): Promise<void> {
     // The name follows the position, so two new tabs are told apart before either is renamed.
     await channels.createTopic(t("channel.topic.defaultName", { n: topics().length + 1 }));
   }
+
+  // The key of a new tab in other browsers, as in the full browser view.
+  useNewTabShortcut(
+    () => void add(),
+    () => !props.archived,
+  );
 
   /** Puts a tab at `to` and keeps the order on this device. */
   function reorder(topicId: string, to: number): void {
@@ -379,6 +420,7 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
         onConfirm={confirmClose}
       >
         <ChannelTabCloseOutcome
+          summary={closingSummary()}
           outcome={closing.outcome}
           note={closing.note}
           onOutcomeChange={(outcome) => {

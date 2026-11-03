@@ -5,12 +5,69 @@
   margin-top: var(--buildersbot-space-1);
 }
 
-.channel-tab-outcome-options {
+.channel-tab-outcome-summary {
+  display: grid;
+  gap: var(--buildersbot-space-2);
+}
+
+.channel-tab-outcome-tab {
+  margin: 0;
+  overflow: hidden;
+  color: var(--buildersbot-text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-tab-outcome-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--buildersbot-space-2);
+  margin: 0;
+}
+
+.channel-tab-outcome-stat {
   display: grid;
   gap: var(--buildersbot-space-0-5);
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-md);
+  background: var(--buildersbot-bg-surface-raised);
+  padding: var(--buildersbot-space-2) var(--buildersbot-space-3);
+}
+
+.channel-tab-outcome-stat dt {
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.channel-tab-outcome-stat dd {
+  margin: 0;
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-lg);
+  font-weight: 600;
+}
+
+.channel-tab-outcome-stat[data-tone="idle"] dd {
+  color: var(--buildersbot-success-text);
+}
+
+.channel-tab-outcome-stat[data-tone="working"] dd {
+  color: var(--buildersbot-warning-text);
+}
+
+/* The three answers sit in one segmented control; the chosen one is lifted. */
+.channel-tab-outcome-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--buildersbot-space-1);
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-bg-control);
+  padding: var(--buildersbot-space-1);
 }
 
 .channel-tab-outcome-label {
+  grid-column: 1 / -1;
+  margin: var(--buildersbot-space-1) var(--buildersbot-space-2) 0;
   color: var(--buildersbot-text-secondary);
   font-size: var(--buildersbot-text-md);
   line-height: var(--buildersbot-leading-md);
@@ -20,14 +77,15 @@
   display: flex;
   min-height: var(--buildersbot-control-lg);
   align-items: center;
-  gap: var(--buildersbot-space-2);
+  justify-content: center;
   cursor: pointer;
   border-radius: var(--buildersbot-radius-md);
-  padding: var(--buildersbot-space-2) var(--buildersbot-space-3);
+  padding: var(--buildersbot-space-2);
 }
 
 .channel-tab-outcome-control[data-checked] {
-  background: var(--buildersbot-hover);
+  background: var(--buildersbot-bg-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--buildersbot-border-strong);
 }
 
 .channel-tab-outcome-option:has(:focus-visible) .channel-tab-outcome-control {
@@ -41,22 +99,16 @@
 }
 
 .channel-tab-outcome-option-label {
-  flex: 1;
   cursor: pointer;
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-md);
+  line-height: var(--buildersbot-leading-md);
+  text-align: center;
+}
+
+.channel-tab-outcome-control[data-checked] .channel-tab-outcome-option-label {
   color: var(--buildersbot-text-primary);
-  font-size: var(--buildersbot-text-lg);
-  line-height: var(--buildersbot-leading-lg);
-}
-
-.channel-tab-outcome-check {
-  width: var(--buildersbot-icon-md);
-  height: var(--buildersbot-icon-md);
-  flex: 0 0 auto;
-}
-
-.channel-tab-outcome-check svg {
-  width: 100%;
-  height: 100%;
+  font-weight: 600;
 }
 
 .channel-tab-outcome-record {

@@ -111,8 +111,8 @@ function parseNumber(value: string | undefined): number {
 /** The version of CLA.md and the line that signs it. The script fails when CLA.md does not contain the line. */
 function loadAgreement(): { readonly version: string; readonly signingLine: string } {
   const text = readFileSync(AGREEMENT_PATH, "utf8");
-  const version = /^Version: (\S+)$/m.exec(text)?.[1];
-  if (version === undefined) fail(`${AGREEMENT_PATH} has no "Version:" line.`);
+  const version = /^(?:Version|Versão): (\S+)$/m.exec(text)?.[1];
+  if (version === undefined) fail(`${AGREEMENT_PATH} has no "Version:" or "Versão:" line.`);
   const signingLine = `I have read the ${AGREEMENT_NAME} ${version} and I agree to it.`;
   if (!text.includes(signingLine)) fail(`${AGREEMENT_PATH} does not contain the signing line "${signingLine}".`);
   return { version, signingLine };

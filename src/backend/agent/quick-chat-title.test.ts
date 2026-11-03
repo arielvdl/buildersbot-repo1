@@ -27,3 +27,14 @@ describe("quickChatTitlePrompt", () => {
     expect(prompt.length).toBeLessThan(2000);
   });
 });
+
+describe("quickChatTitlePrompt", () => {
+  it("leaves the attachment marker out of the message", () => {
+    const prompt = quickChatTitlePrompt("@[image.png](attachment:abc-123)Resuma esta tela", "Claro.");
+    expect(prompt).toContain("Resuma esta tela");
+    expect(prompt).not.toContain("attachment:");
+  });
+  it("keeps the file name when the message has only files", () => {
+    expect(quickChatTitlePrompt("@[image.png](attachment:abc-123)", "Ok")).toContain("image.png");
+  });
+});

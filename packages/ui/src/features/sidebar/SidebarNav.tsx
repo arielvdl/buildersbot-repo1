@@ -13,6 +13,7 @@ import { SidebarEmptyState } from "./SidebarEmptyState";
 import { SidebarHiddenGroup } from "./SidebarHiddenGroup";
 import { SidebarPinnedGroup } from "./SidebarPinnedGroup";
 import { SidebarSectionList } from "./SidebarSectionList";
+import { SidebarSelectionBar } from "./SidebarSelectionBar";
 import { SidebarWaitingGroup } from "./SidebarWaitingGroup";
 import { useSidebarScope } from "./sidebar-scope";
 
@@ -78,7 +79,8 @@ export function SidebarNav() {
         <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
           {reorderAnnouncement()}
         </span>
-        {/* Last, so it sticks to the bottom of the list while the filter is on. */}
+        {/* Last, so they stick to the bottom of the list while the filter is on or chats are picked. */}
+        <SidebarSelectionBar />
         <SidebarActivityNotice />
       </div>
       <Show

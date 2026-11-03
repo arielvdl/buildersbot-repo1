@@ -24,7 +24,12 @@ const EMPTY: StageModel = { actors: [], overflow: 0, request: null, links: [], d
  * memo, the timer and the seats. Only this chunk imports the stage, so a channel with the stage off
  * never loads it.
  */
-export function ChannelStageHost(props: { channelId: string; workingTurns: () => readonly string[] }) {
+export function ChannelStageHost(props: {
+  channelId: string;
+  workingTurns: () => readonly string[];
+  /** The reader scrolled up to older messages: the stage steps aside, even while agents work. */
+  readerAway?: () => boolean;
+}) {
   const channels = useChannels();
   const { agentList } = useAgents();
   const { turnStepLines, approvals, pendingPrompts } = useTurns();
@@ -96,7 +101,9 @@ export function ChannelStageHost(props: { channelId: string; workingTurns: () =>
   const settings = () => channelStageSettingsFor(activeServerId(), props.channelId);
   const folded = () => settings().folded;
   // A memo: the stage plays its fold when this changes, not on each change of the model.
-  const hidden = createMemo(() => !folded() && settings().collapse && model().actors.length === 0);
+  const hidden = createMemo(
+    () => !folded() && ((props.readerAway?.() ?? false) || (settings().collapse && model().actors.length === 0)),
+  );
   const toggleFold = () =>
     updateChannelStage(activeServerId(), (preference) =>
       withChannelStageFolded(preference, props.channelId, !folded()),

@@ -31,6 +31,7 @@ import type {
   BranchAgentTaskInput,
   CancelMcpSignInInput,
   CapabilityState,
+  ChannelCommand,
   ChannelMemory,
   ChannelRoutine,
   ChannelRoutineRun,
@@ -144,6 +145,7 @@ import {
   isCustomProviderHarness,
   MODEL_SWITCH_ITEM_TYPES,
   type ModelSwitchReason,
+  QUICK_STATUS_ITEM_TYPE,
   type QueueSteerFallback,
   type SecurityGuardPreference,
   SIDEBAR_PEOPLE_SECTION_ID,
@@ -244,6 +246,13 @@ import {
 } from "./agent/provider-runtime";
 import { type ForceScope, QueueControls } from "./agent/queue-controls";
 import { cleanQuickChatTitle, quickChatTitlePrompt } from "./agent/quick-chat-title";
+import {
+  cleanQuickStatus,
+  minutesRunning,
+  QuickStatusGate,
+  quickStatusActivity,
+  quickStatusPrompt,
+} from "./agent/quick-status";
 import { quietRoutineRun } from "./agent/routine-quiet-runs";
 import { type RoutineMutationOptions, RoutineScheduler, toRoutineOperationFailed } from "./agent/routine-scheduler";
 import { localTimezone } from "./agent/routine-tools";
@@ -590,6 +599,8 @@ const USER_SEND_RETRY_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_SECTION_TEAMMATES = 32;
 /** How long an archive waits for the provider to end the turn that it stopped. After it, the archive is refused. */
 const TASK_STOP_WAIT_MS = 15_000;
+/** How long a quick status generation may run. After it the person gets no note, as if the switch were off. */
+const QUICK_STATUS_DEADLINE_MS = 45_000;
 
 /** The user's update, and the browser profile choice that the profile operations set after their checks. */
 export type AgentUpdate = UpdateAgentInput & {
@@ -606,6 +617,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   readonly messaging: MessagingThreads;
   readonly #profileSave: ProfileSave;
   readonly #profileClients = new ProfileClients();
+  /** The pause and the open place of each agent for the quick status reply (switch `quick-status-reply`). */
+  readonly #quickStatusGate = new QuickStatusGate();
   readonly #warmGenerations = new WarmGenerations({
     ownerFor: (provider) => this.#providers.currentClient(provider),
     createClient: (provider) => this.#providers.createProfileClient(provider),
@@ -1451,6 +1464,11 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       },
       ...(channelLane ? { lane: channelLane } : {}),
       error: (error) => this.#emitError("channel_coordination_failed", error),
+    });
+    // A person's message in a channel whose agent has worked for a long time gets a quick status note.
+    this.channels.observeCommands((command) => {
+      if (command.type !== "send" || !this.optimizations.optimizationEnabled("quick-status-reply")) return;
+      this.#quickStatusForChannel(command);
     });
     this.#channelRoutines = new ChannelRoutineScheduler({
       channels: this.channels,
@@ -5940,8 +5958,171 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     this.#mailboxSync.emitQueue(agent.id);
     this.#usageLimits.retry(agent.id);
     this.#drain.scheduleDrain(agent.id);
+    if (this.optimizations.optimizationEnabled("quick-status-reply")) {
+      this.#quickStatusForChat(agent, task, snapshot, delivery.delivery.text);
+    }
     return receipt;
   }, Effect.uninterruptible).bind(this);
+
+  /**
+   * The quick status reply for a message to the agent's own chat or to one of its tasks (switch
+   * `quick-status-reply`). It starts only while the turn of that thread has run for 5 minutes or more. The
+   * message stays queued, or steers the turn, as before: the note is one more line beside it.
+   */
+  #quickStatusForChat(
+    agent: AgentSummary,
+    task: Pick<AgentThreadRecord, "taskId" | "threadId"> | null,
+    snapshot: ConversationSnapshot,
+    newMessage: string,
+  ): void {
+    const turnId = snapshot.activeTurnId;
+    Effect.runFork(
+      this.#replyQuickStatus({
+        agentId: agent.id,
+        place: task ? "task" : "chat",
+        busySince: turnId ? this.#turn.turnStartedAt(turnId) : null,
+        messages: snapshot.messages,
+        newMessage,
+        write: (text) => {
+          const message = this.#quickStatusMessage(text);
+          if (task) this.#appendSideThreadSystemMessage(agent.id, task.threadId, message, "thread.quick-status");
+          else this.#appendSystemMessage(agent.id, message, "thread.quick-status");
+        },
+      }).pipe(Effect.forkIn(this.#scope)),
+    );
+  }
+
+  /**
+   * The quick status reply for a message that a person sends in a channel (switch `quick-status-reply`). The
+   * agents with a running task in that tab, or the one the message names, are each checked by the time that
+   * their oldest running turn has run. The note goes into the tab with the agent as its author.
+   */
+  #quickStatusForChannel(command: Extract<ChannelCommand, { type: "send" }>): void {
+    let work: ReturnType<ChannelService["runningWork"]>;
+    try {
+      work = this.channels.runningWork(command.channelId, command.topicId, command.recipientAgentId);
+    } catch (error) {
+      // A channel or tab that is gone has no work to ask about.
+      logger.info("Quick status skipped: no channel work.", { error });
+      return;
+    }
+    for (const item of work) {
+      const startedAt = this.#turn
+        .runningTurns()
+        .filter((turn) => turn.agentId === item.agentId)
+        .map((turn) => Date.parse(turn.startedAt));
+      Effect.runFork(
+        this.#replyQuickStatus({
+          agentId: item.agentId,
+          place: "channel",
+          busySince: startedAt.length > 0 ? Math.min(...startedAt) : null,
+          request: item.request,
+          messages: item.messages,
+          newMessage: command.text,
+          write: (text) =>
+            this.channels.noteQuickStatus(command.channelId, item.taskId, item.agentId, text, QUICK_STATUS_ITEM_TYPE),
+        }).pipe(Effect.forkIn(this.#scope)),
+      );
+    }
+  }
+
+  #quickStatusMessage(text: string): ConversationMessage {
+    return {
+      id: `quick-status-${randomUUID()}`,
+      author: "system",
+      source: "system",
+      text,
+      createdAt: new Date().toISOString(),
+      status: "completed",
+      itemType: QUICK_STATUS_ITEM_TYPE,
+    };
+  }
+
+  /**
+   * One quick status: the decision, the generation and the note. The generation has the agent's own
+   * provider and model at the lowest effort, with no tools, no session and no thread, and it uses a spare
+   * place of the disposable clients, so it never takes the place of a person's own generation. A failure
+   * writes nothing: the person sees what they saw before. Each outcome goes to the log with times and
+   * counts, never with text, so a developer can follow how the reply behaves.
+   */
+  readonly #replyQuickStatus = Effect.fn("AgentService.replyQuickStatus")(function* (
+    this: AgentService,
+    input: {
+      agentId: string;
+      place: "chat" | "task" | "channel";
+      busySince: number | null;
+      request?: string | undefined;
+      messages: readonly ConversationMessage[];
+      newMessage: string;
+      write: (text: string) => void;
+    },
+  ) {
+    const now = Date.now();
+    const decision = this.#quickStatusGate.decide(input.agentId, input.busySince, now);
+    if (decision !== "start") {
+      if (decision === "cooldown" || decision === "in-flight")
+        logger.info("Quick status skipped.", { agentId: input.agentId, place: input.place, reason: decision });
+      return;
+    }
+    const busySince = input.busySince ?? now;
+    const startedAt = Date.now();
+    let outcome = "failed";
+    let wrote = false;
+    yield* Effect.gen({ self: this }, function* () {
+      const agent = this.#roster().find((candidate) => candidate.id === input.agentId);
+      if (!agent || this.#stopping) {
+        outcome = "agent-gone";
+        return;
+      }
+      // A background generation leaves one place for a person's own.
+      if (!this.#profileClients.hasSpare()) {
+        outcome = "no-spare-place";
+        return;
+      }
+      const model = this.#endpoints
+        .available()
+        .find((candidate) => candidate.provider === agent.provider && candidate.id === agent.model);
+      const raw = yield* this.generateWorkflowText({
+        provider: agent.provider,
+        model: agent.model,
+        effort: model ? summaryEffort(model) : agent.reasoningEffort,
+        prompt: quickStatusPrompt({
+          agent,
+          request: input.request,
+          activity: quickStatusActivity(agent, input.messages),
+          newMessage: input.newMessage,
+          minutes: minutesRunning(busySince, startedAt),
+        }),
+      }).pipe(Effect.timeoutOrElse({ duration: QUICK_STATUS_DEADLINE_MS, orElse: () => Effect.succeed("") }));
+      const note = cleanQuickStatus(this.#mcp.redact(raw));
+      if (!note) {
+        outcome = raw ? "empty" : "timeout";
+        return;
+      }
+      input.write(note);
+      wrote = true;
+      outcome = "written";
+    }).pipe(
+      Effect.catch((failure) =>
+        Effect.sync(() => {
+          outcome = "failed";
+          logger.warn("Could not write a quick status.", { agentId: input.agentId, error: failure.cause });
+        }),
+      ),
+      Effect.ensuring(
+        Effect.sync(() => {
+          this.#quickStatusGate.finish(input.agentId, Date.now(), wrote);
+          logger.info("A quick status ended.", {
+            agentId: input.agentId,
+            place: input.place,
+            outcome,
+            minutesRunning: minutesRunning(busySince, startedAt),
+            generationMs: Date.now() - startedAt,
+          });
+        }),
+      ),
+    );
+  }).bind(this);
 
   /** The turn that the user stopped last in a lane: the agent's own chat, or one task. */
   #stoppedTurn(agentId: string, taskId: string | null): string | null {

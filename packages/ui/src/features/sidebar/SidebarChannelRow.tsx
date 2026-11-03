@@ -17,6 +17,7 @@ import { ChannelAvatar } from "../channels/ChannelAvatar";
 import { SidebarAgentIndicator, SidebarWaitChip, SidebarWaitTooltip } from "./SidebarAgentIndicator";
 import { SidebarChannelContextMenu, SidebarDeletedChannelContextMenu } from "./SidebarChannelContextMenu";
 import { clickIsOnAvatar, SidebarChatTabStrip } from "./SidebarChatTabStrip";
+import { SidebarSelectionContextMenu } from "./SidebarSelectionBar";
 import { sidebarAgentStateLabel, sidebarMessageTime } from "./sidebar-filtering";
 import { useSidebarScope } from "./sidebar-scope";
 import { sidebarChatTabsKey } from "./sidebar-types";
@@ -29,6 +30,7 @@ export function SidebarChannelRow(rowProps: { channel: ChannelSummary; waiting?:
     endChatDragging,
     layoutMutable,
     props,
+    selection,
     sidebarClickIsSuppressed,
     startChatDragging,
     tabStrips,
@@ -44,6 +46,9 @@ export function SidebarChannelRow(rowProps: { channel: ChannelSummary; waiting?:
     return current ? `. ${sidebarAgentStateLabel(current, t, format)}` : "";
   };
   const draggable = () => !rowProps.channel.archived && layoutMutable() && !props.compact && !rowProps.waiting;
+  // Only a row in a section can be picked: the waiting group and Deleted channels are not places in the layout.
+  const pickable = () => !rowProps.channel.archived && layoutMutable() && !props.compact && !rowProps.waiting;
+  const picked = () => pickable() && selection.has(rowProps.channel.id);
   const [menuOpen, setMenuOpen] = createSignal(false);
   const title = () => rowProps.channel.title.trim();
   /* Running work is a prefix on the preview line rather than a word beside the name: one line
@@ -66,14 +71,18 @@ export function SidebarChannelRow(rowProps: { channel: ChannelSummary; waiting?:
           "agent-row channel-row",
           {
             "agent-row-active": active(),
+            "agent-row-picked": picked(),
             "sidebar-agent-row-dragging": draggedChatId() === rowProps.channel.id,
           },
         ]}
         aria-label={`${rowProps.channel.name}${title() ? `, ${title()}` : ""}${labelPreview()}${waitLabel()}`}
         aria-pressed={active() ? "true" : "false"}
+        aria-selected={picked() ? "true" : undefined}
         data-cuelume-navigate=""
         onClick={(event: MouseEvent) => {
           if (sidebarClickIsSuppressed(event)) return;
+          // ⌘/Ctrl or Shift picks the row with others to act on them together; a plain click ends the pick.
+          if (pickable() && selection.click(event, rowProps.channel.id)) return;
           // The avatar opens the tabs of a chat that has them; the rest of the row opens the chat.
           if (tabs() && clickIsOnAvatar(event)) tabStrips.toggle(tabsKey());
           else props.onSelectChannel?.(rowProps.channel.id);
@@ -137,7 +146,12 @@ export function SidebarChannelRow(rowProps: { channel: ChannelSummary; waiting?:
           </Show>
         }
       >
-        <SidebarChannelContextMenu channel={rowProps.channel} pinned={false} />
+        <Show
+          when={picked() && selection.count() > 1}
+          fallback={<SidebarChannelContextMenu channel={rowProps.channel} pinned={false} />}
+        >
+          <SidebarSelectionContextMenu />
+        </Show>
       </Show>
     </ContextMenu.Root>
   );

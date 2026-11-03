@@ -93,6 +93,12 @@ export const messages = {
   "channel.topic.outcome.noteRequired": "Что произошло? (обязательно)",
   "channel.topic.outcome.noteCount": "{count}/{max}",
   "channel.topic.closeRecord": "Короткая запись останется в вашем профиле, только на этом компьютере.",
+  // What goes away with the tab, shown above the question in the close dialog.
+  "channel.topic.summary.messages": "Сообщения",
+  "channel.topic.summary.age": "Создана",
+  "channel.topic.summary.status": "Статус",
+  "channel.topic.summary.idle": "Свободна",
+  "channel.topic.summary.working": "В работе",
   "channel.stage.label": "Сцена агентов",
   "channel.stage.fold": "Свернуть сцену агентов",
   "channel.stage.unfold": "Развернуть сцену агентов",

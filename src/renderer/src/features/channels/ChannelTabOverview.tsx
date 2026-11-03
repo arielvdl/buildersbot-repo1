@@ -2,9 +2,9 @@ import type { ChannelTopic } from "@buildersbot/contracts/ipc";
 import { Button, Input, Pin, PinOff } from "@buildersbot/ui";
 import { useText } from "@buildersbot/ui/text";
 import { createMemo, createSignal, For, onSettled, Show } from "solid-js";
+import { channelTabAgeLabel } from "./channel-tab-age-label";
 import {
   type ChannelTabSort,
-  channelTabAge,
   isChannelTabPinned,
   orderChannelTabOverview,
   readChannelTabPins,
@@ -31,7 +31,8 @@ export function ChannelTabOverview(props: {
   restoreFocus: () => void;
 }) {
   const channels = useChannels();
-  const { t, format } = useText();
+  const text = useText();
+  const { t } = text;
   const [query, setQuery] = createSignal("");
   const [sort, setSort] = createSignal<ChannelTabSort>("running");
   const [pins, setPins] = createSignal(readChannelTabPins());
@@ -49,21 +50,7 @@ export function ChannelTabOverview(props: {
     return () => window.clearInterval(timer);
   });
 
-  function age(topic: ChannelTopic): string {
-    const value = channelTabAge(topic.updatedAt ?? topic.createdAt);
-    switch (value.unit) {
-      case "now":
-        return t("channel.topic.age.now");
-      case "minute":
-        return t("channel.topic.age.minute", { count: value.count });
-      case "hour":
-        return t("channel.topic.age.hour", { count: value.count });
-      case "day":
-        return t("channel.topic.age.day", { count: value.count });
-      default:
-        return format.date(value.at, { month: "short", day: "numeric" });
-    }
-  }
+  const age = (topic: ChannelTopic) => channelTabAgeLabel(text, topic.updatedAt ?? topic.createdAt);
 
   function open(topic: ChannelTopic): void {
     void channels.setTopic(topic.id);

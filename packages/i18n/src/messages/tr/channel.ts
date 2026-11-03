@@ -78,6 +78,12 @@ export const messages = {
   "channel.topic.outcome.noteRequired": "Ne oldu? (zorunlu)",
   "channel.topic.outcome.noteCount": "{count}/{max}",
   "channel.topic.closeRecord": "Kısa bir kayıt profilinizde kalır, yalnızca bu bilgisayarda.",
+  // What goes away with the tab, shown above the question in the close dialog.
+  "channel.topic.summary.messages": "Mesajlar",
+  "channel.topic.summary.age": "Oluşturuldu",
+  "channel.topic.summary.status": "Durum",
+  "channel.topic.summary.idle": "Boşta",
+  "channel.topic.summary.working": "Çalışıyor",
   "channel.stage.label": "Ajan sahnesi",
   "channel.stage.fold": "Ajan sahnesini daralt",
   "channel.stage.unfold": "Ajan sahnesini genişlet",

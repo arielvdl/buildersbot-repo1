@@ -1087,6 +1087,7 @@ export class TurnLifecycle {
         // provider start, the session and its settings. `firstOutputMs` is the provider's: the time
         // to its first text, thinking or tool step.
         logger.info("A turn finished.", {
+          agentId,
           provider: running.client.provider,
           model: this.#hooks.turnModel(agentId, turnId),
           status,
@@ -1909,6 +1910,18 @@ export class TurnLifecycle {
     if (!isString(item.id)) return;
     if (isToolItem(item)) {
       const failed = completed && toolFailed(item);
+      // Keep a record of each failed step. Only fixed values go in the log: a tool, server or
+      // command name can come from a user's server or from model text.
+      if (failed) {
+        const status = getString(item, "status");
+        logger.warn("A tool step failed.", {
+          turnId,
+          itemType: item.type,
+          kind: toolUsage(item)?.kind ?? "other",
+          status: status === "failed" || status === "declined" ? status : "exit-code",
+          exitCode: typeof item.exitCode === "number" ? item.exitCode : null,
+        });
+      }
       this.#traces.observe(turnId, item.id, "tool", {
         completed,
         failed,

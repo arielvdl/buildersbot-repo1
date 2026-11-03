@@ -158,17 +158,22 @@ interface SidebarChannelWaitsInput {
  * The order is the one of an agent: a question, then a browser takeover, then an approval.
  */
 export function sidebarChannelWaits(input: SidebarChannelWaitsInput): Record<string, SidebarChannelWait> {
-  const channelByThread = new Map<string, string>();
+  const channelByThread = new Map<string, { channelId: string; topicId: string | undefined }>();
   for (const channel of input.channels) {
     if (channel.archived) continue;
     for (const thread of channel.threads ?? [])
-      channelByThread.set(threadKey(thread.agentId, thread.threadId), channel.id);
+      channelByThread.set(threadKey(thread.agentId, thread.threadId), {
+        channelId: channel.id,
+        topicId: thread.topicId,
+      });
   }
   const waits: Record<string, SidebarChannelWait> = {};
   const mark = (request: SidebarThreadRequest, wait: () => SidebarChannelWait) => {
     if (request.threadId === undefined) return;
-    const channelId = channelByThread.get(threadKey(request.agentId, request.threadId));
-    if (channelId && !waits[channelId]) waits[channelId] = wait();
+    const owner = channelByThread.get(threadKey(request.agentId, request.threadId));
+    if (!owner || waits[owner.channelId]) return;
+    const current = wait();
+    waits[owner.channelId] = owner.topicId ? { ...current, topicId: owner.topicId } : current;
   };
   for (const prompt of input.prompts) mark(prompt, () => questionWait(prompt.questions));
   for (const takeover of input.takeovers) mark(takeover, () => TAKEOVER_WAIT);

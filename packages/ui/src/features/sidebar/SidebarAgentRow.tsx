@@ -24,6 +24,7 @@ import {
   SidebarWaitTooltip,
 } from "./SidebarAgentIndicator";
 import { clickIsOnAvatar, SidebarChatTabStrip } from "./SidebarChatTabStrip";
+import { SidebarSelectionContextMenu } from "./SidebarSelectionBar";
 import { sidebarAgentStateLabel, sidebarMessageTime, sidebarUsageResetTime } from "./sidebar-filtering";
 import { useSidebarScope } from "./sidebar-scope";
 import { sidebarChatTabsKey } from "./sidebar-types";
@@ -40,6 +41,7 @@ export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boole
     endChatDragging,
     layoutMutable,
     props,
+    selection,
     sidebarClickIsSuppressed,
     startChatDragging,
     tabStrips,
@@ -68,6 +70,9 @@ export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boole
       : avatarMoodInChat(props.agentMoods[rowProps.agent.id] ?? "idle", props.activeAgentId === rowProps.agent.id);
   const hiddenLabel = () => (rowProps.userHidden ? `${t("sidebar.hidden.title")}. ` : "");
   const draggable = () => layoutMutable() && !props.compact && !rowProps.waiting && !rowProps.userHidden;
+  // Only a row in a section can be picked: the waiting and hidden groups are not places in the layout.
+  const pickable = () => layoutMutable() && !props.compact && !rowProps.waiting && !rowProps.userHidden;
+  const picked = () => pickable() && selection.has(rowProps.agent.id);
   const wait = () => {
     const current = state();
     return rowProps.waiting && current?.kind === "waiting" ? current : undefined;
@@ -104,15 +109,19 @@ export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boole
           "agent-row",
           {
             "agent-row-active": props.activeAgentId === rowProps.agent.id,
+            "agent-row-picked": picked(),
             "sidebar-agent-row-dragging": draggedChatId() === rowProps.agent.id,
           },
         ]}
         aria-label={`${rowProps.agent.name}${title() ? `, ${title()}` : ""}${accessLabel()}${windowLabel()}${labelDetail()}${stateLabel() ? `. ${stateLabel()}` : ""}`}
         title={routineLabel() || undefined}
         aria-pressed={props.activeAgentId === rowProps.agent.id ? "true" : "false"}
+        aria-selected={picked() ? "true" : undefined}
         data-cuelume-navigate=""
         onClick={(event: MouseEvent) => {
           if (sidebarClickIsSuppressed(event)) return;
+          // ⌘/Ctrl or Shift picks the row with others to act on them together; a plain click ends the pick.
+          if (pickable() && selection.click(event, rowProps.agent.id)) return;
           // The avatar opens the tabs of a chat that has them; the rest of the row opens the chat.
           if (tabs() && clickIsOnAvatar(event)) tabStrips.toggle(tabsKey());
           else props.onSelectAgent(rowProps.agent.id);
@@ -179,7 +188,14 @@ export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boole
           {(state) => <span class="sr-only">{sidebarAgentStateLabel(state(), t, format)}</span>}
         </Show>
       </ContextMenu.Trigger>
-      <SidebarAgentContextMenu agent={rowProps.agent} pinned={false} userHidden={rowProps.userHidden === true} />
+      <Show
+        when={picked() && selection.count() > 1}
+        fallback={
+          <SidebarAgentContextMenu agent={rowProps.agent} pinned={false} userHidden={rowProps.userHidden === true} />
+        }
+      >
+        <SidebarSelectionContextMenu />
+      </Show>
     </ContextMenu.Root>
   );
   return (

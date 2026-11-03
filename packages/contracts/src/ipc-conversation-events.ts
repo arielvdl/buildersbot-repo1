@@ -307,6 +307,14 @@ export function channelRoutingConversationEvent(message: ConversationMessage): C
 export const CONTEXT_RESET_ITEM_TYPE = "context-reset";
 
 /**
+ * The item type of a quick status note: the short answer that a second, fast generation writes while an
+ * agent's turn has run for a long time and the person writes again (the `quick-status-reply` optimization).
+ * It is a system line in the chat or channel, outside the agent's own turn. The text is a readable
+ * sentence, so a client that does not know this item type still shows it.
+ */
+export const QUICK_STATUS_ITEM_TYPE = "quick-status";
+
+/**
  * The item types of the markers that show a switch of model for a plan's usage limit or a provider
  * error: one when the agent leaves its model, one when it goes back. The text is a readable sentence
  * that names the model, as for the context reset.

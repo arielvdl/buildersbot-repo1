@@ -1683,7 +1683,7 @@ function WebWorkspaceFrame(props: WebWorkspaceProps) {
         const ids = snapshot ? current.tabs.openIds(agent.id) : current.tabs.storedOpenIds(agent.id);
         const tasks = snapshot?.tasks ?? [];
         const tabs = [
-          { id: MAIN_THREAD_ID, title: t("sidebar.tabs.main") },
+          { id: MAIN_THREAD_ID, title: t("sidebar.tabs.main"), closable: false },
           ...ids.flatMap((id) => {
             const task = tasks.find((entry) => entry.id === id);
             return task
@@ -1817,6 +1817,14 @@ function WebWorkspaceFrame(props: WebWorkspaceProps) {
     }
     const current = agentThreads();
     void select(chatId).then(() => current?.tabs.open(chatId, tabId));
+  };
+  /** Closes one tab from the list: a thread tab only, or a channel tab with the questions of its own cross. */
+  const closeChatTab = (kind: "agent" | "channel", chatId: string, tabId: string) => {
+    if (kind === "channel") {
+      void channels.requestTopicClose(chatId, tabId);
+      return;
+    }
+    agentThreads()?.tabs.close(chatId, tabId);
   };
   function openChannel(id: string, edit = false) {
     userOpensChat("channel", id);
@@ -2197,6 +2205,7 @@ function WebWorkspaceFrame(props: WebWorkspaceProps) {
                   onSelectChannel={openChannel}
                   chatTabs={chatTabs()}
                   onOpenChatTab={openChatTab}
+                  onCloseChatTab={closeChatTab}
                   onEditChannel={(id) => openChannel(id, true)}
                   onDeleteChannel={
                     channels.deletionSupported()

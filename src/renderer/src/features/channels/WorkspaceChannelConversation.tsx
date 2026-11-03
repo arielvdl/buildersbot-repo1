@@ -1,6 +1,6 @@
 import type { BrowserTakeoverRequest, CentralAuthUser } from "@buildersbot/contracts/ipc";
 import { hasVisibleToasts } from "@buildersbot/ui";
-import { createMemo, Loading, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, Loading, Show } from "solid-js";
 import { ChannelStageHost } from "../../lazy-views";
 import { useNavigation } from "../../navigation";
 import { usePlatform } from "../../platform";
@@ -91,14 +91,27 @@ function DesktopChannelConversation(props: { channelId: string; account: () => C
     takeovers,
     hiddenAgentIds: userHiddenAgentIds,
   });
+  // The reader is up in older messages: the stage folds away and comes back at the end of the chat.
+  const [readerAway, setReaderAway] = createSignal(false);
+  createEffect(
+    () => props.channelId,
+    () => {
+      setReaderAway(false);
+    },
+  );
   return (
     <Conversation
       channel={view.source}
+      onReaderAwayChange={setReaderAway}
       notice={<ChannelErrorNotice />}
       stage={
         !narrowWindow() && channelStageSettingsFor(activeServerId(), props.channelId).enabled ? (
           <Loading>
-            <ChannelStageHost channelId={props.channelId} workingTurns={view.source.workingTurns} />
+            <ChannelStageHost
+              channelId={props.channelId}
+              workingTurns={view.source.workingTurns}
+              readerAway={readerAway}
+            />
           </Loading>
         ) : undefined
       }
