@@ -26,6 +26,7 @@ import {
   removeQuickChatFolder,
   renameQuickChatFolder,
 } from "./quick-chat-folders";
+import { readLastQuickChat, writeLastQuickChat } from "./quick-chat-last";
 import {
   addQuickChatPointer,
   pruneQuickChatPointers,
@@ -72,6 +73,7 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
     agentName: () => t("quick.list.title"),
     noProviderMessage: () => sourceText("error.provider.noneReady"),
     onModelChanged: () => toast(t("quick.notice.modelChanged")),
+    restoreLast,
   });
   const { agentList, agentListSettled, agentStatus, userHiddenAgentIds, updateAgent: updateRosterAgent } = useAgents();
   const buildThreads = useConversationThreadsOf();
@@ -109,6 +111,27 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
     const open = called();
     return open ? agentList().find((agent) => agent.id === open.agentId) : quick.agent();
   });
+
+  /**
+   * Opens the conversation that was open when the person left the page, so a return finds the chat as it was.
+   * A conversation that is gone, archived, or whose agent is gone is not restored: a new one opens.
+   */
+  async function restoreLast(ownId: string): Promise<boolean> {
+    const last = readLastQuickChat(activeServerId());
+    if (!last) return false;
+    const own = last.agentId === ownId;
+    if (!own) {
+      if (!pointers().some((pointer) => pointer.agentId === last.agentId && pointer.taskId === last.taskId))
+        return false;
+      if (!agentList().some((agent) => agent.id === last.agentId)) return false;
+      if (!tasks.snapshot(last.agentId)) await tasks.loadTasks(last.agentId);
+    }
+    const live = tasks.snapshot(last.agentId)?.tasks.some((task) => task.id === last.taskId && task.state !== "closed");
+    if (!live) return false;
+    setCalled(own ? null : last);
+    tabs.open(last.agentId, last.taskId);
+    return true;
+  }
 
   /** A message that opens with an @ tag starts its conversation in that agent. Any other message starts it here. */
   async function sendDraft(text: string, files: string[]): Promise<boolean> {
@@ -250,6 +273,14 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
     () => ({ key: selectedKey(), ready: ready() }),
     ({ ready: isReady }) => {
       if (isReady) requestAnimationFrame(() => focusComposer(chat));
+    },
+  );
+
+  // The open conversation is kept, so the next visit opens it again. A new one with no message is kept as none.
+  createEffect(
+    () => ({ key: selectedKey(), id: owner()?.id, taskId: open()?.id, ready: ready() }),
+    ({ id, taskId, ready: isReady }) => {
+      if (isReady) writeLastQuickChat(activeServerId(), id && taskId ? { agentId: id, taskId } : null);
     },
   );
 
