@@ -4,14 +4,15 @@ import type { AgentProviderRef } from "@buildersbot/contracts/agent-providers";
 import type { AvatarHue } from "@buildersbot/contracts/ipc";
 import type { AppTextKey } from "@buildersbot/i18n";
 import { Button } from "@buildersbot/ui";
-import { createMemo, onSettled, Show } from "solid-js";
+import { createEffect, createMemo, onSettled, Show } from "solid-js";
 import { useText } from "../../text";
 import { orbitFamily } from "../agents/agent-model-family";
+import { RollText } from "./RollText";
 import { StageActorEffects } from "./StageActorEffects";
+import { StageBubble } from "./StageBubble";
 import type { StageActivity } from "./stage-activity";
 import { FIGURE_HEIGHT, FIGURE_WIDTH, type StageGeometry, seatIsFront, seatPoint, seatSide } from "./stage-geometry";
 import { ENTER_EASING, ENTER_MS, FADE_MS, LEAVE_MS, prefersReducedMotion } from "./stage-motion";
-import { Typewriter } from "./Typewriter";
 
 /** One agent on a stage: who it is, what it does, and where it sits. */
 export interface StageActorData {
@@ -89,6 +90,7 @@ export function StageActor(props: {
   const { t, sourceText } = useText();
   let figure: HTMLDivElement | undefined;
   let hop: HTMLDivElement | undefined;
+  let ping: HTMLSpanElement | undefined;
   const place = createMemo(() => seatPoint(props.actor.seat, props.geometry));
   const family = createMemo(() =>
     props.actor.provider && props.actor.model ? orbitFamily(props.actor.provider, props.actor.model) : null,
@@ -200,6 +202,38 @@ export function StageActor(props: {
     return () => animation.cancel();
   });
 
+  // A new activity: the cube wobbles like jelly and a ring spreads from it. The celebration and the shake above
+  // are the motion of `done` and `failed`, so those two get the ring only.
+  let lastActivity = props.actor.activity;
+  createEffect(
+    () => props.actor.activity,
+    (activity) => {
+      const before = lastActivity;
+      lastActivity = activity;
+      if (before === activity || props.leaving || prefersReducedMotion()) return;
+      if (activity !== "done" && activity !== "failed") {
+        hop?.animate(
+          [
+            { transform: "none" },
+            { transform: "scale(1.18, 0.82)", offset: 0.2 },
+            { transform: "scale(0.9, 1.12)", offset: 0.42 },
+            { transform: "scale(1.06, 0.95)", offset: 0.64 },
+            { transform: "scale(0.99, 1.01)", offset: 0.82 },
+            { transform: "none" },
+          ],
+          { duration: 760, easing: "ease-out" },
+        );
+      }
+      ping?.animate(
+        [
+          { transform: "scale(0.9)", opacity: 0.7 },
+          { transform: "scale(1.9)", opacity: 0 },
+        ],
+        { duration: 900, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)" },
+      );
+    },
+  );
+
   return (
     <li
       class="agent-stage-actor"
@@ -235,6 +269,13 @@ export function StageActor(props: {
           </Show>
           <span>{props.actor.name}</span>
         </span>
+        <span
+          class="agent-stage-ping"
+          aria-hidden="true"
+          ref={(node) => {
+            ping = node;
+          }}
+        />
         <div
           class="agent-stage-hop"
           ref={(node) => {
@@ -265,25 +306,20 @@ export function StageActor(props: {
         />
       </Show>
       <Show when={!props.leaving && props.bubble !== false}>
-        <div class="agent-stage-bubble" data-tone={props.actor.activity}>
-          <Show
-            when={
-              props.actor.activity === "waiting" || props.actor.activity === "failed" || props.actor.activity === "done"
-            }
-          >
-            <span class="agent-stage-bubble-tone">{t(ACTIVITY_LABEL[props.actor.activity])}</span>
-          </Show>
-          <Show when={say()} keyed>
-            {(sentence) => (
-              <span class="agent-stage-bubble-text">
-                <Typewriter text={sentence} />
-              </span>
-            )}
-          </Show>
-        </div>
+        <StageBubble
+          activity={props.actor.activity}
+          tone={
+            props.actor.activity === "waiting" || props.actor.activity === "failed" || props.actor.activity === "done"
+              ? t(ACTIVITY_LABEL[props.actor.activity])
+              : null
+          }
+          sentence={say()}
+        />
       </Show>
       <span class="agent-stage-name" aria-hidden="true">
-        <span class="agent-stage-verb">{t(ACTIVITY_LABEL[props.actor.activity])}</span>
+        <span class="agent-stage-verb">
+          <RollText text={t(ACTIVITY_LABEL[props.actor.activity])} />
+        </span>
       </span>
     </li>
   );

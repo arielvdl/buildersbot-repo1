@@ -17,6 +17,7 @@ import { createEffect, createSignal, For, Show, untrack } from "solid-js";
 import { Button } from "../../button";
 import { useText } from "../../text";
 import { createTaskListPlayState } from "../conversation/TaskList";
+import { RollText } from "../stage/RollText";
 import type { StageActorData } from "../stage/StageActor";
 import { StageBoard } from "../stage/StageBoard";
 import type { StageLinkData } from "../stage/StageLinks";
@@ -187,7 +188,7 @@ function StageRequest(props: { request: ChannelStageRequest; geometry: StageGeom
         </For>
       </span>
       <span class="channel-stage-request-count">
-        {t("channel.stage.requestParts", { done: props.request.done, total: props.request.parts })}
+        <RollText text={t("channel.stage.requestParts", { done: props.request.done, total: props.request.parts })} />
       </span>
     </div>
   );

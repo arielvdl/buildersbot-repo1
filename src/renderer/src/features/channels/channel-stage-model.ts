@@ -12,6 +12,7 @@ import type { AgentProfile } from "@buildersbot/ui/data";
 import { type StageActivity, stageActivityOfLine } from "@buildersbot/ui/features/stage/stage-activity";
 import type { TurnStepLines } from "../conversation/turn-step-lines";
 import { startingChannelTask } from "./channel-conversation-rows";
+import { agentThoughtLine } from "./channel-stage-thought";
 
 /** The seats round the table. More agents than this wait in a "+N" chip. */
 const STAGE_SEATS = 8;
@@ -47,7 +48,10 @@ export interface StageActor {
   hue: AvatarHue | null;
   lead: boolean;
   activity: StageActivity;
-  /** The host's English progress line, for the speech bubble. The view renders it with `sourceText`. */
+  /**
+   * The line of the speech bubble: what the agent thinks (its newest thinking sentence, as it wrote it),
+   * and without a thought yet the host's English progress line. The view renders it with `sourceText`.
+   */
   line: string | null;
   /** The agent that gets the work, while this one delegates. */
   delegatesTo: string | null;
@@ -267,6 +271,7 @@ export function channelStageModel(input: StageInput): StageModel {
       earlier(pose.next);
     }
     if (hold) earlier(hold.until);
+    const speaks = activity !== "waiting" && activity !== "done" && activity !== "failed";
     const delegatesTo = activity === "delegating" ? (linkTargets.get(id) ?? null) : null;
     actors.push({
       id,
@@ -276,7 +281,7 @@ export function channelStageModel(input: StageInput): StageModel {
       hue: profile?.avatarHue ?? null,
       lead: id === lead,
       activity,
-      line: last && activity !== "waiting" && activity !== "done" && activity !== "failed" ? last.text : null,
+      line: speaks ? (agentThoughtLine(page, id, turnId) ?? last?.text ?? null) : null,
       delegatesTo,
     });
   }
