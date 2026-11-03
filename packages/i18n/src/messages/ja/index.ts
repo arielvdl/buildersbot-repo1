@@ -33,6 +33,7 @@ import { messages as preview } from "./preview";
 import { messages as prompt } from "./prompt";
 import { messages as provider } from "./provider";
 import { messages as queue } from "./queue";
+import { messages as quick } from "./quick";
 import { messages as remoteDesktop } from "./remoteDesktop";
 import { messages as routine } from "./routine";
 import { messages as server } from "./server";
@@ -76,6 +77,7 @@ export const ja = {
   ...guard,
   ...billing,
   ...provider,
+  ...quick,
   ...app,
   ...composer,
   ...attachment,

@@ -114,5 +114,3 @@ export function createQuickChat(options: QuickChatOptions) {
 
   return { phase: () => state.phase, agent, open, updateAgent, close };
 }
-
-export type QuickChat = ReturnType<typeof createQuickChat>;
