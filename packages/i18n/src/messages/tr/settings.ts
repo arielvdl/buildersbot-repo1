@@ -180,6 +180,12 @@ export const messages = {
     "Kaç sekmenin çalışacağına boş bellek karar verir ve hiçbir zaman bu sayıyı geçmez. Uygulama belleği okuyamıyorsa bu sayı olduğu gibi uygulanır.",
   "settings.load.lines.tabsFixedHint":
     "Bir kanalın her sekmesi kendi çalışma hattıdır: bir mesaj yalnızca kendi sekmesindeki önceki mesajları bekler. 1 ile bir ajan aynı anda tek sekmede çalışır.",
+  "settings.load.quickChat.title": "Hızlı sohbet mesaj dizileri",
+  "settings.load.quickChat.description": "Hızlı sohbetin kaç konuşmasının aynı anda çalışacağını belirler.",
+  "settings.load.quickChat.label": "Aynı anda çalışan konuşmalar",
+  "settings.load.quickChat.unit": "(1 ile 16 arası, önerilen: {suggested})",
+  "settings.load.quickChat.hint":
+    "Başka bir konuşmadaki bir mesaj, bunlardan biri turunu bitirene kadar bekler. Daha düşük bir sayı çalışan hiçbir turu durdurmaz. Çalışan her konuşma bellek ve sağlayıcının planını kullanır.",
   "settings.sections.label": "Ayar bölümleri",
   "settings.panel.resize": "Sağ paneli yeniden boyutlandır",
   "settings.preferences.loadFailed": "Ayarlarınız yüklenemedi.",

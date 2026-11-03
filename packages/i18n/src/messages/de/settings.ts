@@ -186,6 +186,12 @@ export const messages = {
     "Der freie Speicher bestimmt, wie viele Tabs laufen, aber nie mehr als diese Zahl. Wo die App den Speicher nicht lesen kann, gilt diese Zahl unverändert.",
   "settings.load.lines.tabsFixedHint":
     "Jeder Tab eines Kanals ist eine eigene Arbeitslinie: Eine Nachricht wartet nur auf die früheren Nachrichten ihres Tabs. Bei 1 arbeitet ein Agent immer nur in einem Tab.",
+  "settings.load.quickChat.title": "Threads des Schnellchats",
+  "settings.load.quickChat.description": "Wie viele Unterhaltungen des Schnellchats gleichzeitig laufen.",
+  "settings.load.quickChat.label": "Unterhaltungen gleichzeitig",
+  "settings.load.quickChat.unit": "(1 bis 16, {suggested} wird empfohlen)",
+  "settings.load.quickChat.hint":
+    "Eine Nachricht in einer anderen Unterhaltung wartet, bis eine davon ihren Durchlauf beendet. Eine niedrigere Zahl stoppt keinen laufenden Durchlauf. Jede Unterhaltung in Arbeit nutzt Speicher und das Abo ihres Anbieters.",
   "settings.sections.label": "Einstellungsbereiche",
   "settings.panel.resize": "Größe des rechten Bereichs ändern",
   "settings.preferences.loadFailed": "Deine Einstellungen konnten nicht geladen werden.",

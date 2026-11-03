@@ -197,6 +197,12 @@ export const messages = {
     "여유 메모리가 실행되는 탭 수를 정하며, 이 숫자를 넘지 않습니다. 앱이 메모리를 읽을 수 없으면 이 숫자가 그대로 적용됩니다.",
   "settings.load.lines.tabsFixedHint":
     "채널의 각 탭은 독립된 작업 흐름입니다. 메시지는 같은 탭의 앞선 메시지만 기다립니다. 1이면 에이전트는 한 번에 한 탭에서만 작업합니다.",
+  "settings.load.quickChat.title": "빠른 채팅 스레드",
+  "settings.load.quickChat.description": "빠른 채팅의 대화를 동시에 몇 개까지 실행할지 정해요.",
+  "settings.load.quickChat.label": "동시에 실행할 대화",
+  "settings.load.quickChat.unit": "(1~16, 권장: {suggested})",
+  "settings.load.quickChat.hint":
+    "다른 대화의 메시지는 이 중 하나가 턴을 끝낼 때까지 기다려요. 숫자를 낮춰도 실행 중인 턴은 멈추지 않아요. 작업 중인 대화마다 메모리와 제공자의 요금제를 사용해요.",
   "settings.sections.label": "설정 섹션",
   "settings.panel.resize": "오른쪽 패널 크기 조절",
   "settings.preferences.loadFailed": "설정을 불러올 수 없어요.",

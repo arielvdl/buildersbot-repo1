@@ -196,6 +196,12 @@ export const messages = {
     "空闲内存决定有多少标签页在运行，且不会超过此数字。如果应用无法读取内存，则直接采用此数字。",
   "settings.load.lines.tabsFixedHint":
     "频道的每个标签页都是独立的工作线：消息只等待同一标签页中更早的消息。设为 1 时，智能体一次只在一个标签页中工作。",
+  "settings.load.quickChat.title": "快速对话的话题",
+  "settings.load.quickChat.description": "同时运行的快速对话数量。",
+  "settings.load.quickChat.label": "同时运行的对话",
+  "settings.load.quickChat.unit": "(1 到 16，建议 {suggested})",
+  "settings.load.quickChat.hint":
+    "其他对话中的消息会等待其中一个完成本轮。调低数字不会停止正在运行的轮次。每个正在工作的对话都会占用内存和服务商的套餐额度。",
   "settings.sections.label": "设置分区",
   "settings.panel.resize": "调整右侧面板宽度",
   // A failed read or save of the app preferences on the General, Notifications, Dynamic Island and Updates tabs.

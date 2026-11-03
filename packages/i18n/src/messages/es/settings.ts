@@ -185,6 +185,12 @@ export const messages = {
     "La memoria libre decide cuántas pestañas se ejecutan, y nunca más que este número. Donde la app no puede leer la memoria, este número se aplica tal cual.",
   "settings.load.lines.tabsFixedHint":
     "Cada pestaña de un canal es una línea de trabajo propia: un mensaje espera solo a los mensajes anteriores de su pestaña. Con 1, un agente trabaja en una pestaña a la vez.",
+  "settings.load.quickChat.title": "Hilos del chat rápido",
+  "settings.load.quickChat.description": "Cuántas conversaciones del chat rápido se ejecutan al mismo tiempo.",
+  "settings.load.quickChat.label": "Conversaciones al mismo tiempo",
+  "settings.load.quickChat.unit": "(de 1 a 16, se sugiere {suggested})",
+  "settings.load.quickChat.hint":
+    "Un mensaje en otra conversación espera hasta que termine el turno de una de estas. Un número menor no detiene ningún turno en curso. Cada conversación en curso usa memoria y el plan de su proveedor.",
   "settings.sections.label": "Secciones de ajustes",
   "settings.panel.resize": "Cambiar el tamaño del panel derecho",
   "settings.preferences.loadFailed": "No se pudieron cargar tus ajustes.",

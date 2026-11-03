@@ -179,6 +179,12 @@ export const messages = {
     "空きメモリで動くタブ数を決めますが、この数を超えることはありません。アプリがメモリを読めない場合は、この数がそのまま使われます。",
   "settings.load.lines.tabsFixedHint":
     "チャンネルの各タブは独立した作業の流れです。メッセージはそのタブの前のメッセージだけを待ちます。1にすると、エージェントは一度に1つのタブで作業します。",
+  "settings.load.quickChat.title": "クイックチャットのスレッド",
+  "settings.load.quickChat.description": "クイックチャットの会話を同時に何件まで実行するかを設定します。",
+  "settings.load.quickChat.label": "同時に実行する会話",
+  "settings.load.quickChat.unit": "(1〜16、推奨は{suggested})",
+  "settings.load.quickChat.hint":
+    "別の会話のメッセージは、これらのいずれかがターンを終えるまで待ちます。数を減らしても、実行中のターンは止まりません。作業中の会話ごとに、メモリとプロバイダーのプランを使います。",
   "settings.sections.label": "設定のセクション",
   "settings.panel.resize": "右パネルのサイズを変更",
   "settings.preferences.loadFailed": "設定を読み込めませんでした。",

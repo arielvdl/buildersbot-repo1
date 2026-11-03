@@ -187,6 +187,12 @@ export const messages = {
     "Wolna pamięć decyduje, ile kart działa, i nigdy nie jest to więcej niż ta liczba. Tam, gdzie aplikacja nie może odczytać pamięci, ta liczba obowiązuje bez zmian.",
   "settings.load.lines.tabsFixedHint":
     "Każda karta kanału to osobna linia pracy: wiadomość czeka tylko na wcześniejsze wiadomości swojej karty. Przy 1 agent pracuje w jednej karcie naraz.",
+  "settings.load.quickChat.title": "Wątki szybkiego czatu",
+  "settings.load.quickChat.description": "Ile rozmów szybkiego czatu działa jednocześnie.",
+  "settings.load.quickChat.label": "Rozmowy jednocześnie",
+  "settings.load.quickChat.unit": "(od 1 do 16, zalecana wartość: {suggested})",
+  "settings.load.quickChat.hint":
+    "Wiadomość w innej rozmowie czeka, aż jedna z tych zakończy swoją turę. Niższa liczba nie zatrzymuje żadnej trwającej tury. Każda rozmowa w toku zużywa pamięć i plan dostawcy.",
   "settings.sections.label": "Sekcje ustawień",
   "settings.panel.resize": "Zmień rozmiar prawego panelu",
   "settings.preferences.loadFailed": "Nie udało się wczytać ustawień.",

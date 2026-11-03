@@ -202,6 +202,12 @@ export const messages = {
     "Het vrije geheugen bepaalt hoeveel tabbladen draaien, en nooit meer dan dit getal. Waar de app het geheugen niet kan lezen, geldt dit getal zoals het is.",
   "settings.load.lines.tabsFixedHint":
     "Elk tabblad van een kanaal is een eigen werklijn: een bericht wacht alleen op de eerdere berichten van zijn tabblad. Met 1 werkt een agent in één tabblad tegelijk.",
+  "settings.load.quickChat.title": "Threads van de snelchat",
+  "settings.load.quickChat.description": "Hoeveel gesprekken van de snelchat tegelijk draaien.",
+  "settings.load.quickChat.label": "Gesprekken tegelijk",
+  "settings.load.quickChat.unit": "(1 tot 16, {suggested} is aanbevolen)",
+  "settings.load.quickChat.hint":
+    "Een bericht in een ander gesprek wacht tot een van deze zijn beurt afrondt. Een lager getal stopt geen lopende beurt. Elk gesprek dat bezig is, gebruikt geheugen en het abonnement van de aanbieder.",
   "settings.sections.label": "Onderdelen van instellingen",
   "settings.panel.resize": "Grootte rechterpaneel wijzigen",
   "settings.preferences.loadFailed": "Kan je instellingen niet laden.",

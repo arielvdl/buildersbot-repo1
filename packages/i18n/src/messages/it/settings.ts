@@ -185,6 +185,12 @@ export const messages = {
     "La memoria libera decide quante schede girano, e mai più di questo numero. Dove l'app non riesce a leggere la memoria, questo numero vale così com'è.",
   "settings.load.lines.tabsFixedHint":
     "Ogni scheda di un canale è una linea di lavoro propria: un messaggio attende solo i messaggi precedenti della sua scheda. Con 1, un agente lavora in una scheda alla volta.",
+  "settings.load.quickChat.title": "Thread della chat rapida",
+  "settings.load.quickChat.description": "Quante conversazioni della chat rapida vengono eseguite contemporaneamente.",
+  "settings.load.quickChat.label": "Conversazioni contemporanee",
+  "settings.load.quickChat.unit": "(da 1 a 16, ne è suggerito {suggested})",
+  "settings.load.quickChat.hint":
+    "Un messaggio in un'altra conversazione attende che una di queste termini il suo turno. Un numero più basso non ferma nessun turno in corso. Ogni conversazione in corso usa memoria e il piano del suo provider.",
   "settings.sections.label": "Sezioni delle impostazioni",
   "settings.panel.resize": "Ridimensiona il pannello destro",
   "settings.preferences.loadFailed": "Impossibile caricare le tue impostazioni.",

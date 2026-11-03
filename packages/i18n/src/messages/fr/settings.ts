@@ -195,6 +195,12 @@ export const messages = {
     "La mémoire libre décide combien d'onglets tournent, sans jamais dépasser ce nombre. Quand l'app ne peut pas lire la mémoire, ce nombre s'applique tel quel.",
   "settings.load.lines.tabsFixedHint":
     "Chaque onglet d'un canal est une ligne de travail à part : un message n'attend que les messages précédents de son onglet. Avec 1, un agent travaille dans un onglet à la fois.",
+  "settings.load.quickChat.title": "Fils du chat rapide",
+  "settings.load.quickChat.description": "Combien de conversations du chat rapide tournent en même temps.",
+  "settings.load.quickChat.label": "Conversations en même temps",
+  "settings.load.quickChat.unit": "(de 1 à 16, {suggested} est conseillé)",
+  "settings.load.quickChat.hint":
+    "Un message dans une autre conversation attend qu'une de celles-ci termine son tour. Un nombre plus bas n'arrête aucun tour en cours. Chaque conversation en cours utilise de la mémoire et le forfait de son fournisseur.",
   "settings.sections.label": "Sections des réglages",
   "settings.panel.resize": "Redimensionner le panneau de droite",
   "settings.preferences.loadFailed": "Impossible de charger vos réglages.",
