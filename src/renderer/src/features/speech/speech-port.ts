@@ -17,7 +17,10 @@ export interface SpeechPort {
     | "getServer"
     | "onServerSettings"
   >;
-  agent: Pick<BuildersBotDesktopApi["agent"], "readConversationPage" | "discardDraftAttachment">;
+  agent: Pick<
+    BuildersBotDesktopApi["agent"],
+    "readConversationPage" | "discardDraftAttachment" | "listTasks" | "readTask"
+  >;
 }
 
 /** Read on each call: tests and stories replace `window.buildersbot` per case. */

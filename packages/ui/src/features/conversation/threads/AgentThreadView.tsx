@@ -143,6 +143,12 @@ export interface AgentThreadViewProps {
   waitsForAnswer?: boolean | undefined;
   /** Another card that the thread shows, such as a question or a browser takeover. The app builds it. */
   attention?: JSX.Element | undefined;
+  /** Reads an answer aloud, as the agent's own chat does. Absent for a message that cannot be read, or without speech. */
+  readAloud?: ((message: AgentMessage) => { reading: boolean; onToggle: () => void } | undefined) | undefined;
+  /** What the menu of an answer shows when `readAloud` has nothing to read yet, such as the offer of the voice download. */
+  readAloudOffer?: ((message: AgentMessage) => { reading: boolean; onToggle: () => void } | undefined) | undefined;
+  /** What shows above the message box, such as the bar of a reply that is read aloud now. */
+  aboveComposer?: JSX.Element | undefined;
   /** The steps of the finished turn above an answer, or undefined for a message that has none. */
   stepsAbove?: ((messageId: string) => AgentStep[] | undefined) | undefined;
   /** The time that the turn of an answer took, and how many of its steps failed. */
@@ -309,6 +315,7 @@ export function AgentThreadView(props: AgentThreadViewProps) {
         onCopy={() => onCopy(message)}
         onBranch={branchAction(message)}
         branchDisabled={branchBusy()}
+        readAloud={props.readAloud?.(message)}
       />
     );
   }
@@ -325,6 +332,7 @@ export function AgentThreadView(props: AgentThreadViewProps) {
         onCopy={() => onCopy(message)}
         onBranch={branchAction(message)}
         branchDisabled={branchBusy()}
+        readAloud={props.readAloud?.(message) ?? props.readAloudOffer?.(message)}
       />
     );
   }
@@ -448,6 +456,7 @@ export function AgentThreadView(props: AgentThreadViewProps) {
         </div>
       </section>
       <div class="composer-wrap">
+        {props.aboveComposer}
         <Show when={failed()}>
           {(task) => (
             <ComposerNotice

@@ -32,6 +32,7 @@ import {
 import { actionToast } from "../../action-toast";
 import { createScopeGuard } from "../../scope-lifetime";
 import { appendVoiceTranscript } from "../../voice-recording";
+import { NEW_SPEECH_THREAD } from "../speech/speech-replies";
 import { createAttachmentImportSounds } from "./attachment-import-sounds";
 import type { ChatSearchMatch } from "./chat-search";
 import { useConversationController } from "./conversation-controller-context";
@@ -741,6 +742,12 @@ export function createConversationViewScope(props: ConversationProps) {
         await threadComposer.send(threads, threadComposer.draft(key).text.trim());
         // The locked editor did not take the earlier focus request.
         if (threadComposer.openDraftKey() === key) setThreadFocusRequest((current) => current + 1);
+      },
+      dictationTarget: (key) => {
+        const target = currentConversationTarget(props);
+        const open = props.threads?.open;
+        if (!target || open === undefined || threadComposer.openDraftKey() !== key) return undefined;
+        return { serverId: target.serverId, agentId: target.agentId, thread: open ? open.threadId : NEW_SPEECH_THREAD };
       },
       reportError: (message) => actionToast.error(message),
       // The stop chime already played, so the notice is silent.

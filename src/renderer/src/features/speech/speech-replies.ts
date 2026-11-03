@@ -1,4 +1,9 @@
-import { type AgentEvent, latestTurnAnswer, type SpeechLanguage } from "@buildersbot/contracts/ipc";
+import {
+  type AgentEvent,
+  type ConversationMessage,
+  latestTurnAnswer,
+  type SpeechLanguage,
+} from "@buildersbot/contracts/ipc";
 import { speechLanguageOf } from "@buildersbot/contracts/speech-language";
 import { speechTextFromMarkdown } from "@buildersbot/contracts/speech-text";
 import { toast } from "@buildersbot/ui";
@@ -43,16 +48,35 @@ interface DictatedMessage {
   continuedTurnId: string | undefined;
   /** A voice conversation reads its replies also when the setting is off. */
   always: boolean;
+  /** Set for a dictation in a side thread: the answer is read from that thread, not from the agent's own chat. */
+  thread: string | undefined;
 }
 
 /** What started a reading: a voice conversation, a dictated message, or the Read aloud control. */
 type SpeechTrigger = "voice_conversation" | "dictation" | "read_aloud";
 
-/** An agent on one server. Agent ids repeat across servers. */
-export type SpeechAgent = Pick<SpeechSource, "serverId" | "agentId">;
+/** The thread of a dictated message that has no thread yet: the first message of a new thread starts it. */
+export const NEW_SPEECH_THREAD = "new";
+
+/**
+ * An agent on one server, and when the dictation was for a side thread, that thread: its provider thread id,
+ * or `NEW_SPEECH_THREAD`. Agent ids repeat across servers. Without a thread, the dictation is for the
+ * agent's own chat.
+ */
+export type SpeechAgent = Pick<SpeechSource, "serverId" | "agentId"> & { thread?: string | undefined };
 
 function agentKey(agent: SpeechAgent): string {
-  return `${agent.serverId}\n${agent.agentId}`;
+  return `${agent.serverId}\n${agent.agentId}\n${agent.thread ?? ""}`;
+}
+
+/** The dictated message that an event of a turn belongs to: the one of its thread, then a new thread's, then the agent's own chat's. */
+function dictationFor(serverId: string, agentId: string, threadId: string): [string, DictatedMessage] | undefined {
+  for (const thread of [threadId, NEW_SPEECH_THREAD, undefined]) {
+    const key = agentKey({ serverId, agentId, thread });
+    const message = dictated.get(key);
+    if (message) return [key, message];
+  }
+  return undefined;
 }
 
 /** The newest dictated message of each agent, by `agentKey`. */
@@ -83,6 +107,7 @@ export function noteDictatedMessage(agent: SpeechAgent, transcript: string, opti
     deliveryTurns: new Map(),
     continuedTurnId: undefined,
     always: options?.always ?? false,
+    thread: agent.thread,
   });
   void warmSpeech(options?.always ?? false);
 }
@@ -120,6 +145,17 @@ function takeDeliveryTurn(message: DictatedMessage): void {
 export function forgetDictatedMessage(agent: SpeechAgent): void {
   const key = agentKey(agent);
   if (!dictated.get(key)?.turnId) dictated.delete(key);
+}
+
+/** The dictated messages of the side threads of this agent are forgotten, and the reply that is read aloud stops. */
+export function dropThreadDictations(agent: Pick<SpeechAgent, "serverId" | "agentId">): void {
+  const prefix = `${agent.serverId}\n${agent.agentId}\n`;
+  for (const key of [...dictated.keys()]) if (key.startsWith(prefix) && !key.endsWith("\n")) dictated.delete(key);
+  for (const item of [...loading])
+    if (item.serverId === agent.serverId && item.agentId === agent.agentId && item.thread !== undefined)
+      loading.delete(item);
+  if (spoken?.serverId === agent.serverId && spoken.agentId === agent.agentId && spoken.thread !== undefined)
+    stopSpokenReply();
 }
 
 /** The reply to the dictated message of this agent is not read, also when its turn started. */
@@ -170,20 +206,29 @@ export function readDictatedReplies(event: AgentEvent, serverId: string): void {
   }
   if (event.type !== "turn-started" && event.type !== "turn-completed") return;
   const agent = { serverId, agentId: event.agentId };
-  const key = agentKey(agent);
   if (event.type === "turn-started") {
     if (event.origin === "routine" || event.origin === "agent") return;
     if (isSpoken(agent)) stopSpokenReply();
-    const message = dictated.get(key);
-    if (!message || message.turnId) return;
+    const found = dictationFor(serverId, event.agentId, event.threadId);
+    if (!found || found[1].turnId) return;
+    const [key, message] = found;
     if (Date.now() - message.dictatedAt > DICTATION_LIFETIME_MS) {
       dictated.delete(key);
       replyEnded(agent);
-    } else message.turnId = event.turnId;
+      return;
+    }
+    message.turnId = event.turnId;
+    // The first turn of a new thread names the thread, so its end finds the dictation by that thread.
+    if (message.thread === NEW_SPEECH_THREAD) {
+      dictated.delete(key);
+      message.thread = event.threadId;
+      dictated.set(agentKey({ ...agent, thread: event.threadId }), message);
+    }
     return;
   }
-  const message = dictated.get(key);
-  if (!message || message.turnId !== event.turnId) return;
+  const found = dictationFor(serverId, event.agentId, event.threadId);
+  if (!found || found[1].turnId !== event.turnId) return;
+  const [key, message] = found;
   if (event.status === "completed" && event.continues) {
     // The request continues in a new turn; its answer is the one to read.
     message.continuedTurnId = event.turnId;
@@ -198,23 +243,21 @@ export function readDictatedReplies(event: AgentEvent, serverId: string): void {
 
 async function readReply(agent: SpeechAgent, turnId: string, message: DictatedMessage): Promise<void> {
   const port = speechPort();
-  const own = { ...agent };
+  const own: SpeechAgent = { ...agent, thread: message.thread };
   loading.add(own);
   try {
     if (!message.always && !(await port.voice.getSpeechSettings()).readReplies) return;
     // The server that sent the turn, also when the user selected another one since.
-    const page = await port.agent.readConversationPage(
-      { agentId: agent.agentId, anchor: { type: "latest" }, limit: ANSWER_LOOKUP_LIMIT },
-      agent.serverId,
-    );
+    const messages = await readAnswerMessages(agent, message);
     if (!loading.has(own)) return;
     loading.delete(own);
-    const answer = latestTurnAnswer(page.messages, turnId);
+    const answer = latestTurnAnswer(messages, turnId);
     await speak(
       answer?.text ?? "",
       { ...agent, messageId: answer?.id ?? null },
       message.language,
       message.always ? "voice_conversation" : "dictation",
+      message.thread,
     );
   } catch (error) {
     if (!loading.has(own)) return;
@@ -228,6 +271,25 @@ async function readReply(agent: SpeechAgent, turnId: string, message: DictatedMe
     loading.delete(own);
     replyEnded(agent);
   }
+}
+
+/** The latest messages that hold the answer: the side thread's when the dictation was for one, else the agent's own chat's. */
+async function readAnswerMessages(agent: SpeechAgent, message: DictatedMessage): Promise<ConversationMessage[]> {
+  const port = speechPort();
+  const threadId = message.thread;
+  if (threadId === undefined || threadId === NEW_SPEECH_THREAD) {
+    const page = await port.agent.readConversationPage(
+      { agentId: agent.agentId, anchor: { type: "latest" }, limit: ANSWER_LOOKUP_LIMIT },
+      agent.serverId,
+    );
+    return page.messages;
+  }
+  // The turn names its provider thread, and a side thread is read by its task.
+  const list = await port.agent.listTasks(agent.agentId, agent.serverId);
+  const task = list.tasks.find((entry) => entry.threadId === threadId);
+  if (!task) return [];
+  const conversation = await port.agent.readTask({ agentId: agent.agentId, taskId: task.id }, agent.serverId);
+  return conversation.messages;
 }
 
 /** Reads one message aloud, or stops it when it is the message that is read now. */
@@ -307,8 +369,9 @@ async function speak(
   source: SpeechSource,
   fallback: SpeechLanguage,
   trigger: SpeechTrigger,
+  thread?: string,
 ): Promise<void> {
-  const own = { serverId: source.serverId, agentId: source.agentId };
+  const own: SpeechAgent = { serverId: source.serverId, agentId: source.agentId, thread };
   const analytics = desktopAnalytics.scope();
   try {
     const text = markdown ? speechTextFromMarkdown(markdown) : "";

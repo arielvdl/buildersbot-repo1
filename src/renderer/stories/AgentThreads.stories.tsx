@@ -6,7 +6,7 @@ import { createAppDom, openChat, PrototypeApp } from "./prototype-support";
 import "./agent-threads-story.css";
 
 /** The real app on Chief, with the open tabs that this device stored. */
-function AgentThreadsApp(props: { open: string[]; active: string | null }) {
+function AgentThreadsApp(props: { open: string[]; active: string | null; speechModelReady?: boolean }) {
   localStorage.setItem(
     TABS_KEY,
     JSON.stringify({ [LOCAL_SERVER_ID]: { [AGENT_ID]: { open: props.open, active: props.active } } }),
@@ -23,7 +23,7 @@ function AgentThreadsApp(props: { open: string[]; active: string | null }) {
   });
   return (
     <div class="agent-threads-story" ref={app.attach}>
-      <PrototypeApp options={THREAD_OPTIONS} />
+      <PrototypeApp options={props.speechModelReady ? { ...THREAD_OPTIONS, speechModelReady: true } : THREAD_OPTIONS} />
     </div>
   );
 }
@@ -39,6 +39,11 @@ type Story = StoryObj<typeof meta>;
 /** The agent's own chat, with four open side threads as tabs: done, working, failed and queued. */
 export const Tabs: Story = {
   render: () => <AgentThreadsApp open={["pricing", "competitors", "release", "links"]} active={null} />,
+};
+
+/** With the voice on this computer, each answer of a side thread has Read aloud, as in the agent's own chat. */
+export const ReadAloud: Story = {
+  render: () => <AgentThreadsApp open={["pricing", "competitors"]} active="pricing" speechModelReady />,
 };
 
 /** A side thread in the place of the chat, with its context meter. */

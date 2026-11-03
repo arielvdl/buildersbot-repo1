@@ -6,15 +6,19 @@ import { Input } from "@buildersbot/ui";
 import type { AgentMessage } from "@buildersbot/ui/data";
 import { ChatSearch } from "@buildersbot/ui/features/conversation/ChatSearch";
 import { contextUsageView } from "@buildersbot/ui/features/conversation/ContextUsage";
+import { SpeakingBar } from "@buildersbot/ui/features/conversation/SpeakingBar";
 import { AgentThreadView, type AgentThreadVoice } from "@buildersbot/ui/features/conversation/threads/AgentThreadView";
 import type { AgentThreadBranchSource } from "@buildersbot/ui/features/conversation/threads/BranchDivider";
 import { useText } from "@buildersbot/ui/text";
-import { createEffect, createMemo, createProjection, createSignal, Show, untrack } from "solid-js";
+import { createEffect, createMemo, createProjection, createSignal, onCleanup, Show, untrack } from "solid-js";
 import { actionToast } from "../../action-toast";
 import { useShowAgentSteps } from "../../agent-steps-preference";
 import { toAgentMessages } from "../../app-message-projection";
 import { usePlatform } from "../../platform";
 import { deviceSendShortcut } from "../../send-shortcut-preference";
+import { offerSpeechModelDownload, speechModelOffersDownload, speechModelReady } from "../speech/speech-model";
+import { speechReading } from "../speech/speech-playback";
+import { dropThreadDictations, stopSpokenReply, toggleReadAloud } from "../speech/speech-replies";
 import { ConversationBrowserTakeover } from "./ConversationBrowserTakeover";
 import { ConversationQuestionPrompt } from "./ConversationQuestionPrompt";
 import { latestVisibleAgentMessageId } from "./conversation-read-state";
@@ -160,6 +164,53 @@ export function ConversationThread() {
       onSend: stopVoiceRecordingAndSend,
     };
   };
+  /** The agent whose answer can be read aloud: the speech runs on this computer, so the web client has none. */
+  const readableReply = (message: AgentMessage) => {
+    const agentId = props.agent?.id;
+    if (props.runtime || !agentId || message.author !== "agent" || message.streaming || !message.body.trim()) return;
+    return agentId;
+  };
+  /** An answer of a thread is read aloud as an answer of the agent's own chat is. */
+  const readAloud = (message: AgentMessage) => {
+    const agentId = readableReply(message);
+    if (!agentId || !speechModelReady()) return;
+    return {
+      reading: speechReading()?.messageId === message.id,
+      onToggle: () =>
+        toggleReadAloud({ serverId: props.server?.id ?? "local", agentId, messageId: message.id }, message.body),
+    };
+  };
+  /** Without the voice, the menu of an answer offers the download, so the person learns why nothing is read. */
+  const readAloudOffer = (message: AgentMessage) => {
+    if (!readableReply(message) || !speechModelOffersDownload()) return;
+    return { reading: false, onToggle: offerSpeechModelDownload };
+  };
+  // Only the conversation that is open speaks: leaving it stops what is read, and drops the replies that
+  // were waiting to be read.
+  createEffect(
+    () => ({
+      thread: props.threads?.open?.id ?? null,
+      agentId: props.agent?.id,
+      serverId: props.server?.id ?? "local",
+    }),
+    (current, previous) => {
+      if (!previous?.agentId || (previous.thread === current.thread && previous.agentId === current.agentId)) return;
+      dropThreadDictations({ serverId: previous.serverId, agentId: previous.agentId });
+      if (speechReading()?.agentId === previous.agentId) stopSpokenReply();
+    },
+  );
+  onCleanup(() => {
+    const agentId = props.agent?.id;
+    if (!agentId) return;
+    dropThreadDictations({ serverId: props.server?.id ?? "local", agentId });
+  });
+  /** The reply of this agent that is read aloud now. */
+  const speaking = () => {
+    const reading = speechReading();
+    return reading && reading.agentId === props.agent?.id && reading.serverId === (props.server?.id ?? "local")
+      ? reading
+      : null;
+  };
   /** Branches the open thread through an answer. A new thread has no answer to branch from. */
   const branch = (threads: ConversationThreads) => {
     const taskId = threads.open?.id;
@@ -244,6 +295,20 @@ export function ConversationThread() {
             onAttachFiles={current().threads.acceptsFiles ? openPicker : undefined}
             onSideQuestion={askSideQuestion()}
             voice={voice()}
+            readAloud={readAloud}
+            readAloudOffer={readAloudOffer}
+            aboveComposer={
+              <Show when={speaking()}>
+                {(reading) => (
+                  <SpeakingBar
+                    agent={current().agent}
+                    caption={reading().part}
+                    levels={reading().levels}
+                    onStop={stopSpokenReply}
+                  />
+                )}
+              </Show>
+            }
             focusRequest={focusRequest()}
             onSend={(text) => threadComposer.send(current().threads, text)}
             onStop={() => current().threads.onStop()}

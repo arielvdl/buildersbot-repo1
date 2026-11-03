@@ -5,7 +5,12 @@ import { onCleanup } from "solid-js";
 import { desktopAnalytics } from "../../../analytics";
 import { playSound, unlockSounds } from "../../../sound-center";
 import { appendVoiceTranscript, encodePcm16, recordingToSamples, recordingToWav } from "../../../voice-recording";
-import { forgetDictatedMessage, noteDictatedMessage, stopSpokenReply } from "../../speech/speech-replies";
+import {
+  forgetDictatedMessage,
+  noteDictatedMessage,
+  type SpeechAgent,
+  stopSpokenReply,
+} from "../../speech/speech-replies";
 import { ensureMicrophoneAccess, microphoneBlockText } from "../../voice/microphone-access";
 import { EMPTY_DRAFT } from "../composer-draft";
 import { composerDraftKey, sameComposerDraft } from "../conversation-keys";
@@ -125,6 +130,8 @@ interface VoiceThreadHooks {
   reportError: (message: string) => void;
   /** The recording stopped at the time limit. */
   reportLimit: () => void;
+  /** Who a dictation for this draft is for, so the reply to its message is read aloud. Undefined when the draft is not open. */
+  dictationTarget: (key: string) => SpeechAgent | undefined;
 }
 
 export function createVoiceStore(deps: VoiceStoreDeps) {
@@ -536,6 +543,9 @@ export function createVoiceStore(deps: VoiceStoreDeps) {
       if (threadKey !== undefined) {
         deps.thread?.appendTranscript(threadKey, result.text);
         if (atLimit) deps.thread?.reportLimit();
+        // The reply to a dictated message is read aloud when the setting is on, in the thread that it was said in.
+        const dictatedFor = spokenReply ? deps.thread?.dictationTarget(threadKey) : undefined;
+        if (dictatedFor) noteDictatedMessage(dictatedFor, result.text);
         // As in the agent's own chat, the phase stays "transcribing" until the send ends, so a second Send waits.
         if (sendThread) await deps.thread?.send(threadKey);
         return;
