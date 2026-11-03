@@ -874,8 +874,15 @@
   outline-offset: var(--buildersbot-space-1);
 }
 
+/* The layer sits over the cube, so the ghost button must never paint it opaque. The ghost variant sets an
+   opaque background on hover (and while expanded) with a selector that has `:not()`, which weighs more than
+   a single class; these selectors weigh more still, so the cube stays in view. */
+.agent-stage-actor .agent-stage-hit[aria-expanded="true"] {
+  background: transparent;
+}
+
 @media (hover: hover) and (pointer: fine) {
-  .agent-stage-hit:hover {
+  .agent-stage-actor .agent-stage-hit:hover:not(:disabled):not([data-disabled]) {
     background: color-mix(in srgb, var(--buildersbot-text-primary) 6%, transparent);
   }
 }
