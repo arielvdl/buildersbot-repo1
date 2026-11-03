@@ -156,6 +156,17 @@ const OPENCODE_TITLE_OFF = { title: { disable: true } } as const;
  */
 export const OPENCODE_PROFILE_CONFIG: OpenCodeConfigBase = { permission: { "*": "deny", bash: "ask", read: "ask" } };
 
+/**
+ * OpenCode's own `websearch` tool is off for every agent. With no default provider it stops the turn
+ * and asks the person "Allow OpenCode to search the web for up-to-date information?" with Exa,
+ * Firecrawl, Parallel, Tavily and TinyFish as the answers. Web access in Builders Bot is the person's
+ * own Chrome through the Builders Bot extension (or the browser chosen in Settings), never a search
+ * service. The rule comes after the other rules of the layer, because the last matching rule wins; a
+ * denied tool is also left out of the request, so the model is not offered it. Checked in OpenCode
+ * 2.2.5: the question comes from `opencode.tool.websearch`, after the permission check.
+ */
+const OPENCODE_WEBSEARCH_OFF = { websearch: "deny" } as const;
+
 const OPENCODE_CONFIG_ENV = "OPENCODE_CONFIG_CONTENT";
 
 /** The built-in providers that read `OPENCODE_API_KEY`: OpenCode Go and the free tier. */
@@ -259,7 +270,12 @@ function mergeOpenCodeConfig(
     ...(apiKey ? Object.fromEntries(OPENCODE_KEY_PROVIDERS.map((id) => [id, { options: { apiKey } }])) : {}),
     ...customProviderEntries(providers),
   };
-  return { ...base, agent: OPENCODE_TITLE_OFF, ...(Object.keys(entries).length > 0 ? { provider: entries } : {}) };
+  return {
+    ...base,
+    permission: { ...base.permission, ...OPENCODE_WEBSEARCH_OFF },
+    agent: OPENCODE_TITLE_OFF,
+    ...(Object.keys(entries).length > 0 ? { provider: entries } : {}),
+  };
 }
 
 /**
@@ -435,6 +451,7 @@ export function culturaBuilderConfigEnv(
   const builtIn = fullContext ? CULTURA_BUILDER_FULL_CONTEXT_MODEL_ENTRIES : CULTURA_BUILDER_MODELS;
   const config: OpenCodeConfig = {
     mcp: ownMcpOff(vendorOff),
+    permission: OPENCODE_WEBSEARCH_OFF,
     enabled_providers: ["cultura-builder"],
     provider: {
       "cultura-builder": {

@@ -7,6 +7,7 @@ const NO_PROVIDERS = () => [];
 interface Overlay {
   mcp?: { playwright?: { type?: string; command?: string[]; enabled?: boolean } };
   enabled_providers?: string[];
+  permission?: Record<string, string>;
   provider?: object;
 }
 
@@ -101,5 +102,25 @@ describe("the Cultura Builder models", () => {
     for (const id of ["builder-plan", "builder-review"]) {
       expect(models[id].limit).toEqual({ context: 262_144, output: 32_768 });
     }
+  });
+});
+
+describe("OpenCode's own web search", () => {
+  it("is denied for an agent, so OpenCode never asks which search service to use", () => {
+    expect(overlay(openCodeConfigEnv({}, NO_PROVIDERS, null)).permission).toEqual({ websearch: "deny" });
+  });
+
+  it("is denied for a Cultura Builder agent too", () => {
+    expect(overlay(culturaBuilderConfigEnv("https://hub.example/v1", "token-value")).permission).toEqual({
+      websearch: "deny",
+    });
+  });
+
+  it("stays denied in a profile run, after the rules of that layer", () => {
+    const permission = overlay(
+      openCodeConfigEnv({ permission: { "*": "deny", bash: "ask", read: "ask" } }, NO_PROVIDERS, null),
+    ).permission;
+    expect(permission).toEqual({ "*": "deny", bash: "ask", read: "ask", websearch: "deny" });
+    expect(Object.keys(permission ?? {}).at(-1)).toBe("websearch");
   });
 });
