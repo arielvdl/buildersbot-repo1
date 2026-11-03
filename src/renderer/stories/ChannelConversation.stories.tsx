@@ -156,14 +156,14 @@ export const WaitingSubtasksAboveStoppedTask: Story = {
 };
 
 /**
- * Requests that wait in this tab, one line each with the reason: the earlier request of the tab, the
- * agent's limit of tabs, low memory, and the agent's own chat.
+ * Requests that wait in this tab for a reason that nothing else shows: one quiet line with an icon that
+ * opens to the reason of each (the agent's limit of tabs, low memory, the agent's own chat). A request
+ * that waits for the earlier one of its tab has no line: that request's work shows already.
  */
 export const WaitingRequests: Story = {
   args: {
     messages: longHistory(40),
     waits: [
-      { id: "wait-tab", ownerAgentId: chief.id, wait: { reason: "tab" } },
       { id: "wait-tabs", ownerAgentId: sales.id, wait: { reason: "agent-tabs", busy: 2, limit: 2 } },
       { id: "wait-memory", ownerAgentId: research.id, wait: { reason: "memory" } },
       { id: "wait-chat", ownerAgentId: chief.id, wait: { reason: "agent-chat" } },

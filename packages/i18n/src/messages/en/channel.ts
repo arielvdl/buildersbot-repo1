@@ -11,7 +11,6 @@ export const messages = defineMessages("channel", {
   "channel.task.onBackup": "{name} runs on the backup model {model}",
   "channel.task.resuming":
     "{name} stopped on a short provider failure. It continues where it stopped ({attempt}/{max}), in {seconds} s",
-  "channel.task.wait.tab": "Waiting - {name} answers the earlier message of this tab first",
   "channel.task.wait.summary": { one: "{count} message waiting", other: "{count} messages waiting" },
   "channel.task.wait.agentTabs": {
     one: "Waiting - {name} already works in {count} tab, the most at the same time. This message starts when it ends",
@@ -111,7 +110,6 @@ export const messages = defineMessages("channel", {
   "channel.topic.age.day": { one: "{count} day ago", other: "{count} days ago" },
   // The stage of a channel: the agents that work show on a table above the conversation.
   "channel.stage.label": "Agent stage",
-  "channel.stage.empty": "Nobody is working",
   "channel.stage.fold": "Fold the agent stage",
   "channel.stage.unfold": "Unfold the agent stage",
   "channel.stage.more": "+{count}",
@@ -140,8 +138,9 @@ export const messages = defineMessages("channel", {
   "channel.stage.flag.title": "Agent stage",
   "channel.stage.flag.enable": "Show the agent stage",
   "channel.stage.flag.enableHint": "The agents that work appear above the conversation.",
-  "channel.stage.flag.collapse": "Fold when nobody works",
-  "channel.stage.flag.collapseHint": "The stage becomes a thin strip while the agents rest.",
+  "channel.stage.flag.collapse": "Hide when nobody works",
+  "channel.stage.flag.collapseHint":
+    "The stage leaves the screen while the agents rest, and comes back when one starts to work.",
   "channel.stage.flag.scope": "Applies to",
   "channel.stage.flag.scopeChannel": "This channel",
   "channel.stage.flag.scopeAll": "All channels",

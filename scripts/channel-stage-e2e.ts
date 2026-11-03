@@ -301,6 +301,8 @@ function readStage(target: Page) {
     return {
       mounted: frame !== null,
       collapsed: document.querySelector(".channel-stage[data-collapsed]") !== null,
+      // Nobody works and the reader hides the stage then: the panel folds to nothing.
+      gone: document.querySelector(".channel-stage[data-gone]") !== null,
       board: board !== null,
       paused: board?.hasAttribute("data-paused") ?? false,
       actors: actors.length,
@@ -809,12 +811,12 @@ try {
   const afterStop = await waitUntil(
     "the stage to fold",
     stageReading,
-    (reading) => reading.collapsed && reading.actors === 0,
+    (reading) => (reading.collapsed || reading.gone) && reading.actors === 0,
     90_000,
   );
   report.stage.afterStop = afterStop;
   report.owner["1"].note +=
-    ` After the work stopped the stage folded into the strip (collapsed ${afterStop.collapsed}).`;
+    ` After the work stopped the stage left the screen (hidden ${afterStop.gone}, strip ${afterStop.collapsed}).`;
 
   // ----- Nobody at work: animations, timers, frames, CPU. -----
   // The renderer still draws the long answers for a while after the stop. The CPU windows wait until it
@@ -890,7 +892,12 @@ try {
       (count) => count === 0,
       120_000,
     );
-    await waitUntil("the stage to fold", stageReading, (reading) => reading.collapsed && reading.actors === 0, 60_000);
+    await waitUntil(
+      "the stage to fold",
+      stageReading,
+      (reading) => (reading.collapsed || reading.gone) && reading.actors === 0,
+      60_000,
+    );
     await openChannel("Launch room");
     await sleep(800);
     await openChannel(channelName);

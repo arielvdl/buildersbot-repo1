@@ -96,9 +96,15 @@
   color: var(--buildersbot-text);
 }
 .channel-task-waits-toggle svg {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  flex: none;
+  stroke-width: var(--buildersbot-icon-stroke);
+}
+.channel-task-waits-chevron {
   transition: transform var(--buildersbot-duration-fast) var(--buildersbot-ease-out);
 }
-.channel-task-waits-toggle svg[data-open] {
+.channel-task-waits-toggle[aria-expanded="true"] .channel-task-waits-chevron {
   transform: rotate(90deg);
 }
 .channel-start-retry,

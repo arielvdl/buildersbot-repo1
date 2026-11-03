@@ -216,7 +216,10 @@ export function createChannelsController(env: ChannelsEnvironment) {
         // A read of the list only leaves the page, its loading state and its error to the next
         // read of the page. A channel that went takes its page with it, as in a read of the page.
         if (!withPage && !selectionGone) return;
-        if (page && state.page?.channel.id === page.channel.id) {
+        // Only a page of the same tab merges. When the open tab closes, the read falls back to the
+        // first tab, and a merge kept the id of the closed tab on the page: the stage then took each
+        // running task of the tab as one of another tab, and showed nobody while the agents worked.
+        if (page && state.page?.channel.id === page.channel.id && state.page.topicId === page.topicId) {
           const merged = mergeChannelPage(state.page.messages, page.messages);
           reconcile(merged.messages, "id")(state.page.messages);
           reconcile(page.tasks, "id")(state.page.tasks);

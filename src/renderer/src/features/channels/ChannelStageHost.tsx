@@ -95,6 +95,8 @@ export function ChannelStageHost(props: { channelId: string; workingTurns: () =>
   });
   const settings = () => channelStageSettingsFor(activeServerId(), props.channelId);
   const folded = () => settings().folded;
+  // A memo: the stage plays its fold when this changes, not on each change of the model.
+  const hidden = createMemo(() => !folded() && settings().collapse && model().actors.length === 0);
   const toggleFold = () =>
     updateChannelStage(activeServerId(), (preference) =>
       withChannelStageFolded(preference, props.channelId, !folded()),
@@ -106,8 +108,8 @@ export function ChannelStageHost(props: { channelId: string; workingTurns: () =>
       overflow={model().overflow}
       request={model().request}
       links={model().links}
-      collapsed={folded() || (settings().collapse && model().actors.length === 0)}
       folded={folded()}
+      hidden={hidden()}
       onToggleFold={toggleFold}
     />
   );

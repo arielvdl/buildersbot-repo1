@@ -1,14 +1,16 @@
 import type { ChannelTask } from "@buildersbot/contracts/ipc";
 import { createSignal, createUniqueId, For, Show } from "solid-js";
 import { Button } from "../../button";
+import { ChevronRight, Clock3 } from "../../icons";
 import { useText } from "../../text";
 
 /**
- * The queued requests of this tab that wait, one quiet line each with the reason
- * (`ChannelTask.wait`): the earlier request of the tab, the agent's place among its parallel tabs, a
- * computer low on memory, or the agent's own chat. A request with no reason shows nothing here.
- * The lines start folded under one summary, so they take no room above the composer. A reader who
- * opens them keeps them open while the notice stays on screen.
+ * The queued requests of this tab that wait for a reason that nothing else on screen shows
+ * (`ChannelTask.wait`): the agent's place among its parallel tabs, a computer low on memory, or the
+ * agent's own chat. Without it, such a request looks dropped. A request that waits for the earlier
+ * request of its tab is not here: the activity line or the stage already shows that work.
+ *
+ * It is one quiet line above the message field, an icon and a count, that opens to the reason of each.
  */
 export function ChannelTaskWaitNotice(props: {
   tasks: Pick<ChannelTask, "id" | "ownerAgentId" | "wait">[];
@@ -21,8 +23,6 @@ export function ChannelTaskWaitNotice(props: {
     const wait = task.wait;
     const name = props.name(task.ownerAgentId);
     switch (wait?.reason) {
-      case "tab":
-        return t("channel.task.wait.tab", { name });
       case "agent-tabs":
         return t("channel.task.wait.agentTabs", { name, count: wait.busy ?? wait.limit ?? 1 });
       case "memory":
@@ -41,30 +41,16 @@ export function ChannelTaskWaitNotice(props: {
           type="button"
           class="channel-task-waits-toggle"
           aria-expanded={open() ? "true" : "false"}
-          aria-controls={listId}
+          aria-controls={open() ? listId : undefined}
           onClick={() => setOpen((value) => !value)}
         >
+          <Clock3 class="channel-task-waits-icon" aria-hidden="true" />
           <span>{t("channel.task.wait.summary", { count: props.tasks.length })}</span>
-          <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" data-open={open() ? "" : undefined}>
-            <path
-              d="m6 4 4 4-4 4"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <ChevronRight class="channel-task-waits-chevron" aria-hidden="true" />
         </Button>
         <Show when={open()}>
           <ul id={listId} class="channel-task-wait-list">
-            <For each={props.tasks}>
-              {(task) => (
-                <li class="channel-task-wait" role="status">
-                  {line(task)}
-                </li>
-              )}
-            </For>
+            <For each={props.tasks}>{(task) => <li class="channel-task-wait">{line(task)}</li>}</For>
           </ul>
         </Show>
       </div>
