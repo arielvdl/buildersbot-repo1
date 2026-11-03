@@ -5,7 +5,7 @@ import { createSignal, onSettled } from "solid-js";
  * needs room for the actors and the request, and a narrow window keeps that space for the conversation.
  * The saved preference is not touched, so the stage returns when the window grows again.
  */
-export const CHANNEL_STAGE_MIN_WINDOW_WIDTH = 1000;
+const CHANNEL_STAGE_MIN_WINDOW_WIDTH = 1000;
 
 const NARROW_QUERY = `(max-width: ${CHANNEL_STAGE_MIN_WINDOW_WIDTH - 1}px)`;
 
