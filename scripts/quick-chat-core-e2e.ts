@@ -19,6 +19,9 @@
 //  10. The Team API on loopback: the quick chat agent is in no list, no id route answers it, a message to it
 //      gets a 404, and no event frame carries its id.
 //  11. The 51st open conversation archives the oldest idle one. Nothing is deleted.
+// Part 3 starts the service with no provider running and a memory level of its own:
+//  12. `warmQuickChat` does nothing before the agent exists and nothing while the memory is low; at `ok` it starts the
+//      provider process once, however many calls come at once, and opens no session, no conversation and no model call.
 // `bun run test:quick-chat-core`. Writes .buildersbot-build/quick-chat-core-e2e/report.json.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -53,6 +56,7 @@ import { AgentStore } from "../src/backend/agent-store";
 import { BuildersBotDatabase } from "../src/backend/buildersbot-database";
 import { CULTURA_BUILDER_GATEWAY, serializeCulturaBuilderSession } from "../src/backend/cultura-builder-auth";
 import { runCauseEffect } from "../src/backend/effect-boundary";
+import type { HostMemory, HostMemoryLevel } from "../src/backend/host-memory";
 import { MailboxStore } from "../src/backend/mailbox-store";
 import { NO_PROVIDER_CREDENTIALS } from "../src/backend/provider-drivers";
 import { SidebarLayoutStore } from "../src/backend/sidebar-layout-store";
@@ -342,7 +346,6 @@ async function runPart2(): Promise<void> {
     await Effect.runPromise(server.stop()).catch(() => undefined);
     await runCauseEffect(agents.stop()).catch(() => undefined);
     database.close();
-    globalThis.fetch = realFetch;
   }
 }
 
@@ -654,6 +657,113 @@ async function partTwoSteps(host2: Host2, log: string, sockets: WebSocket[]): Pr
   });
 }
 
+// ---------------------------------------------------------------------------------------------------
+// Part 3: the warm-up
+
+async function runWarmPart(): Promise<void> {
+  const profile = join(root, "part3");
+  const executable = join(root, "builders", "bin", "opencode");
+  const log = join(root, "warm.jsonl");
+  process.env.FAKE_LOG = log;
+  const spawns = async () =>
+    (await readJsonl<{ event: string }>(log)).filter((entry) => entry.event === "spawn").length;
+  /** The sessions that opened in a folder. The start of the provider reads its model list in a session of its own, so only the one in the folder of the quick chat agent is the agent's. */
+  const sessionsIn = async (folder: string) =>
+    (await readJsonl<{ event: string; cwd?: string }>(log)).filter(
+      (entry) => entry.event === "session" && entry.cwd === folder,
+    ).length;
+  const session = serializeCulturaBuilderSession({
+    access: ACCESS,
+    refresh: "refresh-quick-chat",
+    expires: Date.now() + 3_600_000,
+    empresa: COMPANY,
+  });
+  let level: HostMemoryLevel = "ok";
+  const memory: HostMemory = {
+    level: () => level,
+    turnLimit: () => 10,
+    reserveTurn: () => () => {},
+    subscribe: () => () => {},
+    hostedPlan: false,
+    kind: "desktop",
+  };
+  const database = new BuildersBotDatabase(join(profile, "user-data"));
+  const store = new AgentStore(join(profile, "user-data"), join(profile, "home"), database);
+  const mailbox = new MailboxStore(join(profile, "user-data"), store.sharedRoot, store.database);
+  const sidebar = new SidebarLayoutStore(join(profile, "user-data", "sidebar-layout.json"));
+  await runCauseEffect(sidebar.initialize());
+  // The stores only: `AgentService.initialize` would start the provider, which is what this part holds still.
+  await runCauseEffect(store.initialize());
+  await runCauseEffect(mailbox.initialize());
+  const agents = new AgentService({
+    store,
+    mailbox,
+    browser: agentBrowser,
+    sidebarLayout: sidebar,
+    preferredProvider: "cultura-builder",
+    offProviders: AGENT_PROVIDERS.filter((provider) => provider !== "cultura-builder"),
+    bundledExecutables: { opencode: executable },
+    hostMemory: memory,
+    credentials: {
+      ...NO_PROVIDER_CREDENTIALS,
+      apiKey: (provider) => (provider === "cultura-builder" ? session : null),
+    },
+  });
+  // The catalog and the status are the test's until the provider runs: the agent is made with the provider cold.
+  catalog = [BUILDER_AUTO];
+  ProviderRuntime.prototype.listModels = () => catalog;
+  const status = agents.getStatus();
+  agents.getStatus = (): AgentStatus => ({
+    ...status,
+    providers: [{ id: "cultura-builder", state: "available", version: null, message: null }],
+  });
+  try {
+    await step("warm: before the agent exists it starts nothing", async () => {
+      await runCauseEffect(agents.warmQuickChat());
+      assert.equal(await spawns(), 0, "A provider started before the quick chat agent existed.");
+      return { spawns: 0 };
+    });
+    const quick = await runCauseEffect(agents.ensureQuickChat());
+    await step("warm: making the agent starts no provider process", async () => {
+      assert.equal(await spawns(), 0, "`ensure` started the provider.");
+      return { spawns: 0 };
+    });
+    await step("warm: while the memory is low it does nothing", async () => {
+      level = "low";
+      await runCauseEffect(agents.warmQuickChat());
+      assert.equal(await spawns(), 0, "A warm ran with the memory low.");
+      level = "critical";
+      await runCauseEffect(agents.warmQuickChat());
+      assert.equal(await spawns(), 0, "A warm ran with the memory critical.");
+      return { spawns: 0 };
+    });
+    await step(
+      "warm: at `ok` it starts the provider once, with no session of the agent, no conversation and no model call",
+      async () => {
+        level = "ok";
+        providerCalls.length = 0;
+        await Promise.all([1, 2, 3].map(() => runCauseEffect(agents.warmQuickChat())));
+        assert.equal(await spawns(), 1, "The provider did not start exactly once.");
+        await runCauseEffect(agents.warmQuickChat());
+        assert.equal(await spawns(), 1, "A warm of a running provider started another process.");
+        assert.equal(
+          await sessionsIn(quick.agent.workspacePath),
+          0,
+          "A warm opened a session for the quick chat agent.",
+        );
+        assert.equal(agents.listTasks(quick.agent.id).tasks.length, 0, "A warm made a conversation.");
+        assert.equal(store.quickChatAgent()?.threadId, null, "A warm opened the thread of the agent.");
+        assert.deepEqual(providerCalls, [], "A warm reached a model.");
+        return { spawns: 1, agentSessions: 0 };
+      },
+    );
+  } finally {
+    ProviderRuntime.prototype.listModels = realListModels;
+    await runCauseEffect(agents.stop()).catch(() => undefined);
+    database.close();
+  }
+}
+
 let running: Host | null = null;
 /** The text of a failure and of its cause, wherever the effect library put it. */
 function messageOf(error: unknown): string {
@@ -874,9 +984,12 @@ try {
   await stopHost(host());
   running = null;
   await runPart2();
+  await runWarmPart();
 
   report.passed = true;
 } finally {
+  globalThis.fetch = realFetch;
+  ProviderRuntime.prototype.listModels = realListModels;
   if (running) await stopHost(running);
   await rm(root, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });

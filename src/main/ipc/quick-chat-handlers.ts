@@ -5,13 +5,16 @@ import { runCauseEffect } from "../../backend/effect-boundary";
 import { handler, type IpcGroupHandlers } from "./define-ipc-group";
 
 export interface QuickChatIpcDependencies {
-  service: Pick<AgentService, "ensureQuickChat">;
+  service: Pick<AgentService, "ensureQuickChat" | "warmQuickChat">;
 }
 
 export function quickChatIpcHandlers({ service }: QuickChatIpcDependencies): Pick<IpcGroupHandlers, "quickChat"> {
   return {
     // Local only and with no payload: the renderer sends nothing that main has to decode, and the group
     // has no server to name. The sender check of the IPC layer runs before this.
-    quickChat: { ensure: handler(() => runCauseEffect(service.ensureQuickChat())) },
+    quickChat: {
+      ensure: handler(() => runCauseEffect(service.ensureQuickChat())),
+      warm: handler(() => runCauseEffect(service.warmQuickChat())),
+    },
   };
 }

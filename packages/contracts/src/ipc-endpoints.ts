@@ -1102,6 +1102,9 @@ export const IPC_ENDPOINTS = {
   // call, puts it back on a listed model when its own left the catalog, and answers it.
   quickChat: {
     ensure: request<undefined, QuickChatEnsureResult>()("quick-chat:ensure"),
+    // Starts the process of the agent's provider when it is stopped, so the first message finds it up. It opens no
+    // session and no conversation and calls no model. It does nothing while the memory is low.
+    warm: request<undefined, void>()("quick-chat:warm"),
   },
   // The programs that agents left running on this computer. `list` answers null where Builders Bot cannot
   // find them (Windows). `stop` takes the id of one, and ends it with its children.

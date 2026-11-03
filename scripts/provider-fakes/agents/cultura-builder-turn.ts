@@ -9,6 +9,7 @@ if (process.argv.includes("--version")) {
 }
 
 const MODEL = "cultura-builder/builder-auto";
+logEntry({ event: "spawn" });
 const setup = (sessionId: string | undefined) => ({
   sessionId,
   models: { availableModels: [{ modelId: MODEL, name: "Cultura Builder" }], currentModelId: MODEL },
@@ -20,6 +21,7 @@ serveFakeAcpAgent({
     peer.reply(request, { protocolVersion: 1, agentCapabilities: { loadSession: true }, authMethods: [] }),
   "session/new": (request, peer) => {
     count += 1;
+    logEntry({ event: "session", cwd: request.params.cwd });
     peer.reply(request, setup(`s-${process.pid}-${count}`));
   },
   "session/load": (request, peer) => peer.reply(request, setup(request.params.sessionId)),

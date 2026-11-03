@@ -623,6 +623,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   readonly #images: ImageGenRuntime;
   readonly #threads: ThreadLifecycle;
   readonly #memoryHold: MemoryHold;
+  /** True while `warmQuickChat` starts the provider, so a second call does nothing. */
+  #quickChatWarming = false;
   readonly #laneBudget: LaneBudget | null;
   readonly #usageLimits: UsageLimitGate;
   readonly #drain: DrainScheduler;
@@ -3133,6 +3135,30 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       );
     return yield* result.failure;
   }, Effect.uninterruptible).bind(this);
+
+  /**
+   * Starts the process that the quick chat agent will use, when it is stopped, so its first message does not wait
+   * for the start. It is the start that the first message would make (`ensureAgentClient`): it opens no session
+   * and no conversation and calls no model. It does nothing before the first `ensure`, while the memory is low,
+   * while another warm runs, or when the process runs already. A failure is not one for the caller: the message
+   * tries again and says why. No timer: one call, one start.
+   */
+  readonly warmQuickChat = Effect.fn("AgentService.warmQuickChat")(function* (this: AgentService) {
+    const agent = this.#store.quickChatAgent();
+    if (!agent || this.#stopping || this.#quickChatWarming || !this.#memoryHold.mayDrain(agent.id)) return;
+    this.#quickChatWarming = true;
+    yield* this.#providers.ensureAgentClient(agent).pipe(
+      Effect.asVoid,
+      Effect.catch((failure) =>
+        Effect.sync(() => logger.info("The quick chat provider did not warm.", { error: failure.cause })),
+      ),
+      Effect.ensuring(
+        Effect.sync(() => {
+          this.#quickChatWarming = false;
+        }),
+      ),
+    );
+  }).bind(this);
 
   /**
    * The agent of the quick chat. The first call makes it: hidden from birth, on the model that

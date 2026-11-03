@@ -821,7 +821,7 @@ const buildersbotApi: BuildersBotDesktopApi = {
     finishTest: decodeLidAwakeStatus,
     status: decodeLidAwakeStatus,
   }),
-  quickChat: bridgeGroup(IPC_ENDPOINTS.quickChat, { ensure: decodeQuickChatEnsure }),
+  quickChat: bridgeGroup(IPC_ENDPOINTS.quickChat, { ensure: decodeQuickChatEnsure, warm: decodeVoid }),
   backgroundProcesses: bridgeGroup(IPC_ENDPOINTS.backgroundProcesses, {
     list: decodeBackgroundProcesses,
     stop: decodeVoid,

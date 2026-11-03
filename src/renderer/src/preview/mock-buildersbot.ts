@@ -1398,6 +1398,8 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
     },
     whatsappAccounts: createMockWhatsAppAccounts(),
     quickChat: {
+      // The preview has no provider process to start.
+      warm: async () => undefined,
       // As the host does: makes the hidden agent on the first call, and moves it to a listed model when its own left.
       ensure: async () => {
         const providerAvailable = (provider: AgentProviderId) =>
