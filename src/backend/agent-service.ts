@@ -190,6 +190,7 @@ import { DeltaBuffer } from "./agent/delta-buffer";
 import type { SectionTeammates } from "./agent/developer-instructions";
 import { DrainScheduler } from "./agent/drain-scheduler";
 import { DuplicationGate, toAgentDuplicationFailed } from "./agent/duplication-gate";
+import { routeAgentEvent } from "./agent/event-routing";
 import type { FailureContext, FailureSignal } from "./agent/failure-signal";
 import { type AgentHostedSites, HostedSiteCoordinator } from "./agent/hosted-site-coordinator";
 import { ImageGenRuntime } from "./agent/image-gen-runtime";
@@ -347,6 +348,11 @@ export type { ResolvedSharedFile } from "./workspace-paths";
 interface AgentServiceEvents {
   failure: [failure: FailureSignal];
   event: [event: AgentEvent];
+  /**
+   * The start, the steps and the end of a turn that a channel, a task or a messaging thread took before
+   * `event`, so the feed sees the runs that no chat listener sees. Never forwarded to a client.
+   */
+  runActivity: [event: AgentEvent];
   /** Finished tool steps for the local host's product analytics. Never forwarded to a client. */
   toolUsage: [usage: ToolUsageSignal];
   /** A workflow run ended, for the local host's product analytics. Never forwarded to a client. */
@@ -6378,8 +6384,15 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
 
   #emit(event: AgentEvent): void {
     recordAgentRestartActivity(event);
-    if (this.channels?.event(event) || this.messaging?.event(event, this.#scope) || this.#tasks?.event(event)) return;
-    this.emit("event", event);
+    routeAgentEvent(
+      event,
+      [
+        (one) => this.channels?.event(one) ?? false,
+        (one) => this.messaging?.event(one, this.#scope) ?? false,
+        (one) => this.#tasks?.event(one) ?? false,
+      ],
+      { emit: (one) => this.emit("event", one), runActivity: (one) => this.emit("runActivity", one) },
+    );
   }
 
   /** Removes live provider state for an execution thread before its durable rows are deleted. */
