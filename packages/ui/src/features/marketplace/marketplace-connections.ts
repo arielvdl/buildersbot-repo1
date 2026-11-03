@@ -148,6 +148,16 @@ export function connectionPlatformApps(
   }));
 }
 
+/**
+ * The tiles of the Store for the message box picker: the same platforms that the Apps tab shows as tiles
+ * (a connection that the person uses, with the Hub having it on), without their status.
+ */
+export function storeTilesOf(views: readonly HubConnectionView[]): { id: string; name: string; endpoints: number }[] {
+  return views
+    .flatMap((view) => connectionPlatformApps(view, () => ""))
+    .map((app) => ({ id: app.id, name: app.platform.name, endpoints: app.platform.endpoints }));
+}
+
 /** The apps of the Apps tab for the Hub connections: each connection's row, then the tiles of its platforms. */
 export function hubConnectionApps(
   views: readonly HubConnectionView[],

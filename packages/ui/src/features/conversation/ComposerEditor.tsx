@@ -43,6 +43,7 @@ import {
 } from "./composer-dom";
 import { shouldRestoreComposerFocus } from "./composer-focus";
 import {
+  type ComposerStoreTile,
   measurePickerFrame,
   type PickerFrame,
   type PickerOption,
@@ -79,10 +80,12 @@ interface ComposerEditorProps {
   mcpServers?: ComposerMcpServer[] | undefined;
   attachments?: DraftAttachment[] | undefined;
   /**
-   * Looks for tools of the store (the Hub's tool catalog) for the words after a `$`. Absent where the
+   * Looks for tools of the store (the Hub's tool catalog) for the words after a `/`. Absent where the
    * store is not offered: a channel, a joined server, or a person who is signed out. Read only.
    */
   storeSearch?: ((query: string) => Promise<HubEndpointSearchView>) | undefined;
+  /** The tiles of the Store (platforms of the tool catalog) that the `/` picker lists before any typing. */
+  storeTiles?: readonly ComposerStoreTile[] | undefined;
   value: string;
   placeholder: string;
   ariaLabel: string;
@@ -92,6 +95,8 @@ interface ComposerEditorProps {
   focusRequest?: number | undefined;
   /** Raised by one to open the skill picker at the caret, as a typed `$` does. */
   skillPickerRequest?: number;
+  /** Raised by one to open the Store picker at the caret, as a `/` at the start of a line does. */
+  storePickerRequest?: number;
   /** A new id puts a quote chip for the text at the caret, or at the end when the caret is unknown. */
   quoteRequest?: QuoteRequest | undefined;
   /** Opens the passage that a quote chip in the draft points to. */
@@ -241,7 +246,7 @@ export function ComposerEditor(props: ComposerEditorProps) {
   const [storeHits, setStoreHits] = createSignal<{ query: string; hits: HubEndpointHit[] }>({ query: "", hits: [] });
   const storeQuery = createMemo(() => {
     const context = mention();
-    const query = context && context.trigger !== "@" ? context.query.trim() : "";
+    const query = context?.trigger === "/" ? context.query.trim() : "";
     return props.storeSearch && isStoreQuery(query) ? query : "";
   });
   createEffect(storeQuery, (query) => {
@@ -267,6 +272,11 @@ export function ComposerEditor(props: ComposerEditorProps) {
     const found = storeHits();
     return query && found.query === query ? found.hits : [];
   });
+  /* The tiles of the Store that fit the words after a `/`: all of them for a bare `/`, so the person browses. */
+  const matchingStoreTiles = createMemo(() => {
+    const query = mention()?.query.trim().toLocaleLowerCase() ?? "";
+    return (props.storeTiles ?? []).filter((tile) => !query || tile.name.toLocaleLowerCase().includes(query));
+  });
   const matchingOptions = createMemo<PickerOption[]>(() => {
     const trigger = mention()?.trigger;
     /* Skills first: a skill is what the user writes with, and a server is what one of them reaches. */
@@ -274,9 +284,15 @@ export function ComposerEditor(props: ComposerEditorProps) {
       return [
         ...matchingSkills().map((match) => ({ type: "skill" as const, ...match })),
         ...matchingMcpServers().map((server) => ({ type: "mcp" as const, server })),
-        ...matchingTools().map((hit) => ({ type: "tool" as const, hit })),
       ];
-    if (trigger === "/") return matchingTools().map((hit) => ({ type: "tool" as const, hit }));
+    /* The Store has its own picker: only what the Store lists, never the skills or the MCP servers of this computer. */
+    if (trigger === "/")
+      return props.storeSearch
+        ? [
+            ...matchingStoreTiles().map((tile) => ({ type: "store-tile" as const, tile })),
+            ...matchingTools().map((hit) => ({ type: "tool" as const, hit })),
+          ]
+        : [];
     if (trigger !== "@") return [];
     return [
       ...matchingAgents().map((agent) => ({ type: "agent" as const, agent })),
@@ -297,12 +313,12 @@ export function ComposerEditor(props: ComposerEditorProps) {
    */
   const pickerStatus = createMemo(() => {
     const context = mention();
+    if (context?.trigger === "/" && props.storeSearch && matchingOptions().length === 0)
+      return t("composer.picker.storeHint");
     if (context?.trigger !== "$" || matchingOptions().length > 0) return null;
     if (requestedMentionStart() !== context.start && context.query.trim()) return null;
     if (usableSkills().length === 0) {
       if (props.skillsLoadFailed) return t("composer.picker.skillsLoadFailed");
-      // The store has tools for a bare `$` of a channel with no one addressed, and of an agent with no skills.
-      if (props.storeSearch && !context.query.trim()) return t("composer.picker.storeHint");
       return t(props.skillsNeedMention ? "composer.picker.skillsMentionFirst" : "composer.picker.noSkills");
     }
     return t("composer.picker.noSkillMatch", { query: context.query.trim() });
@@ -330,6 +346,7 @@ export function ComposerEditor(props: ComposerEditorProps) {
   let lastEmittedValue = "";
   let lastFocusRequest = 0;
   let lastSkillPickerRequest = 0;
+  let lastStorePickerRequest = 0;
   // A request made before this editor existed belongs to an earlier one, which inserted it.
   let lastQuoteRequest = untrack(() => props.quoteRequest?.id ?? 0);
   /* Where the caret was when the editor last had it. A selection in a message takes the caret away. */
@@ -372,6 +389,7 @@ export function ComposerEditor(props: ComposerEditorProps) {
       attachments: props.attachments ?? [],
       focusRequest: props.focusRequest ?? 0,
       skillPickerRequest: props.skillPickerRequest ?? 0,
+      storePickerRequest: props.storePickerRequest ?? 0,
       quoteRequest: props.quoteRequest,
       disabled: props.disabled,
     }),
@@ -384,6 +402,7 @@ export function ComposerEditor(props: ComposerEditorProps) {
       attachments,
       focusRequest,
       skillPickerRequest,
+      storePickerRequest,
       quoteRequest,
       disabled,
     }) => {
@@ -447,6 +466,10 @@ export function ComposerEditor(props: ComposerEditorProps) {
       if (skillPickerRequest > lastSkillPickerRequest) {
         lastSkillPickerRequest = skillPickerRequest;
         openSkillPicker();
+      }
+      if (storePickerRequest > lastStorePickerRequest) {
+        lastStorePickerRequest = storePickerRequest;
+        openStorePicker();
       }
       // A locked composer keeps the quote until it opens again.
       if (quoteRequest && quoteRequest.id > lastQuoteRequest && !disabled) {
@@ -645,12 +668,39 @@ export function ComposerEditor(props: ComposerEditorProps) {
     updateMention();
   }
 
+  /* Writes a `/` at the start of a line, as if typed: the Store picker opens only there. */
+  function openStorePicker() {
+    if (!editor || props.disabled || !props.storeSearch) return;
+    editor.focus();
+    ensureEditorSelection();
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return;
+    if (!selection.isCollapsed) selection.collapseToEnd();
+    const beforeCaret = editorText(editor).slice(
+      0,
+      editorTextOffset(editor, selection.anchorNode ?? editor, selection.anchorOffset),
+    );
+    insertPlainText(editor, `${beforeCaret && !beforeCaret.endsWith("\n") ? "\n" : ""}/`);
+    emitValue();
+    updateMention();
+  }
+
   function insertOption(option: PickerOption) {
     const context = mention();
     if (!editor || !context) return;
     const range = rangeFromTextOffsets(editor, context.start, context.end);
     if (!range) return;
     range.deleteContents();
+    if (option.type === "store-tile") {
+      /* A tile is a step, not an answer: its name goes after the `/` and the tools of the platform show. */
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      insertPlainText(editor, `/${option.tile.name}`);
+      emitValue();
+      updateMention();
+      return;
+    }
     const token =
       option.type === "agent"
         ? createMentionToken(option.agent)
@@ -1131,7 +1181,7 @@ export function ComposerEditor(props: ComposerEditorProps) {
                         <span class="mention-picker-skill-icon" aria-hidden="true">
                           <Blocks />
                         </span>
-                      ) : option.type === "tool" ? (
+                      ) : option.type === "tool" || option.type === "store-tile" ? (
                         <span class="mention-picker-skill-icon" aria-hidden="true">
                           <Store />
                         </span>

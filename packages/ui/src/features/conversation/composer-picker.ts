@@ -16,6 +16,15 @@ export interface PickerFrame {
   bottom: number;
 }
 
+/** A tile of the Store (Marketplace, Apps tab): a platform of the tool catalog, such as Google Ads. */
+export interface ComposerStoreTile {
+  /** `<connection id>:<platform id>`, as the tile of the Apps tab. */
+  id: string;
+  name: string;
+  /** How many tools of the platform the organization allows. */
+  endpoints: number;
+}
+
 export type PickerOption =
   | { type: "agent"; agent: ComposerAgent }
   /** Addresses every member of a channel. It inserts the text `@everyone`. */
@@ -25,6 +34,8 @@ export type PickerOption =
   | { type: "mcp"; server: ComposerMcpServer }
   /** A tool of the store (the Hub's tool catalog). Choosing it writes its name and id into the draft. */
   | { type: "tool"; hit: HubEndpointHit }
+  /** A tile of the Store. Choosing it writes its name after the `/`, so the tools of the platform show. */
+  | { type: "store-tile"; tile: ComposerStoreTile }
   | { type: "attachment"; attachment: DraftAttachment };
 
 export function pickerOptionKey(option: PickerOption): string {
@@ -32,6 +43,7 @@ export function pickerOptionKey(option: PickerOption): string {
   if (option.type === "everyone") return "everyone";
   if (option.type === "skill") return `skill:${option.skill.skillId}`;
   if (option.type === "tool") return `tool:${option.hit.endpointId}`;
+  if (option.type === "store-tile") return `store-tile:${option.tile.id}`;
   return option.type === "mcp" ? `mcp:${option.server.id}` : `attachment:${option.attachment.id}`;
 }
 
@@ -43,6 +55,7 @@ export function pickerOptionText(option: PickerOption, t: TextValue["t"]): strin
     return t("composer.picker.option.skill", { name });
   }
   if (option.type === "tool") return t("composer.picker.option.tool", { name: option.hit.title });
+  if (option.type === "store-tile") return t("composer.picker.option.storeTile", { name: option.tile.name });
   return option.type === "mcp"
     ? t("composer.picker.option.mcp", { name: option.server.name })
     : t("composer.picker.option.file", { name: option.attachment.name });
@@ -53,6 +66,7 @@ export function pickerOptionName(option: PickerOption, t: TextValue["t"]): strin
   if (option.type === "everyone") return t("composer.picker.everyone");
   if (option.type === "skill") return option.skill.name;
   if (option.type === "tool") return option.hit.title;
+  if (option.type === "store-tile") return option.tile.name;
   return option.type === "mcp" ? option.server.name : option.attachment.name;
 }
 
@@ -66,6 +80,7 @@ export function pickerOptionDescription(
   if (option.type === "skill") return skillDescription(option.skill);
   if (option.type === "mcp") return mcpServerDescription(option.server);
   if (option.type === "tool") return toolDescription(option.hit, t, format);
+  if (option.type === "store-tile") return t("composer.picker.storeTileTools", { count: option.tile.endpoints });
   return option.agent.description.trim() || option.agent.title.trim() || undefined;
 }
 
@@ -98,7 +113,8 @@ export function pickerOptionBadge(option: PickerOption, t: TextValue["t"]): { la
   if (option.type === "everyone") return { label: t("composer.picker.badge.channel"), icon: UsersRound };
   if (option.type === "attachment") return { label: t("composer.picker.badge.file"), icon: File };
   if (option.type === "mcp") return { label: MCP_BADGE, icon: Plug };
-  if (option.type === "tool") return { label: t("composer.picker.badge.store"), icon: Store };
+  if (option.type === "tool" || option.type === "store-tile")
+    return { label: t("composer.picker.badge.store"), icon: Store };
   switch (option.skill.origin ?? "marketplace") {
     case "local":
       return { label: t("composer.picker.badge.custom"), icon: Folder };

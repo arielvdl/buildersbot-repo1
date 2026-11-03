@@ -158,6 +158,7 @@
     "./features/conversation/VoiceRecordingMorph": "./src/features/conversation/VoiceRecordingMorph.tsx",
     "./features/conversation/composer-presets": "./src/features/conversation/composer-presets.ts",
     "./features/conversation/composer-store-tool": "./src/features/conversation/composer-store-tool.ts",
+    "./features/conversation/composer-picker": "./src/features/conversation/composer-picker.ts",
     "./features/conversation/composer-tokens": "./src/features/conversation/composer-tokens.ts",
     "./features/conversation/composer-dom": "./src/features/conversation/composer-dom.ts",
     "./features/conversation/send-shortcut": "./src/features/conversation/send-shortcut.ts",

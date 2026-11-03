@@ -36,6 +36,7 @@ import {
   contextUsageView,
 } from "@buildersbot/ui/features/conversation/ContextUsage";
 import { CloseIcon } from "@buildersbot/ui/features/conversation/ConversationIcons";
+import type { ComposerStoreTile } from "@buildersbot/ui/features/conversation/composer-picker";
 import {
   appendPresetPrompt,
   formatPresetShortcut,
@@ -45,6 +46,7 @@ import { type OpenWaitItem, OpenWaits } from "@buildersbot/ui/features/conversat
 import { ReplyQuote } from "@buildersbot/ui/features/conversation/ReplyQuote";
 import { SpeakingBar } from "@buildersbot/ui/features/conversation/SpeakingBar";
 import { ComposerVoiceControls } from "@buildersbot/ui/features/conversation/VoiceRecordingMorph";
+import { storeTilesOf } from "@buildersbot/ui/features/marketplace/marketplace-connections";
 import { useText } from "@buildersbot/ui/text";
 import { createEffect, createMemo, createSignal, createStore, For, Loading, lazy, onSettled, Show } from "solid-js";
 import { useComposerPresets } from "../../composer-presets-preference";
@@ -184,6 +186,7 @@ export function ConversationComposer() {
         : t("composer.placeholder.messageAgent");
   const [pickerOpen, setPickerOpen] = createSignal(false);
   const [skillPickerRequest, setSkillPickerRequest] = createSignal(0);
+  const [storePickerRequest, setStorePickerRequest] = createSignal(0);
   // A skill belongs to one agent, so a channel offers the skills of the agents that the draft addresses.
   const channelSkills = channel
     ? createChannelSkills({
@@ -194,8 +197,9 @@ export function ConversationComposer() {
     : undefined;
   const composerSkills = () => (channelSkills ? channelSkills.skills() : installedSkills());
   const openPicker = () => setSkillPickerRequest((current) => current + 1);
+  const openStorePicker = () => setStorePickerRequest((current) => current + 1);
   /**
-   * The store's tools after a `$`, in a chat and in a channel. Not on a joined server: its agents do not use
+   * The store's tools after a `/` (or the add menu), in a chat and in a channel. Not on a joined server: its agents do not use
    * this computer's Hub session. A channel turn gets them while only the owner writes in the channels
    * (`#connectionContext` in the tool router), so a channel with a team member keeps them closed.
    */
@@ -203,6 +207,21 @@ export function ConversationComposer() {
     props.runtime || (props.server && props.server.kind !== "local")
       ? undefined
       : (query: string) => window.buildersbot.hubConnections.searchEndpoints({ connectionId: "tool-catalog", query });
+  /**
+   * The tiles of the Store, as the Apps tab lists them (the platforms of the connections that the person
+   * uses). Main keeps the Hub's answers for up to 5 minutes, so the read is cheap. A failed read shows none.
+   */
+  const [storeTiles, setStoreTiles] = createSignal<readonly ComposerStoreTile[]>([]);
+  createEffect(
+    () => storeSearch() !== undefined,
+    (available) => {
+      if (!available) return;
+      void window.buildersbot.hubConnections.getView().then(
+        (view) => setStoreTiles(storeTilesOf(view.connections)),
+        () => setStoreTiles([]),
+      );
+    },
+  );
   /**
    * The draft goes to the side question, so that the chat gets nothing of it. A draft with attachments
    * stays: the side question cannot send files.
@@ -818,6 +837,8 @@ export function ConversationComposer() {
               ariaLabel={channel ? t("channel.composer.label") : messageLabel()}
               focusRequest={composerFocusRequest()}
               skillPickerRequest={skillPickerRequest()}
+              storePickerRequest={storePickerRequest()}
+              storeTiles={storeTiles()}
               quoteRequest={quoteRequest()}
               onOpenQuote={openQuote}
               onValueChange={(text) => {
@@ -868,7 +889,7 @@ export function ConversationComposer() {
               attachDisabled={attachmentBusy()}
               onAttach={openAttachmentPicker}
               onPickSkill={openPicker}
-              onPickStore={storeSearch() ? openPicker : undefined}
+              onPickStore={storeSearch() ? openStorePicker : undefined}
               onSideQuestion={askSideQuestion()}
               onVoice={openVoiceConversation()}
               presets={presetItems()}
