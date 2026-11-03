@@ -6,6 +6,7 @@
  */
 
 import type { AgentProviderRef } from "@buildersbot/contracts/agent-providers";
+import { expandAttachmentReferences, stripAttachmentReferences } from "@buildersbot/contracts/attachment-references";
 import type { AvatarHue, ChannelPage, ChannelTask } from "@buildersbot/contracts/ipc";
 import type { AgentProfile } from "@buildersbot/ui/data";
 import { type StageActivity, stageActivityOfLine } from "@buildersbot/ui/features/stage/stage-activity";
@@ -190,7 +191,10 @@ function requestOf(page: ChannelPage, relevant: ReadonlySet<string>): StageReque
   if (!root) return null;
   const rootId = root.id;
   const parts = page.tasks.filter((task) => task.parentTaskId === rootId);
-  const text = root.instruction.trim().split("\n")[0] ?? "";
+  // The words, not the markers: an image sent first would otherwise show as `@[image.png](attachment:id)`.
+  // A request of only files shows their names.
+  const words = stripAttachmentReferences(root.instruction) || expandAttachmentReferences(root.instruction);
+  const text = words.split("\n").find((line) => line.trim().length > 0) ?? "";
   const title = text.length > REQUEST_TITLE_LIMIT ? `${text.slice(0, REQUEST_TITLE_LIMIT - 1)}…` : text;
   return {
     title,
