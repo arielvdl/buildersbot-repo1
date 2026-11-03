@@ -79,6 +79,12 @@ export const messages = {
   "channel.topic.outcome.noteRequired": "Wat is er gebeurd? (verplicht)",
   "channel.topic.outcome.noteCount": "{count}/{max}",
   "channel.topic.closeRecord": "Een kort verslag blijft in je Profiel, alleen op deze computer.",
+  // What goes away with the tab, shown above the question in the close dialog.
+  "channel.topic.summary.messages": "Berichten",
+  "channel.topic.summary.age": "Gemaakt",
+  "channel.topic.summary.status": "Status",
+  "channel.topic.summary.idle": "Inactief",
+  "channel.topic.summary.working": "Bezig",
   "channel.stage.label": "Podium van agents",
   "channel.stage.fold": "Agentenpodium inklappen",
   "channel.stage.unfold": "Agentenpodium uitklappen",

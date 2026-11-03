@@ -78,6 +78,12 @@ export const messages = {
   "channel.topic.outcome.noteRequired": "무슨 일이 있었나요? (필수)",
   "channel.topic.outcome.noteCount": "{count}/{max}",
   "channel.topic.closeRecord": "짧은 기록은 프로필에 남습니다. 이 컴퓨터에만 저장됩니다.",
+  // What goes away with the tab, shown above the question in the close dialog.
+  "channel.topic.summary.messages": "메시지",
+  "channel.topic.summary.age": "생성",
+  "channel.topic.summary.status": "상태",
+  "channel.topic.summary.idle": "대기 중",
+  "channel.topic.summary.working": "작업 중",
   "channel.stage.label": "에이전트 무대",
   "channel.stage.fold": "에이전트 무대 접기",
   "channel.stage.unfold": "에이전트 무대 펼치기",

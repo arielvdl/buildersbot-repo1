@@ -84,6 +84,12 @@ export const messages = {
   "channel.topic.outcome.noteRequired": "¿Qué pasó? (obligatorio)",
   "channel.topic.outcome.noteCount": "{count}/{max}",
   "channel.topic.closeRecord": "Un registro breve queda en tu Perfil, solo en este equipo.",
+  // What goes away with the tab, shown above the question in the close dialog.
+  "channel.topic.summary.messages": "Mensajes",
+  "channel.topic.summary.age": "Creada",
+  "channel.topic.summary.status": "Estado",
+  "channel.topic.summary.idle": "Inactiva",
+  "channel.topic.summary.working": "En curso",
   "channel.stage.label": "Escenario de agentes",
   "channel.stage.fold": "Plegar el escenario de agentes",
   "channel.stage.unfold": "Desplegar el escenario de agentes",

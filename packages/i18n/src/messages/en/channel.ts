@@ -95,6 +95,12 @@ export const messages = defineMessages("channel", {
   "channel.topic.outcome.noteRequired": "What happened? (required)",
   "channel.topic.outcome.noteCount": "{count}/{max}",
   "channel.topic.closeRecord": "A short record stays in your Profile, on this computer only.",
+  // What goes away with the tab, shown above the question in the close dialog.
+  "channel.topic.summary.messages": "Messages",
+  "channel.topic.summary.age": "Created",
+  "channel.topic.summary.status": "Status",
+  "channel.topic.summary.idle": "Idle",
+  "channel.topic.summary.working": "Working",
   // The list of tabs under the channel title: every tab, its age, the running ones first, and a search.
   "channel.topic.list": "Tabs",
   "channel.topic.search": "Search tabs",

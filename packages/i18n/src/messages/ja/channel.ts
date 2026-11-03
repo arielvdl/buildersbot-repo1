@@ -78,6 +78,12 @@ export const messages = {
   "channel.topic.outcome.noteRequired": "何があったか？（必須）",
   "channel.topic.outcome.noteCount": "{count}/{max}",
   "channel.topic.closeRecord": "短い記録がプロフィールに残ります。このコンピューターにだけ保存されます。",
+  // What goes away with the tab, shown above the question in the close dialog.
+  "channel.topic.summary.messages": "メッセージ",
+  "channel.topic.summary.age": "作成",
+  "channel.topic.summary.status": "状態",
+  "channel.topic.summary.idle": "待機中",
+  "channel.topic.summary.working": "作業中",
   "channel.stage.label": "エージェントのステージ",
   "channel.stage.fold": "エージェントステージを折りたたむ",
   "channel.stage.unfold": "エージェントステージを展開",
