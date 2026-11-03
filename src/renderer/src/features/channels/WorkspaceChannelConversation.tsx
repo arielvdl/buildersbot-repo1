@@ -22,6 +22,7 @@ import { useWindowPage } from "../window/window-page-context";
 import { ChannelErrorNotice } from "./ChannelConversationParts";
 import { createChannelConversation } from "./channel-conversation";
 import { channelStageSettingsFor } from "./channel-stage-preference";
+import { createChannelStageNarrowWindow } from "./channel-stage-width";
 import { useChannels } from "./channels-context";
 
 /**
@@ -74,6 +75,8 @@ function DesktopChannelConversation(props: { channelId: string; account: () => C
       if (event?.type === "browser-takeover-requested") requests.push(event.request);
     return requests;
   });
+  // A narrow window never shows the stage, whatever the reader configured.
+  const narrowWindow = createChannelStageNarrowWindow();
   const view = createChannelConversation({
     channelId: props.channelId,
     isOwnSender,
@@ -93,7 +96,7 @@ function DesktopChannelConversation(props: { channelId: string; account: () => C
       channel={view.source}
       notice={<ChannelErrorNotice />}
       stage={
-        channelStageSettingsFor(activeServerId(), props.channelId).enabled ? (
+        !narrowWindow() && channelStageSettingsFor(activeServerId(), props.channelId).enabled ? (
           <Loading>
             <ChannelStageHost channelId={props.channelId} workingTurns={view.source.workingTurns} />
           </Loading>
