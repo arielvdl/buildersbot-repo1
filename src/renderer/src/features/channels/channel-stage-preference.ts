@@ -37,7 +37,7 @@ const preferenceSchema = z.object({
 });
 const storedSchema = z.record(z.string(), z.unknown());
 
-export function readChannelStagePreferences(storage: ChannelStageStorage = window.localStorage): ChannelStageByScope {
+function readChannelStagePreferences(storage: ChannelStageStorage = window.localStorage): ChannelStageByScope {
   try {
     const parsed = storedSchema.safeParse(JSON.parse(storage.getItem(STORAGE_KEY) ?? "{}"));
     if (!parsed.success) return {};
@@ -64,7 +64,7 @@ function writeChannelStagePreferences(
 }
 
 /** The settings of one channel. With no channel open, only the default of all channels shows. */
-export function channelStageSettings(
+function channelStageSettings(
   preference: ChannelStagePreference | undefined,
   channelId: string | null,
 ): ChannelStageSettings {

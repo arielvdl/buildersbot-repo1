@@ -11,24 +11,16 @@ import type { AgentProfile } from "@buildersbot/ui/data";
 import type { TurnStepLines } from "../conversation/turn-step-lines";
 
 /** The seats round the table. More agents than this wait in a "+N" chip. */
-export const STAGE_SEATS = 8;
+const STAGE_SEATS = 8;
 /** An agent that is active and has not reported a step for this long is thinking. */
-export const STAGE_THINK_AFTER_MS = 1500;
+const STAGE_THINK_AFTER_MS = 1500;
 /** How long a finished, failed or delegating agent stays on the stage. */
 const HOLD_MS = { done: 2800, failed: 3000, delegating: 2000 } as const;
 /** The end of the messages that is read for streaming authors and the turn of each member. */
 const MESSAGE_TAIL = 60;
 const REQUEST_TITLE_LIMIT = 90;
 
-export type StageActivity =
-  | "reading"
-  | "thinking"
-  | "editing"
-  | "running"
-  | "delegating"
-  | "waiting"
-  | "failed"
-  | "done";
+type StageActivity = "reading" | "thinking" | "editing" | "running" | "delegating" | "waiting" | "failed" | "done";
 
 type HeldActivity = keyof typeof HOLD_MS;
 
@@ -52,13 +44,13 @@ export interface StageActor {
   delegatesTo: string | null;
 }
 
-export interface StageRequest {
+interface StageRequest {
   title: string;
   parts: number;
   done: number;
 }
 
-export interface StageLink {
+interface StageLink {
   /** The task that the link is for, which is also its identity. */
   key: string;
   from: string;
