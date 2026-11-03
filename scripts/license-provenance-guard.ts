@@ -119,6 +119,12 @@ const COMPATIBILITY: readonly Allowance[] = [
     reason: "the protocol name that a released client still reads, and the link scheme it registered",
   },
   {
+    file: /^apps\/site-router\/src\/index\.ts$/u,
+    tokens: ["openbot"],
+    line: /openbot\\?\.site/u,
+    reason: "the zone of a site published before the rename, which the site router still serves",
+  },
+  {
     file: /^src\/main\/legacy-profile(?:\.test)?\.ts$/u,
     tokens: ["openbot"],
     reason: "the migration reads the application name, the profile folder and the file prefix of an existing profile",
