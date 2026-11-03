@@ -4,6 +4,7 @@ import type {
   AgentTaskBranch,
   AgentTasksSnapshot,
   ConversationSnapshot,
+  QuickChatRuntime,
 } from "@buildersbot/contracts/ipc";
 import type { AppTextKey } from "@buildersbot/i18n";
 import { currentText } from "@buildersbot/ui/text";
@@ -263,6 +264,7 @@ export function createAgentTasks(options: AgentTasksOptions) {
     agentId: string,
     text: string,
     attachmentDraftIds: string[] = [],
+    runtime?: QuickChatRuntime,
   ): Promise<AgentTask | null> {
     const task = await runAction(
       () =>
@@ -270,6 +272,7 @@ export function createAgentTasks(options: AgentTasksOptions) {
           agentId,
           text,
           ...(attachmentDraftIds.length ? { attachmentDraftIds } : {}),
+          ...(runtime ? { runtime } : {}),
           clientMessageId: crypto.randomUUID(),
         }),
       "conversation.threads.error.start",

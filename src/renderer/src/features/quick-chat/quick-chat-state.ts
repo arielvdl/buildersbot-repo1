@@ -1,4 +1,4 @@
-import type { ClientAgentSummary, UpdateAgentInput } from "@buildersbot/contracts/ipc";
+import type { AgentSummary, ClientAgentSummary, UpdateAgentInput } from "@buildersbot/contracts/ipc";
 import type { AgentProfile } from "@buildersbot/ui/data";
 import { createSignal, createStore } from "solid-js";
 import { toAgentProfile } from "../../app-message-projection";
@@ -106,11 +106,16 @@ export function createQuickChat(options: QuickChatOptions) {
     if (scopeIsCurrent()) keep(stored);
   }
 
+  /** Keeps the agent that an answer carries, such as the new default model of the next conversation. */
+  function adopt(summary: AgentSummary): void {
+    if (scopeIsCurrent()) keep(summary);
+  }
+
   /** The page is closing: the thread state stops reading the agent. */
   function close(): void {
     generation += 1;
     setQuickChatAgentId(undefined);
   }
 
-  return { phase: () => state.phase, agent, open, updateAgent, close };
+  return { phase: () => state.phase, agent, open, updateAgent, adopt, close };
 }

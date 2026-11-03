@@ -252,7 +252,13 @@ export interface ConversationProps {
    * Set by the Quick chat page. The view then shows one open thread: it has no thread tabs, no own chat
    * of the agent and no message box for that chat, and its header has this title in place of the agent.
    */
-  quickChat?: { title: JSX.Element } | undefined;
+  quickChat?:
+    | {
+        title: JSX.Element;
+        /** The name of the agent whose model this conversation uses. Present: the model picker is locked. */
+        modelLocked?: string | undefined;
+      }
+    | undefined;
   browserTabs: BrowserTab[];
   activeBrowserTabId: string | null;
   browserVisibilitySuspended: boolean;

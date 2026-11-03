@@ -1,4 +1,4 @@
-import type { AgentTask } from "@buildersbot/contracts/ipc";
+import type { AgentTask, QuickChatRuntime } from "@buildersbot/contracts/ipc";
 import { TOAST_DURATION, toast } from "@buildersbot/ui";
 import { DRAFT_THREAD_ID, MAIN_THREAD_ID } from "@buildersbot/ui/features/conversation/threads/thread-types";
 import { currentText } from "@buildersbot/ui/text";
@@ -395,8 +395,13 @@ export function createAgentThreadTabs(options: AgentThreadTabsOptions) {
   }
 
   /** The first message of the new thread tab starts the thread, which then takes the place of the tab. */
-  async function sendDraft(agentId: string, text: string, attachmentDraftIds: string[]): Promise<boolean> {
-    const started = await tasks.startTask(agentId, text, attachmentDraftIds);
+  async function sendDraft(
+    agentId: string,
+    text: string,
+    attachmentDraftIds: string[],
+    runtime?: QuickChatRuntime,
+  ): Promise<boolean> {
+    const started = await tasks.startTask(agentId, text, attachmentDraftIds, runtime);
     if (!started || !scopeIsCurrent()) return false;
     seen.add(started.id);
     const stillOpen = activeId(agentId) === DRAFT_THREAD_ID;

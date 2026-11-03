@@ -24,6 +24,8 @@ export const messages = defineMessages("quick", {
   "quick.list.queued": "Queued",
   "quick.list.rowActions": "Actions for {title}",
   "quick.header.new": "New conversation",
+  "quick.model.ownedByAgent": "This conversation uses the model of {name}. Change it in that agent.",
+  "quick.model.changeFailed": "Could not change the model. The conversation keeps its model.",
   "quick.notice.modelChanged": "The model for Quick chat is no longer available. It changed to the default.",
   "quick.signIn.title": "Connect a provider to use Quick chat",
   "quick.signIn.action": "Open providers",

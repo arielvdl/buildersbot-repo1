@@ -1,4 +1,4 @@
-import type { CentralAuthUser, UpdateAgentInput } from "@buildersbot/contracts/ipc";
+import type { CentralAuthUser } from "@buildersbot/contracts/ipc";
 import { Button, Skeleton, toast, Zap } from "@buildersbot/ui";
 import type { AgentProfile } from "@buildersbot/ui/data";
 import { MAIN_THREAD_ID, type ThreadItem } from "@buildersbot/ui/features/conversation/threads/thread-types";
@@ -33,6 +33,7 @@ import {
   readQuickChatPointers,
 } from "./quick-chat-pointers";
 import { quickChatPort } from "./quick-chat-port";
+import { createQuickChatRuntime, type QuickChatAgentUpdate, touchesQuickChatRuntime } from "./quick-chat-runtime";
 import { createQuickChat } from "./quick-chat-state";
 
 /** What owns the focus while it is open: a popover, a menu, a dialog, or the header with the model picker. */
@@ -114,7 +115,13 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
     const id = agentId();
     if (!id) return false;
     const call = calledAgent(text);
-    if (!call) return tabs.sendDraft(id, text, files);
+    if (!call) {
+      const chosen = runtime.draftRuntime();
+      const sent = await tabs.sendDraft(id, text, files, chosen);
+      if (sent) runtime.started(chosen);
+      else runtime.startFailed();
+      return sent;
+    }
     const agent = mentionable().find((candidate) => candidate.id === call.agentId);
     if (!agent) {
       actionToast.error(t("quick.error.agentGone"));
@@ -179,6 +186,15 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
     const id = owner()?.id;
     return item && id ? quickChatRowKey(id, item.id) : null;
   });
+  /** The model of the open conversation, or of the draft. A conversation of a called agent has none: that agent's own model stands. */
+  const runtime = createQuickChatRuntime({
+    port: quickChatPort,
+    agent: quick.agent,
+    open: () => (called() ? undefined : open()),
+    adopt: quick.adopt,
+    refreshTasks: (id) => void tasks.loadTasks(id),
+  });
+  const conversationAgent = createMemo(() => runtime.profile(owner()));
   const ready = createMemo(() => quick.phase() === "ready");
   const conversationGone = createMemo(() => called() !== null && owner() === undefined);
   const activeThreadId = createMemo(() => ownerThreads()?.header.activeId);
@@ -237,13 +253,28 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
     },
   );
 
+  // A new conversation starts with the model of the last one, so a choice that was never sent ends here.
+  createEffect(selectedKey, () => runtime.resetDraft());
+
+  /** The model goes to the open conversation. Any other field of the agent is saved on the agent. */
+  async function updateQuickChatAgent(id: string, updates: QuickChatAgentUpdate): Promise<void> {
+    if (!touchesQuickChatRuntime(updates)) return quick.updateAgent(id, updates);
+    const { provider, model, reasoningEffort, fastMode, providerAccountId, ...rest } = updates;
+    await runtime.change({ provider, model, reasoningEffort, fastMode, providerAccountId });
+    if (Object.keys(rest).length > 0) await quick.updateAgent(id, rest);
+  }
+
   const subject = {
-    agent: owner,
+    agent: conversationAgent,
     // The Quick chat agent is in no roster, so its changes go through the page. Another agent's go the usual way.
-    updateAgent: (id: string, updates: Omit<UpdateAgentInput, "agentId">) =>
-      id === agentId() ? quick.updateAgent(id, updates) : updateRosterAgent(id, updates),
+    updateAgent: (id: string, updates: QuickChatAgentUpdate) =>
+      id === agentId() ? updateQuickChatAgent(id, updates) : updateRosterAgent(id, updates),
     sendDraft,
     quickChat: {
+      /** The conversation of a called agent keeps that agent's model, so its picker is locked and says why. */
+      get modelLocked() {
+        return called() ? owner()?.name : undefined;
+      },
       title: (
         <span class="quick-header-title">
           <Zap class="quick-header-bolt" aria-hidden="true" />
@@ -295,6 +326,7 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
               const id = agentId();
               if (!id) return;
               setCalled(null);
+              runtime.resetDraft();
               tabs.startNew(id);
             }}
             onArchive={(item) => void tabs.archive(item.agentId, item.taskId)}

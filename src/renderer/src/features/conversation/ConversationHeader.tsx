@@ -137,7 +137,11 @@ export function ConversationHeader() {
         canConnectProvider: props.canConnectProvider,
         onManageProviders: props.onManageProviders,
         // A model, effort, provider or account chosen during a turn applies from the next turn.
-        disabledReason: t("conversation.header.modelsUnavailable"),
+        disabled: props.quickChat?.modelLocked !== undefined,
+        disabledReason:
+          props.quickChat?.modelLocked !== undefined
+            ? t("quick.model.ownedByAgent", { name: props.quickChat.modelLocked })
+            : t("conversation.header.modelsUnavailable"),
         accountChoice: true,
         providerAccountId: props.agent ? agentNextProviderAccountId(props.agent) : undefined,
         onChange: (model, provider, accountId) => void selectAndConfirmModel(model, provider, accountId),
