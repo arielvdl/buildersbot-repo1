@@ -16,6 +16,24 @@ interface SiteRouterEnv {
   SITE_SERVE_ENABLED?: string;
   /** Origin of the account service, such as `https://buildersbot.culturabuilder.com`. The report route and error pages use it. */
   ACCOUNT_ORIGIN?: string;
+  /** Extra comma-separated hostnames that belong to the platform, not to a published site. */
+  PASSTHROUGH_HOSTNAMES?: string;
+}
+
+/**
+ * Hostnames under the wildcard route that are platform services, not published sites. They must reach
+ * their own origin untouched: answering them here as "site hosting" takes the Hub gateway and the
+ * RTX model endpoint offline (any method but GET fails with 405, GET with 503).
+ */
+const PLATFORM_HOSTNAMES = ["hub.culturabuilder.com", "llm-rtx.culturabuilder.com"];
+
+export function isPlatformHostname(hostname: string, extra?: string): boolean {
+  const name = hostname.toLowerCase();
+  if (PLATFORM_HOSTNAMES.includes(name)) return true;
+  return (extra ?? "")
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .some((entry) => entry !== "" && entry === name);
 }
 
 interface SiteRouterRuntime {
@@ -25,6 +43,8 @@ interface SiteRouterRuntime {
 
 export default {
   async fetch(request: Request, env: SiteRouterEnv, ctx: ExecutionContext): Promise<Response> {
+    // Platform hosts go straight to their origin, with the original method, headers and streamed body.
+    if (isPlatformHostname(new URL(request.url).hostname, env.PASSTHROUGH_HOSTNAMES)) return fetch(request);
     try {
       return await Effect.runPromise(
         Effect.gen(function* () {
