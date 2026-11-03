@@ -166,6 +166,7 @@ export const messages = {
   "settings.presets.title": "Atalhos de prompt",
   "settings.presets.description":
     "Salve os prompts que você usa muito. Escolha um no menu + da caixa de mensagem, ou aperte as teclas dele enquanto digita. Você pode criar quantos quiser.",
+  "settings.presets.listTitle": "Seus atalhos",
   "settings.presets.empty": "Nenhum atalho de prompt ainda.",
   "settings.presets.add": "Adicionar atalho de prompt",
   "settings.presets.name": "Nome",
@@ -178,6 +179,10 @@ export const messages = {
   "settings.presets.shortcutClear": "Remover teclas",
   "settings.presets.shortcutHint": "Use Ctrl, ⌘ ou Alt com uma tecla. Esc cancela.",
   "settings.presets.shortcutReserved": "Essas teclas já têm outro uso. Tente outras teclas.",
+  "settings.presets.sendOnClick": "Enviar ao clicar",
+  "settings.presets.sendOnClickHint":
+    'Ao escolher este atalho no menu "+" ou pelas teclas, a mensagem é enviada na hora, sem apertar Enviar.',
+  "settings.presets.sendOnClickBadge": "Envia ao clicar",
   "settings.presets.editLabel": "Editar atalho de prompt {name}",
   "settings.presets.deleteLabel": "Excluir atalho de prompt {name}",
   // O revisor de segurança que lê cada mensagem antes do agente.
@@ -442,6 +447,9 @@ export const messages = {
     "Quando um agente trabalha há 5 minutos ou mais num turno e você escreve de novo, uma segunda geração rápida conta numa nota curta o que o agente está fazendo agora. O turno e a sua mensagem não mudam. A nota usa o modelo do próprio agente com esforço baixo, então cada nota tem um custo pequeno, no máximo uma a cada 3 minutos por agente. O app registra cada uma no log. Risco: a nota vem só dos passos recentes, então pode ficar vaga ou errada.",
   "settings.tab.general.title": "Geral",
   "settings.tab.general.description": "Controle como o Builders Bot se comporta neste computador.",
+  "settings.tab.promptShortcuts.title": "Atalhos de prompt",
+  "settings.tab.promptShortcuts.description":
+    "Salve os prompts que você usa muito. Escolha um no menu + da caixa de mensagem, ou aperte as teclas dele enquanto digita.",
   "settings.tab.agents.title": "Agentes",
   "settings.tab.agents.description":
     "Escolha o que os agentes deste computador podem fazer quando você não define isso para um agente.",

@@ -22,7 +22,6 @@ import {
 } from "@buildersbot/ui";
 import { AppearanceSelect } from "@buildersbot/ui/features/settings/AppearanceSelect";
 import type { GeneralSettingsValue } from "@buildersbot/ui/features/settings/app-settings";
-import { ComposerPresetsSection } from "@buildersbot/ui/features/settings/ComposerPresetsSection";
 import { LanguageSelect } from "@buildersbot/ui/features/settings/LanguageSelect";
 import { LogoColorPicker } from "@buildersbot/ui/features/settings/LogoColorPicker";
 import { SendShortcutSelect } from "@buildersbot/ui/features/settings/SendShortcutSelect";
@@ -30,18 +29,11 @@ import { useText } from "@buildersbot/ui/text";
 import { createEffect, createSignal, Show } from "solid-js";
 import { appPort } from "../../app-port";
 import { useAppearanceChoice } from "../../appearance-choice";
-import {
-  addComposerPreset,
-  removeComposerPreset,
-  updateComposerPreset,
-  useComposerPresets,
-} from "../../composer-presets-preference";
 import { useI18n } from "../../i18n-context";
 import { useInterfaceSizeChoice } from "../../interface-size";
 import { useLayout } from "../../layout";
 import type { LeftColumnView } from "../../left-column";
 import { useLogoColorChoice } from "../../logo-color";
-import { currentDevicePlatform } from "../../send-shortcut-preference";
 import { DictationEngineSelect } from "./DictationEngineSelect";
 import { DictationKeyField } from "./DictationKeyField";
 import { DictationModeSelect } from "./DictationModeSelect";
@@ -76,7 +68,6 @@ export function SettingsGeneralTab(props: SettingsGeneralTabProps) {
   const i18n = useI18n();
   const appearance = useAppearanceChoice();
   const logoColor = useLogoColorChoice();
-  const composerPresets = useComposerPresets();
   const interfaceSize = useInterfaceSizeChoice();
   const layout = useLayout();
   const leftColumnLabel = (value: LeftColumnView | undefined) => (value ? i18n.t(LEFT_COLUMN_LABELS[value]) : "");
@@ -309,14 +300,6 @@ export function SettingsGeneralTab(props: SettingsGeneralTabProps) {
           </Item>
         </ItemGroup>
       </SettingsSection>
-
-      <ComposerPresetsSection
-        presets={composerPresets()}
-        devicePlatform={props.platform ?? currentDevicePlatform()}
-        onAdd={addComposerPreset}
-        onUpdate={updateComposerPreset}
-        onRemove={removeComposerPreset}
-      />
 
       <SettingsSection title={i18n.t("settings.appBehavior.title")}>
         <ItemGroup class="settings-modal-card">

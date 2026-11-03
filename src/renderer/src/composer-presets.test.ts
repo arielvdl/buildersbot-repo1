@@ -76,4 +76,13 @@ describe("composer presets", () => {
     ]);
     expect(parsed.map((preset) => preset.shortcut)).toEqual(["Alt+KeyK", null]);
   });
+
+  test("a preset sends on click only when it was saved that way", () => {
+    const parsed = parseComposerPresets([
+      { id: "a", name: "A", prompt: "a", sendOnClick: true },
+      { id: "b", name: "B", prompt: "b" },
+      { id: "c", name: "C", prompt: "c", sendOnClick: "yes" },
+    ]);
+    expect(parsed.map((preset) => preset.sendOnClick)).toEqual([true, false, false]);
+  });
 });

@@ -15,6 +15,8 @@ export interface ComposerPreset {
   readonly prompt: string;
   /** A key combination such as `Meta+Alt+KeyK`, or no key combination. */
   readonly shortcut: string | null;
+  /** True when choosing the preset sends the message at once, with no second click on Send. */
+  readonly sendOnClick: boolean;
 }
 
 interface PresetKeyEvent {
@@ -127,7 +129,7 @@ export function parseComposerPresets(value: unknown): ComposerPreset[] {
   const presets: ComposerPreset[] = [];
   for (const item of value) {
     if (!isDynamicRecord(item)) continue;
-    const { id, name, prompt, shortcut } = item;
+    const { id, name, prompt, shortcut, sendOnClick } = item;
     if (typeof id !== "string" || !id || ids.has(id)) continue;
     if (typeof name !== "string" || typeof prompt !== "string") continue;
     const cleanName = name.trim().slice(0, COMPOSER_PRESET_NAME_MAX);
@@ -136,7 +138,7 @@ export function parseComposerPresets(value: unknown): ComposerPreset[] {
     const key = typeof shortcut === "string" && shortcut && !shortcuts.has(shortcut) ? shortcut : null;
     ids.add(id);
     if (key) shortcuts.add(key);
-    presets.push({ id, name: cleanName, prompt: cleanPrompt, shortcut: key });
+    presets.push({ id, name: cleanName, prompt: cleanPrompt, shortcut: key, sendOnClick: sendOnClick === true });
   }
   return presets;
 }

@@ -6,6 +6,7 @@ import {
   CircleArrowDown,
   CreditCard,
   Gauge,
+  MessageSquareText,
   Mic,
   MousePointer2,
   PanelTop,
@@ -22,6 +23,7 @@ import type { AGENT_DEFAULT_SETTINGS } from "@buildersbot/ui/features/settings/S
 export type SettingsTab =
   | "general"
   | "agents"
+  | "prompt-shortcuts"
   | "guard"
   | "load"
   | "task-reviewer"
@@ -153,11 +155,6 @@ export const navItems: ReadonlyArray<SettingsNavItem> = [
         anchor: "settings.sendShortcut.title",
         descriptionKey: "settings.sendShortcut.description",
         keywordsKey: "settings.search.keywords.sendShortcut",
-      },
-      {
-        anchor: "settings.presets.title",
-        descriptionKey: "settings.presets.description",
-        keywordsKey: "settings.search.keywords.presets",
       },
       {
         anchor: "settings.showAgentSteps.title",
@@ -307,6 +304,22 @@ export const navItems: ReadonlyArray<SettingsNavItem> = [
         anchor: "settings.backgroundProcesses.title",
         descriptionKey: "settings.backgroundProcesses.description",
         keywordsKey: "settings.search.keywords.backgroundProcesses",
+      },
+    ],
+  },
+  // The saved prompts ("Atalhos de prompt" in Portuguese): they have a tab of their own, so the list can grow
+  // without pushing the rest of the general settings down.
+  {
+    value: "prompt-shortcuts",
+    titleKey: "settings.tab.promptShortcuts.title",
+    descriptionKey: "settings.tab.promptShortcuts.description",
+    keywordsKey: "settings.search.keywords.presets",
+    icon: MessageSquareText,
+    rows: [
+      {
+        anchor: "settings.presets.title",
+        descriptionKey: "settings.presets.description",
+        keywordsKey: "settings.search.keywords.presets",
       },
     ],
   },

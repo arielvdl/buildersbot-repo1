@@ -39,3 +39,10 @@
   font: inherit;
   font-size: var(--buildersbot-text-sm);
 }
+
+.composer-presets-send {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2, 8px);
+  cursor: pointer;
+}

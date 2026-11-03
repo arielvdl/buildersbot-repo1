@@ -61,6 +61,7 @@ import { SettingsGeneralTab } from "./SettingsGeneralTab";
 import { SettingsGuardTab } from "./SettingsGuardTab";
 import { type SettingsLoad, SettingsLoadTab } from "./SettingsLoadTab";
 import { SettingsNotificationsTab } from "./SettingsNotificationsTab";
+import { SettingsPromptShortcutsTab } from "./SettingsPromptShortcutsTab";
 import { SettingsTaskReviewerTab, type TaskReviewerLoad } from "./SettingsTaskReviewerTab";
 import { SettingsVoiceTab } from "./SettingsVoiceTab";
 import { createSettingsGuardStore } from "./settings-guard-store";
@@ -271,6 +272,7 @@ export function SettingsModal(props: SettingsModalProps) {
       if (
         value === "general" ||
         value === "agents" ||
+        value === "prompt-shortcuts" ||
         value === "guard" ||
         value === "load" ||
         value === "task-reviewer" ||
@@ -377,6 +379,10 @@ export function SettingsModal(props: SettingsModalProps) {
         <Tabs.Content value="agents" class="settings-modal-tab-panel" data-tab="agents">
           {preferencesLoadError()}
           <agents.Panel menuMount={modalElement} />
+        </Tabs.Content>
+
+        <Tabs.Content value="prompt-shortcuts" class="settings-modal-tab-panel" data-tab="prompt-shortcuts">
+          <SettingsPromptShortcutsTab platform={props.appInfo?.platform} />
         </Tabs.Content>
 
         <Tabs.Content value="guard" class="settings-modal-tab-panel" data-tab="guard">

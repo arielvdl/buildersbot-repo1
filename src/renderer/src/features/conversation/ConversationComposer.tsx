@@ -172,6 +172,8 @@ export function ConversationComposer() {
     updateCurrentDraft({ text });
     updateTeamTyping(text);
     setComposerFocusRequest((current) => current + 1);
+    // A preset that sends on click goes out once the draft has the prompt; the frame lets the write land first.
+    if (preset.sendOnClick) requestAnimationFrame(() => submitComposer());
   };
   const messageLabel = () =>
     channel

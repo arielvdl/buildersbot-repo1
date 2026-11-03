@@ -169,6 +169,7 @@ export const messages = defineMessages("settings", {
   "settings.presets.title": "Prompt presets",
   "settings.presets.description":
     "Save prompts that you use often. Pick one in the + menu of the message box, or press its keys while you type. You can add as many as you want.",
+  "settings.presets.listTitle": "Your presets",
   "settings.presets.empty": "No presets yet.",
   "settings.presets.add": "Add preset",
   "settings.presets.name": "Name",
@@ -181,6 +182,10 @@ export const messages = defineMessages("settings", {
   "settings.presets.shortcutClear": "Remove keys",
   "settings.presets.shortcutHint": "Use Ctrl, ⌘ or Alt with a key. Esc cancels.",
   "settings.presets.shortcutReserved": "These keys have another use. Try other keys.",
+  "settings.presets.sendOnClick": "Send on click",
+  "settings.presets.sendOnClickHint":
+    'Choosing this preset from the "+" menu or by its keys sends the message at once, with no second click on Send.',
+  "settings.presets.sendOnClickBadge": "Sends on click",
   "settings.presets.editLabel": "Edit preset {name}",
   "settings.presets.deleteLabel": "Delete preset {name}",
   // The security reviewer that reads every message before the agent does.
@@ -462,6 +467,9 @@ export const messages = defineMessages("settings", {
   // The Settings window shell: its tab list, headers and save bar.
   "settings.tab.general.title": "General",
   "settings.tab.general.description": "Control how Builders Bot behaves on this computer.",
+  "settings.tab.promptShortcuts.title": "Prompt presets",
+  "settings.tab.promptShortcuts.description":
+    "Save prompts that you use often. Pick one in the + menu of the message box, or press its keys while you type.",
   "settings.tab.agents.title": "Agents",
   "settings.tab.agents.description":
     "Choose what the agents on this computer can do when you do not set it for an agent.",

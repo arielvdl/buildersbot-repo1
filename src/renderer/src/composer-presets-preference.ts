@@ -58,16 +58,21 @@ function releaseShortcut(presets: readonly ComposerPreset[], shortcut: string | 
   );
 }
 
-export function addComposerPreset(input: Pick<ComposerPreset, "name" | "prompt" | "shortcut">): string {
+export function addComposerPreset(
+  input: Pick<ComposerPreset, "name" | "prompt" | "shortcut"> & Partial<Pick<ComposerPreset, "sendOnClick">>,
+): string {
   const id = crypto.randomUUID();
   const shortcut = input.shortcut && !isReservedPresetShortcut(input.shortcut) ? input.shortcut : null;
-  commit([...releaseShortcut(composerPresets(), shortcut), { id, name: input.name, prompt: input.prompt, shortcut }]);
+  commit([
+    ...releaseShortcut(composerPresets(), shortcut),
+    { id, name: input.name, prompt: input.prompt, shortcut, sendOnClick: input.sendOnClick === true },
+  ]);
   return id;
 }
 
 export function updateComposerPreset(
   id: string,
-  change: Partial<Pick<ComposerPreset, "name" | "prompt" | "shortcut">>,
+  change: Partial<Pick<ComposerPreset, "name" | "prompt" | "shortcut" | "sendOnClick">>,
 ): void {
   const shortcut =
     change.shortcut === undefined
