@@ -88,6 +88,30 @@ describe("channel tabs", () => {
     );
   });
 
+  it("counts the messages that a person wrote in every tab, and no reply or blank one", async () => {
+    const { store, channelId, first } = await openStore();
+    store.update(store.get(channelId), {
+      topics: [
+        ...store.topics(channelId),
+        { id: "topic-second", channelId, name: "Second", createdAt: "2026-10-01T09:00:00.000Z", revision: 0 },
+      ],
+    });
+    const reply = {
+      ...message(channelId, first, "reply", "Done"),
+      author: { kind: "agent" as const, id: "a", name: "A" },
+    };
+    store.update(store.get(channelId), {
+      messages: [
+        message(channelId, first, "one", "First"),
+        reply,
+        message(channelId, first, "blank", "  "),
+        message(channelId, "topic-second", "two", "Second tab"),
+      ],
+    });
+
+    expect(store.personMessageCount(channelId)).toBe(2);
+  });
+
   it("keeps each tab's messages and work to itself", async () => {
     const { store, channelId, first } = await openStore();
     store.update(store.get(channelId), {
