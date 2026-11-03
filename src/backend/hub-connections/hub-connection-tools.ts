@@ -32,6 +32,8 @@ import type {
   HubConnectionOrgUsage,
   HubConnectionsView,
   HubConnectionUsageView,
+  HubEndpointSearchInput,
+  HubEndpointSearchView,
 } from "@buildersbot/contracts/ipc";
 import { sourceText } from "@buildersbot/i18n/source";
 import { createBuildersBotLogger } from "@buildersbot/logging";
@@ -127,6 +129,8 @@ const PEOPLE_DATA_THREADS = 256;
 const PEOPLE_DATA_SUBJECTS = 300;
 /** The person's use is read again at most this often (the PROXY design, §13.5). */
 const USAGE_CACHE_MS = 30_000;
+/** The most searches of the message box picker that main sends to the Hub in a minute. */
+const SEARCH_PER_MINUTE = 40;
 /** The most organizations whose use one read asks the Hub for. */
 const USAGE_ORGS = 10;
 
@@ -327,6 +331,8 @@ export class HubConnectionTools {
   readonly #now: () => number;
   readonly #turns = new Map<string, TurnState>();
   readonly #hourly: number[] = [];
+  /** When the searches of the message box ran, for the last minute. */
+  readonly #searches: number[] = [];
   readonly #described = new Map<string, { readonly answer: ToolCatalogDescribeAnswer; readonly until: number }>();
   /** The organization that the person chose for each connection, on a card or in a setting. */
   readonly #chosen = new Map<string, string>();
@@ -462,6 +468,61 @@ export class HubConnectionTools {
       if (entry?.access.some((row) => row.orgId === orgId && canPay(row))) this.#chosen.set(connectionId, orgId);
     }
     return yield* this.view(false);
+  }).bind(this);
+
+  /**
+   * The tools of the store that fit the words the person types in the message box. Read only: it
+   * never runs a tool and the person pays nothing from this app. It uses the organization that pays
+   * the connection's calls (`choosePayer`) and never asks a card: with no such organization the
+   * answer is `needs_payer`, and the person chooses on the connection's page. At most
+   * `SEARCH_PER_MINUTE` searches a minute, whatever the window asks.
+   */
+  readonly searchEndpoints = Effect.fn("HubConnectionTools.searchEndpoints")(function* (
+    this: HubConnectionTools,
+    input: HubEndpointSearchInput,
+  ) {
+    const none = (status: HubEndpointSearchView["status"]): HubEndpointSearchView => ({ status, results: [] });
+    if (input.connectionId !== TOOL_CATALOG_CONNECTION_ID) return none("unavailable");
+    const body = toolCatalogSearchRequest({
+      query: input.query,
+      platform: input.platform,
+      limit: HUB_CONNECTIONS_LIMITS.searchResults,
+    });
+    if (!body || valueRule(body.query)) return none("refused");
+    if (!this.#enabledOnComputer()) return none("off");
+    if (!this.#signedIn()) return none("signed_out");
+    const now = this.#now();
+    while (this.#searches.length > 0 && now - (this.#searches[0] ?? 0) > 60_000) this.#searches.shift();
+    if (this.#searches.length >= SEARCH_PER_MINUTE) return none("unavailable");
+    this.#searches.push(now);
+    const catalog = yield* Effect.result(this.#client.catalog());
+    if (Result.isFailure(catalog)) return none(failureStatus(catalog.failure.code));
+    const entry = catalog.success.connections.find((candidate) => candidate.id === input.connectionId);
+    if (!entry) return none("off");
+    const decision = choosePayer(entry, catalog.success.orgs, this.#anchor(input.connectionId));
+    if (decision.kind !== "pay") return none("needs_payer");
+    const outcome = yield* Effect.result(this.#client.search(decision.access.orgId, body));
+    if (Result.isFailure(outcome)) {
+      if (outcome.failure.code === "unauthorized" || outcome.failure.code === "token_refused")
+        this.#client.forgetCatalog();
+      return none(failureStatus(outcome.failure.code));
+    }
+    if (outcome.success.kind !== "answer") return none("unavailable");
+    return {
+      status: "ready",
+      results: outcome.success.answer.results
+        .filter((hit) => !hasVendorPhrase(hit.title))
+        .map((hit) => ({
+          endpointId: hit.endpointId,
+          title: hit.title,
+          platform: hit.platform,
+          provider: hit.provider,
+          priceKind: hit.priceKind,
+          unitPriceMicros: hit.unitPriceMicros,
+          currency: hit.currency,
+          maxCostMicros: hit.maxCostMicros,
+        })),
+    } satisfies HubEndpointSearchView;
   }).bind(this);
 
   /**

@@ -2,8 +2,8 @@ import { rankAgentMentions } from "@buildersbot/contracts/agent-mention-rank";
 import { attachmentReferenceIds } from "@buildersbot/contracts/attachment-references";
 import { EVERYONE_MENTION, serializeChatTagReference } from "@buildersbot/contracts/chat-tag-references";
 import { INPUT_LIMITS } from "@buildersbot/contracts/input-limits";
-import type { DraftAttachment } from "@buildersbot/contracts/ipc";
-import { Badge, Blocks, Listbox, Puzzle, UsersRound } from "@buildersbot/ui";
+import type { DraftAttachment, HubEndpointHit, HubEndpointSearchView } from "@buildersbot/contracts/ipc";
+import { Badge, Blocks, Listbox, Puzzle, Store, UsersRound } from "@buildersbot/ui";
 import { usesTouchLayout } from "@buildersbot/ui/utils";
 import { Dynamic, Portal } from "@solidjs/web";
 import {
@@ -53,6 +53,7 @@ import {
   pickerOptionText,
   skillMatchRank,
 } from "./composer-picker";
+import { isStoreQuery } from "./composer-store-tool";
 import {
   type AttachmentTokenActions,
   createAttachmentToken,
@@ -60,6 +61,7 @@ import {
   createMentionToken,
   createQuoteToken,
   createSkillToken,
+  createStoreToolToken,
   MENTION_PATTERN,
   renderEditorValue,
   syncAttachmentTokens,
@@ -76,6 +78,11 @@ interface ComposerEditorProps {
   /** The host's MCP servers, offered by the same `$` the skills answer. */
   mcpServers?: ComposerMcpServer[] | undefined;
   attachments?: DraftAttachment[] | undefined;
+  /**
+   * Looks for tools of the store (the Hub's tool catalog) for the words after a `$`. Absent where the
+   * store is not offered: a channel, a joined server, or a person who is signed out. Read only.
+   */
+  storeSearch?: ((query: string) => Promise<HubEndpointSearchView>) | undefined;
   value: string;
   placeholder: string;
   ariaLabel: string;
@@ -89,6 +96,8 @@ interface ComposerEditorProps {
   quoteRequest?: QuoteRequest | undefined;
   /** Opens the passage that a quote chip in the draft points to. */
   onOpenQuote?: ((messageId: string, text: string) => void) | undefined;
+  /** A channel with no agent addressed yet: an empty skill list asks for a mention instead of saying "no skills". */
+  skillsNeedMention?: boolean | undefined;
   /** The last skill list request failed, so an empty picker says so instead of "no skills". */
   skillsLoadFailed?: boolean | undefined;
   onValueChange: (value: string) => void;
@@ -143,10 +152,13 @@ interface MentionContext {
   query: string;
   start: number;
   end: number;
-  trigger: "@" | "$";
+  /** `/` at the start of a message or line: the store's tools only. */
+  trigger: "@" | "$" | "/";
 }
 
 const DICTATION_INTERIM_WORDS = 2;
+/** The pause in typing before the words after a `$` or `/` go to the store's search. */
+const STORE_SEARCH_DELAY_MS = 350;
 
 export function expandComposerMentions(value: string): string {
   return value.replace(MENTION_PATTERN, (match, name: string, target: string) => {
@@ -221,6 +233,40 @@ export function ComposerEditor(props: ComposerEditorProps) {
       (server) => server.enabled && (!query || server.name.toLocaleLowerCase().includes(query)),
     );
   });
+  /*
+   * The tools of the store that fit what follows a `$`. The query goes to the Hub, so it must read as
+   * a search: it starts with a letter ("$5 for lunch" never leaves the computer), has at least 3
+   * characters, and waits for a pause in the typing. A newer query drops the older answer.
+   */
+  const [storeHits, setStoreHits] = createSignal<{ query: string; hits: HubEndpointHit[] }>({ query: "", hits: [] });
+  const storeQuery = createMemo(() => {
+    const context = mention();
+    const query = context && context.trigger !== "@" ? context.query.trim() : "";
+    return props.storeSearch && isStoreQuery(query) ? query : "";
+  });
+  createEffect(storeQuery, (query) => {
+    const search = props.storeSearch;
+    if (!query || !search) return;
+    let current = true;
+    const timer = window.setTimeout(() => {
+      void search(query)
+        .then((view) => {
+          if (current) setStoreHits({ query, hits: view.status === "ready" ? view.results : [] });
+        })
+        .catch(() => {
+          if (current) setStoreHits({ query, hits: [] });
+        });
+    }, STORE_SEARCH_DELAY_MS);
+    return () => {
+      current = false;
+      window.clearTimeout(timer);
+    };
+  });
+  const matchingTools = createMemo(() => {
+    const query = storeQuery();
+    const found = storeHits();
+    return query && found.query === query ? found.hits : [];
+  });
   const matchingOptions = createMemo<PickerOption[]>(() => {
     const trigger = mention()?.trigger;
     /* Skills first: a skill is what the user writes with, and a server is what one of them reaches. */
@@ -228,7 +274,9 @@ export function ComposerEditor(props: ComposerEditorProps) {
       return [
         ...matchingSkills().map((match) => ({ type: "skill" as const, ...match })),
         ...matchingMcpServers().map((server) => ({ type: "mcp" as const, server })),
+        ...matchingTools().map((hit) => ({ type: "tool" as const, hit })),
       ];
+    if (trigger === "/") return matchingTools().map((hit) => ({ type: "tool" as const, hit }));
     if (trigger !== "@") return [];
     return [
       ...matchingAgents().map((agent) => ({ type: "agent" as const, agent })),
@@ -251,8 +299,12 @@ export function ComposerEditor(props: ComposerEditorProps) {
     const context = mention();
     if (context?.trigger !== "$" || matchingOptions().length > 0) return null;
     if (requestedMentionStart() !== context.start && context.query.trim()) return null;
-    if (usableSkills().length === 0)
-      return t(props.skillsLoadFailed ? "composer.picker.skillsLoadFailed" : "composer.picker.noSkills");
+    if (usableSkills().length === 0) {
+      if (props.skillsLoadFailed) return t("composer.picker.skillsLoadFailed");
+      // The store has tools for a bare `$` of a channel with no one addressed, and of an agent with no skills.
+      if (props.storeSearch && !context.query.trim()) return t("composer.picker.storeHint");
+      return t(props.skillsNeedMention ? "composer.picker.skillsMentionFirst" : "composer.picker.noSkills");
+    }
     return t("composer.picker.noSkillMatch", { query: context.query.trim() });
   });
   const pickerOpen = createMemo(() => mention() !== null && (matchingOptions().length > 0 || pickerStatus() !== null));
@@ -548,9 +600,12 @@ export function ComposerEditor(props: ComposerEditorProps) {
     const selection = readEditorSelection(editor);
     if (!selection || selection.anchor !== selection.focus) return null;
     const beforeCaret = editorText(editor).slice(0, selection.focus);
-    const match = beforeCaret.match(/(?:^|\s)([@$])([^@$\n\uFFFC]{0,60})$/u);
+    // A `/` counts only at the start of the message or of a line, so a path in the middle of a sentence stays text.
+    const match =
+      beforeCaret.match(/(?:^|\s)([@$])([^@$\n\uFFFC]{0,60})$/u) ??
+      beforeCaret.match(/(?:^|\n)(\/)([^@$/\n\uFFFC]{0,60})$/u);
     if (!match) return null;
-    const trigger = match[1] === "$" ? "$" : "@";
+    const trigger = match[1] === "$" ? "$" : match[1] === "/" ? "/" : "@";
     const query = match[2] ?? "";
     return { query, start: beforeCaret.length - query.length - 1, end: beforeCaret.length, trigger };
   }
@@ -605,7 +660,9 @@ export function ComposerEditor(props: ComposerEditorProps) {
             ? createSkillToken(option.skill)
             : option.type === "mcp"
               ? createMcpToken(option.server)
-              : createAttachmentToken(option.attachment, attachmentTokenActions);
+              : option.type === "tool"
+                ? createStoreToolToken(option.hit.title, option.hit.endpointId)
+                : createAttachmentToken(option.attachment, attachmentTokenActions);
     const trailingSpace = document.createTextNode(" ");
     range.insertNode(trailingSpace);
     range.insertNode(token);
@@ -1015,7 +1072,11 @@ export function ComposerEditor(props: ComposerEditorProps) {
                 class={["mention-picker-list", pickerFades.classes()]}
                 onScroll={pickerFades.measure}
                 aria-label={t(
-                  mention()?.trigger === "$" ? "composer.picker.skillLabel" : "composer.picker.mentionLabel",
+                  mention()?.trigger === "$"
+                    ? "composer.picker.skillLabel"
+                    : mention()?.trigger === "/"
+                      ? "composer.picker.storeLabel"
+                      : "composer.picker.mentionLabel",
                 )}
                 options={matchingOptions()}
                 optionValue={pickerOptionKey}
@@ -1069,6 +1130,10 @@ export function ComposerEditor(props: ComposerEditorProps) {
                       ) : option.type === "mcp" ? (
                         <span class="mention-picker-skill-icon" aria-hidden="true">
                           <Blocks />
+                        </span>
+                      ) : option.type === "tool" ? (
+                        <span class="mention-picker-skill-icon" aria-hidden="true">
+                          <Store />
                         </span>
                       ) : (
                         <AttachmentReferenceVisual name={option.attachment.name} />

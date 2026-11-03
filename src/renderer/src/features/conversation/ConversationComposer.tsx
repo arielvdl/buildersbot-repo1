@@ -61,6 +61,7 @@ import { speechReading } from "../speech/speech-playback";
 import { stopSpokenReply } from "../speech/speech-replies";
 import { copyComposerSelection, readComposerCopy } from "./composer-clipboard";
 import { useConversationViewScope } from "./conversation-scope";
+import { createChannelSkills } from "./stores/channel-skills";
 import { currentConversationTarget } from "./stores/composer-store";
 
 // Module scope: the composer remounts on navigation, and a dismissed notice must stay dismissed.
@@ -183,8 +184,25 @@ export function ConversationComposer() {
         : t("composer.placeholder.messageAgent");
   const [pickerOpen, setPickerOpen] = createSignal(false);
   const [skillPickerRequest, setSkillPickerRequest] = createSignal(0);
-  /** A skill belongs to one agent, and a channel message goes to the agents it routes to. */
-  const pickSkill = () => (channel ? undefined : () => setSkillPickerRequest((current) => current + 1));
+  // A skill belongs to one agent, so a channel offers the skills of the agents that the draft addresses.
+  const channelSkills = channel
+    ? createChannelSkills({
+        props,
+        draftText: () => currentDraft().text,
+        members: () => props.mentionAgents ?? props.agents,
+      })
+    : undefined;
+  const composerSkills = () => (channelSkills ? channelSkills.skills() : installedSkills());
+  const openPicker = () => setSkillPickerRequest((current) => current + 1);
+  /**
+   * The store's tools after a `$`, in a chat and in a channel. Not on a joined server: its agents do not use
+   * this computer's Hub session. A channel turn gets them while only the owner writes in the channels
+   * (`#connectionContext` in the tool router), so a channel with a team member keeps them closed.
+   */
+  const storeSearch = () =>
+    props.runtime || (props.server && props.server.kind !== "local")
+      ? undefined
+      : (query: string) => window.buildersbot.hubConnections.searchEndpoints({ connectionId: "tool-catalog", query });
   /**
    * The draft goes to the side question, so that the chat gets nothing of it. A draft with attachments
    * stays: the side question cannot send files.
@@ -770,9 +788,11 @@ export function ConversationComposer() {
               agentId={props.agent?.id}
               agents={props.mentionAgents ?? props.agents}
               everyoneMention={Boolean(channel) && (props.mentionAgents ?? props.agents).length > 1}
-              skills={installedSkills()}
-              skillsLoadFailed={installedSkillsLoadFailed()}
+              skills={composerSkills()}
+              skillsLoadFailed={channelSkills ? channelSkills.loadFailed() : installedSkillsLoadFailed()}
+              skillsNeedMention={channelSkills?.needsMention() ?? false}
               mcpServers={mcpServers()}
+              storeSearch={storeSearch()}
               attachments={currentDraft().attachments}
               value={currentDraft().text}
               disabled={submitting() || voicePhase() === "transcribing" || editorLocked() || savePending()}
@@ -847,7 +867,8 @@ export function ConversationComposer() {
               }
               attachDisabled={attachmentBusy()}
               onAttach={openAttachmentPicker}
-              onPickSkill={pickSkill()}
+              onPickSkill={openPicker}
+              onPickStore={storeSearch() ? openPicker : undefined}
               onSideQuestion={askSideQuestion()}
               onVoice={openVoiceConversation()}
               presets={presetItems()}

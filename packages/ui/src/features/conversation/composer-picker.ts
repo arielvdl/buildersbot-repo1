@@ -1,7 +1,9 @@
-import type { DraftAttachment } from "@buildersbot/contracts/ipc";
+import type { DraftAttachment, HubEndpointHit } from "@buildersbot/contracts/ipc";
+import type { AppFormat } from "@buildersbot/i18n";
 import { Bot, File, Folder, Plug, type Puzzle, ShieldCheck, Store, UsersRound } from "@buildersbot/ui";
 import type { ComposerAgent, ComposerMcpServer, ComposerSkill } from "../../data";
 import type { TextValue } from "../../text";
+import { formatConnectionMoney } from "../billing/money";
 
 /**
  * Where the picker hangs, and from which element. Like the queue panel, it is a child of
@@ -21,12 +23,15 @@ export type PickerOption =
   /** `showSlug` is set when another listed skill has the same name: the slug tells them apart. */
   | { type: "skill"; skill: ComposerSkill; showSlug: boolean }
   | { type: "mcp"; server: ComposerMcpServer }
+  /** A tool of the store (the Hub's tool catalog). Choosing it writes its name and id into the draft. */
+  | { type: "tool"; hit: HubEndpointHit }
   | { type: "attachment"; attachment: DraftAttachment };
 
 export function pickerOptionKey(option: PickerOption): string {
   if (option.type === "agent") return `agent:${option.agent.id}`;
   if (option.type === "everyone") return "everyone";
   if (option.type === "skill") return `skill:${option.skill.skillId}`;
+  if (option.type === "tool") return `tool:${option.hit.endpointId}`;
   return option.type === "mcp" ? `mcp:${option.server.id}` : `attachment:${option.attachment.id}`;
 }
 
@@ -37,6 +42,7 @@ export function pickerOptionText(option: PickerOption, t: TextValue["t"]): strin
     const name = option.showSlug ? `${option.skill.name} ${option.skill.slug}` : option.skill.name;
     return t("composer.picker.option.skill", { name });
   }
+  if (option.type === "tool") return t("composer.picker.option.tool", { name: option.hit.title });
   return option.type === "mcp"
     ? t("composer.picker.option.mcp", { name: option.server.name })
     : t("composer.picker.option.file", { name: option.attachment.name });
@@ -46,6 +52,7 @@ export function pickerOptionName(option: PickerOption, t: TextValue["t"]): strin
   if (option.type === "agent") return option.agent.name;
   if (option.type === "everyone") return t("composer.picker.everyone");
   if (option.type === "skill") return option.skill.name;
+  if (option.type === "tool") return option.hit.title;
   return option.type === "mcp" ? option.server.name : option.attachment.name;
 }
 
@@ -58,7 +65,14 @@ export function pickerOptionDescription(
   if (option.type === "attachment") return format.fileSize(option.attachment.size);
   if (option.type === "skill") return skillDescription(option.skill);
   if (option.type === "mcp") return mcpServerDescription(option.server);
+  if (option.type === "tool") return toolDescription(option.hit, t, format);
   return option.agent.description.trim() || option.agent.title.trim() || undefined;
+}
+
+/** The platform and the most one call can cost, so the price is read before the tool is chosen. */
+function toolDescription(hit: HubEndpointHit, t: TextValue["t"], format: AppFormat): string {
+  const amount = formatConnectionMoney(format, hit.maxCostMicros, hit.currency);
+  return `${hit.platform} · ${t("composer.picker.toolMaxCost", { amount })}`;
 }
 
 /** Where the server answers: the address for an http server, the command for a stdio one. */
@@ -84,6 +98,7 @@ export function pickerOptionBadge(option: PickerOption, t: TextValue["t"]): { la
   if (option.type === "everyone") return { label: t("composer.picker.badge.channel"), icon: UsersRound };
   if (option.type === "attachment") return { label: t("composer.picker.badge.file"), icon: File };
   if (option.type === "mcp") return { label: MCP_BADGE, icon: Plug };
+  if (option.type === "tool") return { label: t("composer.picker.badge.store"), icon: Store };
   switch (option.skill.origin ?? "marketplace") {
     case "local":
       return { label: t("composer.picker.badge.custom"), icon: Folder };

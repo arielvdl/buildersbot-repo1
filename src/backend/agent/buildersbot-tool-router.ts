@@ -490,8 +490,10 @@ export class BuildersBotToolRouter {
   /** Where the turn of a connection call came from. The process decides it, never the agent's text. */
   #connectionContext(agentId: string, params: DynamicToolCallParams): HubConnectionContext {
     const publicThreadId = this.#conversation.publicThreadId(agentId, params.threadId);
-    // The Hub connections read an agent turn that a routine started as an agent turn.
-    const origin = hubConnectionOrigin(this.turnOrigin(agentId, publicThreadId, params.turnId));
+    // A channel is open to the connections while nobody but the owner can write in the channels, as for the
+    // owner's Chrome (`chromeTurnOrigin`); a team member in the channels closes it again. The Hub connections
+    // read an agent turn that a routine started as an agent turn.
+    const origin = hubConnectionOrigin(this.#chromeOrigin(agentId, params));
     return { agentId, threadId: publicThreadId, turnId: params.turnId, origin };
   }
 

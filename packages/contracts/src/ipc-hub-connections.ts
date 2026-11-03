@@ -18,8 +18,11 @@ import {
   type HubConnectionPlatform,
   isHubAccessRequestKind,
   isHubConnectionId,
+  isHubEndpointId,
   isHubOrgId,
   isHubPlainText,
+  TOOL_CATALOG_PRICE_KINDS,
+  type ToolCatalogPriceKind,
 } from "./hub-connections";
 import type { ConversationMessage } from "./ipc-conversation-messages";
 
@@ -415,4 +418,92 @@ export function hubConnectionChatEvent(message: ConversationMessage): HubConnect
     return null;
   }
   return isChatEvent(value) && value.kind === kind ? value : null;
+}
+
+// --- Endpoint search for the message box ---------------------------------------------------------
+
+/** The person looks for a tool of the store while writing. Read only: a search never runs a tool. */
+export interface HubEndpointSearchInput {
+  connectionId: string;
+  query: string;
+  platform?: string;
+}
+
+/**
+ * - `ready`: the Hub answered; `results` may be empty.
+ * - `signed_out`, `off`, `unavailable`: as in the connections view.
+ * - `needs_payer`: no organization can pay yet, or the person must choose one on the connection's page.
+ * - `refused`: the text is outside the rules (empty, too long, or it holds a key or a token).
+ */
+export const HUB_ENDPOINT_SEARCH_STATUSES = [
+  "ready",
+  "signed_out",
+  "off",
+  "unavailable",
+  "needs_payer",
+  "refused",
+] as const;
+export type HubEndpointSearchStatus = (typeof HUB_ENDPOINT_SEARCH_STATUSES)[number];
+
+/** One tool of the store: what the picker shows. The price is for one unit; no amount is a charge. */
+export interface HubEndpointHit {
+  endpointId: string;
+  title: string;
+  platform: string;
+  provider: string;
+  priceKind: ToolCatalogPriceKind;
+  unitPriceMicros: number;
+  currency: string;
+  maxCostMicros: number;
+}
+
+export interface HubEndpointSearchView {
+  status: HubEndpointSearchStatus;
+  results: HubEndpointHit[];
+}
+
+const SEARCH_RESULTS_MAX = HUB_CONNECTIONS_LIMITS.searchResults;
+
+export function parseHubEndpointSearchInput(value: unknown): HubEndpointSearchInput {
+  if (
+    !isDynamicRecord(value) ||
+    !isHubConnectionId(value.connectionId) ||
+    !isString(value.query) ||
+    value.query.length > HUB_CONNECTIONS_LIMITS.searchQueryChars ||
+    (value.platform !== undefined && (!isString(value.platform) || !VENDOR_SLUG.test(value.platform)))
+  )
+    throw new Error("Invalid endpoint search.");
+  return {
+    connectionId: value.connectionId,
+    query: value.query,
+    ...(value.platform === undefined ? {} : { platform: value.platform }),
+  };
+}
+
+function isEndpointHit(value: unknown): value is HubEndpointHit {
+  return (
+    isDynamicRecord(value) &&
+    isHubEndpointId(value.endpointId) &&
+    isHubPlainText(value.title, HUB_CONNECTIONS_LIMITS.titleChars) &&
+    isString(value.platform) &&
+    VENDOR_SLUG.test(value.platform) &&
+    isString(value.provider) &&
+    VENDOR_SLUG.test(value.provider) &&
+    isOneOf(TOOL_CATALOG_PRICE_KINDS, value.priceKind) &&
+    micros(value.unitPriceMicros) &&
+    isString(value.currency) &&
+    CURRENCY.test(value.currency) &&
+    micros(value.maxCostMicros)
+  );
+}
+
+export function isHubEndpointSearchView(value: unknown): value is HubEndpointSearchView {
+  return (
+    isDynamicRecord(value) &&
+    isOneOf(HUB_ENDPOINT_SEARCH_STATUSES, value.status) &&
+    Array.isArray(value.results) &&
+    value.results.length <= SEARCH_RESULTS_MAX &&
+    value.results.every(isEndpointHit) &&
+    (value.status === "ready" || value.results.length === 0)
+  );
 }

@@ -338,6 +338,8 @@ import type {
   HubConnectionPayerInput,
   HubConnectionsView,
   HubConnectionUsageView,
+  HubEndpointSearchInput,
+  HubEndpointSearchView,
 } from "./ipc-hub-connections";
 import type {
   ApplyInstanceTransferInput,
@@ -1476,6 +1478,8 @@ export const IPC_ENDPOINTS = {
     requestAccess: request<HubConnectionAccessRequestInput, HubConnectionAccessRequestResult>()(
       "hub-connections:request-access",
     ),
+    /** Looks for tools of the store for the message box picker. Read only; it never runs a tool. */
+    searchEndpoints: request<HubEndpointSearchInput, HubEndpointSearchView>()("hub-connections:search-endpoints"),
     /**
      * Opens the connections page of the Hub in the person's browser, where the person allows this app
      * to spend an organization's connections. Main opens one fixed URL; the renderer sends none.

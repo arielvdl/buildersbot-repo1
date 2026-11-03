@@ -32,8 +32,9 @@ The router grants the namespace per call. It is absent when:
 - the agent's own setting `connectionsOff` names the connection (`AgentSummary.connectionsOff`,
   stored on the agent record, local only, absent = every connection);
 - the turn does not come from the person at this computer, one of the person's routines, or an
-  agent that the person's turn started. A chat app thread (Slack, Discord, Telegram), a channel
-  and a team member never get it (`hubTurnOrigin`, from the mailbox deliveries of the turn; see
+  agent that the person's turn started. A chat app thread (Slack, Discord, Telegram) and a team member never get it, and a channel gets it only
+  while nobody but the owner can write in the channels (`#connectionContext`, with the rule of
+  `chromeTurnOrigin`; `hubTurnOrigin`, from the mailbox deliveries of the turn; see
   [Who may use them](#who-may-use-them)).
 
 `/session.active` does not close the connections: it says whether the account may use the LLM.
@@ -53,7 +54,7 @@ that a routine started, at any distance; it keeps the owner's Chrome closed alon
 ([browser.md](browser.md)).
 
 - A message that the person writes in the app is `owner_ui`; with a team member stamped on it, or
-  on its last queue edit, `team_member`; in a channel, `team_member`; from a chat app (also as the
+  on its last queue edit, `team_member`; in a channel, `team_member` (for the connections and the owner's Chrome, `owner_ui` while no team member can write in the channels); from a chat app (also as the
   answer of an agent that works there), `messaging`.
 - A message that an agent sends carries the origin of the turn that sent it, as `sentOrigin` gives
   it: the person's own turn passes on `agent`, a routine passes on `routine_agent`, and a closed origin
@@ -259,6 +260,24 @@ views (`hub-connection-views.ts`) from the catalog and `/session` answers that i
 | `choosePayer` | The organization that the person chooses on the page. Only a row that can pay is kept. The agent has no path to it. |
 | `requestAccess` | "Ask the admin" (`access`) and "Ask the admin for more" (`more`), through the Hub route of the contract (§10.1). Never for the personal plan or an organization that is not in the catalog. |
 | `openConsent` | Opens the connections page of the Hub (`https://hub.culturabuilder.com/builder-ai/conexoes`) in the default browser, where the person allows this app to spend an organization's connections. The URL is fixed in main; the renderer sends none. |
+
+### The message box picker
+
+`HubConnectionTools.searchEndpoints` (IPC `hub-connections:search-endpoints`) gives the tools of the
+tool catalog that fit the words after a `$` in the message box (`ComposerEditor`, prop `storeSearch`).
+It is read only and spends nothing from this app: it uses the organization that already pays the
+connection (`choosePayer`), never asks a card (`needs_payer` tells the person to choose on the
+connection's page), refuses an empty text or one that holds a key or a token (`valueRule`), and sends
+at most 40 searches a minute. The renderer sends a query only when it starts with a letter, has 3
+characters and waits 350 ms, so `$5` in a sentence goes nowhere. Choosing a result writes
+`[tool-catalog: <title> (<endpointId>)]` in the draft; the agent then runs `describe` and `call`, and
+the cost card and Hub approval do not change. A chat and a channel of this computer get it (`storeSearch` is
+absent on a joined server); the "+" menu has a "Store tool" item that opens the same `$` picker. In a channel the
+`$` lists the skills of the agents that the draft tags (`createChannelSkills`), or of its only agent. The Hub may charge for a search: confirm before relying
+on it. A `/` at the start of a message or line opens the same search with the store's tools only. A chosen tool
+shows as a chip (`createStoreToolToken`) and serializes to the same text; a draft that holds that text shows the chip
+again (`STORE_TOOL_PATTERN`). A query goes to the Hub only when it reads as words (`isStoreQuery`: a letter first, then
+letters, digits, spaces, `_` or `-`, at least 3), never as a price or a path.
 
 ### Marketplace
 

@@ -8,9 +8,11 @@ import {
   type HubConnectionsView,
   type HubConnectionUsageRow,
   type HubConnectionUsageView,
+  type HubEndpointSearchView,
   isHubConnectionAccessRequestResult,
   isHubConnectionsView,
   isHubConnectionUsageView,
+  isHubEndpointSearchView,
 } from "@buildersbot/contracts/ipc";
 
 function copyCap(cap: HubConnectionAccessView["cap"]): HubConnectionAccessView["cap"] {
@@ -110,4 +112,21 @@ export function decodeHubConnectionUsageView(value: unknown): HubConnectionUsage
 export function decodeHubConnectionAccessRequestResult(value: unknown): HubConnectionAccessRequestResult {
   if (!isHubConnectionAccessRequestResult(value)) throw new Error("Invalid Hub connection access request result.");
   return { status: value.status, requestedAt: value.requestedAt, failure: value.failure };
+}
+
+export function decodeHubEndpointSearchView(value: unknown): HubEndpointSearchView {
+  if (!isHubEndpointSearchView(value)) throw new Error("Invalid Hub endpoint search.");
+  return {
+    status: value.status,
+    results: value.results.map((hit) => ({
+      endpointId: hit.endpointId,
+      title: hit.title,
+      platform: hit.platform,
+      provider: hit.provider,
+      priceKind: hit.priceKind,
+      unitPriceMicros: hit.unitPriceMicros,
+      currency: hit.currency,
+      maxCostMicros: hit.maxCostMicros,
+    })),
+  };
 }

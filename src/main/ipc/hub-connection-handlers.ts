@@ -4,7 +4,11 @@
 // Hub URL reaches a window, and a window sends no URL: main opens the one fixed consent page. The
 // payloads are parsed by the contract before the service sees them.
 
-import { parseHubConnectionAccessRequestInput, parseHubConnectionPayerInput } from "@buildersbot/contracts/ipc";
+import {
+  parseHubConnectionAccessRequestInput,
+  parseHubConnectionPayerInput,
+  parseHubEndpointSearchInput,
+} from "@buildersbot/contracts/ipc";
 import type { AgentService } from "../../backend/agent-service";
 import { runCauseEffect } from "../../backend/effect-boundary";
 import { handler, type IpcGroupHandlers, payloadHandler } from "./define-ipc-group";
@@ -16,6 +20,7 @@ export interface HubConnectionIpcDependencies {
     | "hubConnectionsUsage"
     | "chooseHubConnectionPayer"
     | "requestHubConnectionAccess"
+    | "searchHubEndpoints"
     | "openHubConsent"
   >;
 }
@@ -33,6 +38,9 @@ export function hubConnectionIpcHandlers({
       ),
       requestAccess: payloadHandler(parseHubConnectionAccessRequestInput, (input) =>
         runCauseEffect(agents.requestHubConnectionAccess(input)),
+      ),
+      searchEndpoints: payloadHandler(parseHubEndpointSearchInput, (input) =>
+        runCauseEffect(agents.searchHubEndpoints(input)),
       ),
       openConsent: handler(() => runCauseEffect(agents.openHubConsent())),
     },

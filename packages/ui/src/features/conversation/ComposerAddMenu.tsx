@@ -1,4 +1,14 @@
-import { AudioLines, DropdownMenu, File, Image, MessageCircleQuestionMark, Plus, Puzzle, Zap } from "@buildersbot/ui";
+import {
+  AudioLines,
+  DropdownMenu,
+  File,
+  Image,
+  MessageCircleQuestionMark,
+  Plus,
+  Puzzle,
+  Store,
+  Zap,
+} from "@buildersbot/ui";
 import { useText } from "@buildersbot/ui/text";
 import { For, Show } from "solid-js";
 
@@ -18,6 +28,8 @@ export interface ComposerAddMenuProps {
   onAttach?: (() => void) | undefined;
   /** Opens the skill picker of the editor, after the menu gave the focus back. Without it, no skill item. */
   onPickSkill?: (() => void) | undefined;
+  /** Opens the same picker for the tools of the store. Without it, no store item. */
+  onPickStore?: (() => void) | undefined;
   /** Without it, no side question item. */
   onSideQuestion?: (() => void) | undefined;
   /** Without it, no voice conversation item. */
@@ -33,7 +45,8 @@ export interface ComposerAddMenuProps {
 /** The "+" menu of a message box: files, skills, the prompt presets, and the side panes of the agent. */
 export function ComposerAddMenu(props: ComposerAddMenuProps) {
   const { t } = useText();
-  let skillPickerChosen = false;
+  /** The picker that the menu item asked for; it opens after the menu gave the focus back. */
+  let chosenPicker: (() => void) | undefined;
   // The browser opens a file picker only in the event of the click or the key.
   const attach = () => {
     props.onOpenChange(false);
@@ -47,11 +60,11 @@ export function ComposerAddMenu(props: ComposerAddMenuProps) {
       open={props.open}
       onOpenChange={(open) => {
         props.onOpenChange(open);
-        const chosen = skillPickerChosen;
-        skillPickerChosen = false;
+        const chosen = chosenPicker;
+        chosenPicker = undefined;
         if (open || !chosen) return;
         // The menu gives the focus back to its trigger two frames after it closes; open the picker after that.
-        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => props.onPickSkill?.())));
+        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(chosen)));
       }}
       placement="top-start"
       gutter={8}
@@ -75,17 +88,34 @@ export function ComposerAddMenu(props: ComposerAddMenuProps) {
             </DropdownMenu.Item>
           </Show>
           <Show when={props.onPickSkill}>
-            <DropdownMenu.Item
-              onPointerDown={(event) => {
-                if (event.button === 0) skillPickerChosen = true;
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") skillPickerChosen = true;
-              }}
-            >
-              <Puzzle aria-hidden="true" />
-              <span>{t("composer.add.skill")}</span>
-            </DropdownMenu.Item>
+            {(pick) => (
+              <DropdownMenu.Item
+                onPointerDown={(event) => {
+                  if (event.button === 0) chosenPicker = pick();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") chosenPicker = pick();
+                }}
+              >
+                <Puzzle aria-hidden="true" />
+                <span>{t("composer.add.skill")}</span>
+              </DropdownMenu.Item>
+            )}
+          </Show>
+          <Show when={props.onPickStore}>
+            {(pick) => (
+              <DropdownMenu.Item
+                onPointerDown={(event) => {
+                  if (event.button === 0) chosenPicker = pick();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") chosenPicker = pick();
+                }}
+              >
+                <Store aria-hidden="true" />
+                <span>{t("composer.add.store")}</span>
+              </DropdownMenu.Item>
+            )}
           </Show>
           <Show when={props.onAttach}>
             <DropdownMenu.Item
