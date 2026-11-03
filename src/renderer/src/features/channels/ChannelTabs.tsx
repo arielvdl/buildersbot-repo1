@@ -241,6 +241,7 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
                 class="channel-tab no-drag"
                 data-topic-id={topic.id}
                 data-active={isOpen(topic) ? "" : undefined}
+                data-working={working(topic) ? "" : undefined}
                 data-dragging={dragged() === topic.id ? "" : undefined}
                 data-drop={dropMark(index())}
                 draggable={movable() && renaming() !== topic.id ? "true" : "false"}
@@ -294,9 +295,7 @@ export function ChannelTabs(props: { channelId: string; archived: boolean }) {
                           if (button && document.activeElement !== button) button.focus();
                         }}
                       >
-                        <span class={["channel-tab-label", { "channel-tab-label-working": working(topic) }]}>
-                          {topic.name}
-                        </span>
+                        <span class="channel-tab-label">{topic.name}</span>
                         <Show when={working(topic)}>
                           <span class="sr-only">{t("sidebar.state.working")}</span>
                         </Show>

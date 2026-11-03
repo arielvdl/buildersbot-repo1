@@ -677,6 +677,7 @@ body:has(.channel-member-dialog) .ui-select-content {
 }
 
 .channel-tab {
+  position: relative;
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -694,6 +695,57 @@ body:has(.channel-member-dialog) .ui-select-content {
   border-color: var(--buildersbot-border);
   background: var(--buildersbot-bg-surface);
   color: var(--buildersbot-text-primary);
+}
+
+/*
+ * A tab with work: a thin track on its base, with a light band that crosses it without stop. The name
+ * stays solid, so the tab never looks stopped between two sweeps. The track is only 2px high, so the
+ * repaint of the moving band is small. The tab that is open has the stronger band.
+ */
+.channel-tab[data-working]::after {
+  position: absolute;
+  right: 6px;
+  bottom: -1px;
+  left: 6px;
+  height: 2px;
+  border-radius: var(--buildersbot-radius-pill);
+  background:
+    linear-gradient(
+      90deg,
+      var(--buildersbot-transparent),
+      var(--buildersbot-text-primary),
+      var(--buildersbot-transparent)
+    )
+    0 0 / 40% 100% no-repeat,
+    color-mix(in srgb, var(--buildersbot-text-primary) 8%, var(--buildersbot-transparent));
+  content: "";
+  opacity: 0.7;
+  pointer-events: none;
+  animation: channel-tab-work 1.4s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+}
+
+.channel-tab[data-working][data-active]::after {
+  opacity: 1;
+}
+
+@keyframes channel-tab-work {
+  from {
+    background-position:
+      -60% 0,
+      0 0;
+  }
+  to {
+    background-position:
+      160% 0,
+      0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .channel-tab[data-working]::after {
+    background: color-mix(in srgb, var(--buildersbot-text-primary) 40%, var(--buildersbot-transparent));
+    animation: none;
+  }
 }
 
 /* A dragged tab stays in its place, faded, until it is dropped. */
@@ -753,7 +805,7 @@ body:has(.channel-member-dialog) .ui-select-content {
   padding-left: 3px;
 }
 
-/* The name gives way to the unread mark. A tab with work shimmers it (app-shell.css). */
+/* The name gives way to the unread mark. A tab with work shows a bar on its base, not a change of the name. */
 .channel-tab-label {
   min-width: 0;
   overflow: hidden;
