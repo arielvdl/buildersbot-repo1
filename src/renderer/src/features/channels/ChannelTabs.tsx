@@ -11,8 +11,8 @@ import {
 } from "@buildersbot/ui/features/sidebar/SidebarAgentIndicator";
 import { useText } from "@buildersbot/ui/text";
 import { createEffect, createMemo, createSignal, createStore, For, flush, Show } from "solid-js";
-import { channelTabAgeLabel } from "./channel-tab-age-label";
 import { useNewTabShortcut } from "../../new-tab-shortcut";
+import { channelTabAgeLabel } from "./channel-tab-age-label";
 import {
   channelTabClose,
   channelTabDetails,
