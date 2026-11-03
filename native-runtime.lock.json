@@ -369,19 +369,19 @@
     "releaseArtifacts": {
       "darwin-arm64": {
         "asset": "remote-desktop-runtime-darwin-arm64.tar.gz",
-        "sha256": "6bb12e809946b14242f3554826ceb29906de4e4dc5df2f860f5440f566d09466"
+        "sha256": "23404ba031e488760d146ac2f6181ba9923e02d882c4af5a81db6a38243c2772"
       },
       "darwin-x64": {
         "asset": "remote-desktop-runtime-darwin-x64.tar.gz",
-        "sha256": "d68b12a10f230ffcade41a235a9e04650f906d3a06b4fc905dd77f1ac261ca32"
+        "sha256": "072dd0831175cf153c44d042b11ad31ee9198c84581029c9da5bf3e040e655f8"
       },
       "win32-x64": {
         "asset": "remote-desktop-runtime-win32-x64.tar.gz",
-        "sha256": "8009b33abdb7f97cc7f9f05ae1f943e131f567666d74bc1e34b639dbe648dbd6"
+        "sha256": "3d7afd19a676eaf0755965fbd1bd54979b55d1593f929523901518128bc48b36"
       },
       "linux-x64": {
         "asset": "remote-desktop-runtime-linux-x64.tar.gz",
-        "sha256": "ea2f9a5f1c8bea1a5917989dfdf23260ba461a94c648d029e25043a0ae0e7010"
+        "sha256": "41c0b8501f3a27a1bc28ceb95324cc2608e5fa00d259ed7a2a7d1a7a9d8aebeb"
       }
     },
     "artifactRelease": {
@@ -389,7 +389,7 @@
       "tag": "remote-desktop-runtime-a62bf62ccfc96c93277de286ef9d856487cac148a4a3d9a273ba63149b0b83a0",
       "inputDigest": "a62bf62ccfc96c93277de286ef9d856487cac148a4a3d9a273ba63149b0b83a0",
       "manifestAsset": "remote-desktop-runtime-manifest.json",
-      "manifestSha256": "c6225c056cc3956e5ef192361bf866eb7d558ee9229db95cd0a473c19e9d5b4f"
+      "manifestSha256": "e879cbe878858ce63bba7240a5eb7602422a88594d707557f3e3445c4bb271d4"
     }
   },
   "bun": {
