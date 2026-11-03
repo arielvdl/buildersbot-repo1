@@ -1,6 +1,13 @@
-import { AudioLines, DropdownMenu, File, Image, MessageCircleQuestionMark, Plus, Puzzle } from "@buildersbot/ui";
+import { AudioLines, DropdownMenu, File, Image, MessageCircleQuestionMark, Plus, Puzzle, Zap } from "@buildersbot/ui";
 import { useText } from "@buildersbot/ui/text";
-import { Show } from "solid-js";
+import { For, Show } from "solid-js";
+
+export interface ComposerAddMenuPreset {
+  id: string;
+  name: string;
+  /** The key combination as the device shows it, or nothing while the preset has none. */
+  shortcutLabel?: string | undefined;
+}
 
 export interface ComposerAddMenuProps {
   open: boolean;
@@ -15,9 +22,15 @@ export interface ComposerAddMenuProps {
   onSideQuestion?: (() => void) | undefined;
   /** Without it, no voice conversation item. */
   onVoice?: (() => void) | undefined;
+  /** The prompt presets of the reader, in the order that the reader made them. */
+  presets?: readonly ComposerAddMenuPreset[] | undefined;
+  /** Writes the prompt of the preset into the draft. Without it, no preset items. */
+  onPickPreset?: ((id: string) => void) | undefined;
+  /** Opens the settings where the reader adds, changes and removes presets. */
+  onManagePresets?: (() => void) | undefined;
 }
 
-/** The "+" menu of a message box: files, skills, and the side panes of the agent. */
+/** The "+" menu of a message box: files, skills, the prompt presets, and the side panes of the agent. */
 export function ComposerAddMenu(props: ComposerAddMenuProps) {
   const { t } = useText();
   let skillPickerChosen = false;
@@ -85,6 +98,41 @@ export function ComposerAddMenu(props: ComposerAddMenuProps) {
               <File aria-hidden="true" />
               <span>{t("composer.add.context")}</span>
             </DropdownMenu.Item>
+          </Show>
+          <Show when={props.onPickPreset}>
+            {(pick) => (
+              <>
+                <DropdownMenu.Separator />
+                <For each={props.presets ?? []}>
+                  {(preset) => (
+                    <DropdownMenu.Item
+                      onSelectAfterClose={() => {
+                        // The menu gives the focus back first; the editor takes it after that.
+                        requestAnimationFrame(() => pick()(preset.id));
+                      }}
+                    >
+                      <Zap aria-hidden="true" />
+                      <span>{preset.name}</span>
+                      <Show when={preset.shortcutLabel}>
+                        {(label) => <span class="ui-menu-trailing">{label()}</span>}
+                      </Show>
+                    </DropdownMenu.Item>
+                  )}
+                </For>
+                <Show when={props.onManagePresets}>
+                  {(manage) => (
+                    <DropdownMenu.Item onSelectAfterClose={() => manage()()}>
+                      <Plus aria-hidden="true" />
+                      <span>
+                        {(props.presets?.length ?? 0) === 0
+                          ? t("composer.add.presetAdd")
+                          : t("composer.add.presetManage")}
+                      </span>
+                    </DropdownMenu.Item>
+                  )}
+                </Show>
+              </>
+            )}
           </Show>
           <Show when={props.onSideQuestion}>
             {(open) => (

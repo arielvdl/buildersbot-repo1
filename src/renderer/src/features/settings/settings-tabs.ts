@@ -155,6 +155,11 @@ export const navItems: ReadonlyArray<SettingsNavItem> = [
         keywordsKey: "settings.search.keywords.sendShortcut",
       },
       {
+        anchor: "settings.presets.title",
+        descriptionKey: "settings.presets.description",
+        keywordsKey: "settings.search.keywords.presets",
+      },
+      {
         anchor: "settings.showAgentSteps.title",
         descriptionKey: "settings.showAgentSteps.description",
         keywordsKey: "settings.search.keywords.showAgentSteps",

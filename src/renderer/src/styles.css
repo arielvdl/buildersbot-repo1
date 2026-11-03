@@ -72,6 +72,7 @@
 @import "@buildersbot/ui/features/settings/slack-integration.css";
 @import "@buildersbot/ui/features/settings/hosted-servers.css";
 @import "@buildersbot/ui/features/settings/server-creation-admin.css";
+@import "@buildersbot/ui/features/settings/composer-presets.css";
 @import "@buildersbot/ui/features/settings/profile.css";
 @import "./features/computer-use/computer-use.css";
 @import "./features/servers/server-settings-modal.css";

@@ -36,15 +36,27 @@ import {
   contextUsageView,
 } from "@buildersbot/ui/features/conversation/ContextUsage";
 import { CloseIcon } from "@buildersbot/ui/features/conversation/ConversationIcons";
+import {
+  appendPresetPrompt,
+  formatPresetShortcut,
+  presetForKeyEvent,
+} from "@buildersbot/ui/features/conversation/composer-presets";
 import { type OpenWaitItem, OpenWaits } from "@buildersbot/ui/features/conversation/OpenWaits";
 import { ReplyQuote } from "@buildersbot/ui/features/conversation/ReplyQuote";
 import { SpeakingBar } from "@buildersbot/ui/features/conversation/SpeakingBar";
 import { ComposerVoiceControls } from "@buildersbot/ui/features/conversation/VoiceRecordingMorph";
 import { useText } from "@buildersbot/ui/text";
-import { createEffect, createMemo, createSignal, createStore, For, Loading, lazy, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, createStore, For, Loading, lazy, onSettled, Show } from "solid-js";
+import { useComposerPresets } from "../../composer-presets-preference";
 import { reportErrorBanner, reportNotification } from "../../error-reports";
 import { setAskBeforeForce, useAskBeforeForce } from "../../force-send-preference";
-import { deviceSendShortcut, sendShortcutAriaKey, sendShortcutHintKey } from "../../send-shortcut-preference";
+import {
+  currentDevicePlatform,
+  deviceSendShortcut,
+  sendShortcutAriaKey,
+  sendShortcutHintKey,
+} from "../../send-shortcut-preference";
+import { useSettings } from "../settings/settings-context";
 import { speechReading } from "../speech/speech-playback";
 import { stopSpokenReply } from "../speech/speech-replies";
 import { copyComposerSelection, readComposerCopy } from "./composer-clipboard";
@@ -126,6 +138,41 @@ export function ConversationComposer() {
   } = useConversationViewScope();
   const { t, format, sourceText: localizeSourceText } = useText();
   const askBeforeForce = useAskBeforeForce();
+  const { openAppSettings } = useSettings();
+  const composerPresets = useComposerPresets();
+  const presetItems = createMemo(() =>
+    composerPresets().map((preset) => ({
+      id: preset.id,
+      name: preset.name,
+      shortcutLabel: preset.shortcut
+        ? formatPresetShortcut(preset.shortcut, props.platform ?? currentDevicePlatform())
+        : undefined,
+    })),
+  );
+  let composerElement: HTMLDivElement | undefined;
+  onSettled(() => {
+    // A key combination that the reader gave to a preset writes its prompt into the draft.
+    const element = composerElement;
+    if (!element) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const preset = presetForKeyEvent(composerPresets(), event);
+      if (!preset) return;
+      event.preventDefault();
+      event.stopPropagation();
+      insertPreset(preset.id);
+    };
+    element.addEventListener("keydown", onKeyDown);
+    return () => element.removeEventListener("keydown", onKeyDown);
+  });
+  /** Writes the prompt of a preset at the end of the draft, never over what the reader typed. */
+  const insertPreset = (id: string) => {
+    const preset = composerPresets().find((item) => item.id === id);
+    if (!preset || submitting() || voicePhase() === "transcribing" || editorLocked() || savePending()) return;
+    const text = appendPresetPrompt(currentDraft().text, preset.prompt);
+    updateCurrentDraft({ text });
+    updateTeamTyping(text);
+    setComposerFocusRequest((current) => current + 1);
+  };
   const messageLabel = () =>
     channel
       ? t("channel.composer.placeholder", { name: channel.name() })
@@ -657,6 +704,7 @@ export function ConversationComposer() {
         </div>
         <div
           class="composer"
+          ref={composerElement}
           data-compact={
             currentDraft().text.includes("\n") || unreferencedDraftAttachments().length > 0 ? undefined : ""
           }
@@ -788,6 +836,9 @@ export function ConversationComposer() {
               onPickSkill={pickSkill()}
               onSideQuestion={askSideQuestion()}
               onVoice={openVoiceConversation()}
+              presets={presetItems()}
+              onPickPreset={insertPreset}
+              onManagePresets={() => openAppSettings(null, "general")}
             />
             <div class="composer-primary-actions">
               <Show when={contextUsageView(context())}>

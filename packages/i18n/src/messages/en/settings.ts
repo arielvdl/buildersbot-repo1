@@ -165,6 +165,24 @@ export const messages = defineMessages("settings", {
   "settings.sendShortcut.enter": "Enter to send",
   "settings.sendShortcut.modEnterMac": "⌘Enter to send",
   "settings.sendShortcut.modEnterWin": "Ctrl+Enter to send",
+  // The prompt presets: saved prompts that the "+" menu of the message box or a key combination writes into the draft.
+  "settings.presets.title": "Prompt presets",
+  "settings.presets.description":
+    "Save prompts that you use often. Pick one in the + menu of the message box, or press its keys while you type. You can add as many as you want.",
+  "settings.presets.empty": "No presets yet.",
+  "settings.presets.add": "Add preset",
+  "settings.presets.name": "Name",
+  "settings.presets.namePlaceholder": "For example: Review the code",
+  "settings.presets.prompt": "Prompt",
+  "settings.presets.promptPlaceholder": "The text that goes into the message box",
+  "settings.presets.shortcut": "Keys",
+  "settings.presets.shortcutNone": "No keys",
+  "settings.presets.shortcutPress": "Press the keys…",
+  "settings.presets.shortcutClear": "Remove keys",
+  "settings.presets.shortcutHint": "Use Ctrl, ⌘ or Alt with a key. Esc cancels.",
+  "settings.presets.shortcutReserved": "These keys have another use. Try other keys.",
+  "settings.presets.editLabel": "Edit preset {name}",
+  "settings.presets.deleteLabel": "Delete preset {name}",
   // The security reviewer that reads every message before the agent does.
   "settings.promptGuard.title": "Security review of messages",
   "settings.promptGuard.description":
@@ -1278,6 +1296,8 @@ export const messages = defineMessages("settings", {
   "settings.search.keywords.roles": "roles, permissions, access, admin, owner",
   "settings.search.keywords.routineFeed": "calendar, feed, iCal, schedule, routines",
   "settings.search.keywords.sendShortcut": "send, enter, keyboard, shortcut, new line",
+  "settings.search.keywords.presets":
+    "preset, presets, prompt, saved prompt, template, snippet, shortcut, keyboard, quick",
   "settings.search.keywords.server": "server, host",
   "settings.search.keywords.serverGeneral": "server name, logo, timezone, general",
   "settings.search.keywords.serverGuard": "guard, task reviewer, security, stuck tasks, Fiscal",

@@ -1,0 +1,41 @@
+/* The prompt presets section of the general settings (`ComposerPresetsSection`). */
+.composer-presets-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--buildersbot-space-3);
+  padding: var(--buildersbot-space-3);
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-md);
+}
+
+.composer-presets-form-actions {
+  display: flex;
+  gap: var(--buildersbot-space-2);
+}
+
+.composer-presets-shortcut {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+}
+
+.composer-presets-preview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.composer-presets-keys {
+  align-self: flex-start;
+  margin-top: var(--buildersbot-space-1);
+  padding: 0 var(--buildersbot-space-1-5);
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-sm);
+  color: var(--buildersbot-text-muted);
+  font: inherit;
+  font-size: var(--buildersbot-text-sm);
+}

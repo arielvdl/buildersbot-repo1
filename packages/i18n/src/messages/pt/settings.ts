@@ -162,6 +162,24 @@ export const messages = {
   "settings.sendShortcut.enter": "Enter para enviar",
   "settings.sendShortcut.modEnterMac": "⌘Enter para enviar",
   "settings.sendShortcut.modEnterWin": "Ctrl+Enter para enviar",
+  // The prompt presets: saved prompts that the "+" menu of the message box or a key combination writes into the draft.
+  "settings.presets.title": "Atalhos de prompt",
+  "settings.presets.description":
+    "Salve os prompts que você usa muito. Escolha um no menu + da caixa de mensagem, ou aperte as teclas dele enquanto digita. Você pode criar quantos quiser.",
+  "settings.presets.empty": "Nenhum atalho de prompt ainda.",
+  "settings.presets.add": "Adicionar atalho de prompt",
+  "settings.presets.name": "Nome",
+  "settings.presets.namePlaceholder": "Por exemplo: Revisar o código",
+  "settings.presets.prompt": "Prompt",
+  "settings.presets.promptPlaceholder": "O texto que vai para a caixa de mensagem",
+  "settings.presets.shortcut": "Teclas",
+  "settings.presets.shortcutNone": "Sem teclas",
+  "settings.presets.shortcutPress": "Aperte as teclas…",
+  "settings.presets.shortcutClear": "Remover teclas",
+  "settings.presets.shortcutHint": "Use Ctrl, ⌘ ou Alt com uma tecla. Esc cancela.",
+  "settings.presets.shortcutReserved": "Essas teclas já têm outro uso. Tente outras teclas.",
+  "settings.presets.editLabel": "Editar atalho de prompt {name}",
+  "settings.presets.deleteLabel": "Excluir atalho de prompt {name}",
   // O revisor de segurança que lê cada mensagem antes do agente.
   "settings.promptGuard.title": "Revisão de segurança das mensagens",
   "settings.promptGuard.description":
@@ -1220,6 +1238,8 @@ export const messages = {
   "settings.search.keywords.roles": "papéis, funções, permissões, acesso, administrador, proprietário",
   "settings.search.keywords.routineFeed": "calendário, agenda, feed, iCal, rotinas",
   "settings.search.keywords.sendShortcut": "enviar, enter, teclado, atalho, nova linha",
+  "settings.search.keywords.presets":
+    "atalho de prompt, prompt, prompt salvo, modelo, texto pronto, atalho, teclado, rápido",
   "settings.search.keywords.server": "servidor, anfitrião, host",
   "settings.search.keywords.serverGeneral": "nome do servidor, logotipo, fuso horário, geral",
   "settings.search.keywords.serverGuard": "guarda, guard, fiscal, revisor, segurança, tarefas paradas, travadas",

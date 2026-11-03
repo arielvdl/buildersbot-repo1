@@ -83,6 +83,8 @@ export const messages = {
   "composer.add.image": "Anexar imagem",
   "composer.add.skill": "Usar uma habilidade",
   "composer.add.context": "Adicionar contexto",
+  "composer.add.presetAdd": "Adicionar atalho de prompt",
+  "composer.add.presetManage": "Gerenciar atalhos de prompt",
   "composer.upload.cancel": "Cancelar envio",
   "composer.voice.progress": "Baixando modelo de voz {progress}%",
   "composer.voice.recording": "Gravação de voz",

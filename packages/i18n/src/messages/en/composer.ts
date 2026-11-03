@@ -80,6 +80,8 @@ export const messages = defineMessages("composer", {
   "composer.add.image": "Attach image",
   "composer.add.skill": "Use a skill",
   "composer.add.context": "Add context",
+  "composer.add.presetAdd": "Add prompt preset",
+  "composer.add.presetManage": "Manage prompt presets",
   "composer.upload.cancel": "Cancel upload",
   "composer.voice.progress": "Downloading voice model {progress}%",
   "composer.voice.recording": "Voice recording",
