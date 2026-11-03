@@ -25,7 +25,9 @@ recording started, also when the reader opens another one before it ends.
   the recording.
 - **Cancel** discards the recording. The draft stays as it was.
 
-Only an agent's own chat reads the reply aloud (`noteDictatedMessage`). A channel has many speakers,
+An agent's own chat and a side thread read the reply aloud (`noteDictatedMessage`). The note names the
+thread, so only the open conversation speaks, and a side thread also has Read aloud on each answer; the quick
+chat is one such thread (see `quick-chat.md`). A channel has many speakers,
 so a message dictated there gets no spoken reply. The web client (`props.runtime`) has no microphone.
 `scripts/channel-voice-input-e2e.ts` checks the channel and the agent composer in the stories.
 

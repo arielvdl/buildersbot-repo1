@@ -428,6 +428,9 @@ A joined desktop, the web client and the mobile app use the optional `agent-hidd
 owner or an admin hides or restores an agent on a host.
 `/v1/agents` and the released agent codecs do not carry `hiddenAt`.
 
+The agent of the quick chat is a case of its own: it is hidden for good, no list or Team API client carries it, and only
+the quick chat page may message it. See [quick-chat.md](quick-chat.md).
+
 ## Agent avatar
 
 An agent with no picture shows the app mark: a box seen from its corner (`AgentMark` in
