@@ -156,9 +156,19 @@
   opacity: 1;
 }
 
+/* The menu button takes the place of the time while it shows, so it does not hide the time. */
+.quick-list-item:focus-within .quick-list-time,
+.quick-list-item:has(.quick-list-actions[data-expanded]) .quick-list-time {
+  visibility: hidden;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .quick-list-item:hover .quick-list-actions {
     opacity: 1;
+  }
+
+  .quick-list-item:hover .quick-list-time {
+    visibility: hidden;
   }
 }
 
@@ -191,6 +201,15 @@
 
 .quick-list-skeleton {
   height: 2.5rem;
+}
+
+.quick-list-owner-mark {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin-right: var(--buildersbot-space-1);
+  vertical-align: -2px;
 }
 
 .quick-list-owner {

@@ -46,6 +46,11 @@ export interface ConversationThreadsInput {
    * "Branched from" opens the agent's own chat at its latest message.
    */
   onOpenMainMessage?: ((messageId: string) => void) | undefined;
+  /**
+   * Starts a new thread from its first message, in place of the agent's own thread start. The Quick chat
+   * uses it to start the thread in an agent that the message calls. Resolves true when the thread started.
+   */
+  onSendDraft?: ((text: string, attachmentDraftIds: string[]) => Promise<boolean>) | undefined;
 }
 
 /** The threads of one agent, for the conversation. Read it in a memo: it reads the thread state. */
@@ -156,7 +161,9 @@ export function conversationThreads(input: ConversationThreadsInput): Conversati
     approval,
     acceptsFiles: tasks.local(),
     onSend: (text, attachmentDraftIds) =>
-      open ? tabs.send(agentId, open.id, text, attachmentDraftIds) : tabs.sendDraft(agentId, text, attachmentDraftIds),
+      open
+        ? tabs.send(agentId, open.id, text, attachmentDraftIds)
+        : (input.onSendDraft ?? ((draft, files) => tabs.sendDraft(agentId, draft, files)))(text, attachmentDraftIds),
     onStop: () => {
       if (open) tasks.stopTask(agentId, open.id);
     },

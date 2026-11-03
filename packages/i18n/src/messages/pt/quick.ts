@@ -26,6 +26,7 @@ export const messages = {
   "quick.notice.modelChanged": "O modelo do Chat rápido saiu do catálogo. Ele voltou ao padrão.",
   "quick.signIn.title": "Conecte um provedor para usar o Chat rápido",
   "quick.signIn.action": "Abrir provedores",
+  "quick.error.agentGone": "Esse agente não está mais disponível.",
   "quick.error.title": "O Chat rápido não abriu",
   "quick.error.retry": "Tentar de novo",
 } as const satisfies PartialTranslation<typeof source>;

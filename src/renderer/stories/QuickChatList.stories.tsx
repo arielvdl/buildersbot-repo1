@@ -65,6 +65,25 @@ type Story = StoryObj<typeof meta>;
 /** Today, yesterday, the last 7 days and older, with the open conversation marked. */
 export const Groups: Story = {};
 
+/** A message that opened with an @ tag started the conversation in that agent, so its row shows the agent. */
+export const OtherAgent: Story = {
+  args: {
+    rows: [
+      {
+        ...row("r", "Sources for the launch", "Find sources about the launch", 5 * 60_000),
+        agentId: "research",
+        key: quickChatRowKey("research", "r"),
+        owner: {
+          name: "Research",
+          quick: false,
+          agent: { avatarSeed: "research", avatarHue: 170, avatarUrl: null, title: "Research" },
+        },
+      },
+      ...rows,
+    ],
+  },
+};
+
 /** A new conversation is open: no row is marked. */
 export const NewConversation: Story = {
   args: { selectedKey: null },

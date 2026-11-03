@@ -27,6 +27,7 @@ export const messages = defineMessages("quick", {
   "quick.notice.modelChanged": "The model for Quick chat is no longer available. It changed to the default.",
   "quick.signIn.title": "Connect a provider to use Quick chat",
   "quick.signIn.action": "Open providers",
+  "quick.error.agentGone": "That agent is no longer available.",
   "quick.error.title": "Quick chat did not open",
   "quick.error.retry": "Try again",
 });

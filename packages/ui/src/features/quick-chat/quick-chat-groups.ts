@@ -1,3 +1,4 @@
+import type { AgentProfile } from "@buildersbot/ui/data";
 import type { ThreadStatus } from "@buildersbot/ui/features/conversation/threads/thread-types";
 
 /** The owner of a conversation of the Quick chat: the Quick chat agent, or an agent that a message called. */
@@ -5,6 +6,8 @@ export interface QuickChatOwner {
   name: string;
   /** True for the Quick chat agent, which has no avatar of its own: its row shows the bolt. */
   quick: boolean;
+  /** The agent that a message called, for its avatar. Absent for the Quick chat agent. */
+  agent?: Pick<AgentProfile, "avatarSeed" | "avatarHue" | "avatarUrl" | "title"> | undefined;
 }
 
 /**

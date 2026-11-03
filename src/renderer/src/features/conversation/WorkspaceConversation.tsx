@@ -31,6 +31,7 @@ import { createScopeGuard } from "../../scope-lifetime";
 import { useTurns } from "../../turns";
 import { turnsPort } from "../../turns-port";
 import { useAuth } from "../account/account-context";
+import type { ConversationThreadsInput } from "../agent-threads/conversation-threads";
 import { attentionKey } from "../agents/agent-runtime-snapshot";
 import { agentThreadAttention } from "../agents/agent-thread-attention";
 import { useAgents } from "../agents/agents-context";
@@ -79,6 +80,8 @@ export interface ConversationSubject {
   agent: () => AgentProfile | undefined;
   updateAgent: (agentId: string, updates: Omit<UpdateAgentInput, "agentId">) => Promise<void>;
   quickChat: NonNullable<ConversationProps["quickChat"]>;
+  /** Starts the thread of a new conversation from its first message. See `ConversationThreadsInput.onSendDraft`. */
+  sendDraft?: ConversationThreadsInput["onSendDraft"];
 }
 
 export function WorkspaceConversation(props: { account: () => CentralAuthUser; subject?: ConversationSubject }) {
@@ -362,7 +365,7 @@ export function WorkspaceConversation(props: { account: () => CentralAuthUser; s
     usageLimitedModels().some((limited) => sameAgentModelChoice(limited, choice));
 
   /** The threads of the shown agent. A host without side threads shows only the agent's own chat. */
-  const threads = useConversationThreads(activeAgent);
+  const threads = useConversationThreads(activeAgent, { onSendDraft: props.subject?.sendDraft });
   /** The thread that the conversation shows: the open side thread, or the agent's own chat. */
   const openThreadId = () => threads()?.open?.threadId;
   /** The thread whose waits the conversation shows. A new thread draft has no turn, so it has none. */
@@ -520,7 +523,8 @@ export function WorkspaceConversation(props: { account: () => CentralAuthUser; s
         onOpenMicrophoneSettings={microphoneSettings()}
         onOpenVoiceSettings={(trigger) => openAppSettings(trigger, "voice")}
         agent={conversationAgent()}
-        agents={agentList()}
+        // The Quick chat calls an agent with an @ tag, so it offers the agents that the person sees.
+        agents={props.subject ? agentList().filter((agent) => !userHiddenAgentIds().has(agent.id)) : agentList()}
         mentionAgents={agentList().filter((agent) => !userHiddenAgentIds().has(agent.id))}
         availableRoutineIds={activeRoutineIds()}
         routines={activeRoutines()}

@@ -13,6 +13,7 @@ import {
   Trash2,
   Zap,
 } from "@buildersbot/ui";
+import { AgentAvatar } from "@buildersbot/ui/features/agents/AgentAvatar";
 import { chatPreviewLine } from "@buildersbot/ui/features/conversation/threads/thread-preview-text";
 import { sidebarMessageTime } from "@buildersbot/ui/features/sidebar/sidebar-filtering";
 import { useText } from "@buildersbot/ui/text";
@@ -52,6 +53,9 @@ function RowPreview(props: { row: QuickChatRow }) {
     <Show when={line()}>
       {(text) => (
         <span class="quick-list-preview">
+          <Show when={props.row.owner.agent} fallback={<Zap class="quick-list-owner-mark" aria-hidden="true" />}>
+            {(agent) => <AgentAvatar class="quick-list-owner-mark" agent={agent()} animated={false} />}
+          </Show>
           <span class="quick-list-owner">{props.row.owner.name}</span> {text()}
         </span>
       )}

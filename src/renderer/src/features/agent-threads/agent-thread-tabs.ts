@@ -408,6 +408,21 @@ export function createAgentThreadTabs(options: AgentThreadTabsOptions) {
     return true;
   }
 
+  /**
+   * Starts a thread in an agent from a first message, and gives it a tab that stays closed in the chat of
+   * that agent. The caller opens it where it wants. Resolves the thread, or null when it did not start.
+   */
+  async function startIn(agentId: string, text: string, attachmentDraftIds: string[]): Promise<AgentTask | null> {
+    const started = await tasks.startTask(agentId, text, attachmentDraftIds);
+    if (!started || !scopeIsCurrent()) return null;
+    seen.add(started.id);
+    writeTabs(agentId, {
+      open: [...keptIds(agentId).filter((entry) => entry !== started.id), started.id],
+      active: storedTabs(agentId).active,
+    });
+    return started;
+  }
+
   /** Runs a queued message of the agent's own chat in a new thread, and opens it. */
   async function runQueuedMessage(agentId: string, deliveryId: string): Promise<void> {
     const started = await tasks.runQueuedMessageAsTask(agentId, deliveryId);
@@ -527,6 +542,7 @@ export function createAgentThreadTabs(options: AgentThreadTabsOptions) {
     remove,
     send,
     sendDraft,
+    startIn,
     runQueuedMessage,
     branch,
     openAt,
