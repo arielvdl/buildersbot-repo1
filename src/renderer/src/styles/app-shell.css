@@ -2323,6 +2323,16 @@ textarea {
   color: var(--buildersbot-text-primary);
 }
 
+.sidebar-chat-tab-new {
+  color: var(--buildersbot-text-muted);
+}
+
+.sidebar-chat-tab-new-icon {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+}
+
 .sidebar-chat-tab-mark {
   width: 5px;
   height: 5px;

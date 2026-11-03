@@ -225,6 +225,7 @@ export const messages = defineMessages("sidebar", {
   "sidebar.channel.unread": { one: "{count} unread message", other: "{count} unread messages" },
   "sidebar.tabs.show": "Show tabs ({count})",
   "sidebar.tabs.close": "Close tab",
+  "sidebar.tabs.new": "New tab",
   "sidebar.tabs.hide": "Hide tabs",
   "sidebar.tabs.main": "Main chat",
   "sidebar.tabs.thread": "Thread",

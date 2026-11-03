@@ -167,6 +167,13 @@ export function WorkspaceSidebar(props: { peopleEnabled: boolean }) {
     }
     agentThreads.close(chatId, tabId);
   };
+  /** Adds a tab at the end of a channel's list. The name follows the position, as in the tab bar of the channel. */
+  const newChannelTab = (channelId: string) => {
+    const count = visibleChannels().find((channel) => channel.id === channelId)?.topics?.length ?? 0;
+    void channels
+      .open(channelId, channelTopicFor(channelId))
+      .then(() => channels.createTopic(t("channel.topic.defaultName", { n: count + 1 })));
+  };
   /** The tabs of each chat, as its row shows them: the agent's own chat and its threads, a channel's tabs. */
   const chatTabs = createMemo((): Record<string, SidebarChatTabs> => {
     const tabsByChat: Record<string, SidebarChatTabs> = {};
@@ -424,6 +431,7 @@ export function WorkspaceSidebar(props: { peopleEnabled: boolean }) {
       chatTabs={chatTabs()}
       onOpenChatTab={openChatTab}
       onCloseChatTab={closeChatTab}
+      onNewChannelTab={newChannelTab}
       onEditChannel={(id) => void channels.editChannel(id)}
       onDeleteChannel={channels.deletionSupported() ? deleteChannel : undefined}
       onRestoreChannel={channels.deletionSupported() ? channels.restore : undefined}

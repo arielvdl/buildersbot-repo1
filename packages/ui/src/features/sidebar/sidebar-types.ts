@@ -141,6 +141,8 @@ export interface SidebarProps {
   chatTabs?: Record<string, SidebarChatTabs> | undefined;
   /** Opens one tab of a chat: a side thread of the agent, or a tab of the channel. */
   onOpenChatTab?: ((kind: SidebarChatRowItem["kind"], chatId: string, tabId: string) => void) | undefined;
+  /** Opens a new tab of a channel. Without it, the tab list of a channel has no "new tab" item at its end. */
+  onNewChannelTab?: ((channelId: string) => void) | undefined;
   /** Closes one tab of a chat. Without it, a tab of the list has no menu. */
   onCloseChatTab?: ((kind: SidebarChatRowItem["kind"], chatId: string, tabId: string) => void) | undefined;
   showingArchivedChannels?: boolean | undefined;

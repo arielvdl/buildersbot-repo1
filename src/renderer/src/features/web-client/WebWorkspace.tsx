@@ -1818,6 +1818,11 @@ function WebWorkspaceFrame(props: WebWorkspaceProps) {
     const current = agentThreads();
     void select(chatId).then(() => current?.tabs.open(chatId, tabId));
   };
+  /** Adds a tab at the end of a channel's list. The name follows the position, as in the tab bar of the channel. */
+  const newChannelTab = (channelId: string) => {
+    const count = channels.state.channels.find((channel) => channel.id === channelId)?.topics?.length ?? 0;
+    void channels.open(channelId).then(() => channels.createTopic(t("channel.topic.defaultName", { n: count + 1 })));
+  };
   /** Closes one tab from the list: a thread tab only, or a channel tab with the questions of its own cross. */
   const closeChatTab = (kind: "agent" | "channel", chatId: string, tabId: string) => {
     if (kind === "channel") {
@@ -2206,6 +2211,7 @@ function WebWorkspaceFrame(props: WebWorkspaceProps) {
                   chatTabs={chatTabs()}
                   onOpenChatTab={openChatTab}
                   onCloseChatTab={closeChatTab}
+                  onNewChannelTab={newChannelTab}
                   onEditChannel={(id) => openChannel(id, true)}
                   onDeleteChannel={
                     channels.deletionSupported()

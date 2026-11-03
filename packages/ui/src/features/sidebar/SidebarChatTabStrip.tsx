@@ -3,12 +3,13 @@
  *
  * The user opens the tabs with a click on the avatar of the row or on the bar; the pointer over the
  * row opens nothing. The row lists at most `SIDEBAR_CHAT_TABS_LIMIT` tabs. The tab that was open keeps
- * a mark and `aria-current`, so the row never falls back to the first tab. The bar and the tabs sit
+ * a mark and `aria-current`, so the row never falls back to the first tab. The last item of the list
+ * opens a new tab, so the user does not have to go to the top of the chat for it. The bar and the tabs sit
  * outside the row button, because a button cannot hold another one. Both are `Button`s with their own
  * drawing and no tap cue, as they had as plain buttons.
  */
 
-import { Button, ContextMenu, X } from "@buildersbot/ui";
+import { Button, ContextMenu, Plus, X } from "@buildersbot/ui";
 import { For, Show } from "solid-js";
 import { useText } from "../../text";
 import { useSidebarScope } from "./sidebar-scope";
@@ -96,6 +97,22 @@ export function SidebarChatTabStrip(props: {
                 </li>
               )}
             </For>
+            <Show when={props.chat.kind === "channel" ? sidebar.onNewChannelTab : undefined}>
+              {(onNew) => (
+                <li>
+                  <Button
+                    variant="unstyled"
+                    data-cuelume-tap={undefined}
+                    class="sidebar-chat-tab sidebar-chat-tab-new"
+                    title={t("sidebar.tabs.new")}
+                    onClick={() => onNew()(props.chat.id)}
+                  >
+                    <Plus class="sidebar-chat-tab-new-icon" aria-hidden="true" />
+                    <span class="sidebar-chat-tab-title">{t("sidebar.tabs.new")}</span>
+                  </Button>
+                </li>
+              )}
+            </Show>
           </ul>
         </div>
       </div>
