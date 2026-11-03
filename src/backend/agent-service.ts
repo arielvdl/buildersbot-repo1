@@ -67,6 +67,8 @@ import type {
   HubConnectionPayerInput,
   HubConnectionsView,
   HubConnectionUsageView,
+  HubEndpointSearchInput,
+  HubEndpointSearchView,
   ListChannelRoutineRunsInput,
   ListRoutineRunsInput,
   LocalBrowserSecretResponse,
@@ -6261,6 +6263,13 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     return this.#hubConnections
       ? this.#hubConnections.choosePayerFor(input.connectionId, input.orgId)
       : this.hubConnectionsView();
+  }
+
+  /** The tools of the store that fit what the person types in the message box. Read only. */
+  searchHubEndpoints(input: HubEndpointSearchInput): Effect.Effect<HubEndpointSearchView> {
+    return this.#hubConnections
+      ? this.#hubConnections.searchEndpoints(input)
+      : Effect.succeed({ status: "off", results: [] });
   }
 
   /**

@@ -272,6 +272,7 @@ import {
   decodeHubConnectionAccessRequestResult,
   decodeHubConnectionsView,
   decodeHubConnectionUsageView,
+  decodeHubEndpointSearchView,
 } from "./hub-connection-decoding";
 import { decodeLidAwakeStatus } from "./lid-awake-decoding";
 import { decodeMacAutomationResults } from "./mac-automation-decoding";
@@ -1034,6 +1035,7 @@ const buildersbotApi: BuildersBotDesktopApi = {
     getUsage: decodeHubConnectionUsageView,
     choosePayer: decodeHubConnectionsView,
     requestAccess: decodeHubConnectionAccessRequestResult,
+    searchEndpoints: decodeHubEndpointSearchView,
     openConsent: decodeVoid,
   }),
   license: bridgeGroup(IPC_ENDPOINTS.license, {
