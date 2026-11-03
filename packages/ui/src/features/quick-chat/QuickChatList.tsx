@@ -20,6 +20,7 @@ import {
   Plus,
   Search,
   Skeleton,
+  SlidersHorizontal,
   Tag,
   Trash2,
   X,
@@ -638,48 +639,76 @@ export function QuickChatList(props: QuickChatListProps) {
           {t("quick.list.new")}
         </Button>
       </header>
-      <div class="quick-list-search">
-        <Search class="quick-list-search-icon" aria-hidden="true" />
-        <Input
-          type="search"
-          size="sm"
-          value={query()}
-          onInput={(event) => setQuery(event.currentTarget.value)}
-          placeholder={t("quick.list.search")}
-          aria-label={t("quick.list.search")}
-        />
-      </div>
-      <div class="quick-list-tools">
-        <fieldset class="quick-list-filters" aria-label={t("quick.list.filter.label")}>
-          <For each={QUICK_CHAT_FILTERS}>
-            {(id) => (
-              <Button
-                variant={filter() === id ? "secondary" : "ghost"}
-                size="sm"
-                type="button"
-                class="quick-list-filter"
-                aria-pressed={filter() === id ? "true" : "false"}
-                onClick={() => setFilter(id)}
-              >
-                {t(FILTER_TEXT[id])}
-              </Button>
-            )}
-          </For>
-        </fieldset>
-        <Show when={foldersEnabled()}>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            type="button"
-            class="quick-list-folder-add"
-            aria-label={t("quick.folder.new")}
-            title={t("quick.folder.new")}
-            onClick={() => setCreating(true)}
+      <div class="quick-list-searchbar">
+        <div class="quick-list-search">
+          <Search class="quick-list-search-icon" aria-hidden="true" />
+          <Input
+            type="search"
+            size="sm"
+            value={query()}
+            onInput={(event) => setQuery(event.currentTarget.value)}
+            placeholder={t("quick.list.search")}
+            aria-label={t("quick.list.search")}
+          />
+        </div>
+        <DropdownMenu.Root placement="bottom-end" gutter={4}>
+          <DropdownMenu.Trigger
+            class={buttonVariants({ variant: "ghost", size: "icon-sm", class: "quick-list-filter-menu" })}
+            data-active={filter() === "all" ? undefined : ""}
+            aria-label={t("quick.list.filter.label")}
+            title={t("quick.list.filter.label")}
           >
-            <FolderPlus aria-hidden="true" />
-          </Button>
-        </Show>
+            <SlidersHorizontal aria-hidden="true" />
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content class="agent-context-menu">
+              <DropdownMenu.RadioGroup
+                value={filter()}
+                onChange={(value: string) => setFilter(QUICK_CHAT_FILTERS.find((id) => id === value) ?? "all")}
+              >
+                <For each={QUICK_CHAT_FILTERS}>
+                  {(id) => (
+                    <DropdownMenu.RadioItem value={id}>
+                      <span>{t(FILTER_TEXT[id])}</span>
+                      <Show when={filter() === id}>
+                        <Check class="quick-tag-check size-4" aria-hidden="true" />
+                      </Show>
+                    </DropdownMenu.RadioItem>
+                  )}
+                </For>
+              </DropdownMenu.RadioGroup>
+              <Show when={foldersEnabled()}>
+                <DropdownMenu.Separator />
+                <DropdownMenu.Item
+                  onSelectAfterClose={() => {
+                    setFilter("all");
+                    setCreating(true);
+                  }}
+                >
+                  <FolderPlus class="agent-context-icon size-4" aria-hidden="true" />
+                  <span>{t("quick.folder.new")}</span>
+                </DropdownMenu.Item>
+              </Show>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
       </div>
+      <Show when={filter() !== "all"}>
+        <div class="quick-list-active-filter">
+          <span class="quick-list-filter-chip">
+            {t(FILTER_TEXT[filter()])}
+            <IconButton
+              label={t("quick.list.filter.clear")}
+              variant="ghost"
+              size="icon-xs"
+              class="quick-list-filter-chip-clear"
+              onClick={() => setFilter("all")}
+            >
+              <X aria-hidden="true" />
+            </IconButton>
+          </span>
+        </div>
+      </Show>
       <div class="quick-list-scroll">
         <Show
           when={!props.loading}

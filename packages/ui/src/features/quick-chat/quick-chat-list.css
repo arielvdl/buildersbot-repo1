@@ -273,32 +273,70 @@
   font-size: var(--buildersbot-text-md);
 }
 
-/* The filters and the new-folder button, under the search. */
-.quick-list-tools {
+/* The search and the filter menu, side by side. The filter shows as a chip while it is not "all". */
+.quick-list-searchbar {
   display: flex;
   align-items: center;
   gap: var(--buildersbot-space-1);
 }
 
-.quick-list-filters {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  display: flex;
+.quick-list-searchbar .quick-list-search {
   min-width: 0;
   flex: 1;
-  flex-wrap: wrap;
-  gap: 2px;
 }
 
-.quick-list-filter.ui-button {
-  height: 1.5rem;
-  padding-inline: var(--buildersbot-space-2);
+.quick-list-filter-menu {
+  position: relative;
+  flex: none;
+}
+
+.quick-list-filter-menu[data-active]::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-accent, currentColor);
+}
+
+.quick-list-active-filter {
+  display: flex;
+}
+
+.quick-list-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--buildersbot-space-1);
+  padding: 1px 4px 1px var(--buildersbot-space-2);
+  border: 1px solid color-mix(in srgb, var(--buildersbot-accent, currentColor) 40%, transparent);
+  border-radius: var(--buildersbot-radius-pill);
+  background: color-mix(in srgb, var(--buildersbot-accent, currentColor) 12%, transparent);
+  color: var(--buildersbot-accent, currentColor);
   font-size: var(--buildersbot-text-sm);
 }
 
-.quick-list-folder-add {
-  flex: none;
+.quick-list-filter-chip .quick-list-filter-chip-clear {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--buildersbot-radius-pill);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.quick-list-filter-chip .quick-list-filter-chip-clear:hover {
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.quick-list-filter-chip .quick-list-filter-chip-clear svg {
+  width: 11px;
+  height: 11px;
 }
 
 /* A folder: its head is a drop target, and the rows are indented under it. */

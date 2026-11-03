@@ -44,6 +44,7 @@ export const messages = {
   "quick.list.filter.running": "Em execução",
   "quick.list.filter.created": "Mais recentes",
   "quick.list.filter.finished": "Finalizadas",
+  "quick.list.filter.clear": "Limpar filtro",
   "quick.folder.new": "Nova pasta",
   "quick.folder.namePlaceholder": "Nome da pasta",
   "quick.folder.actions": "Ações da pasta {name}",

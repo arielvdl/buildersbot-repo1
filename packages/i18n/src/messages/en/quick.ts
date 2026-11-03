@@ -45,6 +45,7 @@ export const messages = defineMessages("quick", {
   "quick.list.filter.running": "Running",
   "quick.list.filter.created": "Newest",
   "quick.list.filter.finished": "Finished",
+  "quick.list.filter.clear": "Clear filter",
   "quick.folder.new": "New folder",
   "quick.folder.namePlaceholder": "Folder name",
   "quick.folder.actions": "Actions for folder {name}",
