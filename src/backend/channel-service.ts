@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { realpathSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, normalize, sep } from "node:path";
+import { expandAttachmentReferences, stripAttachmentReferences } from "@buildersbot/contracts/attachment-references";
 import { leadingAddress } from "@buildersbot/contracts/chat-tag-references";
 import { INPUT_LIMITS } from "@buildersbot/contracts/input-limits";
 import {
@@ -999,7 +1000,8 @@ export class ChannelService {
    */
   #nameTopic(channelId: string, topicId: string, text: string, agent: AgentSummary): Effect.Effect<void> {
     return Effect.gen({ self: this }, function* () {
-      const raw = yield* this.hooks.generate(agent, topicNamePrompt(this.store.get(channelId).name, text));
+      const request = stripAttachmentReferences(text) || expandAttachmentReferences(text);
+      const raw = yield* this.hooks.generate(agent, topicNamePrompt(this.store.get(channelId).name, request));
       const name = cleanTopicName(raw);
       if (!name) return;
       const named = yield* channelSync(() => {
@@ -4215,7 +4217,10 @@ const TOPIC_NAME_LENGTH = 32;
  * nothing to name it by. The channel model writes the real name over it.
  */
 function autoTopicName(text: string): string | null {
-  const line = text.split("\n").find((candidate) => candidate.trim().length > 0);
+  // The words, not the attachment marker: a first message that starts with an image would name the tab
+  // `@[image.png](attachment:…)`. A message of only files keeps their names, so the tab is still named.
+  const words = stripAttachmentReferences(text);
+  const line = (words || expandAttachmentReferences(text)).split("\n").find((candidate) => candidate.trim().length > 0);
   if (!line) return null;
   const collapsed = line.replace(/\s+/gu, " ").trim();
   if (!collapsed) return null;

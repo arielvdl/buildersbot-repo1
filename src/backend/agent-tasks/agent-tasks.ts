@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { agentProviderDescriptor } from "@buildersbot/contracts/agent-providers";
-import { expandAttachmentReferences } from "@buildersbot/contracts/attachment-references";
+import { expandAttachmentReferences, stripAttachmentReferences } from "@buildersbot/contracts/attachment-references";
 import { sortConversationMessages } from "@buildersbot/contracts/conversation-order";
 import { INPUT_LIMITS } from "@buildersbot/contracts/input-limits";
 import {
@@ -794,10 +794,13 @@ function startedTaskResult(task: AgentThreadRecord): BuildersBotToolResponse {
   });
 }
 
-/** The first line of the text, cut to the title limit. An attachment reference shows as its file name. */
+/**
+ * The first line of the words, cut to the title limit. An attachment reference is not a word, so an image
+ * sent first does not name the thread; a message of only files shows their names.
+ */
 function taskTitle(text: string): string {
   const line =
-    expandAttachmentReferences(text)
+    (stripAttachmentReferences(text) || expandAttachmentReferences(text))
       .split("\n")
       .map((part) => part.trim())
       .find((part) => part.length > 0) ?? "";

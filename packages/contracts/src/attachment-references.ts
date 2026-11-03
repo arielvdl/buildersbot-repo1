@@ -69,3 +69,17 @@ export function removeAttachmentReferences(value: string, attachmentId: string):
     candidateId === attachmentId ? "" : marker,
   );
 }
+
+/**
+ * The text a person wrote, without the attachment markers: the words only, for a title or a prompt
+ * that names the conversation. A marker is `@[file](attachment:id)`, so an image sent first would
+ * otherwise become the title. The spaces left behind are collapsed per line.
+ */
+export function stripAttachmentReferences(value: string): string {
+  return value
+    .replace(ATTACHMENT_REFERENCE_PATTERN, " ")
+    .split("\n")
+    .map((line) => line.replace(/[^\S\n]+/gu, " ").trim())
+    .join("\n")
+    .trim();
+}

@@ -1,12 +1,16 @@
+import { expandAttachmentReferences, stripAttachmentReferences } from "@buildersbot/contracts/attachment-references";
+
 /** The prompt that asks for a title of a quick chat conversation. Only the title is the answer. */
 export function quickChatTitlePrompt(asked: string, answered: string): string {
+  // The words only: an attachment marker such as `@[image.png](attachment:id)` says nothing about the subject.
+  const request = stripAttachmentReferences(asked) || expandAttachmentReferences(asked);
   return [
     "Write a title for this conversation.",
     "Rules: at most 6 words, in the language of the person's message, no quotes, no final punctuation,",
     "no markdown. Name the subject of the conversation, not the first words of the message.",
     "Answer with the title only.",
     "",
-    `Person's message:\n${asked.slice(0, 800)}`,
+    `Person's message:\n${request.slice(0, 800)}`,
     "",
     `Answer:\n${answered.slice(0, 800)}`,
   ].join("\n");
