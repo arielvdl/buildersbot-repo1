@@ -339,6 +339,7 @@ const fakeAgents: TeamApiAgents = {
   off: () => undefined,
   preferredProvider: () => "claude",
   newAgentProvider: () => "claude",
+  quickChatAgentId: () => null,
   getStatus: () => {
     throw new Error(`The status backend failed with ${FAKE_SECRET}.`);
   },

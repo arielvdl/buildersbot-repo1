@@ -645,7 +645,9 @@ export function agentIpcHandlers({
         },
       }),
       sendMessage: scopedHandler(parseSendMessage, {
-        local: (input) => runCauseEffect(service.sendMessage(input, host.conversationSender())),
+        // The window is the only caller that names `via`, and the service honors it for the quick chat agent alone.
+        local: (input) =>
+          runCauseEffect(service.sendMessage(input, host.conversationSender(), undefined, "quick-chat")),
         remote: (input, serverId) => {
           if (input.taskId) {
             const files = input.attachmentDraftIds?.length ? { attachmentDraftIds: input.attachmentDraftIds } : null;
@@ -729,7 +731,7 @@ export function agentIpcHandlers({
           remoteTaskRequest(serverId, AGENT_TASKS_ROUTES.read, decodeRemoteTaskConversation, agentTaskBody(parsed)),
       }),
       startTask: scopedHandler(parseStartAgentTask, {
-        local: (input) => runCauseEffect(service.startTask(input, host.conversationSender())),
+        local: (input) => runCauseEffect(service.startTask(input, host.conversationSender(), undefined, "quick-chat")),
         remote: (input, serverId) => {
           const files = input.attachmentDraftIds?.length ? { attachmentDraftIds: input.attachmentDraftIds } : null;
           return remoteTaskRequest(
@@ -832,7 +834,7 @@ export function agentIpcHandlers({
           ),
       }),
       steerQueuedMessage: scopedHandler(parseSteerQueuedMessage, {
-        local: (parsed) => runCauseEffect(service.steerQueuedMessage(parsed)),
+        local: (parsed) => runCauseEffect(service.steerQueuedMessage(parsed, "quick-chat")),
         remote: (parsed, serverId) =>
           runCauseEffect(
             remoteServers.request(serverId, TEAM_API_ROUTES.agent.queueSteer(parsed.agentId), decodeVoid, {
@@ -843,7 +845,7 @@ export function agentIpcHandlers({
       }),
       // A joined server forces through `queue-force-v1`. An older host has no route for it.
       forceQueuedMessage: scopedHandler(parseForceQueuedMessage, {
-        local: (parsed) => runCauseEffect(service.forceQueuedMessage(parsed)),
+        local: (parsed) => runCauseEffect(service.forceQueuedMessage(parsed, "quick-chat")),
         remote: (parsed, serverId) => {
           if (!remoteServers.supportsCapability(serverId, QUEUE_FORCE_CAPABILITY))
             throw new Error(sourceText("error.team.queueForceUnsupported"));

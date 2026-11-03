@@ -497,7 +497,9 @@ export class DrainScheduler {
     )
       return "agent-client-changing";
     // A hidden agent finishes the turn that runs. Its queued messages wait until the user restores it.
-    if (agent?.hiddenAt !== undefined) return "hidden";
+    // The quick chat agent is hidden for good and is never restored: its messages only got in through
+    // its own page, so its queue is not held.
+    if (agent?.hiddenAt !== undefined && agent.quickChat !== true) return "hidden";
     // Only a provider that runs one turn of the agent at a time holds its chat for channel work. For
     // any other, the chat and the tabs run beside each other. Tasks and tabs are never held here.
     if (

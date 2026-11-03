@@ -1072,7 +1072,10 @@ export class RoutineScheduler implements RoutineDueSource {
     yield* routineStep(() => {
       const snapshot = this.#conversation.ensureSnapshot(agent.id, agent.threadId);
       this.#hooks.syncMailboxMessages(snapshot);
-      this.#hooks.emit({ type: "agents-changed", agents: this.#hooks.listAgents() });
+      this.#hooks.emit({
+        type: "agents-changed",
+        agents: this.#hooks.listAgents().filter((agent) => agent.quickChat !== true),
+      });
       this.#conversation.emitConversation(snapshot);
       this.#hooks.emitQueue(agent.id);
       this.#hooks.scheduleDrain(agent.id);
@@ -1157,7 +1160,10 @@ export class RoutineScheduler implements RoutineDueSource {
         );
       yield* this.#store.updatePreview(agent.id, run.instruction).pipe(toRoutineOperationFailed);
       yield* routineStep(() => {
-        this.#hooks.emit({ type: "agents-changed", agents: this.#hooks.listAgents() });
+        this.#hooks.emit({
+          type: "agents-changed",
+          agents: this.#hooks.listAgents().filter((agent) => agent.quickChat !== true),
+        });
         this.#conversation.emitConversation(snapshot, "routine.run-queued", {
           routineId: run.routineId,
           runId: run.id,

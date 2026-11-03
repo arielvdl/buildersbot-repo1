@@ -91,6 +91,7 @@ type TeamApiAgentMethods = Pick<
   | "getHostAnalytics"
   | "listModels"
   | "listAgents"
+  | "quickChatAgentId"
   | "sidebarChatIds"
   | "listConversationReads"
   | "generateProfile"

@@ -322,6 +322,12 @@ import {
 const logger = createBuildersBotLogger("agent-service");
 
 /**
+ * The way in that lets a caller reach the hidden agent of the quick chat. Only the local IPC handlers pass
+ * it. Without it a hidden agent refuses new work, whatever the agent is.
+ */
+export type HiddenAgentAccess = "quick-chat";
+
+/**
  * Only the application knows which managed CLIs it downloaded, so a caller that says nothing gets
  * none of them. Codex is left out on purpose: it is the one provider that can also ship inside the
  * application, and an unset entry keeps that copy in the search.
@@ -850,7 +856,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         interrupt: (agentId, turnId) => this.interrupt(agentId, turnId).pipe(toRoutineOperationFailed),
         awaitDrain: (agentId) => this.#drain.taskFor(agentId)?.pipe(toRoutineOperationFailed),
         syncMailboxMessages: (snapshot) => this.#mailboxSync.syncMailboxMessages(snapshot),
-        listAgents: () => this.listAgents(),
+        // The whole roster: the hidden state of the quick chat agent must refuse a routine run for it too.
+        listAgents: () => this.#roster(),
         // A hidden agent keeps its routines, but they do not run until the user restores it.
         excludedAgents: () =>
           new Set([...this.#duplication.pendingAgents(), ...this.#removal.deleting(), ...this.#hiddenAgentIds()]),
@@ -1937,6 +1944,11 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
    */
   listAgents(): AgentSummary[] {
     return this.#roster().filter((agent) => agent.quickChat !== true);
+  }
+
+  /** The id of the quick chat agent, or null before the first `ensure`. The Team API closes it to every client. */
+  quickChatAgentId(): string | null {
+    return this.#store.quickChatAgent()?.id ?? null;
   }
 
   /** Every agent, the quick chat one included, except the copies that are still being made. */
@@ -3239,10 +3251,15 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     };
   }
 
+  /**
+   * The agents that a user hid, which the routine scheduler holds back from the drain. The quick chat agent
+   * is hidden too but is not one of them: its messages only get in through its own page, so nothing holds
+   * its queue, and it has no routine to hold.
+   */
   #hiddenAgentIds(): string[] {
     return this.#store
       .list()
-      .filter((agent) => agent.hiddenAt !== undefined)
+      .filter((agent) => agent.hiddenAt !== undefined && agent.quickChat !== true)
       .map((agent) => agent.id);
   }
 
@@ -3288,9 +3305,19 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     return snapshot;
   }).bind(this);
 
+  /**
+   * Whether a caller may reach the hidden agent of the quick chat. Both must hold: the caller names the
+   * quick chat page's way in (`via`), and the agent is the quick chat one. Only the local IPC handlers
+   * name it. The Team API, scripts, other agents, channels and messaging do not, so they are refused.
+   */
+  #quickChatAccess(agentId: string, via: HiddenAgentAccess | undefined): boolean {
+    return via === "quick-chat" && this.#store.isQuickChat(agentId);
+  }
+
   /** Refuses new work for a hidden agent. A turn that already runs is not affected. */
-  #requireNotHidden(agentId: string): void {
-    if (this.#store.isHidden(agentId)) throw new Error(sourceText("error.backend.recipientHidden"));
+  #requireNotHidden(agentId: string, via?: HiddenAgentAccess): void {
+    if (this.#store.isHidden(agentId) && !this.#quickChatAccess(agentId, via))
+      throw new Error(sourceText("error.backend.recipientHidden"));
   }
 
   setMarketplaceSource(agentId: string, source: NonNullable<AgentSummary["marketplaceSource"]>): AgentSummary {
@@ -5065,17 +5092,37 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     return structuredClone(this.#tasks.read(agentId, taskId));
   }
 
+  /**
+   * At the limit of open conversations, archives the oldest one that is idle. It never deletes one, and it
+   * leaves a conversation that runs or waits alone: with none idle, nothing is archived and the start
+   * answers the limit as for any agent. It runs only when a conversation starts, with no timer. A failure
+   * to archive is not a failure to start.
+   */
+  #makeRoomInQuickChat(agentId: string): Effect.Effect<void> {
+    return Effect.gen({ self: this }, function* () {
+      const open = this.#tasks.snapshot(agentId).tasks.filter((task) => task.state !== "closed");
+      if (open.length < INPUT_LIMITS.agentTasks) return;
+      const idle = open
+        .filter((task) => task.state === "idle")
+        .sort((left, right) => left.updatedAt.localeCompare(right.updatedAt) || left.id.localeCompare(right.id))[0];
+      if (idle) yield* this.closeTask({ agentId, taskId: idle.id });
+    }).pipe(Effect.ignore);
+  }
+
   /** Starts a task of the agent with its first message. The task runs beside the agent's own chat. */
   readonly startTask = Effect.fn("AgentService.startTask")(function* (
     this: AgentService,
     input: StartAgentTaskInput,
     sender?: ConversationMessageSender,
     timezone?: string,
+    via?: HiddenAgentAccess,
   ): Effect.fn.Return<AgentTask, AgentLifecycleFailed> {
+    // The quick chat has no list of tasks to tidy by hand, so a new conversation at the limit makes room.
+    if (this.#store.isQuickChat(input.agentId)) yield* this.#makeRoomInQuickChat(input.agentId);
     const task = yield* lifecycleStep("start task", () => {
       if (!this.#roster().some((agent) => agent.id === input.agentId))
         throw new Error(sourceText("error.agent.unknown", { id: input.agentId }));
-      this.#requireNotHidden(input.agentId);
+      this.#requireNotHidden(input.agentId, via);
       // A start with files and no text takes its title from the first file.
       const firstDraft = input.attachmentDraftIds?.[0];
       const titleText = input.text.trim() || (firstDraft ? (this.#mailbox.draftName(firstDraft) ?? "") : "");
@@ -5093,6 +5140,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       },
       sender,
       timezone,
+      via,
     ).pipe(
       // A task without its first message is no use: it goes, and the user can send again.
       Effect.tapError(() =>
@@ -5406,9 +5454,12 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
    * Stops the turn that holds the agent's own chat, as the Stop button does, and starts this queued
    * message next, alone, before the other queued messages. See `QueueForce` for the order of the steps.
    */
-  forceQueuedMessage(input: ForceQueuedMessageInput): Effect.Effect<ForceQueuedMessageResult, AgentLifecycleFailed> {
+  forceQueuedMessage(
+    input: ForceQueuedMessageInput,
+    via?: HiddenAgentAccess,
+  ): Effect.Effect<ForceQueuedMessageResult, AgentLifecycleFailed> {
     // As for a steer: the queue of a hidden agent waits.
-    if (this.#store.isHidden(input.agentId))
+    if (this.#store.isHidden(input.agentId) && !this.#quickChatAccess(input.agentId, via))
       return Effect.fail(
         new AgentLifecycleFailed({
           operation: "forceQueuedMessage",
@@ -5424,9 +5475,12 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       );
   }
 
-  steerQueuedMessage(input: SteerQueuedMessageInput): Effect.Effect<void, AgentLifecycleFailed> {
+  steerQueuedMessage(
+    input: SteerQueuedMessageInput,
+    via?: HiddenAgentAccess,
+  ): Effect.Effect<void, AgentLifecycleFailed> {
     // A steer gives a queued message to the running turn. The queue of a hidden agent waits.
-    if (this.#store.isHidden(input.agentId))
+    if (this.#store.isHidden(input.agentId) && !this.#quickChatAccess(input.agentId, via))
       return Effect.fail(
         new AgentLifecycleFailed({
           operation: "steerQueuedMessage",
@@ -5456,8 +5510,9 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     input: SendMessageInput,
     sender?: ConversationMessageSender,
     timezone?: string,
+    via?: HiddenAgentAccess,
   ): Effect.fn.Return<QueuedMessageReceipt, AgentLifecycleFailed> {
-    if (!input.clientMessageId) return yield* this.#sendUserMessage(input, sender, timezone);
+    if (!input.clientMessageId) return yield* this.#sendUserMessage(input, sender, timezone, undefined, undefined, via);
     const idempotencyKey = `user-send:${createHash("sha256")
       .update(JSON.stringify([sender?.id ?? null, input.agentId, input.clientMessageId]))
       .digest("hex")}`;
@@ -5469,7 +5524,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     if (pending) return yield* Deferred.await(pending);
     const send = Deferred.makeUnsafe<QueuedMessageReceipt, AgentLifecycleFailed>();
     this.#pendingUserSends.set(idempotencyKey, send);
-    return yield* this.#sendUserMessage(input, sender, timezone, idempotencyKey).pipe(
+    return yield* this.#sendUserMessage(input, sender, timezone, idempotencyKey, undefined, via).pipe(
       Effect.onExit((exit) => Deferred.done(send, exit)),
       Effect.ensuring(Effect.sync(() => this.#pendingUserSends.delete(idempotencyKey))),
     );
@@ -5482,6 +5537,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     timezone: string | undefined,
     idempotencyKey?: string,
     origin?: HubTurnOrigin,
+    via?: HiddenAgentAccess,
   ) {
     const validateRecipient = yield* lifecycleStep("prepare message delivery", () =>
       this.#mailbox.prepareDelivery([input.agentId]),
@@ -5491,7 +5547,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         operation: "send message",
         cause: new Error(sourceText("error.agent.unknown", { id: input.agentId })),
       });
-    yield* lifecycleStep("send message", () => this.#requireNotHidden(input.agentId));
+    yield* lifecycleStep("send message", () => this.#requireNotHidden(input.agentId, via));
     const agent = yield* this.#store
       .getOrCreate(input.agentId)
       .pipe(
@@ -5509,7 +5565,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     yield* lifecycleStep("validate message recipient", () => {
       validateRecipient();
       // The provider start can wait, and the user can hide the agent in that time.
-      this.#requireNotHidden(input.agentId);
+      this.#requireNotHidden(input.agentId, via);
     });
     // A message to a task runs in the task's own thread and lane, beside the agent's own chat.
     const taskId = input.taskId;
@@ -5639,7 +5695,13 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     const agent = this.#store.list().find((item) => item.id === recipientAgentId);
     // A recipient with no loaded chat runs no turn, so its page is not read for this.
     const snapshot = this.#conversation.snapshotToUpdate(recipientAgentId);
-    if (!agent || !snapshot || this.#store.isHidden(agent.id) || !this.#mailbox.steersChatTurn(deliveryId))
+    // A message of the quick chat agent only got in through its page, so its steer is not held.
+    if (
+      !agent ||
+      !snapshot ||
+      (this.#store.isHidden(agent.id) && agent.quickChat !== true) ||
+      !this.#mailbox.steersChatTurn(deliveryId)
+    )
       return Effect.void;
     return this.#steerWhenBusy(agent, null, snapshot, deliveryId, false);
   }

@@ -9,27 +9,88 @@
 //   5. A model that left the catalog moves the agent to the rule; a call after that changes nothing.
 //   6. With no provider that can run, a first call fails and makes no agent; an existing agent stays.
 //   7. The preload decoder refuses an answer whose agent is not the quick chat one.
-// The provider runtime is stood in: the catalog and the status are the ones of the test, so no provider
-// CLI starts and no model is called. `AgentService.initialize` is not run.
+// Part 1 stands the provider runtime in: the catalog and the status are the ones of the test, so no
+// provider CLI starts and no model is called. `AgentService.initialize` is not run.
+// Part 2 runs the service on a fake bundled Builders CLI (`provider-fakes/agents/cultura-builder-turn.ts`) and
+// checks the way in and the ways that stay closed:
+//   8. A message sent as the local IPC does (`via: "quick-chat"`) runs a real turn: the drain does not hold
+//      it as hidden. The same call with no `via`, and a `via` for an ordinary hidden agent, are refused.
+//   9. The Dynamic Island action and a routine run find no agent to send to.
+//  10. The Team API on loopback: the quick chat agent is in no list, no id route answers it, a message to it
+//      gets a 404, and no event frame carries its id.
+//  11. The 51st open conversation archives the oldest idle one. Nothing is deleted.
 // `bun run test:quick-chat-core`. Writes .buildersbot-build/quick-chat-core-e2e/report.json.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import type { AgentEvent, AgentModelOption, AgentProviderId, AgentStatus } from "@buildersbot/contracts/ipc";
+import { INPUT_LIMITS } from "@buildersbot/contracts/input-limits";
+import {
+  AGENT_PROVIDERS,
+  type AgentEvent,
+  type AgentModelOption,
+  type AgentProviderId,
+  type AgentStatus,
+} from "@buildersbot/contracts/ipc";
 import { QUICK_CHAT_FAST_MODEL, quickChatDefaultModel } from "@buildersbot/contracts/quick-chat-model";
+import { TEAM_API_ROUTES } from "@buildersbot/contracts/team-api-routes";
+import {
+  TEAM_APP_VERSION_HEADER,
+  TEAM_CAPABILITIES_HEADER,
+  TEAM_PROTOCOL_V1_WEBSOCKET,
+  TEAM_PROTOCOL_VERSION_HEADER,
+} from "@buildersbot/contracts/team-protocol";
+import { teamCapabilitiesForProtocol } from "@buildersbot/contracts/team-protocol/current";
+import { TEAM_PROTOCOL_V9 } from "@buildersbot/contracts/team-protocol/v9";
 import { sourceText } from "@buildersbot/i18n/source";
+import { plugin } from "bun";
 import { Effect } from "effect";
 import { ProviderRuntime } from "../src/backend/agent/provider-runtime";
 import type { AgentBrowserHost } from "../src/backend/agent/turn-lifecycle";
 import { AgentService } from "../src/backend/agent-service";
 import { AgentStore } from "../src/backend/agent-store";
 import { BuildersBotDatabase } from "../src/backend/buildersbot-database";
+import { CULTURA_BUILDER_GATEWAY, serializeCulturaBuilderSession } from "../src/backend/cultura-builder-auth";
 import { runCauseEffect } from "../src/backend/effect-boundary";
 import { MailboxStore } from "../src/backend/mailbox-store";
+import { NO_PROVIDER_CREDENTIALS } from "../src/backend/provider-drivers";
 import { SidebarLayoutStore } from "../src/backend/sidebar-layout-store";
 import { decodeQuickChatEnsure } from "../src/preload/quick-chat-decoding";
+import { installFakeAgent, readJsonl } from "./provider-fakes/host";
+
+// The main process imports Electron for its windows and IPC. No check here opens a window.
+plugin({
+  name: "quick-chat-core-electron-boundary",
+  setup(build) {
+    class Inert {}
+    build.module("electron", () => ({
+      loader: "object",
+      exports: {
+        app: { getPath: () => tmpdir(), getVersion: () => "0.0.0-e2e", isPackaged: false, on: () => undefined },
+        BrowserWindow: Object.assign(class extends Inert {}, { getAllWindows: () => [] }),
+        MessageChannelMain: class extends Inert {},
+        Notification: Object.assign(class extends Inert {}, { isSupported: () => false }),
+        clipboard: {},
+        dialog: {},
+        ipcMain: { handle: () => undefined, removeHandler: () => undefined, on: () => undefined },
+        nativeImage: {},
+        net: {},
+        powerMonitor: { on: () => undefined },
+        safeStorage: { isEncryptionAvailable: () => false },
+        screen: {},
+        session: {},
+        shell: { openExternal: async () => undefined },
+        systemPreferences: {},
+        webContents: { getAllWebContents: () => [] },
+      },
+    }));
+  },
+});
+
+const { TeamApiServer } = await import("../src/main/team-api-server");
+const { TeamStore } = await import("../src/main/team-store");
+const { performDynamicIslandCriticalAction } = await import("../src/main/dynamic-island-actions");
 
 const OUT = resolve(import.meta.dirname, "../.buildersbot-build/quick-chat-core-e2e");
 
@@ -92,6 +153,8 @@ const providerCalls: string[] = [];
 
 // The runtime of the providers is stood in at two doors: the catalog it lists, and the one call that
 // would reach a model (`createProfileClient`, which the quick chat must never make).
+const realListModels = ProviderRuntime.prototype.listModels;
+const realCreateProfileClient = ProviderRuntime.prototype.createProfileClient;
 ProviderRuntime.prototype.listModels = () => catalog;
 ProviderRuntime.prototype.createProfileClient = (provider) => {
   providerCalls.push(`createProfileClient:${provider}`);
@@ -155,6 +218,441 @@ async function stopHost(host: Host): Promise<void> {
 
 const ensure = (host: Host) => runCauseEffect(host.agents.ensureQuickChat());
 const quickChatRows = (host: Host) => host.store.list().filter((agent) => agent.quickChat === true);
+
+// ---------------------------------------------------------------------------------------------------
+// Part 2
+
+const OWNER = { username: "owner-user", password: "owner-password-123" };
+const HOST_VERSION = "0.0.0-e2e";
+const COMPANY = "Quick Chat Lab";
+const ACCESS = "access-quick-chat";
+const WAIT_MS = 30_000;
+const realFetch = globalThis.fetch;
+
+function jsonResponse(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+}
+
+/** The gateway of the fake Hub. A request to loopback goes through; any other address fails, so no check reaches the network. */
+globalThis.fetch = Object.assign(
+  async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const url = input instanceof Request ? input.url : String(input);
+    if (url.startsWith("http://127.0.0.1")) return realFetch(input, init);
+    if (url === `${CULTURA_BUILDER_GATEWAY}/session`) return jsonResponse(200, { active: true, empresa: COMPANY });
+    throw new Error(`The check reached the network: ${url}`);
+  },
+  { preconnect: () => undefined },
+);
+
+const teamBrowser = {
+  listTabs: () => [],
+  getControlState: () => ({ sessions: [] }),
+  open: unused,
+  activate: unused,
+  navigate: unused,
+  reload: unused,
+  stop: unused,
+  takeUserControl: unused,
+  releaseUserControl: () => {},
+  releaseUserControlHeldBy: () => {},
+  close: unused,
+  capturePreview: unused,
+  setVisible: unused,
+  getDisplayState: () => ({ tabs: [], activeTabId: null }),
+  loadUrl: unused,
+  isPrivate: () => false,
+  startView: unused,
+  dispatchViewInput: unused,
+  copyViewSelection: unused,
+  importSignIn: unused,
+};
+
+interface Host2 {
+  database: BuildersBotDatabase;
+  store: AgentStore;
+  agents: AgentService;
+  server: InstanceType<typeof TeamApiServer>;
+  team: InstanceType<typeof TeamStore>;
+  port: number;
+  events: AgentEvent[];
+}
+
+async function runPart2(): Promise<void> {
+  const profile = join(root, "part2");
+  const executable = join(root, "builders", "bin", "opencode");
+  const log = join(root, "builders.jsonl");
+  process.env.FAKE_LOG = log;
+  await installFakeAgent(executable, "cultura-builder-turn");
+  const session = serializeCulturaBuilderSession({
+    access: ACCESS,
+    refresh: "refresh-quick-chat",
+    expires: Date.now() + 3_600_000,
+    empresa: COMPANY,
+  });
+
+  const database = new BuildersBotDatabase(join(profile, "user-data"));
+  const store = new AgentStore(join(profile, "user-data"), join(profile, "home"), database);
+  const mailbox = new MailboxStore(join(profile, "user-data"), store.sharedRoot, store.database);
+  const sidebar = new SidebarLayoutStore(join(profile, "user-data", "sidebar-layout.json"));
+  const team = new TeamStore(join(profile, "user-data", "buildersbot-team-server-v2.json"));
+  await runCauseEffect(sidebar.initialize());
+  await runCauseEffect(team.initialize());
+  await runCauseEffect(team.configure("E2E Host", OWNER.username, OWNER.password));
+  const agents = new AgentService({
+    store,
+    mailbox,
+    browser: agentBrowser,
+    sidebarLayout: sidebar,
+    preferredProvider: "cultura-builder",
+    offProviders: AGENT_PROVIDERS.filter((provider) => provider !== "cultura-builder"),
+    bundledExecutables: { opencode: executable },
+    credentials: {
+      ...NO_PROVIDER_CREDENTIALS,
+      apiKey: (provider) => (provider === "cultura-builder" ? session : null),
+    },
+    // The reviewer is a model call of its own; this check is about the way in, not about the reviewer.
+    securityGuard: () => ({
+      enabled: false,
+      scope: "all",
+      mode: "annotate",
+      minLevel: "suspicious",
+      model: null,
+      timeoutMs: 20_000,
+    }),
+  });
+  const events: AgentEvent[] = [];
+  agents.on("event", (event) => events.push(event));
+  await runCauseEffect(agents.initialize());
+  const server = new TeamApiServer({
+    store: team,
+    agents,
+    mailbox,
+    browser: teamBrowser,
+    sidebarLayout: sidebar,
+    appVersion: HOST_VERSION,
+    hiddenAgents: agents,
+  });
+  const port = await Effect.runPromise(server.start());
+  const host2: Host2 = { database, store, agents, server, team, port, events };
+  const sockets: WebSocket[] = [];
+  try {
+    await partTwoSteps(host2, log, sockets);
+  } finally {
+    for (const socket of sockets) socket.close();
+    await Effect.runPromise(server.stop()).catch(() => undefined);
+    await runCauseEffect(agents.stop()).catch(() => undefined);
+    database.close();
+    globalThis.fetch = realFetch;
+  }
+}
+
+/** Waits for the first event that `pick` accepts, among the ones that came and the ones to come. Fails after `WAIT_MS`: a missing event is a failure. */
+function nextEvent<T>(host2: Host2, pick: (event: AgentEvent) => T | null): Promise<T> {
+  return new Promise((resolveEvent, reject) => {
+    // An event that came before the call counts: a fake turn can end before the caller starts to wait.
+    for (const past of host2.events) {
+      const picked = pick(past);
+      if (picked !== null) {
+        resolveEvent(picked);
+        return;
+      }
+    }
+    const timer = setTimeout(() => {
+      host2.agents.off("event", onEvent);
+      const seen = [...new Set(host2.events.map((event) => event.type))];
+      reject(new Error(`No event within ${WAIT_MS} ms. Events seen: ${seen.join(" ")}`));
+    }, WAIT_MS);
+    const onEvent = (event: AgentEvent) => {
+      const picked = pick(event);
+      if (picked === null) return;
+      clearTimeout(timer);
+      host2.agents.off("event", onEvent);
+      resolveEvent(picked);
+    };
+    host2.agents.on("event", onEvent);
+  });
+}
+
+async function partTwoSteps(host2: Host2, log: string, sockets: WebSocket[]): Promise<void> {
+  const { agents, store } = host2;
+  // The turns of a conversation never reach the events of the agent's own chat: the task list tells when one ends.
+  const turnEnded = (taskId: string) =>
+    nextEvent(host2, (event) =>
+      event.type === "agent-tasks-changed" &&
+      event.snapshot.tasks.some((task) => task.id === taskId && task.state === "idle" && task.outcome !== null)
+        ? event
+        : null,
+    );
+
+  /** Starts one conversation as the local IPC does and waits for its turn to end. */
+  const converse = async (agentId: string, text: string) => {
+    // The wait looks at the events that came before it, so a turn that ends at once is not missed.
+    const task = await runCauseEffect(agents.startTask({ agentId, text }, undefined, undefined, "quick-chat"));
+    await turnEnded(task.id);
+    return task;
+  };
+
+  const made = await step("part 2: ensure on the real catalog of the fake CLI", async () => {
+    const providers = agents.getStatus().providers ?? [];
+    assert.ok(
+      providers.some((row) => row.id === "cultura-builder" && row.state === "available"),
+      "The fake Cultura Builder provider is not available.",
+    );
+    const result = await runCauseEffect(agents.ensureQuickChat());
+    assert.equal(result.changed, true);
+    assert.equal(result.agent.provider, "cultura-builder");
+    assert.ok(result.agent.model.startsWith("cultura-builder/"), `The model id is ${result.agent.model}.`);
+    return { id: result.agent.id, model: result.agent.model, effort: result.agent.reasoningEffort };
+  });
+  const quickId = made.id;
+
+  const first = await step("local IPC send: a real turn runs, and the drain does not hold it as hidden", async () => {
+    const task = await runCauseEffect(
+      agents.startTask({ agentId: quickId, text: "First question" }, undefined, undefined, "quick-chat"),
+    );
+    // The turn is what proves it: a hold of the drain would keep the message in the queue for good.
+    await turnEnded(task.id);
+    const prompts = (await readJsonl<{ event: string; text?: string }>(log)).filter(
+      (entry) => entry.event === "prompt",
+    );
+    assert.ok(
+      prompts.some((entry) => entry.text?.includes("First question")),
+      "The provider never got the message.",
+    );
+    const listed = agents.listTasks(quickId).tasks.find((candidate) => candidate.id === task.id);
+    assert.equal(listed?.state, "idle");
+    assert.equal(listed?.hold, null);
+    assert.equal(agents.listQueue(quickId).deliveries.length, 0, "A message is still in the queue.");
+    return { taskId: task.id, state: listed?.state };
+  });
+
+  await step(
+    "with no `via`, the same send and start are refused; so is a `via` for an ordinary hidden agent",
+    async () => {
+      const hiddenText = sourceText("error.backend.recipientHidden");
+      const refused = (run: () => Promise<unknown>, label: string) =>
+        assert.rejects(
+          run,
+          (error: unknown) => messageOf(error).includes(hiddenText),
+          `${label} was not refused as hidden.`,
+        );
+      await refused(
+        () => runCauseEffect(agents.sendMessage({ agentId: quickId, text: "x" })),
+        "sendMessage with no via",
+      );
+      await refused(
+        () => runCauseEffect(agents.sendMessage({ agentId: quickId, text: "x", taskId: first.taskId })),
+        "sendMessage to a conversation with no via",
+      );
+      await refused(() => runCauseEffect(agents.startTask({ agentId: quickId, text: "x" })), "startTask with no via");
+      await refused(
+        () =>
+          runCauseEffect(agents.steerQueuedMessage({ agentId: quickId, deliveryId: "none", expectedTurnId: "none" })),
+        "steer with no via",
+      );
+      await refused(
+        () =>
+          runCauseEffect(agents.forceQueuedMessage({ agentId: quickId, deliveryId: "none", expectedTurnId: "none" })),
+        "force with no via",
+      );
+      // An ordinary agent that a user hid: the way in of the quick chat does not open it.
+      const ordinary = await runCauseEffect(
+        store.createAgent({ name: "Ordinary", description: "", avatarSeed: "ordinary", avatarHue: null }),
+      );
+      store.setHidden(ordinary.id, new Date().toISOString());
+      await refused(
+        () =>
+          runCauseEffect(agents.sendMessage({ agentId: ordinary.id, text: "x" }, undefined, undefined, "quick-chat")),
+        "sendMessage to an ordinary hidden agent with via",
+      );
+      await refused(
+        () => runCauseEffect(agents.startTask({ agentId: ordinary.id, text: "x" }, undefined, undefined, "quick-chat")),
+        "startTask to an ordinary hidden agent with via",
+      );
+      assert.equal(agents.listQueue(quickId).deliveries.length, 0, "A refused message was queued.");
+      return { refused: 7 };
+    },
+  );
+
+  await step("the Dynamic Island action and a routine find no agent to reach", async () => {
+    const unknown = sourceText("error.agent.unknown", { id: quickId });
+    const hiddenText = sourceText("error.backend.recipientHidden");
+    // The action of the island sends as `service.sendMessage` does, with no `via`: the quick chat agent is refused.
+    await assert.rejects(
+      () =>
+        runCauseEffect(
+          performDynamicIslandCriticalAction(
+            { type: "send-message", serverId: "local", agentId: quickId, text: "x", clientMessageId: "island-1" },
+            agents,
+            { request: () => Effect.die(new Error("Not used.")) },
+            { decodeVoid: () => undefined, decodeQueuedMessageReceipt: (value) => value },
+            () => undefined,
+          ),
+        ),
+      (error: unknown) => messageOf(error).includes(hiddenText),
+      "The Dynamic Island action reached the quick chat agent.",
+    );
+    // A routine for it, then a test run: the scheduler sees the hidden state of the quick chat agent.
+    let routineError = "";
+    try {
+      const routine = agents.createRoutine(
+        {
+          agentId: quickId,
+          name: "Nightly",
+          instruction: "Check.",
+          active: true,
+          timezone: "UTC",
+          schedule: { kind: "custom", expression: "0 * * * *" },
+        },
+        { recordConversationEvent: false },
+      );
+      await runCauseEffect(agents.testRoutine({ agentId: quickId, routineId: routine.id }));
+    } catch (error) {
+      routineError = messageOf(error);
+    }
+    assert.ok(
+      routineError.includes(hiddenText) || routineError.includes(unknown),
+      `A routine run for the quick chat agent was not refused: "${routineError}".`,
+    );
+    return { routineRefusal: routineError.slice(0, 120) };
+  });
+
+  await step(
+    "Team API: no list, no id route, no message, and no event frame carries the quick chat agent",
+    async () => {
+      const call = async (method: string, path: string, token?: string, body?: unknown) => {
+        const headers: Record<string, string> = {
+          Accept: "application/json",
+          [TEAM_PROTOCOL_VERSION_HEADER]: String(TEAM_PROTOCOL_V9),
+          [TEAM_APP_VERSION_HEADER]: HOST_VERSION,
+          [TEAM_CAPABILITIES_HEADER]: teamCapabilitiesForProtocol(TEAM_PROTOCOL_V9).join(","),
+        };
+        if (body !== undefined) headers["Content-Type"] = "application/json";
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const response = await realFetch(`http://127.0.0.1:${host2.port}${path}`, {
+          method,
+          headers,
+          body: body === undefined ? null : JSON.stringify(body),
+        });
+        const text = await response.text();
+        return { status: response.status, text };
+      };
+      const login = await call("POST", TEAM_API_ROUTES.auth.login, undefined, OWNER);
+      assert.equal(login.status, 200, `Sign-in returned ${login.status}.`);
+      const token = String(JSON.parse(login.text).sessionToken);
+
+      // The event socket of the owner, the role that no access rule closes anything for.
+      const socket = new WebSocket(`ws://127.0.0.1:${host2.port}${TEAM_API_ROUTES.events}`, [
+        TEAM_PROTOCOL_V1_WEBSOCKET,
+        `buildersbot-token.${token}`,
+      ]);
+      sockets.push(socket);
+      const frames: string[] = [];
+      socket.addEventListener("message", (event) => frames.push(String(event.data)));
+      await new Promise<void>((resolveOpen, reject) => {
+        socket.addEventListener("open", () => resolveOpen(), { once: true });
+        socket.addEventListener("error", () => reject(new Error("The event socket did not open.")), { once: true });
+      });
+      socket.send(
+        JSON.stringify({
+          type: "agent-event-scope",
+          includeConversations: true,
+          // As a current client: every capability of the current protocol, so nothing is dropped for want of one.
+          capabilities: [...teamCapabilitiesForProtocol(TEAM_PROTOCOL_V9)],
+        }),
+      );
+      // A conversation of the quick chat agent runs while the socket listens.
+      const task = await converse(quickId, "Heard on the socket?");
+      // An ordinary event after it, so the socket is known to be live when the check ends.
+      const ordinary = await runCauseEffect(
+        agents.createAgentProfile({ name: "Visible", description: "", avatarSeed: "visible", avatarHue: null }),
+      );
+      // The same socket then sees an ordinary agent work, so it is known to be live and to carry such events.
+      await runCauseEffect(agents.sendMessage({ agentId: ordinary.id, text: "Hello" }));
+      await new Promise<void>((resolveFrame, reject) => {
+        const timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                `No event frame for the ordinary agent. Service saw it: ${host2.events.some((event) => event.type === "agents-changed" && event.agents.some((agent) => agent.id === ordinary.id))}. Frames: ${frames.length}; quick=${quickId} ordinary=${ordinary.id}: ${frames.map((frame) => frame.slice(0, 200)).join(" | ")}`,
+              ),
+            ),
+          WAIT_MS,
+        );
+        const check = () => {
+          if (frames.some((frame) => frame.includes(ordinary.id))) {
+            clearTimeout(timer);
+            resolveFrame();
+            return;
+          }
+          setTimeout(check, 50);
+        };
+        check();
+      });
+      assert.ok(frames.length > 0);
+      assert.ok(
+        frames.every((frame) => !frame.includes(quickId)),
+        "An event frame carried the quick chat agent.",
+      );
+
+      const list = await call("GET", TEAM_API_ROUTES.agents.all, token);
+      assert.equal(list.status, 200);
+      assert.ok(!list.text.includes(quickId), "GET /v1/agents carried the quick chat agent.");
+      assert.ok(list.text.includes(ordinary.id), "The ordinary agent is not in the list.");
+      const missing: Record<string, number> = {};
+      for (const [label, method, path, body] of [
+        ["agent", "GET", `${TEAM_API_ROUTES.agents.all}/${quickId}`, undefined],
+        ["messages", "POST", TEAM_API_ROUTES.agent.messages(quickId), { text: "x" }],
+        ["conversation", "GET", `${TEAM_API_ROUTES.agents.all}/${quickId}/conversation`, undefined],
+        ["tasks", "GET", `${TEAM_API_ROUTES.agents.all}/${quickId}/tasks`, undefined],
+        ["queue", "GET", `${TEAM_API_ROUTES.agents.all}/${quickId}/queue`, undefined],
+        ["interrupt", "POST", TEAM_API_ROUTES.agent.interrupt(quickId), { turnId: "x" }],
+      ] as const) {
+        const answer = await call(method, path, token, body);
+        assert.equal(answer.status, 404, `${label} answered ${answer.status}, not 404.`);
+        assert.ok(!answer.text.includes(task.id), `${label} carried a task of the quick chat agent.`);
+        missing[label] = answer.status;
+      }
+      const hiddenList = await call("POST", "/v1/hidden-agents", token, {});
+      assert.ok(!hiddenList.text.includes(quickId), "The list of hidden agents carried the quick chat agent.");
+      return { frames: frames.length, ...missing };
+    },
+  );
+
+  await step("the 51st open conversation archives the oldest idle one and deletes none", async () => {
+    const before = agents.listTasks(quickId).tasks.filter((task) => task.state !== "closed").length;
+    for (let index = before; index < INPUT_LIMITS.agentTasks; index += 1) await converse(quickId, `Question ${index}`);
+    const open = agents.listTasks(quickId).tasks.filter((task) => task.state !== "closed");
+    assert.equal(open.length, INPUT_LIMITS.agentTasks, "The quick chat is not at its limit.");
+    const oldest = [...open].sort((a, b) => a.updatedAt.localeCompare(b.updatedAt) || a.id.localeCompare(b.id))[0];
+    assert.ok(oldest);
+    // The list shows the open conversations first and holds 50 in all, so the archived one is read from the table.
+    const rows = () =>
+      store.database.connection
+        .prepare(
+          "SELECT COALESCE(legacy_task_id, thread_id) AS id, archived_at FROM projection_agent_threads WHERE agent_id = ?",
+        )
+        .all(quickId);
+    const read = (row: unknown) => (typeof row === "object" && row !== null ? { ...row } : {});
+    const archivedIds = () =>
+      rows()
+        .map(read)
+        .flatMap((row) => ("archived_at" in row && row.archived_at !== null && "id" in row ? [String(row.id)] : []));
+    assert.equal(rows().length, INPUT_LIMITS.agentTasks, "The table does not hold the 50 conversations.");
+    assert.deepEqual(archivedIds(), [], "A conversation was archived before the limit.");
+    const added = await converse(quickId, "The 51st question");
+    assert.equal(rows().length, INPUT_LIMITS.agentTasks + 1, "A conversation was deleted.");
+    assert.deepEqual(archivedIds(), [oldest.id], "The oldest idle conversation was not the one archived.");
+    const openAfter = agents.listTasks(quickId).tasks.filter((task) => task.state !== "closed");
+    assert.equal(
+      openAfter.length,
+      INPUT_LIMITS.agentTasks,
+      "The open conversations are not at the limit after the 51st.",
+    );
+    assert.ok(openAfter.some((task) => task.id === added.id));
+    return { open: openAfter.length, archivedId: oldest.id };
+  });
+}
 
 let running: Host | null = null;
 /** The text of a failure and of its cause, wherever the effect library put it. */
@@ -369,6 +867,13 @@ try {
     assert.throws(() => decodeQuickChatEnsure(null));
     return { refused: 3 };
   });
+
+  // ---- Part 2: the way in and the ways that stay closed, on a fake bundled Builders CLI.
+  ProviderRuntime.prototype.listModels = realListModels;
+  ProviderRuntime.prototype.createProfileClient = realCreateProfileClient;
+  await stopHost(host());
+  running = null;
+  await runPart2();
 
   report.passed = true;
 } finally {

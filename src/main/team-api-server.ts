@@ -1946,6 +1946,9 @@ export class TeamApiServer {
   hiddenAgentIds(protocol: number, capabilities: ReadonlySet<string>, member?: AccessMember | string): Set<string> {
     const agents = this.#options.agents.listAgents();
     const hidden = hiddenProviderAgentIds(agents, protocol);
+    // For a caller with no member too, as an event for every client or a push: no one reads the quick chat agent.
+    const quickChatId = this.#options.agents.quickChatAgentId();
+    if (quickChatId !== null) hidden.add(quickChatId);
     for (const id of this.#unrepresentableAgentIds(
       agents.filter((agent) => !hidden.has(agent.id)),
       protocol,
@@ -1978,9 +1981,14 @@ export class TeamApiServer {
     return agentAccessLevel(access.levels(serverId), this.#accessMember(member), agentId);
   }
 
-  /** The agents at `none` for `member`. */
+  /**
+   * The agents at `none` for `member`. The quick chat agent is always in it, for every role, the owner
+   * included: it is the conversation of the person at this computer and never leaves it.
+   */
   #blockedAgentIds(member: AccessMember | string): Set<string> {
     const blocked = new Set<string>();
+    const quickChatId = this.#options.agents.quickChatAgentId();
+    if (quickChatId !== null) blocked.add(quickChatId);
     const resolved = this.#accessMember(member);
     const access = this.#options.agentAccess;
     const serverId = this.#options.store.getIdentity()?.serverId;
