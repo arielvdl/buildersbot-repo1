@@ -338,6 +338,10 @@ export const messages = {
   "error.backend.taskNotFound": "このタスクは利用できません。",
   "error.backend.taskClosed": "このタスクは閉じています。メッセージを送信するには、もう一度開いてください。",
   "error.backend.taskStillRunning": "このタスクはまだ実行中です。停止するまで待ってから閉じてください。",
+  "error.backend.quickChatModelUnavailable": "{provider}では今{model}を使えません。別のモデルを選んでください。",
+  "error.backend.quickChatRuntimeByConversation":
+    "クイックチャットは会話ごとにモデルを設定します。モデルは会話の中で選んでください。",
+  "error.backend.quickChatRuntimeOnly": "会話ごとのモデルを設定できるのはクイックチャットだけです。",
   "error.backend.threadNotFound": "このスレッドは利用できません。",
   "error.backend.threadStillRunning": "このスレッドはまだ実行中です。停止してから、もう一度お試しください。",
   "error.backend.threadArchived": "このスレッドはアーカイブされています。メッセージを送信するには、復元してください。",

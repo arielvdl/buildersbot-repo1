@@ -328,6 +328,11 @@ export const messages = {
   "error.backend.taskNotFound": "To zadanie nie jest dostępne.",
   "error.backend.taskClosed": "To zadanie jest zamknięte. Otwórz je ponownie, aby wysłać wiadomość.",
   "error.backend.taskStillRunning": "To zadanie nadal działa. Poczekaj, aż się zatrzyma, a potem je zamknij.",
+  "error.backend.quickChatModelUnavailable":
+    "Model {model} nie jest teraz dostępny u dostawcy {provider}. Wybierz inny model.",
+  "error.backend.quickChatRuntimeByConversation":
+    "Szybki czat ustawia model dla każdej rozmowy. Wybierz model w tej rozmowie.",
+  "error.backend.quickChatRuntimeOnly": "Tylko szybki czat przyjmuje model dla jednej rozmowy.",
   "error.backend.threadNotFound": "Ten wątek jest niedostępny.",
   "error.backend.threadStillRunning": "Ten wątek nadal działa. Zatrzymaj go, a potem spróbuj ponownie.",
   "error.backend.threadArchived": "Ten wątek jest zarchiwizowany. Przywróć go, aby wysłać wiadomość.",

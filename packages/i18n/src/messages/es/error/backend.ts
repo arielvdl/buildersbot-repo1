@@ -338,6 +338,10 @@ export const messages = {
   "error.backend.taskNotFound": "Esta tarea no está disponible.",
   "error.backend.taskClosed": "Esta tarea está cerrada. Vuelve a abrirla para enviar un mensaje.",
   "error.backend.taskStillRunning": "Esta tarea sigue en ejecución. Espera a que se detenga y después ciérrala.",
+  "error.backend.quickChatModelUnavailable": "{model} no está disponible en {provider} ahora. Elige otro modelo.",
+  "error.backend.quickChatRuntimeByConversation":
+    "El chat rápido define su modelo para cada conversación. Elige el modelo en la conversación.",
+  "error.backend.quickChatRuntimeOnly": "Solo el chat rápido acepta un modelo para una sola conversación.",
   "error.backend.threadNotFound": "Este hilo no está disponible.",
   "error.backend.threadStillRunning": "Este hilo sigue en ejecución. Detenlo y vuelve a intentarlo.",
   "error.backend.threadArchived": "Este hilo está archivado. Restáuralo para enviar un mensaje.",

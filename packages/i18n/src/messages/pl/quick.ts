@@ -23,6 +23,8 @@ export const messages = {
   "quick.list.queued": "W kolejce",
   "quick.list.rowActions": "Działania dla: {title}",
   "quick.header.new": "Nowa rozmowa",
+  "quick.model.ownedByAgent": "Ta rozmowa używa modelu {name}. Zmień go w tym agencie.",
+  "quick.model.changeFailed": "Nie udało się zmienić modelu. Rozmowa zachowuje swój model.",
   "quick.notice.modelChanged": "Model szybkiego czatu nie jest już dostępny. Wrócił do domyślnego.",
   "quick.signIn.title": "Połącz dostawcę, aby używać szybkiego czatu",
   "quick.signIn.action": "Otwórz dostawców",

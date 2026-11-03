@@ -63,6 +63,39 @@ Each of these is refused as for any hidden agent, because none of them passes `v
 holds an agent by id reads the whole roster (`#roster()`, `findAgent`). Restore, copy and delete
 answer "unknown agent" for it.
 
+## Model per conversation
+
+Each conversation has its own model. The value is in `runtime_json` of `projection_agent_threads`
+(`{"v":1,"provider","model","reasoningEffort"?,"fastMode"?}`). A null value means the conversation
+uses the model of the agent. Migration 52 only adds the column, so an older build ignores it and runs
+every conversation on the agent's model.
+
+- **New conversation:** the draft starts with the model of the last conversation used. The agent keeps
+  that model as the default for new conversations, in its own `provider`, `model`, `reasoningEffort`
+  and `fastMode` fields. The first message writes `runtime_json` in the same transaction that creates
+  the conversation. A model chosen in a draft that is never sent does not become the default.
+- **Existing conversations:** `ensureQuickChat` fills `runtime_json` with the agent's model in each
+  conversation that is still null. It does this once, in a transaction, so a later change of the
+  default does not change an old conversation. A model that left the catalog moves only the default,
+  and it never rewrites a conversation.
+- **Choosing a model:** `quickChat.setConversationRuntime` checks that the model is listed for the
+  provider, that the provider is on, and that the effort is accepted. If a check fails, nothing is
+  written, the picker goes back to the real model, and the error shows as `error.backend.quickChatModelUnavailable`.
+- **When it applies:** the next message in that conversation uses the new model. A reply that is
+  already running is not stopped. A message already queued in that conversation uses the new model,
+  because the model is read when the turn starts. Other conversations are not changed.
+- **Provider change in a stopped conversation:** the provider sessions of the conversation are closed
+  when the choice is made. A change while the conversation runs is applied at the start of its next
+  turn, in its lane.
+- **Locked conversations:** a conversation that starts with `@agent` runs on that agent's model. Its
+  picker is disabled with `quick.model.ownedByAgent`, because a change would alter that agent's own chats.
+- **Refused writes:** `updateAgent` refuses runtime fields for the quick chat agent with
+  `error.backend.quickChatRuntimeByConversation`, so no `pendingRuntime` is created on it. On open,
+  `ensureQuickChat` moves an existing `pendingRuntime` into the default for new conversations and clears it.
+- **Errors are visible:** a refused choice shows an error toast, and the picker goes back to the real
+  model. A failed send shows its error in the conversation, and the message can be sent again. The model
+  never changes by itself.
+
 ## Warm-up
 
 `quickChat.warm` (`quick-chat:warm`) starts the provider process of the agent when it is stopped,

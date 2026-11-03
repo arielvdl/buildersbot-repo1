@@ -347,6 +347,11 @@ export const messages = {
   "error.backend.taskNotFound": "Cette tâche n’est pas disponible.",
   "error.backend.taskClosed": "Cette tâche est fermée. Rouvrez-la pour envoyer un message.",
   "error.backend.taskStillRunning": "Cette tâche est toujours en cours. Attendez qu’elle s’arrête, puis fermez-la.",
+  "error.backend.quickChatModelUnavailable":
+    "{model} n'est pas disponible sur {provider} pour le moment. Choisissez un autre modèle.",
+  "error.backend.quickChatRuntimeByConversation":
+    "Le chat rapide définit son modèle pour chaque conversation. Choisissez le modèle dans la conversation.",
+  "error.backend.quickChatRuntimeOnly": "Seul le chat rapide accepte un modèle pour une seule conversation.",
   "error.backend.threadNotFound": "Ce fil n’est pas disponible.",
   "error.backend.threadStillRunning": "Ce fil est toujours en cours. Arrêtez-le, puis réessayez.",
   "error.backend.threadArchived": "Ce fil est archivé. Restaurez-le pour envoyer un message.",

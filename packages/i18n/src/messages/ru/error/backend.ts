@@ -327,6 +327,11 @@ export const messages = {
   "error.backend.taskNotFound": "Эта задача недоступна.",
   "error.backend.taskClosed": "Эта задача закрыта. Откройте её снова, чтобы отправить сообщение.",
   "error.backend.taskStillRunning": "Эта задача ещё выполняется. Дождитесь её остановки, затем закройте её.",
+  "error.backend.quickChatModelUnavailable":
+    "Модель {model} сейчас недоступна у провайдера {provider}. Выберите другую модель.",
+  "error.backend.quickChatRuntimeByConversation":
+    "Быстрый чат задаёт модель для каждого диалога. Выберите модель в самом диалоге.",
+  "error.backend.quickChatRuntimeOnly": "Только быстрый чат принимает модель для одного диалога.",
   "error.backend.threadNotFound": "Эта ветка недоступна.",
   "error.backend.threadStillRunning": "Эта ветка ещё выполняется. Остановите её и повторите попытку.",
   "error.backend.threadArchived": "Эта ветка в архиве. Восстановите её, чтобы отправить сообщение.",

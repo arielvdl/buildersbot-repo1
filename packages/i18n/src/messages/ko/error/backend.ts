@@ -316,6 +316,11 @@ export const messages = {
   "error.backend.taskNotFound": "이 작업을 사용할 수 없어요.",
   "error.backend.taskClosed": "이 작업은 닫혀 있어요. 메시지를 보내려면 다시 여세요.",
   "error.backend.taskStillRunning": "이 작업이 아직 실행 중이에요. 중지될 때까지 기다린 후 닫으세요.",
+  "error.backend.quickChatModelUnavailable":
+    "{provider}에서 지금은 {model}을(를) 사용할 수 없어요. 다른 모델을 선택하세요.",
+  "error.backend.quickChatRuntimeByConversation":
+    "빠른 채팅은 대화마다 모델을 따로 정해요. 모델은 대화에서 선택하세요.",
+  "error.backend.quickChatRuntimeOnly": "대화 하나에 모델을 따로 지정할 수 있는 것은 빠른 채팅뿐이에요.",
   "error.backend.threadNotFound": "이 스레드를 사용할 수 없어요.",
   "error.backend.threadStillRunning": "이 스레드가 아직 실행 중이에요. 중지한 다음 다시 시도하세요.",
   "error.backend.threadArchived": "이 스레드는 보관되어 있어요. 메시지를 보내려면 복원하세요.",

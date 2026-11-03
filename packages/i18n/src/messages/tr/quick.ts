@@ -23,6 +23,8 @@ export const messages = {
   "quick.list.queued": "Sırada",
   "quick.list.rowActions": "{title} için işlemler",
   "quick.header.new": "Yeni konuşma",
+  "quick.model.ownedByAgent": "Bu konuşma {name} modelini kullanıyor. Modeli o ajanda değiştirin.",
+  "quick.model.changeFailed": "Model değiştirilemedi. Konuşma mevcut modelini koruyor.",
   "quick.notice.modelChanged": "Hızlı sohbetin modeli artık kullanılamıyor. Varsayılan modele geçti.",
   "quick.signIn.title": "Hızlı sohbeti kullanmak için bir sağlayıcı bağlayın",
   "quick.signIn.action": "Sağlayıcıları aç",

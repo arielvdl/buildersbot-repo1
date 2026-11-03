@@ -23,6 +23,8 @@ export const messages = {
   "quick.list.queued": "排队中",
   "quick.list.rowActions": "{title} 的操作",
   "quick.header.new": "新建对话",
+  "quick.model.ownedByAgent": "该对话使用{name}的模型。请在该助手中更改。",
+  "quick.model.changeFailed": "无法更改模型。该对话保留原模型。",
   "quick.notice.modelChanged": "快速对话的模型已不可用，已切换为默认模型。",
   "quick.signIn.title": "连接服务商后即可使用快速对话",
   "quick.signIn.action": "打开服务商",

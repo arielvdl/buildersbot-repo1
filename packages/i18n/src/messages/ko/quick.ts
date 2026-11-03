@@ -23,6 +23,8 @@ export const messages = {
   "quick.list.queued": "대기 중",
   "quick.list.rowActions": "{title} 작업",
   "quick.header.new": "새 대화",
+  "quick.model.ownedByAgent": "이 대화는 {name}의 모델을 사용해요. 그 에이전트에서 변경하세요.",
+  "quick.model.changeFailed": "모델을 변경하지 못했어요. 이 대화는 기존 모델을 그대로 유지해요.",
   "quick.notice.modelChanged": "빠른 채팅의 모델을 더 이상 사용할 수 없어요. 기본 모델로 바뀌었어요.",
   "quick.signIn.title": "빠른 채팅을 쓰려면 제공자를 연결하세요",
   "quick.signIn.action": "제공자 열기",

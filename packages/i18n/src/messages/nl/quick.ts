@@ -23,6 +23,8 @@ export const messages = {
   "quick.list.queued": "In wachtrij",
   "quick.list.rowActions": "Acties voor {title}",
   "quick.header.new": "Nieuw gesprek",
+  "quick.model.ownedByAgent": "Dit gesprek gebruikt het model van {name}. Wijzig het in die agent.",
+  "quick.model.changeFailed": "Het model kon niet worden gewijzigd. Het gesprek houdt zijn model.",
   "quick.notice.modelChanged": "Het model voor Snelchat is niet meer beschikbaar. Het is teruggezet naar de standaard.",
   "quick.signIn.title": "Verbind een aanbieder om Snelchat te gebruiken",
   "quick.signIn.action": "Aanbieders openen",

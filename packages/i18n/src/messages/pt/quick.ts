@@ -23,6 +23,8 @@ export const messages = {
   "quick.list.queued": "Na fila",
   "quick.list.rowActions": "Ações de {title}",
   "quick.header.new": "Nova conversa",
+  "quick.model.ownedByAgent": "Esta conversa usa o modelo de {name}. Mude-o nesse agente.",
+  "quick.model.changeFailed": "Não foi possível mudar o modelo. A conversa mantém o modelo atual.",
   "quick.notice.modelChanged": "O modelo do Chat rápido saiu do catálogo. Ele voltou ao padrão.",
   "quick.signIn.title": "Conecte um provedor para usar o Chat rápido",
   "quick.signIn.action": "Abrir provedores",
