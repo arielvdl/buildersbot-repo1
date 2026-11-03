@@ -80,7 +80,9 @@ import type {
   ProviderUsageResets,
   QueuedMessageReceipt,
   QueueSnapshot,
+  QuickChatConversationRuntimeResult,
   QuickChatEnsureResult,
+  QuickChatRuntime,
   RemoveMcpServerInput,
   ReorderQueueInput,
   ResetAgentSessionSettingInput,
@@ -100,6 +102,7 @@ import type {
   SetAgentSessionSettingInput,
   SetMcpServerEnabledInput,
   SetMessageReactionInput,
+  SetQuickChatConversationRuntimeInput,
   SharedTable,
   SidebarLayoutSnapshot,
   SidebarSection,
@@ -3268,6 +3271,102 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     return { agent: held, changed: false };
   }).bind(this);
 
+  /**
+   * Checks a model that a person chose for a quick chat conversation, and answers it as the conversation
+   * will store it. The model must be in the list of its provider and the provider must be on. An effort
+   * that the model does not take becomes the model's default, and a model with no effort setting keeps
+   * none. Fast mode stays only for a model that has a fast tier. Nothing is written here, so a refusal
+   * leaves the conversation as it was.
+   */
+  #checkQuickChatRuntime(requested: QuickChatRuntime): Effect.Effect<QuickChatRuntime, AgentLifecycleFailed> {
+    return Effect.gen({ self: this }, function* () {
+      yield* this.#providers
+        .ensureProvider(requested.provider)
+        .pipe(
+          Effect.mapError(
+            (failure) => new AgentLifecycleFailed({ operation: "checkQuickChatModel", cause: failure.cause }),
+          ),
+        );
+      return yield* lifecycleStep("check quick chat model", () => {
+        const model = this.#endpoints
+          .available()
+          .find((candidate) => candidate.provider === requested.provider && candidate.id === requested.model);
+        if (!model)
+          throw new Error(
+            sourceText("error.backend.quickChatModelUnavailable", {
+              model: requested.model,
+              provider: providerLabel(requested.provider),
+            }),
+          );
+        this.#providers.requireProviderOn(requested.provider);
+        const reasoningEffort =
+          model.reasoningEffortConfigurable === false
+            ? undefined
+            : requested.reasoningEffort && model.supportedReasoningEfforts.includes(requested.reasoningEffort)
+              ? requested.reasoningEffort
+              : model.defaultReasoningEffort;
+        return {
+          provider: model.provider,
+          model: model.id,
+          ...(reasoningEffort === undefined ? {} : { reasoningEffort }),
+          ...(requested.fastMode === true && model.fastServiceTier !== undefined ? { fastMode: true } : {}),
+        };
+      });
+    });
+  }
+
+  /**
+   * Makes the model of a conversation the default of the next new one. It writes the quick chat agent's
+   * record in the store, with no `#applyAgentUpdate`: nothing is delivered, no session is retired and no
+   * `pendingRuntime` is made. The agent runs no conversation of its own, so its record is only the default.
+   */
+  #rememberQuickChatDefault(agentId: string, runtime: QuickChatRuntime): Effect.Effect<void, AgentLifecycleFailed> {
+    const agent = this.#store.quickChatAgent();
+    if (!agent || agent.id !== agentId) return Effect.void;
+    const same =
+      agent.provider === runtime.provider &&
+      agent.model === runtime.model &&
+      agent.reasoningEffort === (runtime.reasoningEffort ?? agent.reasoningEffort) &&
+      (agent.fastMode === true) === (runtime.fastMode === true);
+    if (same) return Effect.void;
+    return this.#store
+      .updateAgent({
+        agentId,
+        provider: runtime.provider,
+        model: runtime.model,
+        reasoningEffort: runtime.reasoningEffort ?? agent.reasoningEffort,
+        fastMode: runtime.fastMode === true,
+      })
+      .pipe(
+        Effect.asVoid,
+        Effect.mapError((failure) => new AgentLifecycleFailed({ operation: "quickChatDefault", cause: failure.cause })),
+      );
+  }
+
+  /**
+   * Sets the model of one quick chat conversation. The model is checked first (`#checkQuickChatRuntime`); a
+   * refusal changes nothing. The new model starts with the next message of that conversation: a turn that
+   * runs now ends on the model it began with. The model also becomes the default of the next new
+   * conversation. A task of any other agent, and an archived one, is refused.
+   */
+  readonly setQuickChatConversationRuntime = Effect.fn("AgentService.setQuickChatConversationRuntime")(function* (
+    this: AgentService,
+    input: SetQuickChatConversationRuntimeInput,
+  ): Effect.fn.Return<QuickChatConversationRuntimeResult, AgentLifecycleFailed> {
+    if (!this.#store.isQuickChat(input.agentId))
+      return yield* this.#unknownAgentFailure("setQuickChatConversationRuntime", input.agentId);
+    yield* lifecycleStep("find quick chat conversation", () => this.#tasks.requireOpen(input.agentId, input.taskId));
+    const runtime = yield* this.#checkQuickChatRuntime(input.runtime);
+    const task = yield* lifecycleStep("set quick chat model", () =>
+      this.#tasks.setRuntime(input.agentId, input.taskId, runtime),
+    );
+    yield* this.#rememberQuickChatDefault(input.agentId, runtime);
+    this.#tasks.changed(input.agentId);
+    const agent = this.#store.quickChatAgent();
+    if (!agent) return yield* this.#unknownAgentFailure("setQuickChatConversationRuntime", input.agentId);
+    return { task: this.#tasks.publicTask(task), agent };
+  }).bind(this);
+
   committedAgentDuplication(operationId: string, sourceAgentId: string): DuplicateAgentResult | null {
     return this.#store.committedAgentDuplication(operationId, sourceAgentId);
   }
@@ -5178,6 +5277,13 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   ): Effect.fn.Return<AgentTask, AgentLifecycleFailed> {
     // The quick chat has no list of tasks to tidy by hand, so a new conversation at the limit makes room.
     if (this.#store.isQuickChat(input.agentId)) yield* this.#makeRoomInQuickChat(input.agentId);
+    // Only the quick chat keeps a model for one conversation. A model that fails the check starts no conversation.
+    if (input.runtime && !this.#store.isQuickChat(input.agentId))
+      return yield* new AgentLifecycleFailed({
+        operation: "start task",
+        cause: new Error(sourceText("error.backend.quickChatRuntimeOnly")),
+      });
+    const runtime = input.runtime ? yield* this.#checkQuickChatRuntime(input.runtime) : undefined;
     const task = yield* lifecycleStep("start task", () => {
       if (!this.#roster().some((agent) => agent.id === input.agentId))
         throw new Error(sourceText("error.agent.unknown", { id: input.agentId }));
@@ -5186,7 +5292,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       const firstDraft = input.attachmentDraftIds?.[0];
       const titleText = input.text.trim() || (firstDraft ? (this.#mailbox.draftName(firstDraft) ?? "") : "");
       // The thread keeps the text as written as its first message, not the file name of the title.
-      return this.#tasks.create(input.agentId, titleText, "user", input.text);
+      return this.#tasks.create(input.agentId, titleText, "user", input.text, runtime);
     });
     this.#tasks.changed(task.agentId);
     yield* this.sendMessage(
@@ -5209,6 +5315,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         }),
       ),
     );
+    // The model of the last conversation that a message started is the default of the next one.
+    if (runtime) yield* this.#rememberQuickChatDefault(task.agentId, runtime);
     return this.#tasks.publicTask(task);
   }).bind(this);
 

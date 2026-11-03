@@ -198,6 +198,7 @@ function withoutPreviews(rows: Rows): Rows {
         branch_source_thread_id: _sourceThread,
         branch_source_message_id: _sourceMessage,
         branch_through_message_id: _through,
+        runtime_json: _runtime,
         ...rest
       }) => rest,
     ),
@@ -212,7 +213,7 @@ function columns(db: DatabaseSync): string[] {
 }
 
 function expectHealthy(db: DatabaseSync): void {
-  expect(db.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({ version: 51 });
+  expect(db.prepare("SELECT MAX(version) AS version FROM schema_migrations").get()).toEqual({ version: 52 });
   expect(db.prepare("PRAGMA foreign_keys").get()).toEqual({ foreign_keys: 1 });
   expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
   expect(db.prepare("PRAGMA integrity_check").get()).toEqual({ integrity_check: "ok" });
@@ -226,7 +227,7 @@ describe("agent thread preview migration", () => {
     migrateBuildersBotDatabase(db);
     expect(withoutPreviews(contents(db))).toEqual(before);
     expect(previews(db)).toEqual(EXPECTED);
-    expect(columns(db).slice(-6, -3)).toEqual(["last_event_sequence", "first_message", "preview"]);
+    expect(columns(db).slice(-7, -4)).toEqual(["last_event_sequence", "first_message", "preview"]);
     expectHealthy(db);
   });
 
@@ -348,9 +349,9 @@ describe("agent thread preview migration", () => {
     const db = databaseAt(48);
     seedThreads(db);
     const before = contents(db);
-    db.exec("INSERT INTO schema_migrations VALUES (52, 'now')");
+    db.exec("INSERT INTO schema_migrations VALUES (53, 'now')");
     expect(() => migrateBuildersBotDatabase(db)).toThrow("newer than this application supports");
-    db.exec("DELETE FROM schema_migrations WHERE version = 52; DELETE FROM schema_migrations WHERE version = 20");
+    db.exec("DELETE FROM schema_migrations WHERE version = 53; DELETE FROM schema_migrations WHERE version = 20");
     expect(() => migrateBuildersBotDatabase(db)).toThrow("missing version 20");
     expect(contents(db)).toEqual(before);
     expect(columns(db)).not.toContain("preview");

@@ -346,6 +346,11 @@ export const messages = defineMessages("error.backend", {
   "error.backend.taskNotFound": "This task is not available.",
   "error.backend.taskClosed": "This task is closed. Open it again to send a message.",
   "error.backend.taskStillRunning": "This task still runs. Wait until it stops, then close it.",
+  // The quick chat keeps one model for each conversation.
+  "error.backend.quickChatModelUnavailable": "{model} is not available on {provider} now. Choose another model.",
+  "error.backend.quickChatRuntimeByConversation":
+    "The quick chat sets its model for each conversation. Choose the model in the conversation.",
+  "error.backend.quickChatRuntimeOnly": "Only the quick chat takes a model for one conversation.",
   // Side threads. Hosts before side threads send the task texts above, so those keys stay.
   "error.backend.threadNotFound": "This thread is not available.",
   "error.backend.threadStillRunning": "This thread still runs. Stop it, then try again.",

@@ -90,6 +90,7 @@ import { decodeQueueEditRequest } from "@buildersbot/contracts/team-protocol/que
 import { sourceText } from "@buildersbot/i18n/source";
 import type { PayloadDecoder } from "../trusted-ipc";
 import { parseAvatarImage } from "./avatar-inputs";
+import { parseQuickChatRuntime } from "./quick-chat-inputs";
 import { isObject, requireString } from "./validation";
 
 function parseAgentRequest(value: unknown): AgentIpcRequest {
@@ -618,11 +619,13 @@ export function parseSendMessage(value: unknown): SendMessageInput {
 
 export function parseStartAgentTask(value: unknown): StartAgentTaskInput {
   const { agentId, text, attachmentDraftIds, clientMessageId } = parseSendMessage(value);
+  const runtime = isObject(value) && value.runtime !== undefined ? parseQuickChatRuntime(value.runtime) : undefined;
   return {
     agentId,
     text,
     ...(attachmentDraftIds ? { attachmentDraftIds } : {}),
     ...(clientMessageId ? { clientMessageId } : {}),
+    ...(runtime ? { runtime } : {}),
   };
 }
 

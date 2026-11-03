@@ -5,6 +5,8 @@ import {
   type AgentTaskOutcome,
   type AttachmentSummary,
   type ConversationMessage,
+  isQuickChatRuntime,
+  type QuickChatRuntime,
 } from "@buildersbot/contracts/ipc";
 import { type DynamicRecord, isDynamicRecord, isOneOf, isString } from "@buildersbot/contracts/runtime-values";
 import type { BuildersBotDatabase } from "../buildersbot-database";
@@ -58,6 +60,11 @@ export interface AgentThreadRecord {
   closedAt: string | null;
   /** Where a branch was copied from. Null for a thread that is not a branch. */
   branch: AgentThreadBranch | null;
+  /**
+   * The model of a quick chat conversation. Null runs on the model of the agent, which is every thread of
+   * every other agent and a quick chat thread that no one has given a model.
+   */
+  runtime: QuickChatRuntime | null;
 }
 
 /** The `branch_*` columns: all three are set, or the thread is not a branch. */
@@ -93,6 +100,8 @@ export interface AgentThreadInput {
   text?: string;
   title: string;
   titleSource: Exclude<AgentThreadTitleSource, "user">;
+  /** The model of the new thread, written in the same transaction that makes it. */
+  runtime?: QuickChatRuntime;
 }
 
 const SELECT_THREAD = "SELECT *, COALESCE(legacy_task_id, thread_id) AS task_id FROM projection_agent_threads";
@@ -383,8 +392,8 @@ export class AgentThreadStore {
         db.prepare(
           `INSERT INTO projection_agent_threads
              (thread_id, agent_id, legacy_task_id, origin, title, title_source, first_message, preview, outcome,
-              error, created_at, updated_at, archived_at, last_event_sequence)
-           VALUES (?, ?, NULL, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, NULL, ?)`,
+              error, created_at, updated_at, archived_at, last_event_sequence, runtime_json)
+           VALUES (?, ?, NULL, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, NULL, ?, ?)`,
         ).run(
           threadId,
           input.agentId,
@@ -396,6 +405,7 @@ export class AgentThreadStore {
           now,
           now,
           sequence,
+          input.runtime ? encodeRuntime(input.runtime) : null,
         );
         return null;
       },
@@ -448,6 +458,27 @@ export class AgentThreadStore {
     this.#database.connection
       .prepare(`UPDATE projection_agent_threads SET outcome = ?, updated_at = ? WHERE ${BY_TASK_ID}`)
       .run(outcome, new Date().toISOString(), taskId, taskId);
+  }
+
+  /** The model of the thread, or null when it runs on the model of its agent or the thread is unknown. */
+  runtimeOf(taskId: string): QuickChatRuntime | null {
+    const row = databaseRow(
+      this.#database.connection
+        .prepare(`SELECT runtime_json FROM projection_agent_threads WHERE ${BY_TASK_ID}`)
+        .get(taskId, taskId),
+    );
+    return row ? decodeRuntime(row.runtime_json) : null;
+  }
+
+  /**
+   * Sets the model of the thread, or clears it with null. The write does not touch `updated_at`: a
+   * change of model is not new activity, so the tab does not move. It answers whether a thread changed.
+   */
+  setRuntime(taskId: string, runtime: QuickChatRuntime | null): boolean {
+    const result = this.#database.connection
+      .prepare(`UPDATE projection_agent_threads SET runtime_json = ? WHERE ${BY_TASK_ID}`)
+      .run(runtime ? encodeRuntime(runtime) : null, taskId, taskId);
+    return Number(result.changes) > 0;
   }
 
   /** Keeps the error of the thread's last turn, or clears it when a turn starts. */
@@ -600,6 +631,31 @@ function deleteThreadRows(db: Connection, threads: readonly AgentThreadRecord[])
   }
 }
 
+/** The stored form of a model. `v` lets a later build change the shape without a migration. */
+function encodeRuntime(runtime: QuickChatRuntime): string {
+  return JSON.stringify({
+    v: 1,
+    provider: runtime.provider,
+    model: runtime.model,
+    ...(runtime.reasoningEffort === undefined ? {} : { reasoningEffort: runtime.reasoningEffort }),
+    ...(runtime.fastMode === undefined ? {} : { fastMode: runtime.fastMode }),
+  });
+}
+
+/** A value that is not text, is not valid JSON, or has another version or shape reads as null, so no row stops a read. */
+function decodeRuntime(stored: unknown): QuickChatRuntime | null {
+  if (!isString(stored)) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stored);
+  } catch {
+    return null;
+  }
+  if (!isDynamicRecord(parsed) || parsed.v !== 1) return null;
+  const { v: _version, ...runtime } = parsed;
+  return isQuickChatRuntime(runtime) ? runtime : null;
+}
+
 function decodeThread(row: DynamicRecord): AgentThreadRecord {
   const origin = requiredStringColumn(row, "origin");
   const titleSource = requiredStringColumn(row, "title_source");
@@ -630,5 +686,6 @@ function decodeThread(row: DynamicRecord): AgentThreadRecord {
       sourceThreadId !== null && sourceMessageId !== null && throughMessageId !== null
         ? { sourceThreadId, sourceMessageId, throughMessageId }
         : null,
+    runtime: decodeRuntime(row.runtime_json),
   };
 }

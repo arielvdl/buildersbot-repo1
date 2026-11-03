@@ -37,6 +37,7 @@ import {
   type AgentRuntimeSnapshot,
   type AgentStatus,
   type AgentSubmission,
+  type AgentSummary,
   type AgentTask,
   type AgentTasksSnapshot,
   type AgentTemplatePublication,
@@ -147,6 +148,7 @@ import {
   type QueueDelivery,
   type QueuedMessageReceipt,
   type QueueSnapshot,
+  type QuickChatRuntime,
   type RemoteDesktopSession,
   type RemoteNetworkRouteState,
   type RemoteSessionReusePreference,
@@ -942,6 +944,46 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
     return task;
   }
 
+  /** As the host checks a model for a quick chat conversation: listed, provider on, effort and fast mode kept only if the model has them. */
+  function checkQuickChatRuntime(requested: QuickChatRuntime): QuickChatRuntime {
+    const model = models
+      .filter(isAgentModelOption)
+      .find((candidate) => candidate.provider === requested.provider && candidate.id === requested.model);
+    const providerOn = agentStatus.providers?.some((row) => row.id === requested.provider && row.state === "available");
+    if (!model || providerOn === false)
+      throw new Error(
+        sourceText("error.backend.quickChatModelUnavailable", { model: requested.model, provider: requested.provider }),
+      );
+    const reasoningEffort =
+      model.reasoningEffortConfigurable === false
+        ? undefined
+        : requested.reasoningEffort && model.supportedReasoningEfforts.includes(requested.reasoningEffort)
+          ? requested.reasoningEffort
+          : model.defaultReasoningEffort;
+    return {
+      provider: model.provider,
+      model: model.id,
+      ...(reasoningEffort === undefined ? {} : { reasoningEffort }),
+      ...(requested.fastMode === true && model.fastServiceTier !== undefined ? { fastMode: true } : {}),
+    };
+  }
+
+  /** The model of the last conversation is the default of the next one: the record of the quick chat agent. */
+  function rememberQuickChatDefault(runtime: QuickChatRuntime): AgentSummary {
+    const held = agents.find((agent) => agent.quickChat === true);
+    if (!held || !isAgentSummary(held)) throw new Error(sourceText("error.provider.noneReady"));
+    const next = {
+      ...held,
+      provider: runtime.provider,
+      model: runtime.model,
+      reasoningEffort: runtime.reasoningEffort ?? held.reasoningEffort,
+      fastMode: runtime.fastMode === true,
+    };
+    if (!isAgentSummary(next)) throw new Error(sourceText("error.provider.noneReady"));
+    agents = agents.map((agent) => (agent.id === held.id ? next : agent));
+    return next;
+  }
+
   function taskConversation(task: AgentTask): ConversationSnapshot {
     const existing = taskConversations.get(task.id);
     if (existing) return existing;
@@ -1400,6 +1442,18 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
     quickChat: {
       // The preview has no provider process to start.
       warm: async () => undefined,
+      // As the host does: checks the model, stores it on the conversation and makes it the default of the next one.
+      setConversationRuntime: async (input) => {
+        const held = agents.find((agent) => agent.id === input.agentId);
+        if (held?.quickChat !== true) throw new Error(sourceText("error.agent.unknown", { id: input.agentId }));
+        const task = findTask(input.agentId, input.taskId);
+        if (task.closedAt !== null) throw new Error(sourceText("error.backend.threadArchived"));
+        const runtime = checkQuickChatRuntime(input.runtime);
+        task.runtime = runtime;
+        const agent = rememberQuickChatDefault(runtime);
+        emitTasks(input.agentId);
+        return clone({ task, agent });
+      },
       // As the host does: makes the hidden agent on the first call, and moves it to a listed model when its own left.
       ensure: async () => {
         const providerAvailable = (provider: AgentProviderId) =>
@@ -3084,7 +3138,16 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
       listTasks: async (agentId) => taskList(agentId),
       readTask: async (input) => clone(taskConversation(findTask(input.agentId, input.taskId))),
       startTask: async (input) => {
+        // As the host does: only the quick chat agent takes a model for one conversation.
+        const held = agents.find((agent) => agent.id === input.agentId);
+        if (input.runtime && held?.quickChat !== true)
+          throw new Error(sourceText("error.backend.quickChatRuntimeOnly"));
+        const runtime = input.runtime ? checkQuickChatRuntime(input.runtime) : undefined;
         const task = createTask(input.agentId, input.text);
+        if (runtime) {
+          task.runtime = runtime;
+          rememberQuickChatDefault(runtime);
+        }
         runTaskTurn(task, input.text);
         return clone(task);
       },

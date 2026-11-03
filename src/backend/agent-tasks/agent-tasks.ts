@@ -15,6 +15,7 @@ import {
   type BranchAgentTaskInput,
   type ConversationMessage,
   type ConversationSnapshot,
+  type QuickChatRuntime,
 } from "@buildersbot/contracts/ipc";
 import { sourceText } from "@buildersbot/i18n/source";
 import { createBuildersBotLogger } from "@buildersbot/logging";
@@ -182,7 +183,13 @@ export class AgentTasks implements TaskLanes {
    * which the task keeps as its first message: the brief of a task that the agent starts, the text
    * of the person (empty for a start with only files), else `text`.
    */
-  create(agentId: string, text: string, origin: AgentThreadOrigin, opening = text): AgentThreadRecord {
+  create(
+    agentId: string,
+    text: string,
+    origin: AgentThreadOrigin,
+    opening = text,
+    runtime?: QuickChatRuntime,
+  ): AgentThreadRecord {
     const title = taskTitle(text);
     if (!title) throw new Error(sourceText("error.backend.threadTitleRequired"));
     this.#requireRoom(agentId);
@@ -192,9 +199,22 @@ export class AgentTasks implements TaskLanes {
       text: opening,
       title,
       titleSource: origin === "agent" ? "agent" : "auto",
+      ...(runtime ? { runtime } : {}),
     });
     this.#conversation.registerTaskThread(agentId, task.threadId);
     return task;
+  }
+
+  /** The model of a quick chat conversation, or null when it runs on the model of its agent. */
+  runtimeOf(taskId: string): QuickChatRuntime | null {
+    return this.#store.runtimeOf(taskId);
+  }
+
+  /** Sets the model of a conversation of the agent. The caller checked the model. */
+  setRuntime(agentId: string, taskId: string, runtime: QuickChatRuntime | null): AgentThreadRecord {
+    this.require(agentId, taskId);
+    this.#store.setRuntime(taskId, runtime);
+    return this.require(agentId, taskId);
   }
 
   /**
@@ -614,6 +634,7 @@ export class AgentTasks implements TaskLanes {
       updatedAt: task.updatedAt,
       closedAt: task.closedAt,
       branch: this.#publicBranch(task),
+      ...(task.runtime ? { runtime: task.runtime } : {}),
     };
   }
 
