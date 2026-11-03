@@ -322,7 +322,7 @@ export function WorkspaceShell(props: { account: () => CentralAuthUser }) {
                 </div>
               }
             >
-              <QuickChatPage />
+              <QuickChatPage account={props.account} />
             </Loading>
           </Show>
           <Show when={serverOnboardingOpen() && middlePane() !== "tasks"}>

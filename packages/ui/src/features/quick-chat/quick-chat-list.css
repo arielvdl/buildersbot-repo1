@@ -1,0 +1,208 @@
+/* The list of conversations of the Quick chat, in the column at the start of its page. It has no
+ * surface of its own: the card draws it. A row is a button with a menu button after it. */
+.quick-list {
+  display: flex;
+  width: 17rem;
+  min-height: 0;
+  flex: none;
+  flex-direction: column;
+  gap: var(--buildersbot-space-2);
+  box-sizing: border-box;
+  padding: var(--left-header-height) var(--buildersbot-space-2) var(--buildersbot-space-2);
+  border-right: 1px solid var(--buildersbot-border);
+  color: var(--buildersbot-text-primary);
+}
+
+.quick-list-header {
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  padding: var(--buildersbot-space-2) var(--buildersbot-space-1) 0;
+}
+
+.quick-list-bolt {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+.quick-list-heading {
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-list-new {
+  flex: none;
+}
+
+.quick-list-search {
+  position: relative;
+}
+
+.quick-list-search-icon {
+  position: absolute;
+  top: 50%;
+  left: var(--buildersbot-space-2);
+  width: 14px;
+  height: 14px;
+  color: var(--buildersbot-text-muted);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.quick-list-search .ui-input {
+  padding-left: var(--buildersbot-space-6);
+}
+
+.quick-list-scroll {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--buildersbot-space-2);
+  overflow-y: auto;
+}
+
+.quick-list-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.quick-list-group-title {
+  margin: 0;
+  padding: var(--buildersbot-space-2) var(--buildersbot-space-2) var(--buildersbot-space-1);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-regular);
+}
+
+.quick-list-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.quick-list-row.ui-button {
+  display: flex;
+  min-width: 0;
+  height: auto;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  padding: var(--buildersbot-space-2);
+  text-align: left;
+  white-space: normal;
+}
+
+.quick-list-row.ui-button {
+  color: var(--buildersbot-text-primary);
+}
+
+.quick-list-row[aria-current="true"] {
+  background: var(--buildersbot-bg-control-hover);
+}
+
+.quick-list-line {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+}
+
+.quick-list-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  font-size: var(--buildersbot-text-md);
+  font-weight: var(--buildersbot-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-list-time,
+.quick-list-queued {
+  flex: none;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-regular);
+}
+
+.quick-list-preview {
+  overflow: hidden;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-regular);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The menu button sits over the end of the row and shows for the row that is hovered or has focus. */
+.quick-list-actions.ui-button {
+  position: absolute;
+  top: var(--buildersbot-space-1);
+  right: var(--buildersbot-space-1);
+  opacity: 0;
+}
+
+.quick-list-item:focus-within .quick-list-actions,
+.quick-list-actions[data-expanded] {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .quick-list-item:hover .quick-list-actions {
+    opacity: 1;
+  }
+}
+
+.quick-list-archived-toggle.ui-button {
+  justify-content: flex-start;
+  gap: var(--buildersbot-space-1);
+}
+
+.quick-list-chevron {
+  width: 14px;
+  height: 14px;
+}
+
+.quick-list-chevron[data-open] {
+  transform: rotate(90deg);
+}
+
+.quick-list-empty {
+  margin: var(--buildersbot-space-4) var(--buildersbot-space-2);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.quick-list-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--buildersbot-space-2);
+  padding: var(--buildersbot-space-2);
+}
+
+.quick-list-skeleton {
+  height: 2.5rem;
+}
+
+.quick-list-owner {
+  color: var(--buildersbot-text-secondary);
+  font-weight: var(--buildersbot-weight-medium);
+}
+
+.quick-list-count {
+  color: var(--buildersbot-text-muted);
+  font-weight: var(--buildersbot-weight-regular);
+}
+
+.quick-list-search .ui-input {
+  font-size: var(--buildersbot-text-md);
+}
