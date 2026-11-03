@@ -20,8 +20,8 @@ export interface MailboxSyncHooks {
   emitError(code: string, error: unknown, agentId?: string): void;
   /** What holds the queue back, when the reason is not this agent's own running turn. */
   queueHold(agentId: string): QueueHold | null;
-  /** A delivery of a message that an agent sent from a side thread changed. */
-  taskOutgoingChanged(agentId: string, taskId: string): void;
+  /** The queue of this agent changed: a side thread that sent it a message may have new rows to show. */
+  taskOutgoingChanged(recipientAgentId: string): void;
 }
 
 export interface MailboxSyncOptions {
@@ -185,8 +185,7 @@ export class MailboxSync {
         this.#conversation.publishConversation(snapshot);
     }
     // A request from a side thread is in no agent's own chat, so its sender's thread is told apart.
-    for (const sender of this.#mailbox.senderTasksForRecipient(agentId))
-      this.#hooks.taskOutgoingChanged(sender.agentId, sender.taskId);
+    this.#hooks.taskOutgoingChanged(agentId);
   }
 
   retryDeliveryReconciliation(agentId: string, turnId?: string, deliveryIds: readonly string[] = []): void {

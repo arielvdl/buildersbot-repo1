@@ -113,6 +113,12 @@ export class AgentTasks implements TaskLanes {
   readonly #branches = Semaphore.makeUnsafe(1);
   /** What the last event gave a Quick chat conversation of the questions that it sent, by task id. */
   readonly #outgoingSignatures = new Map<string, string>();
+  /**
+   * The Quick chat tasks that sent a question to each agent, by the agent that got it. A queue change of any
+   * agent asks this first, so it costs a lookup and not a read of the mailbox. A task that is closed leaves it when
+   * its agent next changes. It starts empty: reading a conversation (`#withOutgoing`) fills it from the mailbox.
+   */
+  readonly #outgoingTo = new Map<string, Set<string>>();
 
   constructor(options: AgentTasksOptions) {
     this.#store = options.store;
@@ -175,18 +181,52 @@ export class AgentTasks implements TaskLanes {
     if (this.#hooks.agent(task.agentId)?.quickChat !== true) return snapshot;
     const rows = this.#mailbox.taskOutgoingMessages(task.agentId, task.taskId);
     this.#outgoingSignatures.set(task.taskId, JSON.stringify(rows.map((row) => row.exchange)));
+    for (const row of rows)
+      for (const recipientId of row.exchange?.recipientAgentIds ?? []) this.#noteOutgoing(recipientId, task.taskId);
     if (rows.length === 0) return snapshot;
     const messages = [...snapshot.messages, ...rows];
     sortConversationMessages(messages);
     return { ...snapshot, messages };
   }
 
+  #noteOutgoing(recipientId: string, taskId: string): void {
+    const tasks = this.#outgoingTo.get(recipientId) ?? new Set<string>();
+    tasks.add(taskId);
+    this.#outgoingTo.set(recipientId, tasks);
+  }
+
   /**
-   * A delivery of a question that a Quick chat task sent changed: the task's conversation goes out again with the
-   * new rows. It does nothing for any other task, and when the rows did not change.
+   * A task of `agentId` sent a message to `recipientIds`. For a Quick chat task, the question is a row of its
+   * conversation from now on, and the conversation goes out with it. Any other task is left as it is.
    */
-  outgoingChanged(agentId: string, taskId: string): void {
+  outgoingSent(agentId: string, taskId: string, recipientIds: readonly string[]): void {
     if (this.#hooks.agent(agentId)?.quickChat !== true) return;
+    for (const recipientId of recipientIds) this.#noteOutgoing(recipientId, taskId);
+    this.#sendOutgoing(agentId, taskId);
+  }
+
+  /**
+   * The queue of `recipientId` changed: a delivery of a question that a Quick chat task sent to it may have
+   * changed, so that task's conversation goes out again with the new rows. It is a lookup for an agent that no
+   * Quick chat task asked, which is almost every agent.
+   */
+  outgoingTouched(recipientId: string): void {
+    const tasks = this.#outgoingTo.get(recipientId);
+    if (!tasks) return;
+    for (const taskId of [...tasks]) {
+      const task = this.#store.task(taskId);
+      if (!task || task.closedAt !== null) {
+        tasks.delete(taskId);
+        this.#outgoingSignatures.delete(taskId);
+        continue;
+      }
+      this.#sendOutgoing(task.agentId, taskId);
+    }
+    if (tasks.size === 0) this.#outgoingTo.delete(recipientId);
+  }
+
+  /** The conversation of a Quick chat task goes out again, when the rows of its questions are not the ones it last got. */
+  #sendOutgoing(agentId: string, taskId: string): void {
     const task = this.#store.task(taskId);
     if (!task || task.agentId !== agentId || task.closedAt !== null) return;
     const snapshot = this.#conversation.loadedExecutionSnapshot(task.threadId);

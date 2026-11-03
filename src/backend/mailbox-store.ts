@@ -1580,22 +1580,6 @@ export class MailboxStore {
     );
   }
 
-  /** The side threads whose messages `agentId` received: one entry for each agent and thread that sent one. */
-  senderTasksForRecipient(agentId: string): Array<{ agentId: string; taskId: string }> {
-    const found = new Map<string, { agentId: string; taskId: string }>();
-    const messages = this.#messagesById();
-    for (const delivery of this.#state.deliveries) {
-      if (delivery.recipientAgentId !== agentId) continue;
-      const message = this.#requireMessage(delivery.messageId, messages);
-      if (message.sender.kind !== "agent" || !message.senderTaskId) continue;
-      found.set(`${message.sender.agentId}:${message.senderTaskId}`, {
-        agentId: message.sender.agentId,
-        taskId: message.senderTaskId,
-      });
-    }
-    return [...found.values()];
-  }
-
   reactionFor(
     agentId: string,
     messageId: string,

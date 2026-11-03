@@ -2279,6 +2279,8 @@ export class BuildersBotToolRouter {
           idempotencyKey: toolCallIdempotencyKey(params),
         })
         .pipe(toToolOperationFailed);
+      // A request from a Quick chat conversation is a row of that conversation, which the agent strip reads.
+      if (senderTaskId) this.#tasks.outgoingSent(senderAgentId, senderTaskId, recipientValues);
       for (const delivery of receipt.deliveries) {
         yield* this.#hooks.steerAgentMessage(delivery.recipientAgentId, delivery.id);
         this.#mailboxSync.emitQueue(delivery.recipientAgentId);

@@ -135,9 +135,11 @@ conversation: one row for each message that the quick chat agent sent, with the 
 A request that an agent sends from a side thread stays out of its own chat, and the thread keeps no row of it. For
 the quick chat agent only, `AgentTasks.#withOutgoing` adds these rows when the conversation is read and when it is
 sent to the renderer (`MailboxStore.taskOutgoingMessages`). The rows are never stored, so a restart cannot leave one
-that says an agent still works. `MailboxSync.emitQueue` calls `AgentTasks.outgoingChanged` when a delivery of such a
-message changes, and the conversation goes out again only when its rows changed. The tasks of every other agent are
-returned as they were.
+that says an agent still works. The router tells `AgentTasks.outgoingSent` when the conversation sends a message,
+and `MailboxSync.emitQueue` calls `AgentTasks.outgoingTouched` with the agent whose queue changed. `AgentTasks` keeps
+which Quick chat tasks asked each agent, so a queue change of any other agent is a lookup and reads nothing of the
+mailbox (`scripts/mailbox-sync-cost-e2e.ts` counts the reads). The conversation goes out again only when its rows
+changed. The tasks of every other agent are returned as they were.
 
 The conversation does not draw these rows (`AgentThreadView` leaves them out). The strip counts an ended delivery as
 an agent that answered (`keepEnded`), for the questions that came after the last message of the person, because the
@@ -191,3 +193,7 @@ the way in, the 51st conversation and `warm`. It writes `.buildersbot-build/quic
 the MCP bridge. A fake CLI turn calls `send_message` as an agent does. It checks the answer, each message that stays
 unknown, `list_agents` and `interrupt_agent`, and the Team API. It writes
 `.buildersbot-build/quick-chat-replies-e2e/report.json`.
+
+`bun run test:mailbox-sync-cost` (`scripts/mailbox-sync-cost-e2e.ts`) seeds 10,000 deliveries between 40 agents, and checks
+that a queue change reads the queue and the senders of its agent once each, and tells the Quick chat tasks once with the
+agent whose queue changed. It writes the time of a queue change to `.buildersbot-build/mailbox-sync-cost-e2e/report.json`.
