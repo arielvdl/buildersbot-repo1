@@ -81,4 +81,19 @@ export const messages = {
     "{name} krijgt volledige toegang. De agent voert commando’s en tools uit, wijzigt bestanden, publiceert sites en verruimt zijn eigen bestandssysteem- en netwerktoegang op de computer waarop hij draait, zonder het opnieuw te vragen. Je kunt dit wijzigen in de instellingen voor Machtigingen van de agent.",
   "app.standingApproval.descriptionUnnamed":
     "Deze agent krijgt volledige toegang. De agent voert commando’s en tools uit, wijzigt bestanden, publiceert sites en verruimt zijn eigen bestandssysteem- en netwerktoegang op de computer waarop hij draait, zonder het opnieuw te vragen. Je kunt dit wijzigen in de instellingen voor Machtigingen van de agent.",
+  "app.feed.tables.label": "Tafels van de projecten aan het werk",
+  "app.feed.tables.title": "Nu aan het werk",
+  "app.feed.tables.empty": "Niemand is nu aan het werk",
+  "app.feed.tables.folded": { one: "{count} tafel ingeklapt", other: "{count} tafels ingeklapt" },
+  "app.feed.tables.show": "Tafels tonen",
+  "app.feed.tables.fold": "Tafels inklappen",
+  "app.feed.tables.more": "+{count}",
+  "app.feed.tables.moreProjectsLabel": {
+    one: "Nog {count} project aan het werk",
+    other: "Nog {count} projecten aan het werk",
+  },
+  "app.feed.tables.filterBy": "Alleen {name} tonen",
+  "app.feed.tables.now": "Nu: {title}",
+  "app.feed.tables.working": { one: "{count} aan het werk", other: "{count} aan het werk" },
+  "app.feed.tables.needsYou": { one: "{count} wacht op jou", other: "{count} wachten op jou" },
 } as const satisfies PartialTranslation<typeof source>;

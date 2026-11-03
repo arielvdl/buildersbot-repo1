@@ -81,4 +81,19 @@ export const messages = {
     "{name} はフルアクセスに変わります。実行しているコンピューター上で、確認なしにコマンドやツールを実行し、ファイルを変更し、サイトを公開し、自身のファイルシステムとネットワークへのアクセスを広げます。これはエージェントの権限設定で変更できます。",
   "app.standingApproval.descriptionUnnamed":
     "このエージェントはフルアクセスに変わります。実行しているコンピューター上で、確認なしにコマンドやツールを実行し、ファイルを変更し、サイトを公開し、自身のファイルシステムとネットワークへのアクセスを広げます。これはエージェントの権限設定で変更できます。",
+  "app.feed.tables.label": "作業中のプロジェクトのテーブル",
+  "app.feed.tables.title": "いま作業中",
+  "app.feed.tables.empty": "いま作業中のエージェントはいません",
+  "app.feed.tables.folded": { one: "折りたたんだテーブル {count} 件", other: "折りたたんだテーブル {count} 件" },
+  "app.feed.tables.show": "テーブルを表示",
+  "app.feed.tables.fold": "テーブルを折りたたむ",
+  "app.feed.tables.more": "+{count}",
+  "app.feed.tables.moreProjectsLabel": {
+    one: "作業中のプロジェクトがほかに {count} 件",
+    other: "作業中のプロジェクトがほかに {count} 件",
+  },
+  "app.feed.tables.filterBy": "{name} だけを表示",
+  "app.feed.tables.now": "いま: {title}",
+  "app.feed.tables.working": { one: "{count} 件作業中", other: "{count} 件作業中" },
+  "app.feed.tables.needsYou": { one: "{count} 件があなたを待っています", other: "{count} 件があなたを待っています" },
 } as const satisfies PartialTranslation<typeof source>;

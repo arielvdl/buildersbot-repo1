@@ -83,4 +83,16 @@ export const messages = {
     "{name} 将升级为完全访问权限。它会在运行它的电脑上直接执行命令和工具、修改文件、发布站点，并扩大自身的文件系统与网络访问范围，不再询问。你可以在该助手的权限设置中更改。",
   "app.standingApproval.descriptionUnnamed":
     "该助手将升级为完全访问权限。它会在运行它的电脑上直接执行命令和工具、修改文件、发布站点，并扩大自身的文件系统与网络访问范围，不再询问。你可以在该助手的权限设置中更改。",
+  "app.feed.tables.label": "正在工作的项目的桌子",
+  "app.feed.tables.title": "正在工作",
+  "app.feed.tables.empty": "现在没有助手在工作",
+  "app.feed.tables.folded": { one: "已收起 {count} 张桌子", other: "已收起 {count} 张桌子" },
+  "app.feed.tables.show": "显示桌子",
+  "app.feed.tables.fold": "收起桌子",
+  "app.feed.tables.more": "+{count}",
+  "app.feed.tables.moreProjectsLabel": { one: "另有 {count} 个项目在工作", other: "另有 {count} 个项目在工作" },
+  "app.feed.tables.filterBy": "只显示 {name}",
+  "app.feed.tables.now": "现在：{title}",
+  "app.feed.tables.working": { one: "{count} 个在工作", other: "{count} 个在工作" },
+  "app.feed.tables.needsYou": { one: "{count} 个需要你", other: "{count} 个需要你" },
 } as const satisfies PartialTranslation<typeof source>;

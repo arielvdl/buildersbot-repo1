@@ -82,4 +82,19 @@ export const messages = {
     "{name} passa ad Accesso completo. Eseguirà comandi e tool, modificherà file, pubblicherà siti e amplierà il proprio accesso al file system e alla rete sul computer che lo esegue, senza chiedere di nuovo. Puoi cambiarlo nelle impostazioni Permessi dell'agente.",
   "app.standingApproval.descriptionUnnamed":
     "Questo agente passa ad Accesso completo. Eseguirà comandi e tool, modificherà file, pubblicherà siti e amplierà il proprio accesso al file system e alla rete sul computer che lo esegue, senza chiedere di nuovo. Puoi cambiarlo nelle impostazioni Permessi dell'agente.",
+  "app.feed.tables.label": "Tavoli dei progetti in corso",
+  "app.feed.tables.title": "In corso adesso",
+  "app.feed.tables.empty": "Nessuno sta lavorando adesso",
+  "app.feed.tables.folded": { one: "{count} tavolo chiuso", other: "{count} tavoli chiusi" },
+  "app.feed.tables.show": "Mostra i tavoli",
+  "app.feed.tables.fold": "Chiudi i tavoli",
+  "app.feed.tables.more": "+{count}",
+  "app.feed.tables.moreProjectsLabel": {
+    one: "{count} altro progetto in corso",
+    other: "{count} altri progetti in corso",
+  },
+  "app.feed.tables.filterBy": "Mostra solo {name}",
+  "app.feed.tables.now": "Ora: {title}",
+  "app.feed.tables.working": { one: "{count} al lavoro", other: "{count} al lavoro" },
+  "app.feed.tables.needsYou": { one: "{count} ha bisogno di te", other: "{count} hanno bisogno di te" },
 } as const satisfies PartialTranslation<typeof source>;

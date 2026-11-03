@@ -83,4 +83,36 @@ export const messages = {
     "Agent {name} przechodzi na Pełny dostęp. Będzie uruchamiać polecenia i narzędzia, zmieniać pliki, publikować witryny oraz rozszerzać własny dostęp do systemu plików i sieci na komputerze, na którym działa, bez ponownego pytania. Możesz to zmienić w ustawieniach Dostęp agenta.",
   "app.standingApproval.descriptionUnnamed":
     "Ten agent przechodzi na Pełny dostęp. Będzie uruchamiać polecenia i narzędzia, zmieniać pliki, publikować witryny oraz rozszerzać własny dostęp do systemu plików i sieci na komputerze, na którym działa, bez ponownego pytania. Możesz to zmienić w ustawieniach Dostęp agenta.",
+  "app.feed.tables.label": "Stoły projektów w pracy",
+  "app.feed.tables.title": "Teraz w pracy",
+  "app.feed.tables.empty": "Nikt teraz nie pracuje",
+  "app.feed.tables.folded": {
+    one: "{count} stół zwinięty",
+    few: "{count} stoły zwinięte",
+    many: "{count} stołów zwiniętych",
+    other: "{count} stołu zwiniętego",
+  },
+  "app.feed.tables.show": "Pokaż stoły",
+  "app.feed.tables.fold": "Zwiń stoły",
+  "app.feed.tables.more": "+{count}",
+  "app.feed.tables.moreProjectsLabel": {
+    one: "Jeszcze {count} projekt w pracy",
+    few: "Jeszcze {count} projekty w pracy",
+    many: "Jeszcze {count} projektów w pracy",
+    other: "Jeszcze {count} projektów w pracy",
+  },
+  "app.feed.tables.filterBy": "Pokaż tylko {name}",
+  "app.feed.tables.now": "Teraz: {title}",
+  "app.feed.tables.working": {
+    one: "{count} pracuje",
+    few: "{count} pracują",
+    many: "{count} pracuje",
+    other: "{count} pracuje",
+  },
+  "app.feed.tables.needsYou": {
+    one: "{count} czeka na ciebie",
+    few: "{count} czekają na ciebie",
+    many: "{count} czeka na ciebie",
+    other: "{count} czeka na ciebie",
+  },
 } as const satisfies PartialTranslation<typeof source>;

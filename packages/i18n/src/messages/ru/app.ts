@@ -84,4 +84,36 @@ export const messages = {
     "{name} получает «Полный доступ». Агент будет выполнять команды и инструменты, изменять файлы, публиковать сайты и расширять собственный доступ к файловой системе и сети на компьютере, где работает, без повторных вопросов. Это можно изменить в настройках «Доступ» агента.",
   "app.standingApproval.descriptionUnnamed":
     "Этот агент получает «Полный доступ». Он будет выполнять команды и инструменты, изменять файлы, публиковать сайты и расширять собственный доступ к файловой системе и сети на компьютере, где работает, без повторных вопросов. Это можно изменить в настройках «Доступ» агента.",
+  "app.feed.tables.label": "Столы проектов в работе",
+  "app.feed.tables.title": "Сейчас в работе",
+  "app.feed.tables.empty": "Сейчас никто не работает",
+  "app.feed.tables.folded": {
+    one: "{count} стол свёрнут",
+    few: "{count} стола свёрнуты",
+    many: "{count} столов свёрнуто",
+    other: "{count} стола свёрнуто",
+  },
+  "app.feed.tables.show": "Показать столы",
+  "app.feed.tables.fold": "Свернуть столы",
+  "app.feed.tables.more": "+{count}",
+  "app.feed.tables.moreProjectsLabel": {
+    one: "Ещё {count} проект в работе",
+    few: "Ещё {count} проекта в работе",
+    many: "Ещё {count} проектов в работе",
+    other: "Ещё {count} проекта в работе",
+  },
+  "app.feed.tables.filterBy": "Показать только {name}",
+  "app.feed.tables.now": "Сейчас: {title}",
+  "app.feed.tables.working": {
+    one: "{count} работает",
+    few: "{count} работают",
+    many: "{count} работает",
+    other: "{count} работает",
+  },
+  "app.feed.tables.needsYou": {
+    one: "{count} ждёт вас",
+    few: "{count} ждут вас",
+    many: "{count} ждёт вас",
+    other: "{count} ждёт вас",
+  },
 } as const satisfies PartialTranslation<typeof source>;

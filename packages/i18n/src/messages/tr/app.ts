@@ -81,4 +81,16 @@ export const messages = {
     "{name} Tam erişime geçer. Onu çalıştıran bilgisayarda tekrar sormadan komut ve araç çalıştıracak, dosyaları değiştirecek, site yayımlayacak ve kendi dosya sistemi ile ağ erişimini genişletecektir. Bunu ajanın İzinler ayarlarından değiştirebilirsiniz.",
   "app.standingApproval.descriptionUnnamed":
     "Bu ajan Tam erişime geçer. Onu çalıştıran bilgisayarda tekrar sormadan komut ve araç çalıştıracak, dosyaları değiştirecek, site yayımlayacak ve kendi dosya sistemi ile ağ erişimini genişletecektir. Bunu ajanın İzinler ayarlarından değiştirebilirsiniz.",
+  "app.feed.tables.label": "Çalışan projelerin masaları",
+  "app.feed.tables.title": "Şu anda çalışıyor",
+  "app.feed.tables.empty": "Şu anda kimse çalışmıyor",
+  "app.feed.tables.folded": { one: "{count} masa katlandı", other: "{count} masa katlandı" },
+  "app.feed.tables.show": "Masaları göster",
+  "app.feed.tables.fold": "Masaları katla",
+  "app.feed.tables.more": "+{count}",
+  "app.feed.tables.moreProjectsLabel": { one: "{count} proje daha çalışıyor", other: "{count} proje daha çalışıyor" },
+  "app.feed.tables.filterBy": "Yalnız {name} göster",
+  "app.feed.tables.now": "Şimdi: {title}",
+  "app.feed.tables.working": { one: "{count} çalışıyor", other: "{count} çalışıyor" },
+  "app.feed.tables.needsYou": { one: "{count} sizi bekliyor", other: "{count} sizi bekliyor" },
 } as const satisfies PartialTranslation<typeof source>;

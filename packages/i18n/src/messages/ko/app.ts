@@ -76,4 +76,19 @@ export const messages = {
     "{name}이(가) 전체 접근 권한으로 전환돼요. 이후에는 다시 묻지 않고 명령과 도구를 실행하고, 파일을 변경하고, 사이트를 게시하고, 실행 중인 컴퓨터에서 파일 시스템과 네트워크 접근 범위를 스스로 넓혀요. 에이전트의 권한 설정에서 변경할 수 있어요.",
   "app.standingApproval.descriptionUnnamed":
     "이 에이전트가 전체 접근 권한으로 전환돼요. 이후에는 다시 묻지 않고 명령과 도구를 실행하고, 파일을 변경하고, 사이트를 게시하고, 실행 중인 컴퓨터에서 파일 시스템과 네트워크 접근 범위를 스스로 넓혀요. 에이전트의 권한 설정에서 변경할 수 있어요.",
+  "app.feed.tables.label": "작업 중인 프로젝트의 테이블",
+  "app.feed.tables.title": "지금 작업 중",
+  "app.feed.tables.empty": "지금 작업 중인 에이전트가 없어요",
+  "app.feed.tables.folded": { one: "접힌 테이블 {count}개", other: "접힌 테이블 {count}개" },
+  "app.feed.tables.show": "테이블 보기",
+  "app.feed.tables.fold": "테이블 접기",
+  "app.feed.tables.more": "+{count}",
+  "app.feed.tables.moreProjectsLabel": {
+    one: "작업 중인 프로젝트 {count}개 더",
+    other: "작업 중인 프로젝트 {count}개 더",
+  },
+  "app.feed.tables.filterBy": "{name}만 보기",
+  "app.feed.tables.now": "지금: {title}",
+  "app.feed.tables.working": { one: "{count}개 작업 중", other: "{count}개 작업 중" },
+  "app.feed.tables.needsYou": { one: "{count}개 확인 필요", other: "{count}개 확인 필요" },
 } as const satisfies PartialTranslation<typeof source>;

@@ -82,4 +82,19 @@ export const messages = {
     "{name} passe en Accès complet. Il exécutera des commandes et des outils, modifiera des fichiers, publiera des sites et élargira son propre accès au système de fichiers et au réseau sur l’ordinateur qui l’exécute, sans vous demander à nouveau. Vous pouvez changer cela dans les réglages Accès de l’agent.",
   "app.standingApproval.descriptionUnnamed":
     "Cet agent passe en Accès complet. Il exécutera des commandes et des outils, modifiera des fichiers, publiera des sites et élargira son propre accès au système de fichiers et au réseau sur l’ordinateur qui l’exécute, sans vous demander à nouveau. Vous pouvez changer cela dans les réglages Accès de l’agent.",
+  "app.feed.tables.label": "Tables des projets en cours",
+  "app.feed.tables.title": "En cours maintenant",
+  "app.feed.tables.empty": "Personne ne travaille maintenant",
+  "app.feed.tables.folded": { one: "{count} table repliée", other: "{count} tables repliées" },
+  "app.feed.tables.show": "Afficher les tables",
+  "app.feed.tables.fold": "Replier les tables",
+  "app.feed.tables.more": "+{count}",
+  "app.feed.tables.moreProjectsLabel": {
+    one: "{count} autre projet en cours",
+    other: "{count} autres projets en cours",
+  },
+  "app.feed.tables.filterBy": "Afficher seulement {name}",
+  "app.feed.tables.now": "Maintenant : {title}",
+  "app.feed.tables.working": { one: "{count} au travail", other: "{count} au travail" },
+  "app.feed.tables.needsYou": { one: "{count} en attente de vous", other: "{count} en attente de vous" },
 } as const satisfies PartialTranslation<typeof source>;

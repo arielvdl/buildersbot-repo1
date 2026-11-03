@@ -81,4 +81,19 @@ export const messages = {
     "{name} wechselt zu Voller Zugriff. Der Agent führt dann Befehle und Tools aus, ändert Dateien, veröffentlicht Websites und erweitert den eigenen Dateisystem- und Netzwerkzugriff auf dem ausführenden Computer ohne erneute Rückfrage. Du kannst das in den Zugriff-Einstellungen des Agenten ändern.",
   "app.standingApproval.descriptionUnnamed":
     "Dieser Agent wechselt zu Voller Zugriff. Er führt dann Befehle und Tools aus, ändert Dateien, veröffentlicht Websites und erweitert den eigenen Dateisystem- und Netzwerkzugriff auf dem ausführenden Computer ohne erneute Rückfrage. Du kannst das in den Zugriff-Einstellungen des Agenten ändern.",
+  "app.feed.tables.label": "Tische der Projekte in Arbeit",
+  "app.feed.tables.title": "Jetzt in Arbeit",
+  "app.feed.tables.empty": "Gerade arbeitet niemand",
+  "app.feed.tables.folded": { one: "{count} Tisch eingeklappt", other: "{count} Tische eingeklappt" },
+  "app.feed.tables.show": "Tische anzeigen",
+  "app.feed.tables.fold": "Tische einklappen",
+  "app.feed.tables.more": "+{count}",
+  "app.feed.tables.moreProjectsLabel": {
+    one: "{count} weiteres Projekt in Arbeit",
+    other: "{count} weitere Projekte in Arbeit",
+  },
+  "app.feed.tables.filterBy": "Nur {name} anzeigen",
+  "app.feed.tables.now": "Jetzt: {title}",
+  "app.feed.tables.working": { one: "{count} arbeitet", other: "{count} arbeiten" },
+  "app.feed.tables.needsYou": { one: "{count} braucht dich", other: "{count} brauchen dich" },
 } as const satisfies PartialTranslation<typeof source>;
