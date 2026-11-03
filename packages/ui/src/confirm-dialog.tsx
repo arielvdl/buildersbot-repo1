@@ -41,7 +41,7 @@ export interface ConfirmDialogProps {
   /** Marks the dialog pending in addition to a pending `onConfirm` promise. */
   pending?: boolean;
   /** Disables the confirm button while the dialog still lacks an answer, such as a choice the body asks for. */
-  confirmDisabled?: boolean;
+  confirmDisabled?: boolean | undefined;
   error?: JSX.Element;
   /** The button that gets focus when the dialog opens. */
   initialFocus?: "confirm" | "cancel";
