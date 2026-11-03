@@ -1,0 +1,406 @@
+/*
+ * The agent stage kit (`features/stage/`): the table, the agents round it, the links and the speech
+ * bubble, shared by the stage of a channel and the tables of the feed. Every animation here moves
+ * `transform` or `opacity` only. Positions come from the components, in pixels, so no rule reads the
+ * layout. The root of a board takes `data-paused` while it is off screen or the window is hidden, and
+ * that one attribute pauses every loop below it.
+ */
+
+.agent-stage-board {
+  position: absolute;
+  inset: 0;
+}
+
+/* The table */
+.agent-stage-table {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.agent-stage-table-top {
+  fill: var(--buildersbot-bg-surface-raised);
+  stroke: var(--buildersbot-border);
+}
+
+.agent-stage-table-left {
+  fill: var(--buildersbot-bg-frame);
+}
+
+.agent-stage-table-right {
+  fill: var(--buildersbot-bg-surface);
+}
+
+.agent-stage-table-grid {
+  fill: none;
+  stroke: var(--buildersbot-border);
+  opacity: 0.6;
+}
+
+/* Hand-offs */
+.agent-stage-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.agent-stage-link {
+  fill: none;
+  stroke-dasharray: 3 7;
+  stroke-width: 1.6;
+  opacity: 0.55;
+}
+
+.agent-stage-packet {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  z-index: 900;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+}
+
+.agent-stage-packet .agent-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* An actor */
+.agent-stage-actors {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-stage-actor {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.agent-stage-figure {
+  position: absolute;
+  bottom: 0;
+  left: calc(var(--stage-width) / -2);
+  width: var(--stage-width);
+  height: var(--stage-height);
+  transform-origin: 50% 100%;
+}
+
+.agent-stage-hop,
+.agent-stage-body {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%;
+}
+
+.agent-stage-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* The provider and the model, above the agent. Static. */
+.agent-stage-model {
+  position: absolute;
+  bottom: calc(100% + var(--buildersbot-space-1));
+  left: 50%;
+  display: flex;
+  max-width: 140px;
+  align-items: center;
+  gap: var(--buildersbot-space-1);
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+  line-height: 1;
+  white-space: nowrap;
+  translate: -50% 0;
+}
+
+.agent-stage-model > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-stage-model-logo {
+  width: var(--buildersbot-icon-sm);
+  height: var(--buildersbot-icon-sm);
+  flex: none;
+  fill: currentcolor;
+}
+
+/* The name under the feet */
+.agent-stage-name {
+  position: absolute;
+  top: var(--buildersbot-space-2);
+  left: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--buildersbot-space-1-5);
+  font-size: var(--buildersbot-text-sm);
+  white-space: nowrap;
+  translate: -50% 0;
+}
+
+.agent-stage-name-text {
+  color: var(--buildersbot-text-primary);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.agent-stage-verb {
+  color: var(--buildersbot-text-muted);
+}
+
+.agent-stage-actor[data-activity="waiting"] .agent-stage-verb {
+  color: var(--buildersbot-accent-text);
+}
+
+.agent-stage-actor[data-activity="failed"] .agent-stage-verb {
+  color: var(--buildersbot-danger-text);
+}
+
+/* The speech bubble: opens to the outside of the table */
+.agent-stage-bubble {
+  position: absolute;
+  bottom: calc(var(--stage-height) * 0.5);
+  width: max-content;
+  min-width: 0;
+  max-width: var(--stage-bubble-max, 210px);
+  padding: var(--buildersbot-space-1-5) var(--buildersbot-space-3);
+  border: 1px solid var(--buildersbot-border-strong);
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-bg-surface-raised);
+  color: var(--buildersbot-text-primary);
+  font-size: var(--buildersbot-text-md);
+  line-height: var(--buildersbot-leading-md);
+}
+
+/* A bubble of the front row opens low, so it stays under the name of the agent beside and above it. */
+.agent-stage-actor[data-front] .agent-stage-bubble {
+  bottom: calc(var(--stage-height) * 0.05);
+}
+
+.agent-stage-actor[data-anchor="right"] .agent-stage-bubble {
+  left: calc(var(--stage-width) / 2 + var(--buildersbot-space-2));
+}
+
+.agent-stage-actor[data-anchor="left"] .agent-stage-bubble {
+  right: calc(var(--stage-width) / 2 + var(--buildersbot-space-2));
+}
+
+.agent-stage-bubble[data-tone="waiting"] {
+  border-color: var(--buildersbot-accent);
+}
+
+.agent-stage-bubble[data-tone="failed"] {
+  border-color: var(--buildersbot-danger-border);
+}
+
+.agent-stage-bubble-tone {
+  display: block;
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.agent-stage-bubble[data-tone="waiting"] .agent-stage-bubble-tone {
+  color: var(--buildersbot-accent-text);
+}
+
+.agent-stage-bubble[data-tone="failed"] .agent-stage-bubble-tone {
+  color: var(--buildersbot-danger-text);
+}
+
+.agent-stage-bubble[data-tone="done"] .agent-stage-bubble-tone {
+  color: var(--buildersbot-success-text);
+}
+
+/* The text of the bubble comes in with a fade. It is not typed letter by letter. */
+.agent-stage-bubble-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  animation: agent-stage-fade var(--buildersbot-duration-normal) var(--buildersbot-ease-out);
+}
+
+/* The motion of each activity: one loop on the body, `transform` only */
+.agent-stage-actor[data-activity="done"] .agent-stage-body {
+  animation: agent-stage-breathe 3.2s ease-in-out infinite;
+}
+
+.agent-stage-actor[data-activity="thinking"] .agent-stage-body {
+  animation: agent-stage-float 2.6s ease-in-out infinite;
+}
+
+.agent-stage-actor[data-activity="reading"] .agent-stage-body {
+  animation: agent-stage-scan 2.4s ease-in-out infinite;
+}
+
+.agent-stage-actor[data-activity="editing"] .agent-stage-body {
+  animation: agent-stage-type 0.38s ease-in-out infinite;
+}
+
+.agent-stage-actor[data-activity="running"] .agent-stage-body {
+  animation: agent-stage-buzz 0.24s linear infinite;
+}
+
+.agent-stage-actor[data-activity="waiting"] .agent-stage-body {
+  animation: agent-stage-nudge 2.1s var(--buildersbot-ease-out) infinite;
+}
+
+.agent-stage-actor[data-activity="delegating"] .agent-stage-body {
+  animation: agent-stage-breathe 3.2s ease-in-out infinite;
+}
+
+.agent-stage-actor[data-lean="left"] .agent-stage-hop {
+  transform: rotate(-8deg);
+}
+
+.agent-stage-actor[data-lean="right"] .agent-stage-hop {
+  transform: rotate(8deg);
+}
+
+.agent-stage-actor[data-activity="failed"] .agent-stage-body {
+  transform: translateY(4px) rotate(6deg);
+}
+
+@keyframes agent-stage-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes agent-stage-breathe {
+  0%,
+  100% {
+    transform: none;
+  }
+
+  50% {
+    transform: scale(1.022, 0.978);
+  }
+}
+
+@keyframes agent-stage-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+
+@keyframes agent-stage-scan {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+@keyframes agent-stage-type {
+  0%,
+  100% {
+    transform: none;
+  }
+
+  40% {
+    transform: translateY(-3px) scale(1.012, 0.988);
+  }
+}
+
+@keyframes agent-stage-buzz {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  25% {
+    transform: translate(0.8px, -0.7px);
+  }
+
+  50% {
+    transform: translate(0, 0.6px);
+  }
+
+  75% {
+    transform: translate(-0.8px, -0.4px);
+  }
+}
+
+@keyframes agent-stage-nudge {
+  0%,
+  55%,
+  100% {
+    transform: none;
+  }
+
+  12% {
+    transform: translateY(-9px);
+  }
+
+  24% {
+    transform: none;
+  }
+
+  34% {
+    transform: translateY(-4px);
+  }
+
+  44% {
+    transform: none;
+  }
+}
+
+/* One attribute pauses every loop while the stage is off screen or the window is hidden. */
+.agent-stage-board[data-paused] .agent-stage-actor[data-activity] .agent-stage-body {
+  animation-play-state: paused;
+}
+
+/* Without motion: no loops. The strip and the bubble keep their short fades. */
+@media (prefers-reduced-motion: reduce) {
+  .agent-stage-actor[data-activity] .agent-stage-body {
+    animation: none;
+  }
+}
+
+/* The cube as a button: a clear layer over the figure, with a ring while chosen. */
+.agent-stage-hit {
+  position: absolute;
+  bottom: 0;
+  left: calc(var(--stage-width) / -2);
+  z-index: 1;
+  width: var(--stage-width);
+  height: var(--stage-height);
+  min-width: 0;
+  padding: 0;
+  border-radius: var(--buildersbot-radius-lg);
+  background: transparent;
+}
+
+.agent-stage-actor[data-selected] .agent-stage-hit {
+  outline: 1px solid var(--buildersbot-accent);
+  outline-offset: var(--buildersbot-space-1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .agent-stage-hit:hover {
+    background: color-mix(in srgb, var(--buildersbot-text-primary) 6%, transparent);
+  }
+}

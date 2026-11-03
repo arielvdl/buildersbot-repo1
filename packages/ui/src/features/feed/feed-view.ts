@@ -4,7 +4,7 @@
  * cards arrive in timeline order, the newest last, and every function here keeps that order.
  */
 
-import type { AvatarHue, FeedItem, FeedItemState } from "@buildersbot/contracts/ipc";
+import type { FeedItem, FeedItemState } from "@buildersbot/contracts/ipc";
 import type { AppTextKey } from "@buildersbot/i18n";
 
 export const FEED_GROUPS = ["time", "project", "agent"] as const;
@@ -156,15 +156,6 @@ export function feedProjectOptions(items: readonly FeedItem[]): FeedOption[] {
 
 export function feedAgentOptions(items: readonly FeedItem[]): FeedOption[] {
   return options(items, feedAgentKey, (item) => item.agentName || null);
-}
-
-/** The face of an agent on a card. Agents of other servers have none here: their cards use the id as the seed. */
-export interface FeedAgentAvatar {
-  /** A key of `feedAgentKey`. */
-  key: string;
-  avatarSeed: string;
-  avatarHue: AvatarHue | null;
-  avatarUrl: string | null;
 }
 
 /** The next card in `state` after the card `afterKey`, going around to the first. */

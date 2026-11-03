@@ -1,5 +1,5 @@
+import { stageActivityOfLine } from "@buildersbot/ui/features/stage/stage-activity";
 import { describe, expect, it } from "vitest";
-import { stageActivityOfLine } from "../channels/channel-stage-model";
 import { appendTurnStepLine } from "./turn-step-lines";
 
 describe("the kind of a progress line", () => {

@@ -1,15 +1,16 @@
 import type { FeedActionInput, FeedActionResult, FeedItem, FeedItemState } from "@buildersbot/contracts/ipc";
 import { useText } from "@buildersbot/ui/text";
-import { createEffect, createMemo, createSignal, createStore, onSettled, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, createStore, onSettled, Show, untrack } from "solid-js";
 import { FeedBulkBar } from "./FeedBulkBar";
 import { FeedFilters } from "./FeedFilters";
 import type { FeedAvatar } from "./FeedItemCard";
 import { FeedJumpBar } from "./FeedJumpBar";
+import { FeedTables } from "./FeedTables";
 import { FeedTimeline, type FeedTimelineControl } from "./FeedTimeline";
 import { createFeedActionsController } from "./feed-actions-controller";
+import type { FeedAgentProfile } from "./feed-tables-model";
 import {
   EMPTY_FEED_FILTERS,
-  type FeedAgentAvatar,
   type FeedFilterState,
   feedAgentKey,
   feedAgentOptions,
@@ -22,8 +23,11 @@ import {
 export interface FeedPageProps {
   /** The cards in timeline order, the newest last. */
   items: readonly FeedItem[];
-  /** The faces of the agents that the window knows. An agent of another server has no entry. */
-  agents: readonly FeedAgentAvatar[];
+  /** The agents that the window knows: their faces, and the provider and model above their cubes. An agent of another server has no entry. */
+  agents: readonly FeedAgentProfile[];
+  /** The reader folded the tables at the top into a strip. Kept by the caller, on this computer. */
+  tablesFolded?: boolean | undefined;
+  onTablesFoldedChange?: ((folded: boolean) => void) | undefined;
   loading: boolean;
   error: string | null;
   /** Opens the conversation or the channel of a card. */
@@ -48,6 +52,7 @@ export function FeedPage(props: FeedPageProps) {
   const [expanded, setExpanded] = createSignal<ReadonlySet<string>>(new Set());
   const [view, setView] = createStore({ following: true, fresh: 0 });
   const [announcement, setAnnouncement] = createSignal("");
+  const [folded, setFolded] = createSignal(untrack(() => props.tablesFolded ?? false));
   let timeline: FeedTimelineControl | undefined;
   let search: HTMLInputElement | undefined;
   /** The card that the last counter showed, so the next click goes on from there. */
@@ -117,6 +122,27 @@ export function FeedPage(props: FeedPageProps) {
       </header>
       <div class="feed-page-body">
         <section class="feed-page-main" aria-labelledby="feed-page-title">
+          <FeedTables
+            items={props.items}
+            agents={props.agents}
+            project={filters.project}
+            agent={filters.agent}
+            onProject={(project) =>
+              setFilters((draft) => {
+                draft.project = project;
+              })
+            }
+            onAgent={(agent) =>
+              setFilters((draft) => {
+                draft.agent = agent;
+              })
+            }
+            folded={folded()}
+            onFoldedChange={(next) => {
+              setFolded(next);
+              props.onTablesFoldedChange?.(next);
+            }}
+          />
           <FeedFilters
             filters={filters}
             projects={projects()}

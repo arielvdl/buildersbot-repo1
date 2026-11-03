@@ -6,8 +6,9 @@
  */
 
 import type { AgentProviderRef } from "@buildersbot/contracts/agent-providers";
-import type { AvatarHue, ChannelPage, ChannelTask, TurnProgressKind } from "@buildersbot/contracts/ipc";
+import type { AvatarHue, ChannelPage, ChannelTask } from "@buildersbot/contracts/ipc";
 import type { AgentProfile } from "@buildersbot/ui/data";
+import { type StageActivity, stageActivityOfLine } from "@buildersbot/ui/features/stage/stage-activity";
 import type { TurnStepLines } from "../conversation/turn-step-lines";
 
 /** The seats round the table. More agents than this wait in a "+N" chip. */
@@ -19,8 +20,6 @@ const HOLD_MS = { done: 2800, failed: 3000, delegating: 2000 } as const;
 /** The end of the messages that is read for streaming authors and the turn of each member. */
 const MESSAGE_TAIL = 60;
 const REQUEST_TITLE_LIMIT = 90;
-
-type StageActivity = "reading" | "thinking" | "editing" | "running" | "delegating" | "waiting" | "failed" | "done";
 
 type HeldActivity = keyof typeof HOLD_MS;
 
@@ -91,32 +90,6 @@ const ACTIVITY_RANK: Readonly<Record<StageActivity, number>> = {
   thinking: 3,
   done: 4,
 };
-
-type LiveStageActivity = Exclude<StageActivity, "waiting" | "failed" | "done">;
-
-const ACTIVITY_OF_KIND: Readonly<Record<Exclude<TurnProgressKind, "other">, LiveStageActivity>> = {
-  read: "reading",
-  search: "reading",
-  check: "running",
-  write: "editing",
-  coordinate: "delegating",
-};
-
-/**
- * The activity that a host progress line stands for. A host that names the kind of the step decides
- * it. The kind `other`, and a host that predates the kind, fall back to the English text that the
- * host sends for each kind of tool step (`thread-items.ts`): its words are matched here, and text
- * that no word matches reads as thinking.
- */
-export function stageActivityOfLine(line: string, kind?: TurnProgressKind): LiveStageActivity {
-  if (kind && kind !== "other") return ACTIVITY_OF_KIND[kind];
-  const text = line.toLowerCase();
-  if (/coordinating|other agent/u.test(text)) return "delegating";
-  if (/making the requested changes|reviewing the changes|editing|writing/u.test(text)) return "editing";
-  if (/checking the work|verification|running|testing|building|browser|screen|window/u.test(text)) return "running";
-  if (/gathering|searching|reading|reviewing the (information|sources)|looking/u.test(text)) return "reading";
-  return "thinking";
-}
 
 function inTab(page: ChannelPage, task: ChannelTask): boolean {
   return !(task.topicId && page.topicId && task.topicId !== page.topicId);

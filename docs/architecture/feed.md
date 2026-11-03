@@ -99,7 +99,9 @@ Schedule and Workflows pages do (`windowPageKind` is `titled`). The shared compo
 
 | File | Part |
 | --- | --- |
-| `FeedPage.tsx` | The page: the filters, the jump bar and the timeline. |
+| `FeedPage.tsx` | The page: the tables, the filters, the jump bar and the timeline. |
+| `FeedTables.tsx` | The tables at the top: one for each project with an agent at work. |
+| `feed-tables-model.ts` | The DOM-free model of the tables (see [The tables](#the-tables)). |
 | `FeedFilters.tsx` | Search (`/` goes to it), project, agent, state, and the grouping: timeline, by project, by agent. |
 | `FeedJumpBar.tsx` | Live or paused, and the counters "Needs you", "Stopped", "Working": each click goes to the next such card. |
 | `FeedTimeline.tsx` | The timeline, on `createChatVirtualizer`: only the cards on screen are in the DOM. |
@@ -127,6 +129,36 @@ move between the cards. A polite live region says when more runs need the person
 one card of each action (`Actions`), on both palettes. The mock answers `act` with the checks of main
 after 0.6 s, and refuses every action on one card. `scripts/feed-ui-e2e.ts` and
 `scripts/feed-actions-ui-e2e.ts` check them in a headless browser.
+
+## The tables
+
+The top of the page has one table for each project that has an agent at work. A project is the sidebar
+section of the agent (`FeedItem.projectId`); the agents of no section sit at one table, "No project".
+The table is the one of the agent stage of a channel, in a smaller size, and the two share the kit in
+`packages/ui/src/features/stage/` (geometry, table, agent, links, motion, one size observer) and its
+stylesheet `agent-stage.css`. A feed table has no speech bubble and no request card: the cards below
+say the step, and the label under the table says the project, the newest title ("Now: ...") and how
+many runs work or need the person.
+
+- **Who sits.** An agent with a card that works or needs the person, or whose card ended in the last
+  2.8 s (3 s when it failed). The model reads the state and `endedAt` of the card itself and keeps no
+  state of any card, so a feed that opens on old work shows nothing and no map of the cards grows.
+  A queued or stopped run has no seat. An agent with several cards sits once, in its most urgent state.
+- **What it does.** `stageActivityOfLine(step)` gives reading, thinking, editing, running or
+  delegating from the last step, with "thinking" before any step. A card that needs the person is
+  "waiting for you".
+- **Limits.** At most 6 tables, 4 seats at each, 16 agents in all. The rest are counted in a "+N" chip.
+  The most urgent table comes first, then the one with the newest card.
+- **Cost.** The model sweeps the cards at each delta, and the page draws again only when what the tables
+  show has changed (`sameFeedTables`). One timer, for the next run that leaves its table; none while no
+  run waits to leave. A table that is off screen, or a hidden window, pauses its loops with one
+  attribute. With nobody at work the top is a 40 px strip: no observer, no timer, no animation.
+- **Filters.** The name of a project filters the feed by it, and a cube filters it by that agent; the
+  same click clears it. The table itself is only a picture. "Fold the tables" keeps the choice on this
+  computer (`buildersbot:feed-tables:v1`, `src/renderer/src/features/feed/feed-tables-storage.ts`).
+- **Not in the tables yet.** The link and the flying cube between a delegating agent and the agent that
+  gets the work need the card to say who delegated (`FeedItem.delegatedBy`, a field main does not send).
+  The agent of a joined server shows with the default colour and no model chip: the card has neither.
 
 ## Actions
 

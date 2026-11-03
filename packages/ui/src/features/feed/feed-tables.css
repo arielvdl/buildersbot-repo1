@@ -1,0 +1,142 @@
+/*
+ * The tables at the top of the feed page (`FeedTables.tsx`). The table and the cubes are drawn by the
+ * stage kit (`features/stage/agent-stage.css`); this file lays the tables in a row and styles the
+ * label under each one. Only palette tokens.
+ */
+
+.feed-tables {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  border-bottom: 1px solid var(--feed-edge);
+  background: var(--buildersbot-bg-canvas);
+}
+
+.feed-tables-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--buildersbot-space-2) var(--buildersbot-space-6) 0;
+}
+
+.feed-tables-head h2 {
+  margin: 0;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-medium);
+}
+
+.feed-tables-strip {
+  display: flex;
+  height: var(--buildersbot-control-xl);
+  margin: 0;
+  align-items: center;
+  justify-content: center;
+  gap: var(--buildersbot-space-3);
+  color: var(--buildersbot-text-dim);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.feed-tables-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--buildersbot-space-3);
+  padding: 0 var(--buildersbot-space-6) var(--buildersbot-space-3);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.feed-table {
+  display: flex;
+  width: 320px;
+  flex: 0 0 320px;
+  flex-direction: column;
+  border-radius: var(--buildersbot-radius-lg);
+}
+
+.feed-table[data-chosen] {
+  outline: 1px solid var(--buildersbot-accent);
+  outline-offset: var(--buildersbot-space-1);
+}
+
+/* The board of a table fills this box. The box has a size of its own, so the board can measure it. */
+.feed-table-stage {
+  position: relative;
+  height: 282px;
+  overflow: hidden;
+  contain: layout paint;
+}
+
+.feed-table-overflow,
+.feed-tables-more {
+  padding: var(--buildersbot-space-0-5) var(--buildersbot-space-2);
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-pill);
+  background: var(--buildersbot-bg-surface);
+  color: var(--buildersbot-text-secondary);
+  font-size: var(--buildersbot-text-sm);
+}
+
+.feed-table-overflow {
+  position: absolute;
+  top: var(--buildersbot-space-2);
+  right: var(--buildersbot-space-2);
+  z-index: 1000;
+}
+
+.feed-tables-more {
+  align-self: center;
+  flex: none;
+}
+
+.feed-table-label {
+  display: grid;
+  gap: var(--buildersbot-space-0-5);
+  min-width: 0;
+  padding: 0 var(--buildersbot-space-2);
+}
+
+.feed-table-name {
+  justify-self: start;
+  max-width: 100%;
+  font-weight: var(--buildersbot-weight-semibold);
+}
+
+.feed-table-now,
+.feed-table-counts {
+  display: flex;
+  gap: var(--buildersbot-space-2);
+  margin: 0;
+  overflow: hidden;
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-table-counts [data-state] {
+  color: var(--feed-state);
+}
+
+@container (max-width: 760px) {
+  .feed-tables-head,
+  .feed-tables-row {
+    padding-inline: var(--buildersbot-space-4);
+  }
+}
+
+/* A small table keeps the names short: the name over the verb, cut with an ellipsis. */
+.feed-table-stage .agent-stage-name {
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  max-width: var(--stage-width, 80px);
+  min-width: 96px;
+}
+
+.feed-table-stage .agent-stage-name-text {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

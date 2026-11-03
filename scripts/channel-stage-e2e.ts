@@ -137,7 +137,7 @@ const report: Report = {
 const PROBE = `(() => {
   if (window.__stageProbe) return;
   Error.stackTraceLimit = 40;
-  const stagePattern = /(ChannelStage\\w*\\.tsx|channel-stage-\\w+\\.ts)/;
+  const stagePattern = /(ChannelStage\\w*\\.tsx|channel-stage-\\w+\\.ts|features[/]stage[/])/;
   const probe = { timeouts: 0, intervals: 0, frames: 0, live: new Map(), liveFrames: new Set(), long: [], all: { timeouts: 0, intervals: 0, frames: 0 } };
   const fromStage = () => stagePattern.test(new Error().stack || "");
   const setTimeoutOriginal = window.setTimeout.bind(window);
@@ -289,8 +289,8 @@ const stageReading = () => readStage(page);
 function readStage(target: Page) {
   return target.evaluate(() => {
     const frame = document.querySelector(".channel-stage-frame");
-    const board = document.querySelector(".channel-stage-board");
-    const actors = [...document.querySelectorAll<HTMLElement>(".channel-stage-actor")];
+    const board = document.querySelector(".agent-stage-board");
+    const actors = [...document.querySelectorAll<HTMLElement>(".agent-stage-actor")];
     const animations = document.getAnimations().filter((animation) => {
       const target = animation.effect instanceof KeyframeEffect ? animation.effect.target : null;
       return target instanceof Element && target.closest(".channel-stage") !== null;
@@ -437,7 +437,7 @@ async function setFlag(options: { enabled: boolean; scope: "channel" | "all" }):
 const stagePreference = () => page.evaluate(() => window.localStorage.getItem("buildersbot:channel-stage:v1"));
 
 const stageModule = (url: string) =>
-  /\/(ChannelStageHost\.tsx|ChannelStage\.tsx|channel-stage-model\.ts|channel-stage\.css)(\?|$)/.test(url);
+  /\/(ChannelStageHost\.tsx|ChannelStage\.tsx|agent-stage-model\.ts|channel-stage\.css)(\?|$)/.test(url);
 const requestedStageModules = (urls: readonly string[]) => [
   ...new Set(urls.filter(stageModule).map((url) => new URL(url).pathname.split("/").pop() ?? url)),
 ];
@@ -657,10 +657,10 @@ try {
 
   const seen = new Set<string>();
   const richLook = await page.evaluate(() => {
-    const actors = [...document.querySelectorAll<HTMLElement>(".channel-stage-actor")];
+    const actors = [...document.querySelectorAll<HTMLElement>(".agent-stage-actor")];
     return actors.map((actor) => {
       const box = actor.getBoundingClientRect();
-      const model = actor.querySelector(".channel-stage-model");
+      const model = actor.querySelector(".agent-stage-model");
       return {
         name: actor.getAttribute("aria-label") ?? "",
         activity: actor.dataset.activity ?? "",
@@ -675,14 +675,12 @@ try {
   await shot("e2e-stage-on-8-agents");
   await shot("e2e-stage-board", page.locator(".channel-stage-frame"));
   const board = await page.evaluate(() => ({
-    table: document.querySelector(".channel-stage-table") !== null,
+    table: document.querySelector(".agent-stage-table") !== null,
     request: document.querySelector(".channel-stage-request") !== null,
     requestBars: document.querySelectorAll(".channel-stage-request-bars i").length,
     leaderOnTop: (() => {
-      const lead = document.querySelector(".channel-stage-actor");
-      const ys = [...document.querySelectorAll(".channel-stage-actor")].map(
-        (actor) => actor.getBoundingClientRect().top,
-      );
+      const lead = document.querySelector(".agent-stage-actor");
+      const ys = [...document.querySelectorAll(".agent-stage-actor")].map((actor) => actor.getBoundingClientRect().top);
       return { first: lead?.getBoundingClientRect().top ?? 0, min: Math.min(...ys) };
     })(),
     streamWidth: Math.round(document.querySelector(".conversation-scroll")?.getBoundingClientRect().width ?? 0),
