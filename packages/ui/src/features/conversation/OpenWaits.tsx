@@ -1,4 +1,4 @@
-import { buttonVariants, DropdownMenu, Ellipsis, MessageCircle, X } from "@buildersbot/ui";
+import { Button, buttonVariants, DropdownMenu, Ellipsis, MessageCircle, X } from "@buildersbot/ui";
 import { createSignal, createUniqueId, For, Show, untrack } from "solid-js";
 import { useText } from "../../text";
 import { createTaskListPlayState, TaskListHeader, TaskMark, type TaskMarkState } from "./TaskList";
@@ -99,6 +99,21 @@ function OpenWaitList(props: OpenWaitsProps) {
           summary={wokenCount()}
           count={wokenCount()}
         />
+        {/* One wait: the stop is one tap away, without the menu of the row. */}
+        <Show when={total() === 1 && props.items[0]}>
+          {(only) => (
+            <Button
+              class="open-waits-stop"
+              variant="ghost"
+              size="sm"
+              type="button"
+              data-cuelume-tap="close"
+              onClick={() => props.onCancel(only().id)}
+            >
+              {t("chat.waits.cancel")}
+            </Button>
+          )}
+        </Show>
       </div>
       <div id={panelId} class="task-list-panel" inert={open() ? undefined : true}>
         <ol class="task-list-items">

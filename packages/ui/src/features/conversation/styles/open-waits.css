@@ -70,3 +70,10 @@
   align-self: flex-start;
   color: var(--buildersbot-text-muted);
 }
+
+.open-waits-stop {
+  flex: 0 0 auto;
+  margin-right: var(--buildersbot-space-2);
+  color: var(--buildersbot-text-muted);
+  font-size: var(--buildersbot-text-sm);
+}
