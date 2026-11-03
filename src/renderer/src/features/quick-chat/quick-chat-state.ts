@@ -25,6 +25,8 @@ export interface QuickChatOptions {
   agentName: () => string;
   /** Tells the person that the model of the Quick chat changed by itself. */
   onModelChanged: () => void;
+  /** Opens the conversation that was open when the person left. False: no such conversation, so a new one opens. */
+  restoreLast?: (agentId: string) => Promise<boolean>;
 }
 
 function wasSeen(): boolean {
@@ -68,7 +70,7 @@ export function createQuickChat(options: QuickChatOptions) {
     return stored;
   }
 
-  /** Makes sure the agent exists, reads its threads, and opens a new conversation. */
+  /** Makes sure the agent exists, reads its threads, and opens the last conversation, or a new one. */
   async function open(): Promise<void> {
     const own = ++generation;
     setState((draft) => {
@@ -82,7 +84,9 @@ export function createQuickChat(options: QuickChatOptions) {
       // The list is read before the first message, so the new conversation shows at its top.
       await tasks.loadTasks(profile.id);
       if (!scopeIsCurrent() || own !== generation) return;
-      tabs.startNew(profile.id);
+      const restored = (await options.restoreLast?.(profile.id)) ?? false;
+      if (!scopeIsCurrent() || own !== generation) return;
+      if (!restored) tabs.startNew(profile.id);
       if (result.changed && wasSeen()) options.onModelChanged();
       markSeen();
       setState((draft) => {

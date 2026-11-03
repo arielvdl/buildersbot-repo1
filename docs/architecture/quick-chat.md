@@ -37,6 +37,13 @@ and none for a model with no effort setting. `fastMode` is on only for a model w
 The catalog of a Cultura Builder account is read when the provider client starts, and only on a
 server with a model policy. A new or removed model shows after that start.
 
+## Which conversation opens
+
+When the page opens, it opens the conversation that was open when the person left. The renderer keeps
+that conversation in `localStorage` (`quick-chat-last.ts`, one record for each server). It can be a
+thread of the quick chat agent or a thread of a called agent. A new conversation with no message is kept
+as none. When the saved thread was deleted or archived, or its agent is gone, a new conversation opens.
+
 ## Where a message goes in
 
 Only the page. The local IPC handlers of `src/main/ipc/agent-handlers.ts` pass `via: "quick-chat"`
