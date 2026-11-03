@@ -104,6 +104,7 @@ export function ConversationHeader() {
       agent={props.agent}
       working={working() || runningThreads() > 0}
       title={channel ? <channel.HeaderTitle onOpenSettings={() => setActiveRightPanel("settings")} /> : undefined}
+      headerTitle={props.quickChat?.title}
       onSettingsIntent={() => void loadAgentSettingsPanel()}
       onOpenSettings={() => setActiveRightPanel("settings")}
       onOpenChat={openMainChat()}
@@ -150,7 +151,7 @@ export function ConversationHeader() {
           : undefined
       }
       threads={
-        <Show when={props.threads}>
+        <Show when={props.quickChat ? undefined : props.threads}>
           {(threads) => <ThreadHeader {...threads().header} onMoveToSide={moveThreadToPanel} />}
         </Show>
       }

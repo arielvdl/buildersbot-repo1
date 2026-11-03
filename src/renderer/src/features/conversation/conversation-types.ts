@@ -248,6 +248,11 @@ export interface ConversationProps {
   waits?: readonly AgentWait[] | undefined;
   /** The agent's threads. Absent where the host keeps only the agent's own chat. */
   threads?: ConversationThreads | undefined;
+  /**
+   * Set by the Quick chat page. The view then shows one open thread: it has no thread tabs, no own chat
+   * of the agent and no message box for that chat, and its header has this title in place of the agent.
+   */
+  quickChat?: { title: JSX.Element } | undefined;
   browserTabs: BrowserTab[];
   activeBrowserTabId: string | null;
   browserVisibilitySuspended: boolean;

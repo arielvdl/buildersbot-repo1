@@ -11,6 +11,7 @@ import {
 } from "@buildersbot/contracts/ipc";
 import { BROWSER_PROFILES_CAPABILITY } from "@buildersbot/contracts/team-protocol/browser-profiles-v1";
 import { hasVisibleToasts } from "@buildersbot/ui";
+import type { AgentProfile } from "@buildersbot/ui/data";
 import {
   type BackupModelSource,
   rememberedBackupModels,
@@ -19,7 +20,6 @@ import {
 } from "@buildersbot/ui/features/conversation/BackupModels";
 import { unloadedHistory } from "@buildersbot/ui/features/conversation/ChatScrollRail";
 import { sidebarAgentWaits } from "@buildersbot/ui/features/sidebar/sidebar-agent-states";
-import { useText } from "@buildersbot/ui/text";
 import { createEffect, createMemo } from "solid-js";
 import { desktopAnalytics } from "../../analytics";
 import { appPort } from "../../app-port";
@@ -31,9 +31,6 @@ import { createScopeGuard } from "../../scope-lifetime";
 import { useTurns } from "../../turns";
 import { turnsPort } from "../../turns-port";
 import { useAuth } from "../account/account-context";
-import { useAgentTasks } from "../agent-tasks/agent-tasks-context";
-import { useAgentThreads } from "../agent-threads/agent-threads-context";
-import { conversationThreads } from "../agent-threads/conversation-threads";
 import { attentionKey } from "../agents/agent-runtime-snapshot";
 import { agentThreadAttention } from "../agents/agent-thread-attention";
 import { useAgents } from "../agents/agents-context";
@@ -57,7 +54,8 @@ import { useWindowPage } from "../window/window-page-context";
 import { Conversation } from "./Conversation";
 import { useConversation } from "./conversation-context";
 import { messagePromptRequestKey, promptRequestKey } from "./conversation-keys";
-import type { ConversationThreads } from "./conversation-types";
+import type { ConversationProps } from "./conversation-types";
+import { useConversationThreads } from "./use-conversation-threads";
 
 /**
  * The transcript of the active Agent, with everything the composer needs to send
@@ -72,7 +70,18 @@ import type { ConversationThreads } from "./conversation-types";
  * rather than captured once.
  */
 
-export function WorkspaceConversation(props: { account: () => CentralAuthUser }) {
+/**
+ * An agent that is not the active one, for a page that shows its conversation, such as the Quick chat.
+ * The conversation then reads this agent in place of the active one, and writes its changes through
+ * `updateAgent`, so an agent that no roster has does not enter the roster.
+ */
+export interface ConversationSubject {
+  agent: () => AgentProfile | undefined;
+  updateAgent: (agentId: string, updates: Omit<UpdateAgentInput, "agentId">) => Promise<void>;
+  quickChat: NonNullable<ConversationProps["quickChat"]>;
+}
+
+export function WorkspaceConversation(props: { account: () => CentralAuthUser; subject?: ConversationSubject }) {
   const scopeIsCurrent = createScopeGuard();
   const serverScope = useServerScope();
   const platform = usePlatform();
@@ -120,16 +129,19 @@ export function WorkspaceConversation(props: { account: () => CentralAuthUser })
     hostAccountLimits,
     agentList,
     agentListConnecting,
-    activeAgent,
+    activeAgent: appActiveAgent,
     userHiddenAgentIds,
     modelOptions,
     settingsRequest,
-    updateAgent,
+    updateAgent: appUpdateAgent,
     setAgentAvatar,
   } = useAgents();
+  /** The agent that the conversation shows: the subject of a page, or the active agent. */
+  const activeAgent = () => (props.subject ? props.subject.agent() : appActiveAgent());
+  const updateAgent = (agentId: string, updates: Omit<UpdateAgentInput, "agentId">) =>
+    props.subject ? props.subject.updateAgent(agentId, updates) : appUpdateAgent(agentId, updates);
   const {
     contextStates,
-    threadContextStates,
     activeQueue,
     activeWaits,
     activeRoutineIds,
@@ -226,14 +238,6 @@ export function WorkspaceConversation(props: { account: () => CentralAuthUser })
     const server = activeServer();
     if (!agent || server?.kind !== "local") return undefined;
     return () => turnsPort().agent.compactContext(agent.id, server.id);
-  });
-
-  /** As `compactActiveAgentContext`, for one side thread of the active agent. */
-  const compactTaskContext = createMemo(() => {
-    const agent = activeAgent();
-    const server = activeServer();
-    if (!agent || server?.kind !== "local") return undefined;
-    return (taskId: string) => turnsPort().agent.compactTaskContext({ agentId: agent.id, taskId }, server.id);
   });
 
   /** The Team API agent summary has no access, so a joined server's agent shows the host's answer. */
@@ -357,30 +361,8 @@ export function WorkspaceConversation(props: { account: () => CentralAuthUser })
   const usageLimited = (choice: AgentModelChoice) =>
     usageLimitedModels().some((limited) => sameAgentModelChoice(limited, choice));
 
-  const { t } = useText();
-  const agentTasks = useAgentTasks();
-  const agentThreads = useAgentThreads();
-  /** The active agent's threads. A host without side threads shows only the agent's own chat. */
-  const threads = createMemo((): ConversationThreads | undefined => {
-    const agent = activeAgent();
-    if (!agent || !agentTasks.available()) return undefined;
-    return conversationThreads({
-      agent: { id: agent.id, updatedAt: agent.updatedAt ?? agent.time },
-      tasks: agentTasks,
-      tabs: agentThreads,
-      approvals: approvals(),
-      prompts: Object.values(pendingPrompts()).filter((event) => event?.type === "prompt"),
-      takeovers: Object.values(pendingPrompts()).flatMap((event) =>
-        event?.type === "browser-takeover-requested" ? [event.request] : [],
-      ),
-      newThreadTitle: t("conversation.threads.new"),
-      onRespondApproval: (approval, decision, options) =>
-        respondToApprovalRequest(approval.agentId, approval.requestId, decision, options),
-      contextStates: threadContextStates,
-      onCompactContext: compactTaskContext(),
-      onOpenMainMessage: (messageId) => void openAgentMessage(agent.id, messageId),
-    });
-  });
+  /** The threads of the shown agent. A host without side threads shows only the agent's own chat. */
+  const threads = useConversationThreads(activeAgent);
   /** The thread that the conversation shows: the open side thread, or the agent's own chat. */
   const openThreadId = () => threads()?.open?.threadId;
   /** The thread whose waits the conversation shows. A new thread draft has no turn, so it has none. */
@@ -543,14 +525,15 @@ export function WorkspaceConversation(props: { account: () => CentralAuthUser })
         availableRoutineIds={activeRoutineIds()}
         routines={activeRoutines()}
         modelOptions={modelOptions()}
-        messages={activeMessages()}
+        // The own chat of the subject is not shown, and the active chat is not its chat.
+        messages={props.subject ? [] : activeMessages()}
         messageReferences={activeAgent() ? (conversations[activeAgent()?.id ?? ""]?.references ?? {}) : {}}
         missingMessageReferences={activeAgent() ? conversations[activeAgent()?.id ?? ""]?.missingReferences : undefined}
         unreadCount={activeAgent() ? (conversations[activeAgent()?.id ?? ""]?.read?.unreadCount ?? 0) : 0}
         firstUnreadMessageId={
           activeAgent() ? (conversations[activeAgent()?.id ?? ""]?.read?.firstUnreadMessageId ?? null) : null
         }
-        loaded={activeAgent() ? conversations[activeAgent()?.id ?? ""]?.loaded === true : false}
+        loaded={props.subject ? true : activeAgent() ? conversations[activeAgent()?.id ?? ""]?.loaded === true : false}
         hasOlder={
           activeServerSupportsCapability("conversation-pagination") && activeAgent()
             ? (conversations[activeAgent()?.id ?? ""]?.page?.hasOlder ?? false)
@@ -560,11 +543,12 @@ export function WorkspaceConversation(props: { account: () => CentralAuthUser })
         discontinuous={activeAgent() ? conversations[activeAgent()?.id ?? ""]?.windowMode === "around" : false}
         loadingOlder={activeAgent() ? conversations[activeAgent()?.id ?? ""]?.olderLoading === true : false}
         olderError={activeAgent() ? (conversations[activeAgent()?.id ?? ""]?.olderError ?? null) : null}
-        queue={activeQueue()}
+        queue={props.subject ? undefined : activeQueue()}
         browserTabs={browserTabs()}
         activeBrowserTabId={activeBrowserTabId()}
         browserVisibilitySuspended={browserVisibilitySuspended()}
-        workspaceCovered={windowPage.conversationCovered()}
+        workspaceCovered={props.subject ? false : windowPage.conversationCovered()}
+        quickChat={props.subject?.quickChat}
         browserControlState={browserControlState()}
         server={activeServer()}
         presence={teamPresence()}
@@ -655,7 +639,7 @@ export function WorkspaceConversation(props: { account: () => CentralAuthUser })
         onCompactAgentContext={compactActiveAgentContext()}
         onRespondToBrowserTakeover={(decision, options) => respondToBrowserTakeover(decision, openThreadId(), options)}
         onCancelQueuedMessage={cancelQueuedMessage}
-        waits={activeWaits()}
+        waits={props.subject ? undefined : activeWaits()}
         threads={threads()}
         onCancelWait={cancelWait}
         onSteerQueuedMessage={steerQueuedMessage}

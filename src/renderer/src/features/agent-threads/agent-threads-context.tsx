@@ -1,6 +1,7 @@
 import { createSimpleContext } from "../../simple-context";
 import { useAgentTasks } from "../agent-tasks/agent-tasks-context";
 import { useAgents } from "../agents/agents-context";
+import { quickChatAgentId } from "../quick-chat/quick-chat-agent";
 import { useServers } from "../servers/servers-context";
 import { createAgentThreadTabs } from "./agent-thread-tabs";
 
@@ -10,7 +11,15 @@ const AgentThreads = createSimpleContext({
   init: () => {
     const { activeServerId } = useServers();
     const { activeAgentId } = useAgents();
-    return createAgentThreadTabs({ serverId: activeServerId, activeAgentId, tasks: useAgentTasks() });
+    return createAgentThreadTabs({
+      serverId: activeServerId,
+      activeAgentId,
+      watchedAgentIds: () => {
+        const id = quickChatAgentId();
+        return id ? [id] : [];
+      },
+      tasks: useAgentTasks(),
+    });
   },
 });
 

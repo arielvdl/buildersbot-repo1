@@ -213,6 +213,25 @@ export function createAgentTasks(options: AgentTasksOptions) {
       });
   }
 
+  /**
+   * Drops the stored conversation of a thread that is not read now, so a long list of threads does not
+   * keep every opened conversation in memory. A running thread is kept: its events still arrive. The
+   * thread reads its conversation whole when it opens again.
+   */
+  function forgetConversation(taskId: string): void {
+    const running = untrack(() =>
+      Object.values(state.snapshots).some((snapshot) =>
+        snapshot.tasks.some((task) => task.id === taskId && (task.state === "running" || task.state === "queued")),
+      ),
+    );
+    if (running || untrack(() => state.conversations[taskId]) === undefined) return;
+    readRequests.delete(taskId);
+    readMarks.delete(taskId);
+    setState((current) => {
+      delete current.conversations[taskId];
+    });
+  }
+
   /** Adds a task that an action returned, so its tab shows before the list event arrives. */
   function rememberTask(task: AgentTask): void {
     setState((current) => {
@@ -400,6 +419,7 @@ export function createAgentTasks(options: AgentTasksOptions) {
     reload,
     loadTasks,
     openTask,
+    forgetConversation,
     startTask,
     runQueuedMessageAsTask,
     canBranch,

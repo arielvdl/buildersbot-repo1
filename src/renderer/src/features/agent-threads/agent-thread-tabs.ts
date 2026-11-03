@@ -24,6 +24,11 @@ const OTHER_WINDOW_DELAY_MS = 5_000;
 export interface AgentThreadTabsOptions {
   serverId: () => string;
   activeAgentId: () => string | undefined;
+  /**
+   * Agents besides the active one whose open thread this reads, such as the agent of the Quick chat
+   * page. That agent is in no roster, so it is never the active one.
+   */
+  watchedAgentIds?: (() => readonly string[]) | undefined;
   tasks: AgentTasks;
 }
 
@@ -36,6 +41,11 @@ export interface AgentThreadTabsOptions {
  */
 export function createAgentThreadTabs(options: AgentThreadTabsOptions) {
   const { serverId, activeAgentId, tasks } = options;
+  /** The agents whose open thread and side panel threads read their conversation. */
+  const readAgentIds = (): string[] => {
+    const active = activeAgentId();
+    return [...(active ? [active] : []), ...(options.watchedAgentIds?.() ?? []).filter((id) => id !== active)];
+  };
   const scopeIsCurrent = createScopeGuard();
   const [tabsByServer, setTabsByServer] = createSignal<ThreadTabsByServer>(readThreadTabs());
   /** Agents with a new thread tab. A new thread that has no message is not kept after a restart. */
@@ -445,17 +455,22 @@ export function createAgentThreadTabs(options: AgentThreadTabsOptions) {
   let reading: ReadonlySet<string> = new Set();
   createEffect(
     () => {
-      const agentId = activeAgentId();
-      if (!agentId) return null;
-      const ids = [activeId(agentId), ...sideIds(agentId)].filter(
-        (id) => id !== MAIN_THREAD_ID && id !== DRAFT_THREAD_ID && !tasks.conversation(id),
-      );
-      return ids.length === 0 ? null : [agentId, ...ids].join("\n");
+      const wanted: string[] = [];
+      for (const agentId of readAgentIds()) {
+        for (const id of [activeId(agentId), ...sideIds(agentId)]) {
+          if (id !== MAIN_THREAD_ID && id !== DRAFT_THREAD_ID && !tasks.conversation(id))
+            wanted.push(`${agentId}\n${id}`);
+        }
+      }
+      return wanted.length === 0 ? null : wanted.join("\t");
     },
     (key) => {
-      const [agentId = "", ...ids] = key?.split("\n") ?? [];
-      for (const id of ids) if (!reading.has(id)) tasks.openTask(agentId, id);
-      reading = new Set(ids);
+      const wanted = key?.split("\t") ?? [];
+      for (const entry of wanted) {
+        const [agentId = "", id = ""] = entry.split("\n");
+        if (!reading.has(id)) tasks.openTask(agentId, id);
+      }
+      reading = new Set(wanted.map((entry) => entry.split("\n")[1] ?? ""));
     },
   );
 

@@ -135,8 +135,10 @@ export function ConversationView(props: ConversationProps) {
 
         {/* A side thread covers the agent's own chat and its message box. They stay mounted, so the way
             back keeps their rows and scroll position and does not build the chat again. */}
-        <ConversationTimeline />
-        <ConversationComposer />
+        <Show when={!props.quickChat}>
+          <ConversationTimeline />
+          <ConversationComposer />
+        </Show>
         <Show when={sideThreadOpen()}>
           <ConversationThread />
         </Show>

@@ -25,6 +25,8 @@ export interface ConversationHeaderProps {
   agent: AgentProfile | null | undefined;
   /** The title of a chat that has no one agent, such as a channel. It shows when `agent` is missing. */
   title?: JSX.Element | undefined;
+  /** A title that takes the place of the agent's name, while the model picker still shows for the agent. */
+  headerTitle?: JSX.Element | undefined;
   modelPicker: ComponentProps<typeof ProviderModelPicker>;
   /** A turn of the chat runs: its title shimmers, so the work shows in the header too. */
   working?: boolean | undefined;
@@ -106,53 +108,62 @@ export function ConversationHeader(props: ConversationHeaderProps) {
   return (
     <header ref={header} class="window-drag conversation-header">
       <div class="conversation-heading-group">
-        <Show when={props.agent} fallback={props.title}>
-          {(agent) => (
-            <>
-              {/* The name is the trigger of its preview itself, so the heading group keeps it as its first element. */}
-              <Tooltip.Root
-                open={previewState.open()}
-                onOpenChange={previewState.onOpenChange}
-                placement="bottom-start"
-                gutter={10}
-                openDelay={CHAT_PREVIEW_OPEN_DELAY}
-                closeDelay={0}
-                skipDelayDuration={CHAT_PREVIEW_SKIP_DELAY}
-                disabled={mainFirst() === ""}
-              >
-                <Tooltip.Trigger
-                  as={Button}
-                  variant="ghost"
-                  size="sm"
-                  type="button"
-                  class="conversation-title no-drag"
-                  data-tab={titleTab()}
-                  data-selected={titleSelected()}
-                  data-details={mainDetailsShown() ? "" : undefined}
-                  aria-label={props.onOpenChat ? t("conversation.header.mainChat") : t("conversation.header.settings")}
-                  onPointerEnter={() => props.onOpenChat || props.onSettingsIntent()}
-                  onFocus={() => props.onOpenChat || props.onSettingsIntent()}
-                  onClick={() => (props.onOpenChat ?? props.onOpenSettings)()}
-                >
-                  <AgentAvatar agent={agent()} mood={mood()} />
-                  <h1 class={props.working ? "conversation-title-working" : undefined}>{agent().name}</h1>
-                </Tooltip.Trigger>
-                <ChatPreviewCard firstMessage={mainFirst()} preview={mainLast()} variant="tab" />
-              </Tooltip.Root>
-              {/* After the name in the document, so the heading group keeps the name first; it shows over its start. */}
-              <Show when={mainDetailsShown()}>
-                <IconButton
-                  class="conversation-title-details no-drag"
-                  variant="ghost"
-                  size="icon-xs"
-                  label={t("conversation.threads.details.openMain")}
-                  onClick={() => setDetailsFor(agent().id)}
-                >
-                  <Info aria-hidden="true" />
-                </IconButton>
-              </Show>
-            </>
-          )}
+        <Show
+          when={props.headerTitle}
+          fallback={
+            <Show when={props.agent} fallback={props.title}>
+              {(agent) => (
+                <>
+                  {/* The name is the trigger of its preview itself, so the heading group keeps it as its first element. */}
+                  <Tooltip.Root
+                    open={previewState.open()}
+                    onOpenChange={previewState.onOpenChange}
+                    placement="bottom-start"
+                    gutter={10}
+                    openDelay={CHAT_PREVIEW_OPEN_DELAY}
+                    closeDelay={0}
+                    skipDelayDuration={CHAT_PREVIEW_SKIP_DELAY}
+                    disabled={mainFirst() === ""}
+                  >
+                    <Tooltip.Trigger
+                      as={Button}
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                      class="conversation-title no-drag"
+                      data-tab={titleTab()}
+                      data-selected={titleSelected()}
+                      data-details={mainDetailsShown() ? "" : undefined}
+                      aria-label={
+                        props.onOpenChat ? t("conversation.header.mainChat") : t("conversation.header.settings")
+                      }
+                      onPointerEnter={() => props.onOpenChat || props.onSettingsIntent()}
+                      onFocus={() => props.onOpenChat || props.onSettingsIntent()}
+                      onClick={() => (props.onOpenChat ?? props.onOpenSettings)()}
+                    >
+                      <AgentAvatar agent={agent()} mood={mood()} />
+                      <h1 class={props.working ? "conversation-title-working" : undefined}>{agent().name}</h1>
+                    </Tooltip.Trigger>
+                    <ChatPreviewCard firstMessage={mainFirst()} preview={mainLast()} variant="tab" />
+                  </Tooltip.Root>
+                  {/* After the name in the document, so the heading group keeps the name first; it shows over its start. */}
+                  <Show when={mainDetailsShown()}>
+                    <IconButton
+                      class="conversation-title-details no-drag"
+                      variant="ghost"
+                      size="icon-xs"
+                      label={t("conversation.threads.details.openMain")}
+                      onClick={() => setDetailsFor(agent().id)}
+                    >
+                      <Info aria-hidden="true" />
+                    </IconButton>
+                  </Show>
+                </>
+              )}
+            </Show>
+          }
+        >
+          {(title) => title()}
         </Show>
         <ThreadDetailsDialog
           details={mainDetails()}
