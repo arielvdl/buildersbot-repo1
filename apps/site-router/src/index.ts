@@ -383,7 +383,89 @@ a{color:#42a0ff;text-decoration:none;font-weight:500}
 a:hover,a:focus-visible{text-decoration:underline}
 `;
 
+const maintenancePageStyle = `
+body{position:relative;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#262033 0%,#1a1a1a 60%)}
+main.maintenance{position:relative;z-index:1;max-width:480px;background:rgba(33,33,33,.88);backdrop-filter:blur(6px);box-shadow:0 24px 60px rgba(0,0,0,.45)}
+main.maintenance p+p{margin-top:12px}
+.en{color:#979797;font-size:14px}
+.maintenance .meta{margin:20px 0 0}
+.progress{height:6px;margin-top:20px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.08)}
+.progress span{display:block;width:40%;height:100%;border-radius:99px;background:linear-gradient(90deg,#d6adf2,#42a0ff);animation:slide 1.8s ease-in-out infinite}
+.scene{position:fixed;inset:0;z-index:0;pointer-events:none}
+.gear{position:absolute;fill:none;stroke:#d6adf2;stroke-width:6;opacity:.13;animation:spin 24s linear infinite}
+.gear-1{width:260px;top:-60px;left:-50px}
+.gear-2{width:180px;top:28%;right:-40px;stroke:#42a0ff;animation-direction:reverse;animation-duration:18s}
+.gear-3{width:120px;bottom:22%;left:14%;animation-duration:14s}
+.spark{position:absolute;bottom:90px;width:6px;height:6px;border-radius:2px;background:#42a0ff;opacity:0;animation:rise 4.5s ease-in infinite}
+.spark-1{left:12%}.spark-2{left:31%;animation-delay:-1.4s;background:#d6adf2}.spark-3{left:50%;animation-delay:-2.6s}.spark-4{left:68%;animation-delay:-.7s;background:#d6adf2}.spark-5{left:87%;animation-delay:-3.3s}
+.floor{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-around;align-items:flex-end;padding:0 4vw;border-top:1px solid rgba(255,255,255,.06);background:linear-gradient(transparent,rgba(214,173,242,.06))}
+.bot{position:relative;zoom:1.5;width:48px;height:72px;margin-bottom:10px;animation:bob 1.1s ease-in-out infinite}
+.bot i,.bot b{position:absolute;display:block}
+.antenna{left:23px;top:0;width:2px;height:10px;background:#979797}
+.antenna::after{content:"";position:absolute;left:-3px;top:-5px;width:8px;height:8px;border-radius:50%;background:#42a0ff;animation:blink 1.4s steps(2) infinite}
+.head{left:4px;top:10px;width:40px;height:28px;border-radius:9px;background:#2e2e2e;border:2px solid #d6adf2}
+.eye{top:8px;width:6px;height:8px;border-radius:3px;background:#42a0ff;transform-origin:center;animation:eye 3.2s ease-in-out infinite}
+.eye:first-child{left:7px}.eye:last-child{right:7px}
+.torso{left:9px;top:40px;width:30px;height:24px;border-radius:7px;background:#3a3a3a;border:2px solid #42a0ff}
+.arm{right:-2px;top:42px;width:6px;height:22px;border-radius:3px;background:#d6adf2;transform-origin:50% 3px;animation:hammer .9s ease-in-out infinite}
+.tool{left:-5px;bottom:-7px;width:16px;height:8px;border-radius:2px;background:#979797}
+.bot-2{animation-delay:-.3s}.bot-2 .arm{animation-delay:-.2s;animation-duration:1.2s}
+.bot-3{animation-delay:-.6s}.bot-3 .arm{animation-delay:-.5s}.bot-3 .head{border-color:#42a0ff}
+.bot-4{animation-delay:-.2s}.bot-4 .arm{animation-delay:-.7s;animation-duration:1.05s}
+.bot-5{animation-delay:-.8s}.bot-5 .arm{animation-delay:-.1s;animation-duration:1.3s}.bot-5 .head{border-color:#42a0ff}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bob{50%{transform:translateY(-4px)}}
+@keyframes hammer{0%,100%{transform:rotate(-35deg)}50%{transform:rotate(55deg)}}
+@keyframes blink{50%{opacity:.25}}
+@keyframes eye{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes rise{0%{transform:translateY(0) rotate(0);opacity:0}15%{opacity:.8}100%{transform:translateY(-55vh) rotate(180deg);opacity:0}}
+@media (max-width:560px){.bot-2,.bot-4{display:none}.gear-1{width:180px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}.progress span{width:100%}}
+`;
+
+/** Gears behind the card. A dashed stroke draws the teeth, so one circle pair is one gear. */
+const maintenanceGear = (className: string) =>
+  `<svg class="gear ${className}" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="38" pathLength="48" stroke-dasharray="3 3"/><circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="10"/></svg>`;
+
+/** One worker bot. Its look and timing come from the `bot-N` class, so the markup stays small. */
+const maintenanceBot = (index: number) =>
+  `<div class="bot bot-${index}"><i class="antenna"></i><i class="head"><b class="eye"></b><b class="eye"></b></i><i class="torso"></i><i class="arm"><b class="tool"></b></i></div>`;
+
+const maintenanceScene = `<div class="scene" aria-hidden="true">${[1, 2, 3].map((n) => maintenanceGear(`gear-${n}`)).join("")}${[1, 2, 3, 4, 5].map((n) => `<i class="spark spark-${n}"></i>`).join("")}<div class="floor">${[1, 2, 3, 4, 5].map(maintenanceBot).join("")}</div></div>`;
+
+/** Friendly page for a paused hosting. Pure CSS: the page policy allows no script and no image. */
+function maintenancePage(request: Request, env: SiteRouterEnv, nonce: string): string {
+  const hostname = new URL(request.url).hostname;
+  const home = accountUrl(env, "/");
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="refresh" content="60">
+<title>Voltamos já - Builders Bot</title>
+<style nonce="${nonce}">${errorPageStyle}${maintenancePageStyle}</style>
+</head>
+<body>
+${maintenanceScene}
+<main class="maintenance">
+<p class="brand">Builders Bot</p>
+<h1>Voltamos já, já</h1>
+<p>Nossos bots estão trabalhando a todo vapor para deixar a sua experiência ainda melhor. É só uma manutenção rápida, e já voltamos.</p>
+<p class="en">Our bots are tuning things up for a better experience. Quick maintenance, we will be right back.</p>
+<div class="progress" aria-hidden="true"><span></span></div>
+<p class="meta">Error 503 - ${escapeHtml(hostname)}. Esta página tenta de novo sozinha.</p>
+${home ? `<nav><a href="${escapeHtml(home.toString())}">Ir para o Builders Bot</a></nav>` : ""}
+</main>
+</body>
+</html>
+`;
+}
+
 function errorPage(request: Request, env: SiteRouterEnv, error: SiteError, nonce: string): string {
+  if (error === "hostingDisabled") return maintenancePage(request, env, nonce);
   const { status, title, detail } = siteErrors[error];
   const hostname = new URL(request.url).hostname;
   const home = accountUrl(env, "/");
