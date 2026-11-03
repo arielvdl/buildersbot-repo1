@@ -27,6 +27,10 @@ quando refeita.
   | `*.sites.buildersbot` | CNAME | `buildersbot.culturabuilder.com` | proxied |
 
   O token OAuth do wrangler não tem `dns_records:edit`; usar um API token com `Zone.DNS: Edit`.
+- **Token do deploy:** o secret `CLOUDFLARE_PRODUCTION_DEPLOY_TOKEN` está com o token OAuth do
+  wrangler, que expira em horas e é preso ao IP da máquina; o runner recebe `9109`/`Invalid access
+  token`. Trocar por um API token da conta com `Workers Scripts: Edit`, `D1: Edit`, `R2: Edit` e
+  `Zone: Read` em `culturabuilder.com`. A variable `CLOUDFLARE_ACCOUNT_ID` já está criada.
 - **Deploy do Worker:** `cd apps/auth-api && bun run build && ../../node_modules/.bin/wrangler deploy --config dist/server/wrangler.json --keep-vars`.
   A sessão OAuth do wrangler serve; os secrets já estão no Worker e `--keep-vars` os preserva. A
   chave `.env.keys` do dotenvx só é necessária para trocar um secret.
