@@ -260,7 +260,13 @@ export function QuickChatPage(props: { account: () => CentralAuthUser }) {
   async function updateQuickChatAgent(id: string, updates: QuickChatAgentUpdate): Promise<void> {
     if (!touchesQuickChatRuntime(updates)) return quick.updateAgent(id, updates);
     const { provider, model, reasoningEffort, fastMode, providerAccountId, ...rest } = updates;
-    await runtime.change({ provider, model, reasoningEffort, fastMode, providerAccountId });
+    await runtime.change({
+      ...(provider === undefined ? {} : { provider }),
+      ...(model === undefined ? {} : { model }),
+      ...(reasoningEffort === undefined ? {} : { reasoningEffort }),
+      ...(fastMode === undefined ? {} : { fastMode }),
+      ...(providerAccountId === undefined ? {} : { providerAccountId }),
+    });
     if (Object.keys(rest).length > 0) await quick.updateAgent(id, rest);
   }
 

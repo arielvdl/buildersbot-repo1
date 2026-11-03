@@ -16,7 +16,7 @@ export function touchesQuickChatRuntime(updates: QuickChatAgentUpdate): boolean 
 }
 
 /** The runtime that an agent profile holds. Absent when its provider is not one that a conversation can name. */
-export function quickChatRuntimeOf(agent: AgentProfile): QuickChatRuntime | undefined {
+function quickChatRuntimeOf(agent: AgentProfile): QuickChatRuntime | undefined {
   if (!isKnownAgentProvider(agent.provider)) return undefined;
   return {
     provider: agent.provider,
@@ -36,7 +36,7 @@ function sameRuntime(left: QuickChatRuntime, right: QuickChatRuntime): boolean {
 }
 
 /** The agent as the header shows it: with the model of the conversation in its place. */
-export function withQuickChatRuntime(agent: AgentProfile, runtime: QuickChatRuntime): AgentProfile {
+function withQuickChatRuntime(agent: AgentProfile, runtime: QuickChatRuntime): AgentProfile {
   return {
     ...agent,
     provider: runtime.provider,
