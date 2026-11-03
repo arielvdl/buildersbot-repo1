@@ -47,6 +47,7 @@ import {
   stopRevealingFileQuote,
   workspaceAgentOfPath,
 } from "./quoted-text";
+import { watchReaderAway } from "./reader-away";
 import { createActivityStore } from "./stores/activity-store";
 import { createBrowserStore } from "./stores/browser-store";
 import { createComposerActions } from "./stores/composer-actions";
@@ -972,7 +973,7 @@ export function createConversationViewScope(props: ConversationProps) {
   let readerLeftLatest = false;
   /** The reader scrolled up to older messages and has not come back to the end. A host can fold what covers the view. */
   const [readerAway, setReaderAway] = createSignal(false);
-  createEffect(readerAway, (away) => props.onReaderAwayChange?.(away));
+  watchReaderAway(readerAway, (away) => props.onReaderAwayChange?.(away));
   let readerDragging = false;
   let readerIntent: { up: boolean; at: number } | undefined;
   let lastTouchY: number | undefined;

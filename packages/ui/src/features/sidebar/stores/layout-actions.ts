@@ -23,6 +23,7 @@ import type {
 } from "../sidebar-drag-model";
 import { type SidebarPinnedItem, sidebarPinnedItemKey } from "../sidebar-pins";
 import type { SidebarChatItem, SidebarProps } from "../sidebar-types";
+import type { SidebarSelection } from "./selection-store";
 
 export function createSidebarLayoutActions(deps: {
   chatPinnedItems: () => SidebarPinnedItem[];
@@ -38,6 +39,7 @@ export function createSidebarLayoutActions(deps: {
   personById: () => Map<string, TeamPresenceMember>;
   props: SidebarProps;
   sectionLabel: (sectionId: string) => string;
+  selection: SidebarSelection;
   visiblePinnedKeys: () => string[];
   visibleSectionIds: () => string[];
 }) {
@@ -55,6 +57,7 @@ export function createSidebarLayoutActions(deps: {
     personById,
     props,
     sectionLabel,
+    selection,
     visiblePinnedKeys,
     visibleSectionIds,
   } = deps;
@@ -89,6 +92,55 @@ export function createSidebarLayoutActions(deps: {
    */
   function assignChatSection(chatId: string, sectionId: string | null): void {
     void props.onMutateLayout({ type: "assign", agentId: chatId, sectionId }).catch(announceError);
+  }
+
+  /** Sends the actions one after the other: each answer is the layout that the next action starts from. */
+  async function runLayoutActions(actions: readonly SidebarLayoutAction[]): Promise<void> {
+    for (const action of actions) await props.onMutateLayout(action);
+  }
+
+  /** Moves the chats of a selection into a section, or out of every section when `sectionId` is null. */
+  function assignChatsSection(chatIds: readonly string[], sectionId: string | null): void {
+    if (chatIds.length === 0) return;
+    void runLayoutActions(chatIds.map((agentId) => ({ type: "assign", agentId, sectionId }))).then(
+      () =>
+        announce(
+          t("sidebar.announce.movedManyTo", {
+            count: chatIds.length,
+            section: sectionLabel(sectionId ?? SIDEBAR_UNASSIGNED_SECTION_ID),
+          }),
+        ),
+      announceError,
+    );
+  }
+
+  /**
+   * Drops a selection beside a row, in the order of the list. They all go before the same row, so they
+   * keep their order. A drop on a row of the selection changes nothing.
+   */
+  function moveChatsBesideChat(chatIds: readonly string[], target: ChatDropTarget): void {
+    const moving = new Set(chatIds);
+    if (moving.has(target.chatId)) return;
+    const rest = (filteredChatsBySection().get(target.sectionId) ?? [])
+      .map((item) => item.id)
+      .filter((id) => !moving.has(id));
+    const targetIndex = rest.indexOf(target.chatId);
+    if (targetIndex < 0) return;
+    const beforeAgentId = target.placement === "before" ? target.chatId : (rest[targetIndex + 1] ?? null);
+    const sectionId = target.sectionId === SIDEBAR_UNASSIGNED_SECTION_ID ? null : target.sectionId;
+    void runLayoutActions(chatIds.map((agentId) => ({ type: "move-agent", agentId, sectionId, beforeAgentId }))).then(
+      () =>
+        announce(t("sidebar.announce.movedManyTo", { count: chatIds.length, section: sectionLabel(target.sectionId) })),
+      announceError,
+    );
+  }
+
+  /** Drops a selection on a section: the chats go to its end, in the order of the list. */
+  function moveChatsToSectionEnd(chatIds: readonly string[], sectionId: string): void {
+    void runLayoutActions(chatIds.map((chatId) => appendChatAction(chatId, sectionId))).then(
+      () => announce(t("sidebar.announce.movedManyTo", { count: chatIds.length, section: sectionLabel(sectionId) })),
+      announceError,
+    );
   }
 
   /** The ids a section shows, in order, without the chat that is being dragged out of it. */
@@ -257,6 +309,18 @@ export function createSidebarLayoutActions(deps: {
     }
 
     if (source.kind === "chat") {
+      // A row of the selection drags the whole selection, unless it goes to the pinned strip.
+      const selected = selection.has(source.id) && selection.count() > 1 ? selection.ids() : null;
+      if (selected && target?.kind === "chat") {
+        moveChatsBesideChat(selected, target.target);
+        selection.clear();
+        return;
+      }
+      if (selected && target?.kind === "section") {
+        moveChatsToSectionEnd(selected, target.sectionId);
+        selection.clear();
+        return;
+      }
       if (target?.kind === "pinned") pinDraggedSidebarItem();
       else if (target?.kind === "chat") moveDraggedChat(source.id, target.target);
       else if (target?.kind === "section") {
@@ -305,6 +369,7 @@ export function createSidebarLayoutActions(deps: {
 
   return {
     assignChatSection,
+    assignChatsSection,
     commitSidebarDrop,
     duplicateSection,
     moveDraggedChat,

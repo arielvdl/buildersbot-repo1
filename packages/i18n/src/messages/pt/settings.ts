@@ -442,6 +442,9 @@ export const messages = {
   "settings.optimizations.streamingCheckpoints.title": "Menos gravações durante uma resposta",
   "settings.optimizations.streamingCheckpoints.description":
     "Uma resposta em andamento é salva a cada 1 a 2 segundos, não várias vezes por segundo. Risco: se o app parar, até 2 segundos de uma resposta podem se perder.",
+  "settings.optimizations.quickStatusReply.title": "Resposta rápida quando o agente está ocupado",
+  "settings.optimizations.quickStatusReply.description":
+    "Quando um agente trabalha há 5 minutos ou mais num turno e você escreve de novo, uma segunda geração rápida conta numa nota curta o que o agente está fazendo agora. O turno e a sua mensagem não mudam. A nota usa o modelo do próprio agente com esforço baixo, então cada nota tem um custo pequeno, no máximo uma a cada 3 minutos por agente. O app registra cada uma no log. Risco: a nota vem só dos passos recentes, então pode ficar vaga ou errada.",
   "settings.tab.general.title": "Geral",
   "settings.tab.general.description": "Controle como o Builders Bot se comporta neste computador.",
   "settings.tab.promptShortcuts.title": "Atalhos de prompt",

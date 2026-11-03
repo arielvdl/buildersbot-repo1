@@ -4,7 +4,8 @@
  * Everything here is data in, drawing out. The desktop reads the channel and gives the actors, so
  * the stage adds no store, no event subscription and no copy of the messages.
  *
- * It is made to cost almost nothing. The table and the request are static. Each actor moves with CSS
+ * It is made to cost almost nothing. The table is static, and a line of text types in once, when it shows
+ * (`Typewriter`, one repaint of one text node for each frame while it types). Each actor moves with CSS
  * keyframes on `transform` only, and the one-time moves (arrive, leave, celebrate, hand-off) are Web
  * Animations that the actor cancels when it goes. Seats come from the size of the board, which a single
  * `ResizeObserver` reports. One attribute on the root pauses every animation while the stage is off
@@ -21,6 +22,7 @@ import { StageBoard } from "../stage/StageBoard";
 import type { StageLinkData } from "../stage/StageLinks";
 import type { StageActivity } from "../stage/stage-activity";
 import type { StageGeometry } from "../stage/stage-geometry";
+import { Typewriter } from "../stage/Typewriter";
 import "../stage/agent-stage.css";
 import "./channel-stage.css";
 
@@ -172,7 +174,12 @@ function StageRequest(props: { request: ChannelStageRequest; geometry: StageGeom
       style={{ left: `${Math.round(props.geometry.centerX)}px`, top: `${Math.round(props.geometry.centerY - 6)}px` }}
     >
       <span class="channel-stage-request-kind">{t("channel.stage.request")}</span>
-      <span class="channel-stage-request-title">{props.request.title}</span>
+      <span class="channel-stage-request-title">
+        {/* Keyed: a new title types in again. */}
+        <Show when={props.request.title} keyed>
+          {(title) => <Typewriter text={title} />}
+        </Show>
+      </span>
       <span class="channel-stage-request-bars" aria-hidden="true">
         <For each={Array.from({ length: Math.min(props.request.parts, 12) }, (_, index) => index)}>
           {(index) => <i data-done={index < props.request.done ? "" : undefined} />}

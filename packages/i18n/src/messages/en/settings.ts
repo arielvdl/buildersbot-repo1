@@ -461,6 +461,9 @@ export const messages = defineMessages("settings", {
   "settings.optimizations.streamingCheckpoints.title": "Fewer writes during a reply",
   "settings.optimizations.streamingCheckpoints.description":
     "A reply that streams is saved every 1 to 2 seconds, not many times each second. Risk: if the app stops, up to 2 seconds of a reply can be lost.",
+  "settings.optimizations.quickStatusReply.title": "Quick status when an agent is busy",
+  "settings.optimizations.quickStatusReply.description":
+    "When an agent has worked on one turn for 5 minutes or more and you write again, a second fast generation tells you in a short note what the agent does now. The turn and your message do not change. The note uses the agent's own model at low effort, so it adds a small cost for each note, at most one every 3 minutes for each agent. The app writes each one to its log. Risk: the note comes from the recent steps only, so it can be vague or wrong.",
   // The Settings window shell: its tab list, headers and save bar.
   "settings.tab.general.title": "General",
   "settings.tab.general.description": "Control how Builders Bot behaves on this computer.",

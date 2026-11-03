@@ -6,6 +6,7 @@
  */
 
 import type { AgentProviderRef } from "@buildersbot/contracts/agent-providers";
+import { expandAttachmentReferences, stripAttachmentReferences } from "@buildersbot/contracts/attachment-references";
 import type { AvatarHue, ChannelPage, ChannelTask } from "@buildersbot/contracts/ipc";
 import type { AgentProfile } from "@buildersbot/ui/data";
 import { type StageActivity, stageActivityOfLine } from "@buildersbot/ui/features/stage/stage-activity";
@@ -190,7 +191,10 @@ function requestOf(page: ChannelPage, relevant: ReadonlySet<string>): StageReque
   if (!root) return null;
   const rootId = root.id;
   const parts = page.tasks.filter((task) => task.parentTaskId === rootId);
-  const text = root.instruction.trim().split("\n")[0] ?? "";
+  // The words, not the markers: an image sent first would otherwise show as `@[image.png](attachment:id)`.
+  // A request of only files shows their names.
+  const words = stripAttachmentReferences(root.instruction) || expandAttachmentReferences(root.instruction);
+  const text = words.split("\n").find((line) => line.trim().length > 0) ?? "";
   const title = text.length > REQUEST_TITLE_LIMIT ? `${text.slice(0, REQUEST_TITLE_LIMIT - 1)}…` : text;
   return {
     title,
@@ -230,6 +234,14 @@ export function channelStageModel(input: StageInput): StageModel {
     links.push({ key: task.id, from: parentOwner, to: task.ownerAgentId });
     linkTargets.set(parentOwner, task.ownerAgentId);
   }
+  // An agent that gave work away and waits for it ends its own turn, so no task of it runs. It stays
+  // on the stage as long as a hand-off from it is open, or the line of that hand-off has no start.
+  const handingOff = new Set<string>();
+  for (const link of links) {
+    if (ids.has(link.from) || !inChannel(link.from)) continue;
+    ids.add(link.from);
+    handingOff.add(link.from);
+  }
 
   const actors: StageActor[] = [];
   for (const id of ids) {
@@ -242,7 +254,7 @@ export function channelStageModel(input: StageInput): StageModel {
     if (input.waitingAgentIds.has(id)) activity = "waiting";
     else if (hold?.activity === "failed") activity = "failed";
     else if (hold?.activity === "done") activity = "done";
-    else if (hold?.activity === "delegating") activity = "delegating";
+    else if (hold?.activity === "delegating" || handingOff.has(id)) activity = "delegating";
     else if (last) {
       const age = now - last.at;
       if (age < STAGE_THINK_AFTER_MS) {
