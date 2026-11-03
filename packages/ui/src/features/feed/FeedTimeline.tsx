@@ -83,7 +83,6 @@ export function FeedTimeline(props: FeedTimelineProps) {
   const [following, setFollowing] = createSignal(true);
   const [fresh, setFresh] = createSignal(0);
   let scroller: HTMLDivElement | undefined;
-  let virtualRoot: HTMLDivElement | undefined;
   /** The card ids the reader had seen when the timeline paused. */
   let seen: Set<string> | null = null;
   let follow = true;
@@ -122,6 +121,15 @@ export function FeedTimeline(props: FeedTimelineProps) {
     } else seen = new Set(untrack(() => props.rows).map((row) => row.key));
   };
 
+  /*
+   * The list is read when the margin is measured, not kept in a variable: a variable of this scope
+   * outlives the list, and the closures of its rows then hold every list the feed ever drew.
+   */
+  const measureMargin = () =>
+    setMargin(
+      calculateChatScrollMargin(scroller, scroller?.querySelector<HTMLElement>(".feed-virtual-list") ?? undefined),
+    );
+
   const atEnd = (element: HTMLElement) =>
     element.scrollHeight - element.scrollTop - element.clientHeight <= FOLLOW_DISTANCE;
 
@@ -136,14 +144,14 @@ export function FeedTimeline(props: FeedTimelineProps) {
       }
       requestAnimationFrame(() => {
         if (!scroller) return;
-        setMargin(calculateChatScrollMargin(scroller, virtualRoot));
+        measureMargin();
         if (follow) scroller.scrollTop = scroller.scrollHeight;
       });
     },
   );
 
   onSettled(() => {
-    const observer = new ResizeObserver(() => setMargin(calculateChatScrollMargin(scroller, virtualRoot)));
+    const observer = new ResizeObserver(measureMargin);
     if (scroller) observer.observe(scroller);
     return () => observer.disconnect();
   });
@@ -230,7 +238,6 @@ export function FeedTimeline(props: FeedTimelineProps) {
           }
         >
           <div
-            ref={virtualRoot}
             class={["feed-virtual-list", { "feed-virtual-list-static": !virtualizer.isVirtualized() }]}
             style={{ height: virtualizer.isVirtualized() ? `${virtualizer.getTotalSize()}px` : "auto" }}
           >

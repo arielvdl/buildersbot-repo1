@@ -84,10 +84,17 @@ function StagePacket(props: { link: StageLinkData; actors: readonly StageActorDa
       fill: "forwards",
     });
     animation.finished.then(
-      () => setFlying(false),
+      () => {
+        // The packet leaves the DOM: the link keeps no hold on it.
+        element = undefined;
+        setFlying(false);
+      },
       () => {},
     );
-    return () => animation.cancel();
+    return () => {
+      animation.cancel();
+      element = undefined;
+    };
   });
   return (
     <Show when={flying()}>

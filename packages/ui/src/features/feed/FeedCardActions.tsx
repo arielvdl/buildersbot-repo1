@@ -51,11 +51,13 @@ export function FeedCardActions(props: FeedCardActionsProps) {
   const confirming = () => props.control?.confirming;
   const form = () => (can("answer") ? need()?.form : undefined);
 
-  // The second step takes the focus, so Enter confirms and Escape cancels.
+  // The second step takes the focus, so Enter confirms and Escape cancels. When the step closes, the
+  // button is let go: a card lives long, and a detached button would keep its closures alive with it.
   createEffect(
     () => confirming(),
     (step) => {
       if (step) queueMicrotask(() => confirmButton?.focus());
+      else confirmButton = undefined;
     },
   );
 
