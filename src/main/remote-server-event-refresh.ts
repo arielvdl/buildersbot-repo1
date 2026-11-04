@@ -17,8 +17,9 @@
 
 import type { AgentEvent, BrowserTab } from "@buildersbot/contracts/ipc";
 import { TEAM_API_ROUTES } from "@buildersbot/contracts/team-api-routes";
+import { SIDEBAR_STYLE_ROUTES } from "@buildersbot/contracts/team-protocol/sidebar-style-v1";
 import { Deferred, Effect, Result } from "effect";
-import { decodeAgentSummaries, decodeQueueSnapshot } from "./remote-agent-decoding";
+import { decodeAgentSummaries, decodeQueueSnapshot, decodeSidebarLayoutSnapshot } from "./remote-agent-decoding";
 import { decodeConversationPageFromHost } from "./remote-conversation-decoding";
 import type { RemoteRequestFn } from "./remote-server-client";
 import { addRemotePreviewUrls, pageQuery } from "./remote-server-urls";
@@ -38,6 +39,15 @@ interface QueueRefresh {
   dirty: boolean;
 }
 
+type SidebarLayoutEvent = Extract<AgentEvent, { type: "sidebar-layout-changed" }>;
+
+// One in-flight layout refetch. `event` is the newest one that a host sent: its five keys are the
+// answer when the read fails.
+interface SidebarLayoutRefresh {
+  dirty: boolean;
+  event: SidebarLayoutEvent;
+}
+
 const FALLBACK_CONVERSATION_LIMIT = 1;
 const INVALIDATED_CONVERSATION_LIMIT = 50;
 
@@ -45,15 +55,19 @@ export interface RemoteEventRefreshOptions {
   request: RemoteRequestFn;
   /** False once the user removes a server. A refetch in flight for it stops emitting. */
   hasServer: (serverId: string) => boolean;
+  /** Whether the host of `serverId` negotiated `sidebar-style-v1`, so that it can send the whole layout. */
+  hasSidebarStyle: (serverId: string) => boolean;
   emit: (serverId: string, event: AgentEvent, bufferedLive?: boolean) => void;
 }
 
 export class RemoteEventRefresh {
   readonly #request: RemoteRequestFn;
   readonly #hasServer: (serverId: string) => boolean;
+  readonly #hasSidebarStyle: (serverId: string) => boolean;
   readonly #emit: (serverId: string, event: AgentEvent, bufferedLive?: boolean) => void;
   readonly #conversations = new Map<string, ConversationRefresh>();
   readonly #queues = new Map<string, QueueRefresh>();
+  readonly #sidebarLayouts = new Map<string, SidebarLayoutRefresh>();
   readonly #generations = new Map<string, number>();
   readonly #rosterLoads = new Map<string, Deferred.Deferred<void, RemoteWorkflowError>>();
   // The frozen `browser-changed` event has no field for a person's control or the history state, so
@@ -66,6 +80,7 @@ export class RemoteEventRefresh {
   constructor(options: RemoteEventRefreshOptions) {
     this.#request = options.request;
     this.#hasServer = options.hasServer;
+    this.#hasSidebarStyle = options.hasSidebarStyle;
     this.#emit = options.emit;
   }
 
@@ -86,6 +101,9 @@ export class RemoteEventRefresh {
       yield* this.#refreshConversationPage(serverId, event.agentId, event.revision);
     } else if (event.type === "queue-invalidated") {
       yield* this.#refreshQueue(serverId, event.agentId);
+    } else if (event.type === "sidebar-layout-changed" && this.#hasSidebarStyle(serverId)) {
+      // The frozen event has five keys. A host with `sidebar-style-v1` sends the rest on its own route.
+      yield* this.#refreshSidebarLayout(serverId, event);
     } else if (event.type === "browser-user-control-changed" || event.type === "browser-page-state-changed") {
       if (event.type === "browser-user-control-changed") this.#browserHolds.set(serverId, new Set(event.tabIds));
       else this.#browserPageStates.set(serverId, new Map(event.tabs.map(({ tabId, ...state }) => [tabId, state])));
@@ -181,6 +199,7 @@ export class RemoteEventRefresh {
 
   forget(serverId: string): void {
     this.#rosterLoads.delete(serverId);
+    this.#sidebarLayouts.delete(serverId);
     this.#browserHolds.delete(serverId);
     this.#browserPageStates.delete(serverId);
     this.#browserStates.delete(serverId);
@@ -195,6 +214,7 @@ export class RemoteEventRefresh {
 
   clear(): void {
     this.#rosterLoads.clear();
+    this.#sidebarLayouts.clear();
     this.#browserHolds.clear();
     this.#browserPageStates.clear();
     this.#browserStates.clear();
@@ -276,6 +296,47 @@ export class RemoteEventRefresh {
       Effect.ensuring(
         Effect.sync(() => {
           if (this.#queues.get(key) === request) this.#queues.delete(key);
+        }),
+      ),
+    );
+  });
+
+  /**
+   * The layout with its colors, icons and markers, read again after a change. One read serves a burst
+   * of changes. When the read fails, the five released keys of the event go out, so that the sections
+   * and the order stay current and only the style is missing until the next change.
+   */
+  readonly #refreshSidebarLayout = Effect.fn("RemoteEvents.refreshSidebarLayout")(function* (
+    this: RemoteEventRefresh,
+    serverId: string,
+    event: SidebarLayoutEvent,
+  ) {
+    const pending = this.#sidebarLayouts.get(serverId);
+    if (pending) {
+      pending.dirty = true;
+      pending.event = event;
+      return;
+    }
+    const request: SidebarLayoutRefresh = { dirty: false, event };
+    this.#sidebarLayouts.set(serverId, request);
+    yield* Effect.gen({ self: this }, function* () {
+      do {
+        request.dirty = false;
+        const result = yield* this.#request(serverId, SIDEBAR_STYLE_ROUTES.read, decodeSidebarLayoutSnapshot, {
+          method: "POST",
+          body: {},
+        }).pipe(Effect.result);
+        if (request.dirty) continue;
+        if (!this.#hasServer(serverId)) return;
+        this.#emit(
+          serverId,
+          Result.isFailure(result) ? request.event : { type: "sidebar-layout-changed", layout: result.success },
+        );
+      } while (request.dirty);
+    }).pipe(
+      Effect.ensuring(
+        Effect.sync(() => {
+          if (this.#sidebarLayouts.get(serverId) === request) this.#sidebarLayouts.delete(serverId);
         }),
       ),
     );

@@ -268,6 +268,7 @@ import { routeRoutineFlows } from "./team-api/route-routine-flows";
 import { routeRoutineResults } from "./team-api/route-routine-results";
 import { routeSharedTables } from "./team-api/route-shared-tables";
 import { routeSideQuestion } from "./team-api/route-side-question";
+import { routeSidebarStyle } from "./team-api/route-sidebar-style";
 import { routeSignInRelay } from "./team-api/route-sign-in-relay";
 import { routeSkillsAdmin } from "./team-api/route-skills-admin";
 import { routeStorage } from "./team-api/route-storage";
@@ -1020,6 +1021,8 @@ export class TeamApiServer {
         return;
       if ((await routeContextReset(context, this.#options.agents, hidden)) === "handled") return;
       if ((await routeQueueForce(context, this.#options.agents, hidden)) === "handled") return;
+      if ((await routeSidebarStyle(context, this.#options.sidebarLayout, this.#options.agents, hidden)) === "handled")
+        return;
       if ((await routeAgentMemoryPage(context, this.#options.agents, hidden)) === "handled") return;
       if ((await routeWorkspaceDirectory(context, this.#options.agents, hidden)) === "handled") return;
       if ((await routeConversationFiles(context, this.#options.agents)) === "handled") return;

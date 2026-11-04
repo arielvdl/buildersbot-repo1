@@ -19,6 +19,7 @@ import { isDeepStrictEqual } from "node:util";
 import { ATTACHMENT_LIMITS, INPUT_LIMITS } from "@buildersbot/contracts/input-limits";
 import {
   AGENT_PROVIDERS,
+  type AgentEvent,
   type AgentModelId,
   type AgentProviderId,
   type AgentStatus,
@@ -30,6 +31,7 @@ import {
   type CustomProviderSummary,
   DEFAULT_AGENT_DEFAULTS,
   type HiddenAgentsSnapshot,
+  isSidebarLayoutSnapshot,
   type QueueSnapshot,
   type RoutineResultConnectionOption,
   type RoutineResultDestination,
@@ -106,6 +108,7 @@ import {
   ROUTINE_RESULTS_ROUTES,
 } from "@buildersbot/contracts/team-protocol/routine-results-v1";
 import { SIDE_QUESTION_CAPABILITY, SIDE_QUESTION_ROUTES } from "@buildersbot/contracts/team-protocol/side-question-v1";
+import { SIDEBAR_STYLE_CAPABILITY, SIDEBAR_STYLE_ROUTES } from "@buildersbot/contracts/team-protocol/sidebar-style-v1";
 import { STORAGE_DISK_CAPABILITY, STORAGE_DISK_ROUTES } from "@buildersbot/contracts/team-protocol/storage-disk-v1";
 import {
   TEAM_APP_VERSION_HEADER,
@@ -127,6 +130,7 @@ import type { BrowserTabSession } from "../src/backend/browser-state";
 import { BuildersBotDatabase } from "../src/backend/buildersbot-database";
 import { runCauseEffect } from "../src/backend/effect-boundary";
 import { RoutineResultError } from "../src/backend/routine-results/routine-results";
+import { SidebarLayoutStore } from "../src/backend/sidebar-layout-store";
 import { TeamChatStore } from "../src/backend/team-chat-store";
 import { createAgentFolders } from "../src/main/agent-folders";
 import { createAgentHostSettings } from "../src/main/agent-host-settings";
@@ -139,6 +143,7 @@ import { EgressProxyService } from "../src/main/egress-proxy-service";
 import { EgressProxyStore } from "../src/main/egress-proxy-store";
 import { MachineAlertMonitor, MachineAlertPreferenceStore } from "../src/main/machine-alerts";
 import { MemoryReviewPreferenceStore } from "../src/main/memory-review-preference-store";
+import { RemoteEventRefresh } from "../src/main/remote-server-event-refresh";
 import { RemoteWorkflowError } from "../src/main/remote-service-effects";
 import type { TeamApiAgents, TeamApiBrowser, TeamApiMailbox } from "../src/main/team-api/dependencies";
 import { isPeerHiddenProvider } from "../src/main/team-api/provider-visibility";
@@ -421,7 +426,7 @@ const fakeAgents: TeamApiAgents = {
   getAnalytics: unused("getAnalytics"),
   getHostAnalytics: unused("getHostAnalytics"),
   listModels: unused("listModels"),
-  sidebarChatIds: unused("sidebarChatIds"),
+  sidebarChatIds: () => new Set(agents.map((item) => item.id)),
   listConversationReads: unused("listConversationReads"),
   generateProfile: unused("generateProfile"),
   askSideQuestion: (input) => {
@@ -699,10 +704,13 @@ const machine = new MachineAlertMonitor({
   onError: (message) => logged.push(message),
 });
 const database = new BuildersBotDatabase(join(root, "user-data"));
+// The real sidebar layout store on a temporary file, so that the style routes change real state.
+const sidebarLayout = new SidebarLayoutStore(join(root, "sidebar-layout.json"));
 let server: TeamApiServer | null = null;
 
 try {
   await runCauseEffect(store.initialize());
+  await runCauseEffect(sidebarLayout.initialize());
   const OWNER_PASSWORD = "owner-password-e2e";
   await runCauseEffect(store.configure("E2E Server", "owner", OWNER_PASSWORD));
   await runCauseEffect(database.initialize());
@@ -754,6 +762,7 @@ try {
     appVersion: APP_VERSION,
     store,
     agents: fakeAgents,
+    sidebarLayout,
     mailbox,
     browser,
     chat: new TeamChatStore(database),
@@ -3936,6 +3945,231 @@ try {
         callsOf("forceQueuedMessage").length === forceCalls,
       [summary(forceUnsupported), summary(forceGone), summary(forceInvalid), summary(forceAnonymous)],
     );
+    // sidebar-style-v1: the whole layout, with a color, an icon and markers, for a peer that asks.
+    {
+      const styleCapabilities = [AGENT_HIDDEN_CAPABILITY, TEAM_QUEUE_EDIT_CAPABILITY, SIDEBAR_STYLE_CAPABILITY];
+      const v9 = { protocol: TEAM_PROTOCOL_V9, capabilities: styleCapabilities };
+      const styleCompatibility = await call("GET", TEAM_API_ROUTES.compatibility, { protocol: TEAM_PROTOCOL_V9 });
+      const styleOlder = await call("GET", TEAM_API_ROUTES.compatibility, { protocol: 8 });
+      check(
+        "the host advertises sidebar-style-v1 to a protocol 9 peer only",
+        list(field(styleCompatibility.body, "capabilities")).includes(SIDEBAR_STYLE_CAPABILITY) &&
+          !list(field(styleOlder.body, "capabilities")).includes(SIDEBAR_STYLE_CAPABILITY),
+        [summary(styleCompatibility), summary(styleOlder)],
+      );
+      const act = (json: Json, options: { protocol?: number; capabilities?: string[] } = v9) =>
+        call("POST", SIDEBAR_STYLE_ROUTES.action, { token: bobToken, json, ...options });
+      const created = await act({ type: "create", name: "Style" });
+      const sectionId = field(created.body, "sections", 0, "id");
+      assert.ok(typeof sectionId === "string", "The style route did not create a section.");
+      const colored = await act({ type: "set-section-color", sectionId, color: "#AABBCC" });
+      const iconed = await act({ type: "set-section-icon", sectionId, icon: { kind: "emoji", emoji: "🚀" } });
+      check(
+        "the style route sets the color of a section in lower case and its icon, and answers with the layout",
+        created.status === 200 &&
+          colored.status === 200 &&
+          field(colored.body, "sections", 0, "color") === "#aabbcc" &&
+          iconed.status === 200 &&
+          isDeepStrictEqual(field(iconed.body, "sections", 0, "icon"), { kind: "emoji", emoji: "🚀" }) &&
+          field(iconed.body, "sections", 0, "color") === "#aabbcc",
+        [summary(created), summary(colored), summary(iconed)],
+      );
+      for (const agentId of ["agent-ada", "agent-oc", "agent-pi"])
+        await act({ type: "move-agent", agentId, sectionId, beforeAgentId: null });
+      const marker = await act({ type: "create-marker", sectionId, label: " Done ", style: "tint", color: "#112233" });
+      const markerId = field(marker.body, "markers", 0, "id");
+      assert.ok(typeof markerId === "string", "The style route did not create a marker.");
+      const updated = await act({ type: "update-marker", markerId, label: "Review", style: "dim", color: null });
+      const moved = await act({ type: "move-marker", markerId, sectionId, beforeId: "agent-pi" });
+      const markerOrder = list(field(moved.body, "itemOrder"));
+      check(
+        "the style route creates, updates and moves a marker, and itemOrder holds the marker between the chats",
+        marker.status === 200 &&
+          isDeepStrictEqual(field(marker.body, "markers", 0), {
+            id: markerId,
+            sectionId,
+            label: "Done",
+            style: "tint",
+            color: "#112233",
+          }) &&
+          updated.status === 200 &&
+          isDeepStrictEqual(field(updated.body, "markers", 0), {
+            id: markerId,
+            sectionId,
+            label: "Review",
+            style: "dim",
+          }) &&
+          moved.status === 200 &&
+          markerOrder.indexOf(markerId) === markerOrder.indexOf("agent-pi") - 1 &&
+          isDeepStrictEqual(
+            list(field(moved.body, "agentOrder")),
+            markerOrder.filter((id) => id !== markerId),
+          ),
+        [summary(marker), summary(updated), summary(moved)],
+      );
+      const read = await call("POST", SIDEBAR_STYLE_ROUTES.read, { token: bobToken, json: {}, ...v9 });
+      check(
+        "the style read gives the layout that the last action gave, and the store holds the same",
+        read.status === 200 &&
+          isDeepStrictEqual(read.body, moved.body) &&
+          isDeepStrictEqual(JSON.parse(JSON.stringify(sidebarLayout.getSnapshot())), moved.body),
+        [summary(read)],
+      );
+      // The released routes keep their wire for a peer that asks for the style too: five keys, and a
+      // section with an id and a name.
+      const releasedKeys = ["agentAssignments", "agentOrder", "order", "revision", "sections"];
+      const asked = await call("GET", TEAM_API_ROUTES.sidebarLayout.state, { token: bobToken, ...v9 });
+      const plain = await call("GET", TEAM_API_ROUTES.sidebarLayout.state, {
+        token: bobToken,
+        protocol: TEAM_PROTOCOL_V9,
+        capabilities: [AGENT_HIDDEN_CAPABILITY, TEAM_QUEUE_EDIT_CAPABILITY],
+      });
+      const older = await call("GET", TEAM_API_ROUTES.sidebarLayout.state, { token: bobToken });
+      check(
+        "the released layout route gives five keys, and a section with an id and a name, to every peer",
+        [asked, plain, older].every(
+          (reply) =>
+            reply.status === 200 &&
+            isDeepStrictEqual(objectKeys(reply.body).sort(), releasedKeys) &&
+            list(field(reply.body, "sections")).every((item) =>
+              isDeepStrictEqual(objectKeys(item).sort(), ["id", "name"]),
+            ),
+        ),
+        [summary(asked), summary(plain), summary(older)],
+      );
+      const releasedColor = await call("POST", TEAM_API_ROUTES.sidebarLayout.actions, {
+        token: bobToken,
+        json: { type: "set-section-color", sectionId, color: "#000000" },
+        ...v9,
+      });
+      const releasedMarker = await call("POST", TEAM_API_ROUTES.sidebarLayout.actions, {
+        token: bobToken,
+        json: { type: "delete-marker", markerId },
+        ...v9,
+      });
+      check(
+        "the released action route still refuses a color and a marker action, and the layout does not change",
+        releasedColor.status === 400 &&
+          releasedMarker.status === 400 &&
+          isDeepStrictEqual(JSON.parse(JSON.stringify(sidebarLayout.getSnapshot())), moved.body),
+        [summary(releasedColor), summary(releasedMarker)],
+      );
+      const unsupportedRead = await call("POST", SIDEBAR_STYLE_ROUTES.read, { token: bobToken, json: {} });
+      const unsupportedAction = await act(
+        { type: "delete-marker", markerId },
+        { protocol: TEAM_PROTOCOL_V9, capabilities: [] },
+      );
+      const badColor = await act({ type: "set-section-color", sectionId, color: "red" });
+      const badType = await act({ type: "explode", sectionId });
+      const badIcon = await act({
+        type: "set-section-icon",
+        sectionId,
+        icon: { kind: "image", dataUrl: "https://example.invalid/a.png" },
+      });
+      const anonymous = await call("POST", SIDEBAR_STYLE_ROUTES.read, { json: {}, ...v9 });
+      check(
+        "without the capability the style routes get 400, a bad color, type or icon gets 400, no session gets 401, and nothing changes",
+        errorIs(unsupportedRead, 400, sourceText("error.team.sidebarStyleUnsupported")) &&
+          errorIs(unsupportedAction, 400, sourceText("error.team.sidebarStyleUnsupported")) &&
+          badColor.status === 400 &&
+          badType.status === 400 &&
+          badIcon.status === 400 &&
+          anonymous.status === 401 &&
+          isDeepStrictEqual(JSON.parse(JSON.stringify(sidebarLayout.getSnapshot())), moved.body),
+        [
+          summary(unsupportedRead),
+          summary(unsupportedAction),
+          summary(badColor),
+          summary(badType),
+          summary(badIcon),
+          summary(anonymous),
+        ],
+      );
+      // A protocol 3 peer does not see the providers of Oscar and Pia. The ids of an agent it cannot see are not in
+      // the layout that it reads, itemOrder included, and it cannot name one in an action.
+      const v3 = { protocol: 3, capabilities: styleCapabilities };
+      const hiddenRead = await call("POST", SIDEBAR_STYLE_ROUTES.read, { token: bobToken, json: {}, ...v3 });
+      const hiddenAction = await act(
+        { type: "move-agent", agentId: "agent-oc", sectionId: null, beforeAgentId: null },
+        v3,
+      );
+      const hiddenBefore = await act({ type: "move-marker", markerId, sectionId, beforeId: "agent-oc" }, v3);
+      const visibleIds = [
+        ...list(field(hiddenRead.body, "agentOrder")),
+        ...list(field(hiddenRead.body, "itemOrder")),
+        ...Object.keys(field(hiddenRead.body, "agentAssignments") ?? {}),
+      ];
+      check(
+        "a peer that cannot see an agent does not read its id in the layout, and cannot name it in an action",
+        hiddenRead.status === 200 &&
+          visibleIds.includes("agent-ada") &&
+          !visibleIds.includes("agent-oc") &&
+          !visibleIds.includes("agent-pi") &&
+          errorIs(hiddenAction, 404, sourceText("error.team.agentNotFound")) &&
+          errorIs(hiddenBefore, 404, sourceText("error.team.agentNotFound")),
+        [summary(hiddenRead), summary(hiddenAction), summary(hiddenBefore)],
+      );
+      // The client side of main, over this host: the event of five keys becomes the whole layout when
+      // the host negotiated the capability, and stays as the host sent it when it did not, or when the
+      // read fails.
+      const refreshed = async (style: boolean, reads: boolean): Promise<AgentEvent[]> => {
+        const emitted: AgentEvent[] = [];
+        const refresh = new RemoteEventRefresh({
+          request: (_serverId, path, decoder, init) =>
+            Effect.tryPromise({
+              try: async () => {
+                const reply = await call(init?.method ?? "GET", path, {
+                  token: bobToken,
+                  ...(init?.method === "POST" ? { json: {} } : {}),
+                  ...v9,
+                });
+                if (!reads || reply.status >= 400) throw new Error("The host refused the read.");
+                return decoder(reply.body);
+              },
+              catch: (cause) => new RemoteWorkflowError({ cause }),
+            }),
+          hasServer: () => true,
+          hasSidebarStyle: () => style,
+          emit: (_serverId, event) => emitted.push(event),
+        });
+        const releasedLayout = await call("GET", TEAM_API_ROUTES.sidebarLayout.state, { token: bobToken, ...v9 });
+        const layout = releasedLayout.body;
+        if (!isSidebarLayoutSnapshot(layout)) throw new Error("The released layout is not a layout.");
+        await Effect.runPromise(refresh.forward("server-1", { type: "sidebar-layout-changed", layout }));
+        return emitted;
+      };
+      const withStyle = await refreshed(true, true);
+      const withoutStyle = await refreshed(false, true);
+      const failedRead = await refreshed(true, false);
+      const mergedLayout = withStyle[0]?.type === "sidebar-layout-changed" ? withStyle[0].layout : null;
+      check(
+        "the client reads the whole layout on the event of a host with the capability, and keeps the five keys otherwise or when the read fails",
+        withStyle.length === 1 &&
+          isSidebarLayoutSnapshot(mergedLayout) &&
+          mergedLayout.sections[0]?.color === "#aabbcc" &&
+          mergedLayout.sections[0]?.icon?.kind === "emoji" &&
+          isDeepStrictEqual(
+            mergedLayout.markers?.map((item) => item.label),
+            ["Review"],
+          ) &&
+          withoutStyle.length === 1 &&
+          withoutStyle[0]?.type === "sidebar-layout-changed" &&
+          withoutStyle[0].layout.sections.every((item) => item.color === undefined && item.icon === undefined) &&
+          withoutStyle[0].layout.markers === undefined &&
+          failedRead.length === 1 &&
+          failedRead[0]?.type === "sidebar-layout-changed" &&
+          failedRead[0].layout.markers === undefined,
+        { withStyle, withoutStyle, failedRead },
+      );
+      const deleted = await act({ type: "delete-marker", markerId });
+      check(
+        "the style route deletes a marker, and the layout has none and no itemOrder",
+        deleted.status === 200 &&
+          field(deleted.body, "markers") === undefined &&
+          field(deleted.body, "itemOrder") === undefined,
+        summary(deleted),
+      );
+    }
     const update = await call("POST", TEAM_API_ROUTES.agent.queueUpdate("agent-ada"), {
       token: bobToken,
       json: { deliveryId: "delivery-1", text: "changed text", keepAttachmentIds: ["kept-1"], attachmentDraftIds: [] },

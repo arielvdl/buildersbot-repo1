@@ -95,6 +95,7 @@ export function serverSupportsCapability(
       capability === "side-question-v1" ||
       capability === "agent-notification-levels-v1" ||
       capability === "queue-force-v1" ||
+      capability === "sidebar-style-v1" ||
       capability === "egress-proxy-v1") &&
     server?.kind === "remote"
   ) {

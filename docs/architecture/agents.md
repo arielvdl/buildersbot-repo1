@@ -1027,8 +1027,9 @@ No field means no color. The section menu sets it with the `set-section-color` a
 and `isSidebarLayoutSnapshot` refuse any other value. The layout file keeps version 2, so an older
 build still reads it. A color in the file that is not valid is dropped, and the section stays.
 Delete removes the color with the section; Duplicate gives the copy the same color. The color is
-local only: the frozen Team API codecs drop it from each section and refuse the action, so a remote
-client does not see it and the desktop shows the menu item only for the local server. The renderer
+the frozen Team API codecs drop it from each section and refuse the action, so only a joined server
+with `sidebar-style-v1` (see [sidebar style](servers.md#sidebar-style)) carries it; the desktop shows the menu item for
+the local server and for such a server. The renderer
 draws the color as a light tint (`sidebar-section-color.css`); a section with no color has no new
 attribute or style. The open chat and the row under the pointer keep the hue of the box in a stronger
 tint, so the open chat shows both that it is open and where it is; a chat with no color opens in the
@@ -1079,8 +1080,8 @@ size, damaged file, SVG with a script, SVG with a link), with the browser error 
 is a URL to fetch. The parser, the store and `isSidebarLayoutSnapshot` check the kind, the characters,
 the image type (PNG or WebP only), the bytes and the pixel size. An icon in the file that is not
 valid is dropped, and the section stays. Duplicate copies the
-icon. As the color, the icon is local only: the frozen Team API codecs drop it and refuse the action,
-so a remote peer shows the letter.
+icon. As the color, the icon crosses the frozen Team API codecs only through `sidebar-style-v1`; any other
+remote peer shows the letter.
 
 The section rail (`SidebarSectionRail.tsx`) is the column at the left of the sidebar: "All", one item
 for each custom section in the layout order, "Unassigned" while it holds a chat, and a plus button.
@@ -1208,7 +1209,8 @@ pointer keep the tint color in a stronger tint, as in a box with a color, and th
 toward the primary text color for contrast. A marker drags as a chat does. A section can have 12
 markers. An activity filter hides the markers, and the compact list shows a line with no text.
 
-Only the local layout keeps markers. The layout has `markers` and `itemOrder`, which holds the chats
+Only the local layout keeps markers, and a joined server with `sidebar-style-v1` shows and changes them
+too. The layout has `markers` and `itemOrder`, which holds the chats
 and the markers in one sequence; `agentOrder` is that sequence without the markers, so a reader of
 `agentOrder` gets the same chat order. The four actions (`create-marker`, `update-marker`,
 `delete-marker`, `move-marker`) and the order rules are in `@buildersbot/contracts/sidebar-markers`, which
@@ -1216,7 +1218,7 @@ the store, the preview mock and the stories share. In a layout with markers, `mo
 chat before a marker. The parser, the store and `isSidebarLayoutSnapshot` check each field; a marker in
 the file that is not valid is dropped, and the sections and chats stay. Deleting a section deletes its
 markers. The frozen Team API codecs drop `markers` and `itemOrder` and refuse the marker actions, so a
-remote peer sees the chats in their order and no marker. An older version reads the file and drops the
+remote peer without `sidebar-style-v1` sees the chats in their order and no marker. An older version reads the file and drops the
 markers at its next save. Instance transfer copies the section names and assignments only, so it
 does not copy the markers.
 

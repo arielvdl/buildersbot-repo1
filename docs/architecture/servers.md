@@ -369,6 +369,41 @@ sentence. Only a protocol 9 peer gets the capability (`TEAM_PROTOCOL_V9_ONLY_CAP
 desktop client (`agent:force-queued-message`) and the web client send the route only to a host that
 advertises it. `scripts/team-api-routes-e2e.ts` checks the route.
 
+### Sidebar style
+
+The released `GET /v1/sidebar-layout` and `POST /v1/sidebar-layout/actions` carry five keys, and their
+frozen codecs drop the color and the icon of a section, the markers and `itemOrder`, and refuse the six
+actions that change them. `sidebar-style-v1` gives a joined server the same sidebar features as this
+computer: section color, section icon, markers (create, update, delete, move) and the order of the
+sections in the section rail. The released routes and their projection do not change for any peer.
+
+The frozen codec is `packages/contracts/src/team-protocol/sidebar-style-v1.ts` and the host route is
+`src/main/team-api/route-sidebar-style.ts`. Both routes are `POST`, as the other optional read routes:
+
+- `POST /v1/sidebar-style` with `{}` answers with the whole layout: the five released keys, and the `color`
+  and `icon` of a section, `markers` and `itemOrder` when there are any.
+- `POST /v1/sidebar-style/actions` takes one action of `SidebarLayoutAction` (all twelve, the released
+  six and the style six) and answers with the layout after it. The host parses it as the released route
+  does (`parseSidebarLayoutAction`) and answers 400 for a value that is not valid. An action that names
+  a chat that the member cannot see is 404, and the hidden ids are left out of `agentOrder`,
+  `itemOrder` and `agentAssignments` of the answer.
+
+A request without the capability gets 400 on both routes. Only a protocol 9 peer gets the capability
+(`TEAM_PROTOCOL_V9_ONLY_CAPABILITIES`), and the host advertises it only when the request lists it.
+
+The host still sends the five-key `sidebar-layout-changed` event to every peer. A desktop with the capability
+reads the layout again on that event (`RemoteEventRefresh.#refreshSidebarLayout`, one read for a burst of
+events) and sends the whole layout to the renderer; when the read fails, it sends the five keys of the event,
+so the sections and the order stay current and only the style is missing until the next change. The IPC
+`agent:get-sidebar-layout` and `agent:mutate-sidebar-layout` use the new routes for a server with the
+capability and the released routes for any other. A color, icon or marker action for a server without it fails
+with `error.team.sidebarStyleUnsupported`. `agent:duplicate-agent` and `agent:save-profile` return a five-key
+layout from a host, so main reads the whole layout again for a server with the capability. The renderer
+(`WorkspaceSidebar.tsx`) turns the color, icon, marker and rail-reorder controls on when the active server has
+`sidebar-layout` and `sidebar-style-v1`; the local server always does. The web client and the phone do not use
+`sidebar-style-v1` yet. `scripts/team-api-routes-e2e.ts` checks the routes, the released wire for a peer that
+asks, a peer without the capability, hidden ids and the event refresh.
+
 ### Browser control and page state
 
 The frozen `browser-changed` event and `GET /v1/browser/tabs` drop unknown tab keys in released

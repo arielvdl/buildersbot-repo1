@@ -75,6 +75,7 @@ import { ROUTINE_RECOVERY_CODECS } from "./routine-recovery-v1";
 import { ROUTINE_RESULTS_CODECS } from "./routine-results-v1";
 import { SHARED_TABLES_CODECS } from "./shared-tables-v1";
 import { SIDE_QUESTION_CODECS } from "./side-question-v1";
+import { SIDEBAR_STYLE_CODECS } from "./sidebar-style-v1";
 import { SIGN_IN_RELAY_CODECS } from "./sign-in-relay-v1";
 import { SKILLS_ADMIN_CODECS } from "./skills-admin-v1";
 import { STORAGE_DISK_CODECS } from "./storage-disk-v1";
@@ -164,6 +165,7 @@ const CODECS: ReadonlyMap<string, OptionalRouteCodec> = new Map([
   ...AGENT_THREAD_FILES_CODECS,
   ...AGENT_THREAD_BRANCHES_CODECS,
   ...SIDE_QUESTION_CODECS,
+  ...SIDEBAR_STYLE_CODECS,
   ...BROWSER_PROFILES_CODECS,
   ...WORKFLOWS_CODECS,
   ...VAULT_CODECS,

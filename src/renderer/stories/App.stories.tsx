@@ -168,6 +168,7 @@ export const DifferentRemoteVersions: Story = {
                 "direct-messages",
                 "remote-desktop",
                 "sidebar-layout",
+                "sidebar-style-v1",
               ],
             },
             connectionSequence: 1,

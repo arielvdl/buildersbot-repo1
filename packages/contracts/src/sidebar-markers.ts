@@ -29,6 +29,11 @@ export function isSidebarMarkerAction(action: SidebarLayoutAction): action is Si
   );
 }
 
+/** The actions that no released Team API protocol carries: a color, an icon, and each marker action. */
+export function isSidebarStyleAction(action: SidebarLayoutAction): boolean {
+  return action.type === "set-section-color" || action.type === "set-section-icon" || isSidebarMarkerAction(action);
+}
+
 /** The section of a chat or a marker: a custom section of the layout, or null for no section. */
 export function sidebarItemSectionId(layout: SidebarLayoutSnapshot, itemId: string): string | null {
   const marker = layout.markers?.find((candidate) => candidate.id === itemId);

@@ -307,6 +307,7 @@ async function main(): Promise<void> {
       const refresh = new RemoteEventRefresh({
         request: () => Effect.die(new Error("This fixture makes no request.")),
         hasServer: () => true,
+        hasSidebarStyle: () => false,
         emit: (_serverId, event) => emitted.push(event),
       });
       const tab = {

@@ -43,8 +43,10 @@ import {
   parseSetAgentNotificationLevelInput,
   parseSetAgentSessionSetting,
   remoteBrowserSecretResponse,
+  type SidebarLayoutSnapshot,
 } from "@buildersbot/contracts/ipc";
 import { isDynamicRecord } from "@buildersbot/contracts/runtime-values";
+import { isSidebarStyleAction } from "@buildersbot/contracts/sidebar-markers";
 import { TEAM_API_ROUTES } from "@buildersbot/contracts/team-api-routes";
 import { AGENT_TASKS_CAPABILITY, AGENT_TASKS_ROUTES } from "@buildersbot/contracts/team-protocol/agent-tasks-v1";
 import {
@@ -73,6 +75,7 @@ import {
   SIDE_QUESTION_CAPABILITY,
   SIDE_QUESTION_ROUTES,
 } from "@buildersbot/contracts/team-protocol/side-question-v1";
+import { SIDEBAR_STYLE_CAPABILITY, SIDEBAR_STYLE_ROUTES } from "@buildersbot/contracts/team-protocol/sidebar-style-v1";
 import { sourceText } from "@buildersbot/i18n/source";
 import { createBuildersBotLogger } from "@buildersbot/logging";
 import { Effect } from "effect";
@@ -105,6 +108,7 @@ import {
 } from "../remote-agent-decoding";
 import { acceptEmpty, decodeVoid, type ResponseDecoder } from "../remote-host-decoding";
 import type { RemoteServerManager } from "../remote-server-manager";
+import type { RemoteWorkflowError } from "../remote-service-effects";
 import type { SkillMarketplaceService } from "../skill-marketplace-service";
 import {
   parseAcknowledgeFailedTurn,
@@ -207,6 +211,32 @@ export function agentIpcHandlers({
   messageLinks,
   openExternal,
 }: AgentIpcDependencies): Pick<IpcGroupHandlers, "agent"> {
+  // A joined server with `sidebar-style-v1` gives and takes the whole layout: colors, icons and markers
+  // too. The released routes carry five keys, so a host without it gets them and no more.
+  const remoteSidebarLayout = (serverId: string): Effect.Effect<SidebarLayoutSnapshot, RemoteWorkflowError> => {
+    const released = remoteServers.request(serverId, TEAM_API_ROUTES.sidebarLayout.state, decodeSidebarLayoutSnapshot);
+    if (!remoteServers.supportsCapability(serverId, SIDEBAR_STYLE_CAPABILITY)) return released;
+    return remoteServers
+      .request(serverId, SIDEBAR_STYLE_ROUTES.read, decodeSidebarLayoutSnapshot, { method: "POST", body: {} })
+      .pipe(Effect.catch(() => released));
+  };
+  /**
+   * A result that carries the layout that the released routes give, five keys. With `sidebar-style-v1`
+   * the layout is read again, so that the result does not wipe the style that the window shows. A read
+   * that fails leaves the result as the host sent it.
+   */
+  const withRemoteSidebarStyle = async <T extends { layout: SidebarLayoutSnapshot }>(
+    serverId: string,
+    result: T,
+  ): Promise<T> => {
+    if (!remoteServers.supportsCapability(serverId, SIDEBAR_STYLE_CAPABILITY)) return result;
+    try {
+      const layout = await runCauseEffect(remoteSidebarLayout(serverId));
+      return layout.revision >= result.layout.revision ? { ...result, layout } : result;
+    } catch {
+      return result;
+    }
+  };
   const remoteTaskRequest = <T>(serverId: string, path: string, decoder: ResponseDecoder<T>, body: RemoteTaskBody) => {
     if (!remoteServers.supportsCapability(serverId, AGENT_TASKS_CAPABILITY)) taskRemoteUnsupported();
     // `agent-tasks-v1` carries text only; a host with `agent-thread-files-v1` takes files on its own routes.
@@ -420,20 +450,27 @@ export function agentIpcHandlers({
       }),
       getSidebarLayout: scopedQueryHandler({
         local: () => sidebarLayout.getSnapshot(),
-        remote: (serverId) =>
-          runCauseEffect(
-            remoteServers.request(serverId, TEAM_API_ROUTES.sidebarLayout.state, decodeSidebarLayoutSnapshot),
-          ),
+        remote: (serverId) => runCauseEffect(remoteSidebarLayout(serverId)),
       }),
       mutateSidebarLayout: scopedHandler(parseSidebarLayoutAction, {
         local: (action) => runCauseEffect(sidebarLayout.mutate(action, service.sidebarChatIds())),
-        remote: (action, serverId) =>
-          runCauseEffect(
+        remote: (action, serverId) => {
+          if (remoteServers.supportsCapability(serverId, SIDEBAR_STYLE_CAPABILITY))
+            return runCauseEffect(
+              remoteServers.request(serverId, SIDEBAR_STYLE_ROUTES.action, decodeSidebarLayoutSnapshot, {
+                method: "POST",
+                body: action,
+              }),
+            );
+          // The released route drops the actions of a color, an icon and a marker without a word.
+          if (isSidebarStyleAction(action)) throw new Error(sourceText("error.team.sidebarStyleUnsupported"));
+          return runCauseEffect(
             remoteServers.request(serverId, TEAM_API_ROUTES.sidebarLayout.actions, decodeSidebarLayoutSnapshot, {
               method: "POST",
               body: action,
             }),
-          ),
+          );
+        },
       }),
       generateProfile: scopedHandler(parseGenerateAgentProfile, {
         local: (input) => runCauseEffect(service.generateProfile(input, sidebarLayout.getSnapshot().sections)),
@@ -467,12 +504,15 @@ export function agentIpcHandlers({
       }),
       saveProfile: scopedHandler(parseSaveAgentProfile, {
         local: (input) => runCauseEffect(service.saveProfile(input, sidebarLayout, host.conversationSender())),
-        remote: (input, serverId) =>
-          runCauseEffect(
-            remoteServers.request(serverId, TEAM_API_ROUTES.agents.saveProfile, decodeSaveAgentProfileResult, {
-              method: "POST",
-              body: input,
-            }),
+        remote: async (input, serverId) =>
+          withRemoteSidebarStyle(
+            serverId,
+            await runCauseEffect(
+              remoteServers.request(serverId, TEAM_API_ROUTES.agents.saveProfile, decodeSaveAgentProfileResult, {
+                method: "POST",
+                body: input,
+              }),
+            ),
           ),
       }),
       createAgent: scopedHandler(parseCreateAgent, {
@@ -497,7 +537,8 @@ export function agentIpcHandlers({
               "owner_ui",
             ),
           ),
-        remote: (agentId, serverId) => runCauseEffect(remoteServers.duplicateAgent(agentId, serverId)),
+        remote: async (agentId, serverId) =>
+          withRemoteSidebarStyle(serverId, await runCauseEffect(remoteServers.duplicateAgent(agentId, serverId))),
       }),
       updateAgent: scopedHandler(parseUpdateAgent, {
         local: (input) => runCauseEffect(service.updateAgent(input)),

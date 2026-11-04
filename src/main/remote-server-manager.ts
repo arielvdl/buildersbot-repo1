@@ -69,6 +69,7 @@ import { FOCUS_USE_CAPABILITY, FOCUS_USE_ROUTES } from "@buildersbot/contracts/t
 import type { HostRestartEvent } from "@buildersbot/contracts/team-protocol/host-update-v1";
 import { INSTANCE_TRANSFER_ROUTES } from "@buildersbot/contracts/team-protocol/instance-transfer-v1";
 import type { MachineAlertEvent } from "@buildersbot/contracts/team-protocol/machine-resources-v1";
+import { SIDEBAR_STYLE_CAPABILITY } from "@buildersbot/contracts/team-protocol/sidebar-style-v1";
 import { decodeTeamProtocolV1CurrentHttpResponse } from "@buildersbot/contracts/team-protocol/v1-adapter";
 import { sourceText } from "@buildersbot/i18n/source";
 import { createFocusUsePing } from "@buildersbot/team-client/focus-use";
@@ -353,6 +354,7 @@ export class RemoteServerManager extends EventEmitter<RemoteServerEvents> {
     this.#refresh = new RemoteEventRefresh({
       request: (serverId, path, decoder, init) => this.#client.request(serverId, path, decoder, init),
       hasServer: (serverId) => this.#store.has(serverId),
+      hasSidebarStyle: (serverId) => this.supportsCapability(serverId, SIDEBAR_STYLE_CAPABILITY),
       emit: (serverId, event, bufferedLive) => {
         // Another device of the user changed their levels: the server list shows the new server level.
         if (event.type === "agent-notification-levels-changed")

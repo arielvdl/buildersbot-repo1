@@ -94,6 +94,7 @@ import { ROUTINE_RECOVERY_CAPABILITY } from "./routine-recovery-v1";
 import { ROUTINE_RESULTS_CAPABILITY } from "./routine-results-v1";
 import { SHARED_TABLES_CAPABILITY } from "./shared-tables-v1";
 import { SIDE_QUESTION_CAPABILITY } from "./side-question-v1";
+import { SIDEBAR_STYLE_CAPABILITY } from "./sidebar-style-v1";
 import { SIGN_IN_RELAY_CAPABILITY } from "./sign-in-relay-v1";
 import { SKILLS_ADMIN_CAPABILITY } from "./skills-admin-v1";
 import { SKILLS_EVENTS_CAPABILITY } from "./skills-events-v1";
@@ -222,6 +223,7 @@ export {
   ROUTINE_RESULTS_CAPABILITY,
   SHARED_TABLES_CAPABILITY,
   SIDE_QUESTION_CAPABILITY,
+  SIDEBAR_STYLE_CAPABILITY,
   SIGN_IN_RELAY_CAPABILITY,
   SKILLS_ADMIN_CAPABILITY,
   SKILLS_EVENTS_CAPABILITY,
@@ -375,6 +377,7 @@ export const TEAM_CURRENT_CAPABILITIES = [
   AGENT_THREAD_BRANCHES_CAPABILITY,
   QUEUE_FORCE_CAPABILITY,
   EGRESS_PROXY_CAPABILITY,
+  SIDEBAR_STYLE_CAPABILITY,
 ] as const;
 
 export type TeamCurrentCapability = (typeof TEAM_CURRENT_CAPABILITIES)[number];
@@ -521,7 +524,8 @@ export const TEAM_BOOTSTRAP_CAPABILITIES = TEAM_CURRENT_CAPABILITIES.filter(
     capability !== HOST_KEY_ROTATION_CAPABILITY &&
     capability !== AGENT_THREAD_BRANCHES_CAPABILITY &&
     capability !== QUEUE_FORCE_CAPABILITY &&
-    capability !== EGRESS_PROXY_CAPABILITY,
+    capability !== EGRESS_PROXY_CAPABILITY &&
+    capability !== SIDEBAR_STYLE_CAPABILITY,
 );
 /**
  * The capabilities that only a protocol 9 peer sends and gets. Protocols 7 and 8 read at most 128
@@ -540,6 +544,7 @@ export const TEAM_PROTOCOL_V9_ONLY_CAPABILITIES: ReadonlySet<string> = new Set<T
   AGENT_THREAD_BRANCHES_CAPABILITY,
   QUEUE_FORCE_CAPABILITY,
   EGRESS_PROXY_CAPABILITY,
+  SIDEBAR_STYLE_CAPABILITY,
 ]);
 // A v8 host reads at most 128 capabilities, so a client sends the protocol 9 ones only after it
 // negotiates protocol 9.
@@ -641,6 +646,7 @@ export function legacyTeamCapabilities(capabilities: readonly string[]): string[
       capability !== TEAM_LONG_CAPABILITY_LISTS_CAPABILITY &&
       capability !== AGENT_THREAD_BRANCHES_CAPABILITY &&
       capability !== QUEUE_FORCE_CAPABILITY &&
-      capability !== EGRESS_PROXY_CAPABILITY,
+      capability !== EGRESS_PROXY_CAPABILITY &&
+      capability !== SIDEBAR_STYLE_CAPABILITY,
   );
 }

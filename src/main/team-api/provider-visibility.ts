@@ -74,7 +74,12 @@ function project(
 ): TeamProtocolV1JsonValue {
   if (Array.isArray(value)) {
     return value.flatMap((item) => {
-      if ((key === "agentOrder" || key === "agentIds") && typeof item === "string" && hiddenIds.has(item)) return [];
+      if (
+        (key === "agentOrder" || key === "itemOrder" || key === "agentIds") &&
+        typeof item === "string" &&
+        hiddenIds.has(item)
+      )
+        return [];
       const visible = project(item, hiddenIds, protocol, "", key);
       return visible === null && item !== null ? [] : [visible];
     });

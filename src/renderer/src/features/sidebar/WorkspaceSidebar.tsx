@@ -105,6 +105,10 @@ export function WorkspaceSidebar(props: { peopleEnabled: boolean }) {
   // The host refuses a member: a hidden agent stops for every member, as a deleted one does.
   const hideAllowed = () =>
     activeServerSupportsCapability(AGENT_HIDDEN_CAPABILITY) && serverRoleCanAdminister(activeServer());
+  // Section colors, icons, markers and the reorder in the rail: this computer, or a joined server whose
+  // host sends and takes the whole layout.
+  const sidebarStyleSupported = () =>
+    activeServerSupportsCapability("sidebar-layout") && activeServerSupportsCapability("sidebar-style-v1");
   const {
     queues,
     failedTurns,
@@ -491,8 +495,8 @@ export function WorkspaceSidebar(props: { peopleEnabled: boolean }) {
           ? { selectedId: selectedRailSectionId(), onSelect: selectRailSection, stage: stageFlag() }
           : undefined
       }
-      sectionIconsSupported={activeServer()?.kind === "local" && activeServerSupportsCapability("sidebar-layout")}
-      markersSupported={activeServer()?.kind === "local" && activeServerSupportsCapability("sidebar-layout")}
+      sectionIconsSupported={sidebarStyleSupported()}
+      markersSupported={sidebarStyleSupported()}
       agents={agentList()}
       activeAgentId={activeDirectMember() || channels.state.selectedId ? "" : (activeAgent()?.id ?? "")}
       showPeople={props.peopleEnabled}
@@ -511,7 +515,7 @@ export function WorkspaceSidebar(props: { peopleEnabled: boolean }) {
       }
       duplicatingSectionIds={duplicatingSectionIds()}
       onDuplicateSection={duplicateSection}
-      sectionColorSupported={activeServer()?.kind === "local" && activeServerSupportsCapability("sidebar-layout")}
+      sectionColorSupported={sidebarStyleSupported()}
       onToggleSection={toggleSidebarSection}
       pinnedItems={pinnedSidebarItems()}
       peopleOrder={sidebarPeopleOrder()}

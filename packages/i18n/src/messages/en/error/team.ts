@@ -70,6 +70,7 @@ export const messages = defineMessages("error.team", {
   "error.team.contextResetUnsupported": "Starting a new chat is not supported by this connection.",
   "error.team.contextCompactUnsupported": "Compacting the context is not supported by this connection.",
   "error.team.queueForceUnsupported": "Forcing a queued message is not supported by this connection.",
+  "error.team.sidebarStyleUnsupported": "Sidebar colors, icons and markers are not supported by this connection.",
   "error.team.workspaceDirectoryUnsupported": "Showing folders is not supported by this connection.",
   "error.team.conversationFileSearchUnsupported": "Searching files is not supported by this connection.",
   "error.team.sideQuestionUnsupported": "Side questions are not supported by this connection.",

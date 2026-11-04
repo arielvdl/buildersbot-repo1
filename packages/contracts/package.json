@@ -97,6 +97,7 @@
     "./team-protocol": "./src/team-protocol/index.ts",
     "./team-protocol/queue-edit-v1": "./src/team-protocol/queue-edit-v1.ts",
     "./team-protocol/queue-force-v1": "./src/team-protocol/queue-force-v1.ts",
+    "./team-protocol/sidebar-style-v1": "./src/team-protocol/sidebar-style-v1.ts",
     "./team-protocol/browser-view-v1": "./src/team-protocol/browser-view-v1.ts",
     "./team-protocol/mcp-sign-in-app-v1": "./src/team-protocol/mcp-sign-in-app-v1.ts",
     "./team-protocol/mcp-sign-in-v1": "./src/team-protocol/mcp-sign-in-v1.ts",
