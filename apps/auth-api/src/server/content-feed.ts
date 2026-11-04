@@ -60,7 +60,6 @@ function latestSiteModifiedAt(): string {
 function contentSitemapXml(): string {
   const entries = [
     { loc: BUILDERSBOT_SITE_URL, lastmod: latestSiteModifiedAt() },
-    { loc: downloadPageUrl("hub"), lastmod: DOWNLOAD_PAGES_UPDATED_AT },
     ...DOWNLOAD_PAGE_ORDER.map((platform) => ({
       loc: downloadPageUrl(platform),
       lastmod: DOWNLOAD_PAGES_UPDATED_AT,

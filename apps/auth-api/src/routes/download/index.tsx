@@ -1,11 +1,9 @@
-import { createFileRoute } from "@tanstack/solid-router";
-import { DownloadHubPage } from "../../components/download/DownloadHubPage";
+import { createFileRoute, redirect } from "@tanstack/solid-router";
 
-// `head` imports the pages when it runs, as in routes/compare/$slug.tsx.
+// There is no page that lists every download: the home page has the macOS and Windows buttons.
+// `/download` stays a valid address for old links and sends them there.
 export const Route = createFileRoute("/download/")({
-  head: async ({ match }) => {
-    const { downloadPageHead } = await import("../../lib/download-pages");
-    return downloadPageHead("hub", match.context.siteUrl);
+  beforeLoad: () => {
+    throw redirect({ to: "/", hash: "downloads", statusCode: 301 });
   },
-  component: DownloadHubPage,
 });
