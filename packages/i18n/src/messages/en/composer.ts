@@ -147,6 +147,7 @@ export const messages = defineMessages("composer", {
   "composer.context.nativeAuto": "The provider manages automatic compaction.",
   "composer.compaction.estimated": "Estimated progress",
   "composer.context.noAuto": "This agent does not compact its context.",
+  "composer.context.long": "This chat is long: each turn sends all of it again. A new chat costs less.",
   "composer.context.lastCompaction": "Last compaction: {before} → {after} tokens",
   "composer.compaction.elapsed": "{minutes}:{seconds}",
   "composer.newChat.action": "New chat",

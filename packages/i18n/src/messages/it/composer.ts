@@ -147,6 +147,7 @@ export const messages = {
   "composer.context.nativeAuto": "Il provider gestisce la compattazione automatica.",
   "composer.compaction.estimated": "Avanzamento stimato",
   "composer.context.noAuto": "Questo agente non compatta il suo contesto.",
+  "composer.context.long": "Questa chat è lunga: ogni turno rinvia tutto. Una nuova chat costa meno.",
   "composer.context.lastCompaction": "Ultima compattazione: {before} → {after} token",
   "composer.compaction.elapsed": "{minutes}:{seconds}",
   "composer.newChat.action": "Nuova chat",

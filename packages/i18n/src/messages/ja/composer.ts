@@ -146,6 +146,8 @@ export const messages = {
   "composer.context.nativeAuto": "自動圧縮はプロバイダーが管理します。",
   "composer.compaction.estimated": "推定の進行状況",
   "composer.context.noAuto": "このエージェントはコンテキストを圧縮しません。",
+  "composer.context.long":
+    "このチャットは長くなっています。各ターンですべてが再送されます。新しいチャットの方が低コストです。",
   "composer.context.lastCompaction": "前回の圧縮: {before} → {after} トークン",
   "composer.compaction.elapsed": "{minutes}:{seconds}",
   "composer.newChat.action": "新しいチャット",

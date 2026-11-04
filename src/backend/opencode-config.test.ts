@@ -1,6 +1,8 @@
 // @vitest-environment node
+
+import { CONTEXT_COMPACTION_BUDGET_TOKENS } from "@buildersbot/contracts/context-budget";
 import { describe, expect, it } from "vitest";
-import { culturaBuilderConfigEnv, openCodeConfigEnv } from "./opencode-config";
+import { culturaBuilderConfigEnv, OPENCODE_COMPACTION_BUFFER_TOKENS, openCodeConfigEnv } from "./opencode-config";
 
 const NO_PROVIDERS = () => [];
 
@@ -9,6 +11,7 @@ interface Overlay {
   enabled_providers?: string[];
   permission?: Record<string, string>;
   provider?: object;
+  compaction?: { buffer?: number };
 }
 
 /**
@@ -122,5 +125,24 @@ describe("OpenCode's own web search", () => {
     ).permission;
     expect(permission).toEqual({ "*": "deny", bash: "ask", read: "ask", websearch: "deny" });
     expect(Object.keys(permission ?? {}).at(-1)).toBe("websearch");
+  });
+});
+
+describe("the context budget of an OpenCode session", () => {
+  const WINDOW_1M = 1_048_576;
+
+  it("compacts a window of 1M at the budget, for an agent, a Cultura Builder agent and a profile run", () => {
+    const envs = [
+      openCodeConfigEnv({}, NO_PROVIDERS, null),
+      culturaBuilderConfigEnv("https://gateway.example", null),
+      openCodeConfigEnv({ permission: { "*": "deny" } }, NO_PROVIDERS, null),
+    ];
+    for (const env of envs) expect(overlay(env).compaction?.buffer).toBe(OPENCODE_COMPACTION_BUFFER_TOKENS);
+    // OpenCode compacts at `window - buffer`.
+    expect(WINDOW_1M - OPENCODE_COMPACTION_BUFFER_TOKENS).toBe(CONTEXT_COMPACTION_BUDGET_TOKENS);
+  });
+
+  it("leaves a window of 262,144 tokens on OpenCode's own rule: the buffer is larger than the window", () => {
+    expect(OPENCODE_COMPACTION_BUFFER_TOKENS).toBeGreaterThan(262_144);
   });
 });

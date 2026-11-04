@@ -152,6 +152,7 @@ export const messages = {
   "composer.context.nativeAuto": "Der Anbieter verwaltet die automatische Komprimierung.",
   "composer.compaction.estimated": "Geschätzter Fortschritt",
   "composer.context.noAuto": "Dieser Agent komprimiert seinen Kontext nicht.",
+  "composer.context.long": "Dieser Chat ist lang: Jeder Durchlauf sendet alles erneut. Ein neuer Chat kostet weniger.",
   "composer.context.lastCompaction": "Letzte Komprimierung: {before} → {after} Tokens",
   "composer.compaction.elapsed": "{minutes}:{seconds}",
   "composer.newChat.action": "Neuer Chat",

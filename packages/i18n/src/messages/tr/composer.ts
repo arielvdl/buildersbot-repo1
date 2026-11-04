@@ -147,6 +147,7 @@ export const messages = {
   "composer.context.nativeAuto": "Otomatik sıkıştırmayı sağlayıcı yönetir.",
   "composer.compaction.estimated": "Tahmini ilerleme",
   "composer.context.noAuto": "Bu ajan bağlamını sıkıştırmaz.",
+  "composer.context.long": "Bu sohbet uzun: her tur her şeyi yeniden gönderir. Yeni bir sohbet daha ucuza gelir.",
   "composer.context.lastCompaction": "Son sıkıştırma: {before} → {after} token",
   "composer.compaction.elapsed": "{minutes}:{seconds}",
   "composer.newChat.action": "Yeni sohbet",

@@ -147,6 +147,7 @@ export const messages = {
   "composer.context.nativeAuto": "De aanbieder beheert het automatisch comprimeren.",
   "composer.compaction.estimated": "Geschatte voortgang",
   "composer.context.noAuto": "Deze agent comprimeert zijn context niet.",
+  "composer.context.long": "Deze chat is lang: elke beurt stuurt alles opnieuw. Een nieuwe chat kost minder.",
   "composer.context.lastCompaction": "Laatste compressie: {before} → {after} tokens",
   "composer.compaction.elapsed": "{minutes}:{seconds}",
   "composer.newChat.action": "Nieuwe chat",

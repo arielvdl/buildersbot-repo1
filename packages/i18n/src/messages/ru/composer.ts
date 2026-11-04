@@ -147,6 +147,7 @@ export const messages = {
   "composer.context.nativeAuto": "Автоматическим сжатием управляет провайдер.",
   "composer.compaction.estimated": "Примерный прогресс",
   "composer.context.noAuto": "Этот агент не сжимает свой контекст.",
+  "composer.context.long": "Этот чат длинный: каждый ход отправляет всё заново. Новый чат обходится дешевле.",
   "composer.context.lastCompaction": "Последнее сжатие: {before} → {after} токенов",
   "composer.compaction.elapsed": "{minutes}:{seconds}",
   "composer.newChat.action": "Новый чат",

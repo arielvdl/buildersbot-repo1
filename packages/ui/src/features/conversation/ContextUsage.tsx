@@ -1,3 +1,4 @@
+import { CONTEXT_WARNING_TOKENS } from "@buildersbot/contracts/context-budget";
 import {
   AGENT_CONTEXT_CATEGORIES,
   type AgentContextCategory,
@@ -88,6 +89,8 @@ function usedShare(usage: ContextUsageView): number {
 function meterLevel(usage: ContextUsageView): "quiet" | "normal" | RadialProgressTone {
   const share = usedShare(usage);
   if (!usage.nativeManaged && usage.autoCompactAt === null && share >= 0.9) return "danger";
+  // A long chat costs on each turn, whatever the window: the warning does not wait for a share of 1M.
+  if (usage.usedTokens >= CONTEXT_WARNING_TOKENS) return "warning";
   if (share >= (usage.autoCompactAt ?? 0.9) - 0.1) return "warning";
   return share < 0.5 ? "quiet" : "normal";
 }
@@ -225,6 +228,9 @@ export function ContextUsageMeter(props: {
                 )}
               </Show>
             </Popover.Description>
+            <Show when={props.usage.usedTokens >= CONTEXT_WARNING_TOKENS && !props.usage.compacting}>
+              <p class="context-meter-note">{t("composer.context.long")}</p>
+            </Show>
             <Show when={compactError()}>
               {(message) => (
                 <p class="context-meter-note" role="alert">

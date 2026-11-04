@@ -143,6 +143,7 @@ export const messages = {
   "composer.context.nativeAuto": "자동 압축은 제공자가 관리해요.",
   "composer.compaction.estimated": "예상 진행률",
   "composer.context.noAuto": "이 에이전트는 컨텍스트를 압축하지 않아요.",
+  "composer.context.long": "이 채팅이 길어요. 매 턴마다 전체를 다시 보내요. 새 채팅이 비용이 더 적어요.",
   "composer.context.lastCompaction": "마지막 압축: 토큰 {before} → {after}",
   "composer.compaction.elapsed": "{minutes}:{seconds}",
   "composer.newChat.action": "새 채팅",

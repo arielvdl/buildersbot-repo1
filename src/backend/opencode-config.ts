@@ -8,6 +8,7 @@
 // This lives beside `provider-drivers.ts` rather than inside it because the driver table is a table:
 // the shape of one CLI's config is a concern of its own, and it is the half worth unit testing.
 
+import { CONTEXT_COMPACTION_BUDGET_TOKENS } from "@buildersbot/contracts/context-budget";
 import type { CustomProviderHarness, CustomProviderHeader, CustomProviderModel } from "@buildersbot/contracts/ipc";
 import type { CulturaBuilderGatewayModel } from "./cultura-builder-auth";
 
@@ -130,6 +131,7 @@ interface OpenCodeConfig {
   readonly provider?: Readonly<Record<string, OpenCodeProviderEntry | OpenCodeKeyEntry>>;
   /** The providers this process lists at all. Absent leaves every provider the user has. */
   readonly enabled_providers?: readonly string[];
+  readonly compaction?: { readonly buffer: number };
 }
 
 /** What a caller starts from: every layer except the ones this module adds. */
@@ -166,6 +168,22 @@ export const OPENCODE_PROFILE_CONFIG: OpenCodeConfigBase = { permission: { "*": 
  * 2.2.5: the question comes from `opencode.tool.websearch`, after the permission check.
  */
 const OPENCODE_WEBSEARCH_OFF = { websearch: "deny" } as const;
+
+/**
+ * When OpenCode compacts a session on its own: it keeps a buffer free below the model window, so it
+ * compacts at `window - buffer`. The default buffer is 15% of the window, which is 890,000 tokens on a
+ * window of 1,048,576: a chat of that size sent all of it on each model step, and nothing compacted
+ * it (finding F-22: 273 sessions above 400,000 tokens, none compacted).
+ *
+ * A buffer of a fixed number of tokens gives a compaction point of `CONTEXT_COMPACTION_BUDGET_TOKENS`
+ * on a window of 1,048,576 tokens, and the window itself stays at 1M. A window that is not larger than
+ * the buffer keeps OpenCode's own rule (checked in the OpenCode 2.2.5 code: `n < window ? window - n :
+ * window - max(15%, 16K)`), so the 262,144 token windows are as before. A window between 549,000 and
+ * 1,048,576 tokens compacts earlier than a share would; models with such a window are rare.
+ */
+const OPENCODE_FULL_WINDOW_TOKENS = 1_048_576;
+export const OPENCODE_COMPACTION_BUFFER_TOKENS = OPENCODE_FULL_WINDOW_TOKENS - CONTEXT_COMPACTION_BUDGET_TOKENS;
+const OPENCODE_COMPACTION = { buffer: OPENCODE_COMPACTION_BUFFER_TOKENS } as const;
 
 const OPENCODE_CONFIG_ENV = "OPENCODE_CONFIG_CONTENT";
 
@@ -274,6 +292,7 @@ function mergeOpenCodeConfig(
     ...base,
     permission: { ...base.permission, ...OPENCODE_WEBSEARCH_OFF },
     agent: OPENCODE_TITLE_OFF,
+    compaction: OPENCODE_COMPACTION,
     ...(Object.keys(entries).length > 0 ? { provider: entries } : {}),
   };
 }
@@ -453,6 +472,7 @@ export function culturaBuilderConfigEnv(
     mcp: ownMcpOff(vendorOff),
     permission: OPENCODE_WEBSEARCH_OFF,
     enabled_providers: ["cultura-builder"],
+    compaction: OPENCODE_COMPACTION,
     provider: {
       "cultura-builder": {
         npm: OPENCODE_COMPATIBLE_NPM,

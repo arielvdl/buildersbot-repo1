@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { contextCompactionTokens } from "@buildersbot/contracts/context-budget";
 import { INPUT_LIMITS } from "@buildersbot/contracts/input-limits";
 import type { AgentContextCategoryUsage, AgentContextState, AgentSummary } from "@buildersbot/contracts/ipc";
 import { Effect, Schema } from "effect";
@@ -20,7 +21,6 @@ interface ThreadContextBudget {
   lastCompactedTokens: number | null;
 }
 
-const CONTEXT_COMPACTION_THRESHOLD = 0.8;
 const CONTEXT_COMPACTION_TIMEOUT_MS = 120_000;
 /**
  * A started compaction of a long thread can take minutes (#3466). Its deadline is this many times
@@ -281,7 +281,8 @@ export class ContextCompaction {
     budget.contextWindow = contextWindow;
     this.#budgets.set(threadId, budget);
 
-    const pressured = usedTokens / contextWindow >= CONTEXT_COMPACTION_THRESHOLD;
+    // 80% of the window, or the absolute budget if that is less (`CONTEXT_COMPACTION_BUDGET_TOKENS`).
+    const pressured = usedTokens >= contextCompactionTokens(contextWindow);
     if (!pressured) {
       budget.pending = false;
       budget.lastCompactedTokens = null;

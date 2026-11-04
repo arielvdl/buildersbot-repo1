@@ -142,6 +142,7 @@ export const messages = {
   "composer.context.nativeAuto": "由服务商管理自动压缩。",
   "composer.compaction.estimated": "估算进度",
   "composer.context.noAuto": "该助手不会压缩上下文。",
+  "composer.context.long": "此对话较长：每一轮都会重新发送全部内容。新对话成本更低。",
   "composer.context.lastCompaction": "上次压缩：{before} → {after} 个 token",
   "composer.compaction.elapsed": "{minutes}:{seconds}",
   "composer.newChat.action": "新对话",

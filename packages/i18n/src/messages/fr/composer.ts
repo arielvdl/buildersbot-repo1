@@ -151,6 +151,8 @@ export const messages = {
   "composer.context.nativeAuto": "Le fournisseur gère le compactage automatique.",
   "composer.compaction.estimated": "Progression estimée",
   "composer.context.noAuto": "Cet agent ne compacte pas son contexte.",
+  "composer.context.long":
+    "Cette discussion est longue : chaque tour renvoie tout. Une nouvelle discussion coûte moins.",
   "composer.context.lastCompaction": "Dernier compactage : {before} → {after} jetons",
   "composer.compaction.elapsed": "{minutes}:{seconds}",
   "composer.newChat.action": "Nouvelle discussion",

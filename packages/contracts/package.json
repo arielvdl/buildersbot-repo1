@@ -47,6 +47,7 @@
     "./server-creation": "./src/server-creation.ts",
     "./host-grant": "./src/host-grant.ts",
     "./host-key-handover": "./src/host-key-handover.ts",
+    "./context-budget": "./src/context-budget.ts",
     "./input-limits": "./src/input-limits.ts",
     "./sidebar-markers": "./src/sidebar-markers.ts",
     "./invite-links": "./src/invite-links.ts",
