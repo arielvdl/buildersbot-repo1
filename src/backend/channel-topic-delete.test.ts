@@ -240,6 +240,15 @@ describe("closing a channel tab", () => {
     await Effect.runPromise(
       service.tool(channelId, "writer", "turn-1", "call-1", "channel_remember", { text: "Ship on Friday." }),
     );
+    // A full channel answers the model with a reason instead of failing the turn.
+    const fillers = Array.from({ length: service.memories.limit() - 1 }, (_, index) => `Filler fact ${index}.`);
+    for (const filler of fillers) service.memories.createManual(channelId, filler);
+    const full = await Effect.runPromise(
+      service.tool(channelId, "writer", "turn-1", "call-full", "channel_remember", { text: "One too many." }),
+    );
+    expect(full).toMatchObject({ accepted: false });
+    expect(JSON.stringify(full)).toContain("channel_forget_memory");
+    for (const filler of fillers) service.memories.deleteByText(channelId, filler);
     await Effect.runPromise(service.tool(channelId, "writer", "turn-1", "call-2", "channel_result", { text: "Done." }));
 
     const second = service.store.page(channelId, "topic-second");

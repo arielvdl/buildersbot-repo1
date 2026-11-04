@@ -16,6 +16,17 @@ import { databaseRow, databaseRows, requiredStringColumn } from "./database/data
  * The aggregate type is deliberately per-owner. `database/agent-roster.ts` purges the events of a
  * deleted agent by `aggregate_type`, and a channel must not be swept up by that query.
  */
+/** The owner is at its cap. A typed error so a tool call can answer the model instead of raising a provider error. */
+export class MemoryLimitError extends Error {
+  constructor(
+    message: string,
+    readonly limit: number,
+  ) {
+    super(message);
+    this.name = "MemoryLimitError";
+  }
+}
+
 export interface MemoryTables {
   table: string;
   ownerColumn: "agent_id" | "channel_id" | "connection_id";
@@ -198,7 +209,7 @@ export class MemoryStore {
     if (input.memoryId && !previous) throw new Error(sourceText("error.backend.memoryGone"));
     if (!previous && !input.uncapped) {
       const limit = this.tables.limit();
-      if (this.count(ownerId) >= limit) throw new Error(this.tables.limitMessage(limit));
+      if (this.count(ownerId) >= limit) throw new MemoryLimitError(this.tables.limitMessage(limit), limit);
     }
 
     const now = new Date().toISOString();

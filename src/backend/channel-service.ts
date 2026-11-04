@@ -74,6 +74,7 @@ import type { ChannelChange } from "./channel-store";
 import { type ChannelAssignment, type ChannelContext, type ChannelStartFailure, ChannelStore } from "./channel-store";
 import { cleanTopicName, topicNamePrompt } from "./channel-topic-name";
 import type { DeliveryContext, MailboxStore } from "./mailbox-store";
+import { MemoryLimitError } from "./memory-store";
 import { extractJsonObject, StructuredOutputError } from "./structured-output";
 
 export interface ChannelHooks {
@@ -3580,9 +3581,24 @@ export class ChannelService {
       if (!isString(args.text) || !args.text.trim() || args.text.length > INPUT_LIMITS.agentMemoryText)
         return yield* channelFailure(new Error("Provide the memory text."));
       const text = args.text;
-      if (tool === "channel_remember")
-        yield* channelSync(() => this.memories.saveFromTool(channelId, text, turnId, `channel-memory:${operationId}`));
-      else if (!(yield* channelSync(() => this.memories.deleteByText(channelId, text))))
+      if (tool === "channel_remember") {
+        // A full channel is an answer for the model, not a failure: it must merge or forget, and a thrown
+        // error would surface to the person as a provider error on every retry.
+        const full = yield* channelSync(() => {
+          try {
+            this.memories.saveFromTool(channelId, text, turnId, `channel-memory:${operationId}`);
+            return null;
+          } catch (error) {
+            if (error instanceof MemoryLimitError) return error;
+            throw error;
+          }
+        });
+        if (full)
+          return {
+            accepted: false,
+            reason: `The channel already holds ${full.limit} memories. Nothing was saved. Merge related facts into one: call channel_forget_memory for the outdated or redundant ones, then channel_remember the combined fact. Do not retry the same text.`,
+          };
+      } else if (!(yield* channelSync(() => this.memories.deleteByText(channelId, text))))
         return { accepted: false, reason: "No memory matches that text." };
       this.hooks.memoriesChanged?.(channelId);
       return { accepted: true };
