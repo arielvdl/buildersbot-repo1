@@ -309,7 +309,9 @@ import { providerGuardModel } from "./guard/provider-guard-model";
 import { type GuardResult, ToolGuard } from "./guard/tool-guard";
 import type { HostMemory } from "./host-memory";
 import { HubConnectionClient } from "./hub-connections/hub-connection-client";
+import type { HubConnectionPort } from "./hub-connections/hub-connection-port";
 import { HubConnectionTools } from "./hub-connections/hub-connection-tools";
+import { HubDelegateHost } from "./hub-connections/hub-delegate-host";
 import { type HubTurnOrigin, routineOriginOf } from "./hub-connections/turn-origin";
 import type { MailboxStore } from "./mailbox-store";
 import { toMcpOperationError } from "./mcp-effects";
@@ -548,6 +550,12 @@ export interface AgentServiceOptions {
    * cost can be approved. Null turns the tools off for this service.
    */
   hubConnections?: {
+    /**
+     * Another Hub client in place of the one that reads this process's Cultura Builder session. A local
+     * server that the desktop app runs as its child process has none: it asks the app, which holds the
+     * session (`HubConnectionDelegate`).
+     */
+    readonly client?: HubConnectionPort;
     readonly fetch?: typeof fetch;
     readonly enabled?: () => boolean;
     readonly openHub?: (url: string) => Promise<void>;
@@ -684,6 +692,8 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   readonly #security: PromptInjectionGuard;
   readonly #toolGuard: ToolGuard;
   readonly #hubConnections: HubConnectionTools | null;
+  /** This process's own Hub client, which holds the session. Null when the connections are off or delegated. */
+  readonly #hubClient: HubConnectionClient | null;
   /**
    * The advanced optimizations (beta) of this host. Each part of the service that has a switch reads it
    * here when it decides, so a change applies to the next decision.
@@ -1828,19 +1838,25 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
     this.#remotePerson = options.channelRemotePerson ?? (() => false);
     // The session stays in this process: the client reads it from the credential store at each request.
     const hubConnections = options.hubConnections === undefined ? {} : options.hubConnections;
-    this.#hubConnections = hubConnections
-      ? new HubConnectionTools({
-          client: new HubConnectionClient({
+    this.#hubClient =
+      hubConnections && !hubConnections.client
+        ? new HubConnectionClient({
             session: () => credentials.apiKey("cultura-builder"),
             saveSession: (value) => credentials.saveApiKey?.("cultura-builder", value) ?? Effect.void,
             ...(hubConnections.fetch ? { fetch: hubConnections.fetch } : {}),
-          }),
-          ...(hubConnections.enabled ? { enabledOnComputer: hubConnections.enabled } : {}),
-          ...(hubConnections.openHub ? { openHub: hubConnections.openHub } : {}),
-          agentConnectionsOff: (agentId) =>
-            store.list().find((candidate) => candidate.id === agentId)?.connectionsOff ?? [],
-        })
-      : null;
+          })
+        : null;
+    const hubClient: HubConnectionPort | null = this.#hubClient ?? hubConnections?.client ?? null;
+    this.#hubConnections =
+      hubConnections && hubClient
+        ? new HubConnectionTools({
+            client: hubClient,
+            ...(hubConnections.enabled ? { enabledOnComputer: hubConnections.enabled } : {}),
+            ...(hubConnections.openHub ? { openHub: hubConnections.openHub } : {}),
+            agentConnectionsOff: (agentId) =>
+              store.list().find((candidate) => candidate.id === agentId)?.connectionsOff ?? [],
+          })
+        : null;
     this.#toolGuard = new ToolGuard({
       preference: options.guard ?? (() => DEFAULT_GUARD_PREFERENCE),
       models: [
@@ -6428,6 +6444,16 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
   /** Whether the Guard's chosen reviewer can run now, such as Cultura Builder with a sign-in. */
   guardJudgeReady(): boolean {
     return this.#toolGuard.judgeReady();
+  }
+
+  /**
+   * A host that answers the Hub requests of one local server, the child process of this app, with this
+   * process's Hub client (`HubDelegateHost`). Main makes one for each start of a child and closes it when
+   * the child exits. Null when this service has no Hub client of its own: the connections are off, or this
+   * is itself a local server whose client is a delegate.
+   */
+  serveHubConnections(write: (line: string) => boolean): HubDelegateHost | null {
+    return this.#hubClient ? new HubDelegateHost({ client: this.#hubClient, write }) : null;
   }
 
   /**

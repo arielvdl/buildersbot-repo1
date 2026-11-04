@@ -966,6 +966,10 @@ the server as a joined server with `thisComputer: true`. `kind` stays `"remote"`
 - **Connection entry.** The server is an HTTPS entry in `buildersbot-remote-servers-v1.json`. The
   directory sync keeps it. While the child is stopped, the entry has the address
   `http://127.0.0.1:0` and no token, so a client never reaches an old port.
+- **Hub channel.** After the ready line, stdout also carries the child's Hub requests, and stdin carries the
+  app's answers, one prefixed line each, with a key of this start (`hub-delegate-protocol.ts`). Other lines are
+  ignored, so the quit request and the ready line work as before. `LocalServers` makes one `HubDelegateHost` for
+  each start of a child and closes it when the child exits or is stopped. No credential crosses it.
 - **Lifetime.** The child ends when its stdin closes. Teardown step 57 stops all children before
   the joined-server connections close (step 60). The sibling scan before an update leaves out the
   child PIDs. After an unexpected exit, the desktop starts the child again after 5 seconds, at most
@@ -1028,6 +1032,10 @@ Limits:
   they type a name.
 - A child server is reached as a joined server. Features behind `kind === "local"`, such as
   Computer Use, voice and the local browser dock, work only as far as the Team API carries them.
+  The Hub connections (the Store) are an exception: its agents have `buildersbot_connections.*` while the
+  app is signed in to Cultura Builder, and the message box offers the Store picker for it (`thisComputer`).
+  The child has no session. It asks the app over its stdin and stdout, and the app runs each operation with
+  its own Hub client ([Local servers](hub-connections.md#local-servers) of the Hub connections design).
 - Only this computer can connect. The child does not publish to the account service and has no
   WebRTC, so phones, the web client and other members cannot join it.
 - The provider CLI sign-ins in the home folder (`~/.codex`, `~/.claude`) and `~/.agents/skills` are

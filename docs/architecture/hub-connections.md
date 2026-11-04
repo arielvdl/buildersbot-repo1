@@ -14,6 +14,7 @@ Hub team is [hub-connections-contract.md](hub-connections-contract.md).
 | Input checks | `hub-connection-input.ts` | The first lock before anything goes to the Hub (below). |
 | Payer rule | `hub-connection-payer.ts` | Which organization pays. The agent has no field for it. |
 | Tools | `hub-connection-tools.ts`, `hub-connection-tool-definitions.ts` | `buildersbot_connections.list` and `buildersbot_connections.call`: access, limits per turn and per hour, cost and payer cards, the untrusted envelope, masking. |
+| Delegate and host | `hub-connection-port.ts`, `hub-delegate-client.ts`, `hub-delegate-host.ts`, `hub-delegate-protocol.ts` | The Hub client of a local server that the app runs as its own child process. The child holds no session: it asks the app, which holds it ([Local servers](#local-servers)). |
 | Router | `src/backend/agent/buildersbot-tool-router.ts` | Runs the two tools with the Guard before (outbound) and after (inbound), and shows the cards through `AttentionRegistry.awaitToolApproval` (owner only, always asks). |
 | Catalog | `src/backend/agent/tool-catalog.ts` | The two tools are deferred tools of a gated namespace. They are in `tool_search`, `tool_describe` and `tool_call` only for an agent that has them in this turn. |
 
@@ -245,6 +246,82 @@ catalog.
 - `cbp_` (proxy token) and `treg_` (vendor key) are in `KNOWN_SECRET_PREFIXES` of
   `packages/logging`, so log redaction masks them without registration.
 - The agent process gets no token: no environment variable, argument, file or tool result.
+- A local server's process (a child of the app) holds no session and no proxy token either: it asks the app
+  over a private channel ([Local servers](#local-servers)), and only the app's process reads the credential store.
+
+## Local servers
+
+A local server is a second server that this app runs on the same computer, as its own headless child
+process (`src/main/local-server-child.ts`, [servers.md](servers.md#servers-on-this-computer)). It has its own user
+data and its own credential store, signed out of Cultura Builder, so its agents had no connection tools.
+They have them now, for the person that is signed in to the app, with no session in the child.
+
+**Design.** The child builds its `HubConnectionTools` with `HubConnectionDelegate` in place of
+`HubConnectionClient` (`AgentService` option `hubConnections.client`; both are a `HubConnectionPort`). The
+delegate sends each Hub operation to the app, and the app runs it with its one `HubConnectionClient`
+(`HubDelegateHost`, made by `AgentService.serveHubConnections` and `LocalServers` for each start of a child).
+The tools of the child (access, origin rules, per turn and per hour limits, payer rules, approval and cost
+cards, `team_member` closed in channels) are the same code and do not change; only the transport of the client
+does.
+
+**Channel.** The pipes that `LocalServers` already makes: the child writes requests to its standard output
+(the app reads that stream for its ready line already), and the app writes answers to the child's standard
+input (the child ends when this input closes already). One JSON message is one line:
+
+| Line | From | What |
+| --- | --- | --- |
+| `BUILDERSBOT_HUB_DELEGATE_HELLO <key> <json>` | app | The first line, once: a random 32-byte key of this start of the child, and the first snapshot. |
+| `BUILDERSBOT_HUB_DELEGATE <mac> {id, method, args}` | child | A request. `mac` is HMAC-SHA256 with the key over the direction and the text. |
+| `BUILDERSBOT_HUB_DELEGATE <mac> {id, ok, value \| code, snapshot}` | app | The answer of the request `id`. A failure is the code of `HubConnectionFailure` (`signed_out`, `offline` …) and no text. |
+| `BUILDERSBOT_HUB_DELEGATE <mac> {type: "snapshot", snapshot}` | app | A change of the snapshot. |
+
+The key is not in the environment, an argument or a file. A process that is not the child but holds the
+descriptor of its output cannot make a request that passes. A request id only grows. Limits: 64 KB for a request,
+4 MB for an answer, 60 s to wait in the child (55 s in the app), 8 requests in flight, 240 in a minute and 200
+paid calls in an hour for each child. The line readers drop a line past the limit whole.
+
+**Methods.** Only `capabilities`, `catalog`, `search`, `describe`, `call`, `confirmation`, and the notices
+`forget_catalog`, `forget_capabilities` and `forget_org` (a cache of the app's own client is stale; no read).
+The app refuses anything else, and `usage` and `requestAccess` among them: those belong to the person's own
+screens, which a local server has not. The app checks each request as the child's own tools check it, and does
+not trust the child's checks:
+
+- exact keys and ids (`isHubOrgId`, `isHubEndpointId`, `isHubConfirmationId`, a UUID for the idempotency key);
+- `search`: `toolCatalogSearchRequest` and `valueRule`, as in the tools;
+- `call`: `readCallInput` (size, depth, only the fields of the tools), then `checkCallInput` (closed schema,
+  credential names and values, public URLs only) against the endpoint description that the app reads from
+  the Hub itself (kept 5 minutes), never one that the child sends. A refused input is an `input_refused`
+  answer and goes nowhere. `maxCostMicros` is accepted only with a `confirmationId`, and the id only if the app gave
+  it to this child in a `confirm_cost` answer;
+- no `fresh` read: the app's client keeps the session and the catalog for its own times;
+- the app's own hourly limit of paid calls, for each child, as a second lock.
+
+A line that fails its check is dropped. After 10 of them the app stops serving that child, and logs one fixed
+line (`hub-delegate`). No log line holds an id, a value or an input.
+
+**Snapshot.** `signedIn()` and `knownConnectionIds()` of `HubConnectionTools` are synchronous, so the child
+keeps the last snapshot that the app pushed. The app pushes it in the hello, with every answer, when its client
+forgets the session (a sign-out, a new sign-in), and after a look every 15 s for a sign-out that did not go
+through the app's own sign-out. The delegate has no other cache, so nothing outlives a sign-out.
+
+**When the app serves.** Only a child that `LocalServers` started, because the host is made there for each start,
+and while a Cultura Builder session is stored in the app. A signed-out app answers `signed_out` to every
+operation and reads nothing from the Hub; the same host serves again after the next sign-in, with no restart of
+the child. The host closes when the child exits, when the app stops it, or when the child's input cannot be written;
+a close drops every wait, and the delegate fails each wait with `offline` when its input ends. A joined server of
+another host (AWS, WebRTC, another person) has no such channel and stays closed.
+
+**What crosses.** Never the session (access and refresh token) or a proxy token (`cbp_`): the refresh token
+rotates and one process at a time may use it (`withCulturaRefreshGrant`), so it stays in the app. The answers are
+the decoded contract values, which carry no credential. The one approval id of a `confirm_cost` crosses, because
+the child's tools use it as the app's own tools do (it opens the Hub page, and the child reads the status with it).
+It is not a credential: the Hub does not accept it as an approval without the person's own sign-in on the Hub page.
+
+**What does not move.** The payer the person chose on the Marketplace page of the app is a state of the app's own
+tools, not the child's. A child's agent asks its own payer card in its own chat (the answer stays in the child's
+memory, as the tools keep it). The per turn and per hour counts are the child's own, and the app's hourly limit for each
+child stops a runaway. The Guard of the child uses the child's own credentials. The cost cards and the
+people-data cards are shown in the child's chat, as for any agent of that server.
 
 ## The person's screens
 
@@ -271,8 +348,9 @@ connection's page), refuses an empty text or one that holds a key or a token (`v
 at most 40 searches a minute. The renderer sends a query only when it starts with a letter, has 3
 characters and waits 350 ms, so `$5` in a sentence goes nowhere. Choosing a result writes
 `[tool-catalog: <title> (<endpointId>)]` in the draft; the agent then runs `describe` and `call`, and
-the cost card and Hub approval do not change. A chat and a channel of this computer get it (`storeSearch` is
-absent on a joined server); the "+" menu has a "Store tool" item that opens the same `$` picker. In a channel the
+the cost card and Hub approval do not change. A chat and a channel of this computer get it, and so does a server that this app runs on this computer
+(`thisComputer`, see [Local servers](#local-servers)); `storeSearch` is absent on a joined server of another host (AWS,
+WebRTC, another person); the "+" menu has a "Store tool" item that opens the same `$` picker. In a channel the
 `$` lists the skills of the agents that the draft tags (`createChannelSkills`), or of its only agent. The Hub may charge for a search: confirm before relying
 on it. A `/` at the start of a message or line opens the same search with the store's tools only. A chosen tool
 shows as a chip (`createStoreToolToken`) and serializes to the same text; a draft that holds that text shows the chip
@@ -338,6 +416,16 @@ the same amount and payer in the call result.
 `bun scripts/hub-connections-call-e2e.ts` drives the real agent service, router, Guard, cards and
 Hub client with a fake Codex app-server against `scripts/fake-hub/` (a fake Hub and a fake vendor on
 127.0.0.1). It writes `.buildersbot-build/hub-connections/tool-catalog.json`.
+
+`bun scripts/hub-connections-local-server-e2e.ts` runs the app's half (the real agent service, Hub client and
+`HubDelegateHost`, with the session) against the fake Hub, and a second Bun process as the local server
+(`scripts/fake-hub/local-server-child.ts`: no session, a `fetch` that refuses everything, the real delegate over the
+real pipes, the real agent service and tools). It checks the tools closed while signed out, the search, the payer
+card, a paid call, the input checks, a forged line, `confirm_cost` with the approval on the Hub, a declined cost,
+that no session, proxy token or vendor key is on the channel or in a file of the child, a sign-out and a new
+sign-in with no restart, and the host that stops with the child. It does not run Electron or `LocalServers`
+(the unit tests in `src/main/local-servers` cover the spawn side with a fake child). It writes
+`.buildersbot-build/hub-connections/local-server.json`.
 
 `bun scripts/hub-connections-usage-e2e.ts` checks the views of the screens from main's side: the
 page view and its decoders, the payer that the person chooses, the requests to the admins, the cost

@@ -199,12 +199,16 @@ export function ConversationComposer() {
   const openPicker = () => setSkillPickerRequest((current) => current + 1);
   const openStorePicker = () => setStorePickerRequest((current) => current + 1);
   /**
-   * The store's tools after a `/` (or the add menu), in a chat and in a channel. Not on a joined server: its agents do not use
-   * this computer's Hub session. A channel turn gets them while only the owner writes in the channels
-   * (`#connectionContext` in the tool router), so a channel with a team member keeps them closed.
+   * The store's tools after a `/` (or the add menu), in a chat and in a channel. The app's own main answers
+   * the search with this computer's Hub session, so it fits the first server and a server that this app
+   * runs on this computer for the same person (`thisComputer`): that server's agents reach the same session
+   * through the app, which serves only its own child process (docs/architecture/hub-connections.md). Not on
+   * a joined server (AWS, WebRTC, another person's): its agents do not use this computer's Hub session. A
+   * channel turn gets them while only the owner writes in the channels (`#connectionContext` in the tool
+   * router), so a channel with a team member keeps them closed.
    */
   const storeSearch = () =>
-    props.runtime || (props.server && props.server.kind !== "local")
+    props.runtime || (props.server && props.server.kind !== "local" && props.server.thisComputer !== true)
       ? undefined
       : (query: string) => window.buildersbot.hubConnections.searchEndpoints({ connectionId: "tool-catalog", query });
   /**

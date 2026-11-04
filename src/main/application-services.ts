@@ -131,6 +131,7 @@ import { BrowserProfileStore } from "../backend/browser-profiles/browser-profile
 import { BuildersBotDatabase } from "../backend/buildersbot-database";
 import { runCauseEffect } from "../backend/effect-boundary";
 import { browserMemory } from "../backend/host-memory";
+import type { HubConnectionPort } from "../backend/hub-connections/hub-connection-port";
 import { isHubPageUrl } from "../backend/hub-connections/hub-connection-tools";
 import { MailboxStore } from "../backend/mailbox-store";
 import { McpOAuth } from "../backend/mcp-oauth-provider";
@@ -601,6 +602,8 @@ export interface ApplicationServiceContext {
   hostingDeveloperKey: string | null;
   /** Set only in a local server that the desktop app started as its child. See `local-server-child.ts`. */
   localServerChild: LocalServerChildEnvironment | null;
+  /** In a local server only: the Hub client that asks the app for each operation (`parent-hub-channel.ts`). */
+  parentHubClient: HubConnectionPort | null;
   macHapticFeedback: MacHapticFeedback;
   teardown: TeardownRegistry;
   forwardCentralAuth: (state: CentralAuthState) => void;
@@ -1024,6 +1027,7 @@ export async function createApplicationServices({
   serverMode: serverModeEnvironment,
   hostingDeveloperKey,
   localServerChild,
+  parentHubClient,
   macHapticFeedback,
   teardown,
   forwardCentralAuth,
@@ -2130,6 +2134,8 @@ export async function createApplicationServices({
     // connections, on pages of the Hub. Only those pages open, in the default browser, where the
     // person is signed in to the Hub.
     hubConnections: {
+      // A local server asks the app that started it: it holds no session of its own.
+      ...(parentHubClient ? { client: parentHubClient } : {}),
       openHub: async (url) => {
         if (!isHubPageUrl(url)) throw new Error("Only a page of the Cultura Builder Hub opens here.");
         await shell.openExternal(url);
@@ -3335,6 +3341,8 @@ export async function createApplicationServices({
           platform: process.platform,
           quitRequested: quit,
           writeEgressDefault: (userData) => egressDefault.writeToNewServer(userData),
+          // The child has no Cultura Builder session: this app answers its Hub requests.
+          serveHubConnections: (write) => service.serveHubConnections(write),
         });
   if (localServers) {
     teardown.push(

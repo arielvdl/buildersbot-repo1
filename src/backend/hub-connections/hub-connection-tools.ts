@@ -41,9 +41,10 @@ import { Effect, Option, Result } from "effect";
 import { z } from "zod";
 import { CULTURA_BUILDER_HUB } from "../cultura-builder-auth";
 import type { DynamicToolResult } from "../protocol";
-import { type HubConnectionClient, HubConnectionFailure, type HubOperationOutcome } from "./hub-connection-client";
+import { HubConnectionFailure, type HubOperationOutcome } from "./hub-connection-client";
 import { checkCallInput, type InputRefusal, readCallInput, valueRule } from "./hub-connection-input";
 import { canPay, choosePayer, type PayerDecision, PERSONAL_ORG } from "./hub-connection-payer";
+import type { HubConnectionPort } from "./hub-connection-port";
 import { callConnectionToolSchema, HUB_CONNECTION_GUIDANCE } from "./hub-connection-tool-definitions";
 import { connectionsView, failureStatus, orgUsageView, usageOrgs } from "./hub-connection-views";
 import { maskedResultJson, maskedResultText, maskResultValue } from "./result-mask";
@@ -91,7 +92,8 @@ export interface HubConnectionHooks {
 }
 
 export interface HubConnectionToolsOptions {
-  readonly client: HubConnectionClient;
+  /** The app's own Hub client, or the delegate of a local server (`hub-delegate-client.ts`). */
+  readonly client: HubConnectionPort;
   /** False when the person turned paid connections off on this computer. */
   readonly enabledOnComputer?: () => boolean;
   /** The connections that the agent's own setting turns off. */
@@ -324,7 +326,7 @@ const NEEDS_PERSON_TEXT: Record<HubNeedsPersonAnswer["needsPerson"], string> = {
 };
 
 export class HubConnectionTools {
-  readonly #client: HubConnectionClient;
+  readonly #client: HubConnectionPort;
   readonly #enabledOnComputer: () => boolean;
   readonly #agentConnectionsOff: (agentId: string) => readonly string[];
   readonly #openHub: ((url: string) => Promise<void>) | null;

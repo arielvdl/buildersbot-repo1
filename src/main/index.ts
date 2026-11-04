@@ -122,6 +122,7 @@ import {
   setMacApplicationTypeAtStart,
   takeLocalServerChildEnvironment,
 } from "./local-server-child";
+import { openParentHubChannel } from "./local-servers/parent-hub-channel";
 import { MacHapticFeedback } from "./mac-haptic-feedback";
 import {
   configureApplicationMenu,
@@ -224,6 +225,8 @@ const serverMode = takeServerModeEnvironment(process.env, app.isPackaged, proces
 // Always taken, so the owner password leaves the environment also when the flag is refused.
 const localServerChildEnvironment = takeLocalServerChildEnvironment(process.env, commandLineUserDataDirectory);
 const localServerChild = serverMode || hostedServer ? null : localServerChildEnvironment;
+// At once, before anything reads the standard input: the app writes its first line there right after it starts this process.
+const parentHubClient = localServerChild ? openParentHubChannel(process.stdin, process.stdout) : null;
 if (serverMode || hostedServer || localServerChild) hideExceptionErrorBox();
 // The bundle starts each process as a UI element. The app becomes a regular app here; a local server has
 // no window, so it has no Dock tile and is not one more app in the lists of macOS.
@@ -1317,6 +1320,7 @@ if (!hasSingleInstanceLock) {
         serverMode,
         hostingDeveloperKey,
         localServerChild,
+        parentHubClient,
         macHapticFeedback,
         teardown,
         forwardCentralAuth,

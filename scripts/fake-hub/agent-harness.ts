@@ -14,6 +14,7 @@ import { type HubJson, type HubJsonObject, isHubJsonObject } from "@buildersbot/
 import { AGENT_PROVIDERS, type AgentEvent } from "@buildersbot/contracts/ipc";
 import { Effect } from "effect";
 import type { AgentBrowserHost } from "../../src/backend/agent/turn-lifecycle";
+import type { HubConnectionPort } from "../../src/backend/hub-connections/hub-connection-port";
 
 /**
  * What `config/read` of the fake Codex answers: the person's servers, as Codex reads them from its own
@@ -273,6 +274,11 @@ export interface AgentHarnessOptions {
    * approval page and the consent page. Default: records nothing and opens nothing.
    */
   readonly openHub?: (url: string) => Promise<void>;
+  /**
+   * Another Hub client in place of the one that reads the session: the delegate of a local server, which
+   * asks the app that started it (`local-server-child.ts` of this folder).
+   */
+  readonly hubClient?: HubConnectionPort;
 }
 
 /** A person of the team, as the host stamps one on a message. */
@@ -337,7 +343,11 @@ export async function startAgentHarness(options: AgentHarnessOptions) {
       customProviders: () => [],
       mcpServers: () => [],
     },
-    hubConnections: { fetch: options.hubFetch, ...(options.openHub ? { openHub: options.openHub } : {}) },
+    hubConnections: {
+      fetch: options.hubFetch,
+      ...(options.openHub ? { openHub: options.openHub } : {}),
+      ...(options.hubClient ? { client: options.hubClient } : {}),
+    },
     ...(options.remotePerson ? { channelRemotePerson: options.remotePerson } : {}),
   });
   agents.on("event", (event) => {

@@ -13,17 +13,27 @@
 //
 // The owner password goes to the child in its environment, and the child removes it from there at
 // once. No password or session token is written to a log.
+//
+// The child has no Cultura Builder session, so its Hub connections (the Store) run through this process:
+// one `HubDelegateHost` for each start of a child answers the requests that the child writes to its
+// standard output, with the app's own Hub client, and writes the answers to the child's standard input.
+// The host serves only this child, and stops when the child exits or is stopped. The session and the
+// proxy tokens never leave this process.
 
 import { type ChildProcess, type SpawnOptions, spawn as spawnProcess } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import { mkdir, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { createInterface } from "node:readline";
 import { LOCAL_SERVER_LIMIT, type ServerSummary } from "@buildersbot/contracts/ipc";
 import { sourceText } from "@buildersbot/i18n/source";
 import { registerSecretValue } from "@buildersbot/logging";
 import { Deferred, Duration, Effect, Exit, Schema, Scope } from "effect";
 import { causeHelpers } from "../../backend/effect-boundary";
+import {
+  createLineReader,
+  HUB_DELEGATE_LIMITS,
+  HUB_DELEGATE_PREFIX,
+} from "../../backend/hub-connections/hub-delegate-protocol";
 import {
   LOCAL_SERVER_ENVIRONMENT,
   LOCAL_SERVER_OWNER_USERNAME,
@@ -111,10 +121,21 @@ function startFailure(): LocalServerFailure {
   return new LocalServerFailure({ cause: new Error(sourceText("error.remote.localServerStartFailed")) });
 }
 
+/** The part of `HubDelegateHost` that this module uses. */
+export interface HubConnectionsHost {
+  start(): void;
+  receive(line: string): void;
+  close(): void;
+}
+
 interface RunningChild {
   readonly child: ChildProcess;
+  /** Answers the child's Hub requests. Closed when the child exits or is stopped. */
+  readonly hub: HubConnectionsHost | null;
   /** Set before this process ends the child, so that its exit does not start it again. */
   stopping: boolean;
+  /** Set when the child has exited: its output is not read any more. */
+  exited: boolean;
 }
 
 export interface LocalServersOptions {
@@ -136,6 +157,11 @@ export interface LocalServersOptions {
   /** A quit request for Builders Bot that reached a running child (`LOCAL_SERVER_QUIT_REQUEST`). */
   quitRequested?: () => void;
   spawn?: SpawnChild;
+  /**
+   * Makes the host that answers one child's Hub requests, with the Hub client of this app. `write` sends one
+   * line to the child's standard input. Null: no connections for the child. Omitted: the same.
+   */
+  serveHubConnections?: (write: (line: string) => boolean) => HubConnectionsHost | null;
   /**
    * Writes the app default egress proxy into the user data folder of a new server, before its first
    * start, so it has the proxy before its first agent. Never through the environment: another process
@@ -319,34 +345,51 @@ export class LocalServers {
         [...this.#options.command.args, `--user-data-dir=${paths.userData}`],
         {
           env: childEnvironment(entry, paths.agentRoot, this.#options.runtimeRoot, secret),
-          // Nothing is written to standard input. It stays open only so that it closes when Builders Bot ends.
+          // Standard input closes when Builders Bot ends, which ends the child. It also carries the answers of the
+          // Hub channel (`serveHubConnections`), one prefixed line each; the child ignores any other line.
           stdio: ["pipe", "pipe", "pipe"],
           windowsHide: true,
         },
       ),
     );
-    const running: RunningChild = { child, stopping: false };
+    // A write to a child that already left ends in an error event, which nobody else would handle.
+    child.stdin?.on("error", () => undefined);
+    const hub = this.#options.serveHubConnections?.((line) => writeLine(child, line)) ?? null;
+    const running: RunningChild = { child, hub, stopping: false, exited: false };
     this.#running.set(entry.id, running);
     const ready = Deferred.makeUnsafe<LocalServerReady, LocalServerFailure>();
-    // The child writes its own log file. Its output is read only for the ready line, and the rest is
-    // read and dropped so that a full pipe cannot stop the child.
-    if (child.stdout)
-      createInterface({ input: child.stdout }).on("line", (line) => {
-        // A child that this process stops can still send it: its own quit and the stop can cross.
-        if (line === LOCAL_SERVER_QUIT_REQUEST) {
-          if (running.stopping || this.#stopped) return;
-          this.#options.log.info("A server on this computer received a quit request for Builders Bot.");
-          this.#options.quitRequested?.();
-          return;
-        }
-        const value = parseReadyLine(line);
-        if (value) Deferred.doneUnsafe(ready, Exit.succeed(value));
-      });
+    const onLine = (line: string): void => {
+      // The Hub requests of the child. The host checks the frame; a line that is not one is ignored.
+      if (line.startsWith(HUB_DELEGATE_PREFIX)) {
+        if (!running.stopping && !running.exited && !this.#stopped) running.hub?.receive(line);
+        return;
+      }
+      // A child that this process stops can still send it: its own quit and the stop can cross.
+      if (line === LOCAL_SERVER_QUIT_REQUEST) {
+        if (running.stopping || this.#stopped) return;
+        this.#options.log.info("A server on this computer received a quit request for Builders Bot.");
+        this.#options.quitRequested?.();
+        return;
+      }
+      const value = parseReadyLine(line);
+      if (value) Deferred.doneUnsafe(ready, Exit.succeed(value));
+    };
+    // The child writes its own log file. Its output is read only for these lines, and the rest is read
+    // and dropped so that a full pipe cannot stop the child. A line past the limit is dropped whole.
+    if (child.stdout) {
+      const reader = createLineReader(HUB_DELEGATE_LIMITS.parentLineChars, onLine);
+      child.stdout.setEncoding("utf8");
+      child.stdout.on("data", (chunk: string) => reader.push(chunk));
+    }
     child.stderr?.resume();
+    // The channel starts after the output is read, and the hello line is the first thing that the child reads.
+    hub?.start();
     child.once("error", (error: Error) => {
       Deferred.doneUnsafe(ready, Exit.fail(new LocalServerFailure({ cause: error })));
     });
     child.once("exit", (code, signal) => {
+      running.exited = true;
+      hub?.close();
       Deferred.doneUnsafe(ready, Exit.fail(startFailure()));
       this.#exited(entry, running, code, signal);
     });
@@ -461,6 +504,7 @@ export class LocalServers {
     if (running) {
       if (only?.stopping) return;
       running.stopping = true;
+      running.hub?.close();
       yield* terminate(running.child, this.#options.platform);
       if (this.#running.get(entry.id) === running) this.#running.delete(entry.id);
     }
@@ -491,6 +535,14 @@ export class LocalServers {
     if (serverId) yield* this.#options.remoteServers.detachLocalServer(serverId, true).pipe(toLocalServerFailure);
     this.#announce();
   });
+}
+
+/** One line to the child's standard input. False when the child cannot read it any more. */
+function writeLine(child: ChildProcess, line: string): boolean {
+  const stdin = child.stdin;
+  if (!stdin || stdin.destroyed || !stdin.writable) return false;
+  stdin.write(`${line}\n`);
+  return true;
 }
 
 function terminate(child: ChildProcess, platform: NodeJS.Platform): Effect.Effect<void> {

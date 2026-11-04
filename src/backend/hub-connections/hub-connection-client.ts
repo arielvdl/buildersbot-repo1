@@ -62,7 +62,7 @@ import {
  * - `token_refused`: the Hub refused to give a proxy token; `tokenError` says why.
  * - `disabled`: the capability is off in `/session` (the kill switch).
  */
-const HUB_CLIENT_FAILURES = [
+export const HUB_CLIENT_FAILURES = [
   "signed_out",
   "offline",
   "hub_unavailable",
@@ -191,11 +191,23 @@ export class HubConnectionClient {
   #generation = 0;
   /** A hash of the refresh token that the caches belong to. Another sign-in drops them. */
   #sessionKey: string | null = null;
+  readonly #forgetListeners = new Set<() => void>();
 
   constructor(options: HubConnectionClientOptions) {
     this.#options = options;
     this.#fetch = options.fetch ?? fetch;
     this.#now = options.now ?? Date.now;
+  }
+
+  /**
+   * Runs `listener` after every `forget`. It runs inside `forget`, so it must not call this client at
+   * once: `#followSession` calls `forget` before it stores the key of the session. Returns the remover.
+   */
+  onForget(listener: () => void): () => void {
+    this.#forgetListeners.add(listener);
+    return () => {
+      this.#forgetListeners.delete(listener);
+    };
   }
 
   /** Drops every token and cache: after a sign-out, a revocation or a kill switch. */
@@ -210,6 +222,7 @@ export class HubConnectionClient {
     this.#catalog = null;
     this.#pendingCatalog = null;
     this.#catalogFailure = null;
+    for (const listener of this.#forgetListeners) listener();
   }
 
   /** Drops the catalog only, so the next read sees a change of organization or access. */
