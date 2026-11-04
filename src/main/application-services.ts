@@ -199,6 +199,7 @@ import { type CustomAgentChanges, createCustomAgentChanges } from "./custom-agen
 import { CUSTOM_AGENTS_FILE, CustomAgentStore } from "./custom-agent-store";
 import { type CustomProviderChanges, createCustomProviderChanges } from "./custom-provider-changes";
 import { CustomProviderStore } from "./custom-provider-store";
+import { startDatabaseMaintenance } from "./database-maintenance-schedule";
 import { MCP_OAUTH_REDIRECT_URL } from "./deep-link-router";
 import { desktopShowsAgentEvent, showRetainedNotification } from "./desktop-notifications";
 import { shouldAutoStartHost } from "./development-profile";
@@ -550,6 +551,8 @@ const TEARDOWN_ORDER = {
   githubConnector: 107,
   // Before the agent service, so no script starts a run while the service stops.
   automation: 108,
+  // Before the service and the database: a run in progress ends, and none starts while they stop.
+  databaseMaintenance: 108.7,
   storageUsage: 109,
   service: 110,
   // After the service, so no agent is cut off from the browser while its turn still ends.
@@ -2607,6 +2610,8 @@ export async function createApplicationServices({
     agents: () => service.listAgents(),
   };
   const storageUsage = new StorageUsageService(new StorageUsageScanner(storageSources), storageSources);
+  const databaseMaintenance = startDatabaseMaintenance(store.database, logger);
+  teardown.push(TEARDOWN_ORDER.databaseMaintenance, "database maintenance", () => databaseMaintenance.stop());
   teardown.push(TEARDOWN_ORDER.storageUsage, "storage scans", () => Effect.runPromise(storageUsage.dispose()));
   // A deleted or renamed agent changes every scope, so no surface keeps its old answer.
   service.on("event", (event) => {

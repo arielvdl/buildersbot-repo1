@@ -527,6 +527,11 @@ export class BuildersBotDatabase {
     return this.#providerHistory.readStagedItems(input);
   }
 
+  /** One bounded batch of staged rows that nothing reads again. See `ProviderHistoryStore.pruneImportedStaging`. */
+  pruneProviderHistoryStaging(input: { before: string; limit: number }): number {
+    return this.#providerHistory.pruneImportedStaging(input);
+  }
+
   markProviderHistoryTurnImported(sessionId: string, turnId: string): void {
     this.#providerHistory.markTurnImported(sessionId, turnId);
   }

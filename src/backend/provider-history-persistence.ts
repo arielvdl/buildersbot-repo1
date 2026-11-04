@@ -3,7 +3,7 @@ import type { AcpHistoryPersistence } from "./acp-client";
 import type { AgentProvider } from "./agent-client";
 import type { BuildersBotDatabase } from "./buildersbot-database";
 import { databaseRow, optionalStringColumn, requiredStringColumn } from "./database/database-rows";
-import type { ProviderHistoryTurnCursor } from "./database/provider-history-store";
+import { PROVIDERS_WITH_DERIVED_STAGING, type ProviderHistoryTurnCursor } from "./database/provider-history-store";
 import { providerSync } from "./provider-client-effects";
 import type { ProviderHistoryConsumer, ProviderHistoryRequest } from "./provider-history";
 
@@ -12,7 +12,7 @@ export function providerHistoryPersistence(
   database: BuildersBotDatabase,
   provider: AgentProvider,
 ): AcpHistoryPersistence {
-  const recordsOnly = provider !== "codex" && provider !== "claude";
+  const recordsOnly = !PROVIDERS_WITH_DERIVED_STAGING.includes(provider);
   const findSession = (externalSessionId: string) => {
     const row = database.connection
       .prepare(

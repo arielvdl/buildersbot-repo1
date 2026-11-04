@@ -62,6 +62,13 @@ export interface ProviderHistoryStagedItem {
   updatedAt: string;
 }
 
+/**
+ * The providers whose staged rows only mirror the conversation: the import turns every row into a
+ * message of the projection, and the provider keeps its own transcript. Every other provider keeps
+ * its staged rows as the raw records that a handoff reads, so nothing prunes them.
+ */
+export const PROVIDERS_WITH_DERIVED_STAGING: readonly string[] = ["codex", "claude"];
+
 export interface ProviderHistoryStoreOptions {
   core: DatabaseCore;
 }
@@ -358,6 +365,44 @@ export class ProviderHistoryStore {
         sessionId,
         turnId,
       );
+    });
+  }
+
+  /**
+   * Deletes staged rows that nothing reads again, in one bounded batch, and returns how many it
+   * deleted. A row goes only when all of this holds:
+   * - the provider is one of `PROVIDERS_WITH_DERIVED_STAGING`, so the conversation already has the content;
+   * - the row and its turn are imported, and the turn is complete;
+   * - the session is `inactive` and its import is `complete` and newer than the session, which is the
+   *   rule that makes the boot backfill skip the session. An active session is read again at each
+   *   boot and needs its rows to see that an old turn did not change, so its rows stay;
+   * - the import has not changed since `before`.
+   * Turn rows and import rows stay, so the import state and the turn list keep their meaning.
+   */
+  pruneImportedStaging(input: { before: string; limit: number }): number {
+    const providers = PROVIDERS_WITH_DERIVED_STAGING;
+    const limit = Math.max(1, Math.min(10_000, Math.floor(input.limit)));
+    const marks = providers.map(() => "?").join(", ");
+    return this.#transaction((db) => {
+      const result = db
+        .prepare(
+          `DELETE FROM provider_history_staging WHERE rowid IN (
+             SELECT staged.rowid
+             FROM provider_history_staging staged
+             JOIN provider_history_turns turn
+               ON turn.session_id = staged.session_id AND turn.turn_id = staged.turn_id
+             JOIN provider_history_imports import ON import.session_id = staged.session_id
+             JOIN projection_provider_sessions session ON session.id = staged.session_id
+             WHERE staged.imported = 1
+               AND turn.imported = 1 AND turn.complete = 1
+               AND import.state = 'complete' AND import.provider IN (${marks})
+               AND session.state = 'inactive' AND import.updated_at >= session.updated_at
+               AND import.updated_at < ?
+             LIMIT ?
+           )`,
+        )
+        .run(...providers, input.before, limit);
+      return Number(result.changes);
     });
   }
 
