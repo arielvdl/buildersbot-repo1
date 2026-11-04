@@ -2,7 +2,8 @@
  * surface of its own: the card draws it. A row is a button with a menu button after it. */
 .quick-list {
   display: flex;
-  width: 17rem;
+  /* As wide as the sidebar, so the buttons of the top row (back, forward, new) stay over this column and not over the chat header. */
+  width: max(var(--left-panel-width, 17rem), 17rem);
   min-height: 0;
   flex: none;
   flex-direction: column;
