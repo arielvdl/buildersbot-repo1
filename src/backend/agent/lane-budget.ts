@@ -62,6 +62,8 @@ export class LaneBudget {
     const free = this.#memory?.freeMb?.() ?? null;
     const floor = this.floorMb();
     if (free === null || floor === null) return null;
+    // A `low` or `critical` level can come from the compressor while the free percentage is high.
+    if (this.#memory?.level() !== "ok") return 0;
     return Math.max(0, Math.floor((free - this.#claimedMb - floor) / this.#sessionMb));
   }
 

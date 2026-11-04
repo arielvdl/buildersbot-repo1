@@ -36,6 +36,12 @@ describe("LaneBudget.idlePolicy", () => {
     expect(budget(3_000).idlePolicy()).toEqual({ idleLimit: 2, releaseAfterMs: 2 * MINUTE_MS });
   });
 
+  it("gives no room for an extra tab when the level is low, even with free memory", () => {
+    expect(budget(20_000).spareSessions()).toBeGreaterThan(0);
+    expect(budget(20_000, "low").spareSessions()).toBe(0);
+    expect(budget(20_000, "critical").hasRoom()).toBe(false);
+  });
+
   it("gives no policy without a reading", () => {
     expect(budget(null).idlePolicy()).toBeNull();
   });

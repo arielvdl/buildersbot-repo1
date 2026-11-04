@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
 import { browserMemory } from "../backend/host-memory";
-import { classifyMacMemory, MacMemory, parseFreePercent, parseSwapUsedMb } from "./mac-memory";
+import { classifyMacMemory, MacMemory, parseCompressorMb, parseFreePercent, parseSwapUsedMb } from "./mac-memory";
 
 describe("reading the numbers of macOS", () => {
   it("reads the free percentage from memory_pressure", () => {
@@ -18,6 +18,38 @@ describe("reading the numbers of macOS", () => {
     expect(parseSwapUsedMb("vm.swapusage: total = 6144.00M  used = 4721.50M  free = 1422.50M  (encrypted)")).toBe(4722);
     expect(parseSwapUsedMb("vm.swapusage: total = 0.00M  used = 0.00M  free = 0.00M")).toBe(0);
     expect(parseSwapUsedMb("garbage")).toBeNull();
+  });
+});
+
+describe("the compressor", () => {
+  it("reads the memory that the compressor occupies, in MB", () => {
+    const text =
+      "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free: 6637.\nPages occupied by compressor: 120110.\n";
+    expect(parseCompressorMb(text)).toBe(1877);
+    expect(parseCompressorMb("Pages occupied by compressor: 100.")).toBeNull();
+    expect(parseCompressorMb("nothing here")).toBeNull();
+  });
+
+  const level = (compressedPercent: number, previous: "ok" | "low" | "critical" = "ok", freePercent = 65) =>
+    classifyMacMemory({ freePercent, swapUsedMb: 770, kernelPressure: "normal", compressedPercent }, previous);
+
+  it("is low with a high compressor although 65% reads free (the stress ramp of 4 November)", () => {
+    // 9.5 GB of 24 GB is 39%.
+    expect(level(39)).toBe("low");
+    expect(level(34)).toBe("ok");
+    expect(level(56)).toBe("critical");
+  });
+
+  it("does not flap: a compressor level is left only 5 points under its threshold", () => {
+    expect(level(33, "low")).toBe("low");
+    expect(level(29, "low")).toBe("ok");
+    expect(level(52, "critical")).toBe("critical");
+    expect(level(49, "critical")).toBe("low");
+  });
+
+  it("ignores an absent compressor number", () => {
+    expect(classifyMacMemory({ freePercent: 65, swapUsedMb: 0 }, "ok")).toBe("ok");
+    expect(classifyMacMemory({ freePercent: 65, swapUsedMb: 0, compressedPercent: null }, "ok")).toBe("ok");
   });
 });
 

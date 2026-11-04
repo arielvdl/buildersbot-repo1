@@ -20,6 +20,16 @@ const CRITICAL_SWAP_MB = 9_000;
 const CRITICAL_SWAP_FREE_BELOW = 15;
 /** A level is left only this far past the threshold that entered it, so it does not flap. */
 const RECOVER_MARGIN_PERCENT = 6;
+/**
+ * The memory that the macOS compressor holds, in percent of the memory of the Mac. `memory_pressure`
+ * counts a compressed page as free, so on 4 November 2026 a Mac with 9.5 GB compressed still read 65%
+ * "free" and the level stayed `ok` for the whole ramp. Above `LOW_COMPRESSED_ABOVE` the Mac is `low`, and
+ * above `CRITICAL_COMPRESSED_ABOVE` it is `critical`, whatever the free percentage says.
+ */
+const LOW_COMPRESSED_ABOVE = 35;
+const CRITICAL_COMPRESSED_ABOVE = 55;
+/** A compressor level is left only this far under its threshold. */
+const RECOVER_COMPRESSED_MARGIN_PERCENT = 5;
 
 /**
  * The pressure level of the macOS kernel (`kern.memorystatus_vm_pressure_level`): 1, 2 or 4. It is the
@@ -35,6 +45,11 @@ export interface MacMemorySample {
    * macOS showed its low-memory panel with 44% "free", 8.7 GB of swap and a kernel level of warn.
    */
   kernelPressure?: MacKernelPressure | null;
+  /**
+   * The memory that the compressor occupies, in percent of the memory of the Mac. Absent when `vm_stat`
+   * gave no number, and then only the other rules apply.
+   */
+  compressedPercent?: number | null;
 }
 
 /** `System-wide memory free percentage: 82%` of `memory_pressure`, or null. */
@@ -49,6 +64,18 @@ export function parseSwapUsedMb(text: string): number | null {
   const match = /used\s*=\s*([\d.]+)M/u.exec(text);
   const value = match?.[1] ? Number(match[1]) : Number.NaN;
   return Number.isFinite(value) ? Math.round(value) : null;
+}
+
+/**
+ * The memory that the compressor occupies, in MB, from `vm_stat`: `Pages occupied by compressor` times
+ * the page size of the header line. Null for text with no such line.
+ */
+export function parseCompressorMb(text: string): number | null {
+  const size = /page size of (\d+) bytes/u.exec(text)?.[1];
+  const pages = /Pages occupied by compressor:\s*(\d+)/u.exec(text)?.[1];
+  if (!size || !pages) return null;
+  const mb = (Number(pages) * Number(size)) / (1024 * 1024);
+  return Number.isFinite(mb) ? Math.round(mb) : null;
 }
 
 /** The value of `sysctl -n kern.memorystatus_vm_pressure_level`, or null. */
@@ -73,16 +100,29 @@ function kernelLevel(sample: MacMemorySample): HostMemoryLevel {
   return "ok";
 }
 
+/** The level that the compressor gives alone. A margin moves both thresholds down, to leave a level. */
+function compressorLevel(sample: MacMemorySample, margin: number): HostMemoryLevel {
+  const percent = sample.compressedPercent;
+  if (percent === null || percent === undefined) return "ok";
+  const slack = margin > 0 ? RECOVER_COMPRESSED_MARGIN_PERCENT : 0;
+  if (percent >= CRITICAL_COMPRESSED_ABOVE - slack) return "critical";
+  if (percent >= LOW_COMPRESSED_ABOVE - slack) return "low";
+  return "ok";
+}
+
 function levelAt(sample: MacMemorySample, margin: number): HostMemoryLevel {
   const kernel = kernelLevel(sample);
+  const compressor = compressorLevel(sample, margin);
   if (
     kernel === "critical" ||
+    compressor === "critical" ||
     sample.freePercent < CRITICAL_BELOW + margin ||
     (sample.swapUsedMb > CRITICAL_SWAP_MB && sample.freePercent < CRITICAL_SWAP_FREE_BELOW + margin)
   )
     return "critical";
   if (
     kernel === "low" ||
+    compressor === "low" ||
     sample.freePercent < LOW_BELOW + margin ||
     (sample.swapUsedMb > LOW_SWAP_MB && sample.freePercent < LOW_SWAP_FREE_BELOW + margin)
   )
@@ -108,17 +148,25 @@ function run(file: string, args: string[]): Promise<string> {
 
 /** Reads the memory of this Mac. Null when macOS gives no number, and the level then stays as it was. */
 export async function readMacMemory(): Promise<MacMemorySample | null> {
-  const [pressure, swap, kernel] = await Promise.all([
+  const [pressure, swap, kernel, vmStat] = await Promise.all([
     run("/usr/bin/memory_pressure", []),
     run("/usr/sbin/sysctl", ["vm.swapusage"]),
-    // A macOS with no such name keeps the other two rules.
+    // A macOS with no such name keeps the other rules.
     run("/usr/sbin/sysctl", ["-n", "kern.memorystatus_vm_pressure_level"]).catch(() => ""),
+    run("/usr/bin/vm_stat", []).catch(() => ""),
   ]);
   const freePercent = parseFreePercent(pressure);
   const swapUsedMb = parseSwapUsedMb(swap);
+  const compressorMb = parseCompressorMb(vmStat);
+  const totalMb = totalmem() / (1024 * 1024);
   return freePercent === null
     ? null
-    : { freePercent, swapUsedMb: swapUsedMb ?? 0, kernelPressure: parseKernelPressure(kernel) };
+    : {
+        freePercent,
+        swapUsedMb: swapUsedMb ?? 0,
+        kernelPressure: parseKernelPressure(kernel),
+        compressedPercent: compressorMb === null || totalMb <= 0 ? null : Math.round((compressorMb / totalMb) * 100),
+      };
 }
 
 export interface MacMemoryOptions {
@@ -206,7 +254,12 @@ export class MacMemory implements HostMemory {
   }
 
   /** The last reading, for the load panel, or null before the first one. */
-  reading(): { level: HostMemoryLevel; freePercent: number; swapUsedMb: number } | null {
+  reading(): {
+    level: HostMemoryLevel;
+    freePercent: number;
+    swapUsedMb: number;
+    compressedPercent?: number | null;
+  } | null {
     return this.#last ? { level: this.#level, ...this.#last } : null;
   }
 

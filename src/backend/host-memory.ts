@@ -8,11 +8,11 @@ export type HostMemoryLevel = "ok" | "low" | "critical";
 
 /**
  * The memory that one more provider session is expected to take, in MB. A measurement of 1 November
- * 2026 gave 200 to 400 MB for a Claude session (197 MB on average over 10); 300 is a careful first
- * guess and is not calibrated yet. A start reserves it (`HostMemory.reserveTurn`) and the lane budget
- * counts it (`LaneBudget`).
+ * 2026 gave 200 to 400 MB for a Claude session. The stress ramp of 4 November 2026 measured about 560 MB
+ * for each provider session with its MCP servers, so a start reserves 560 (`HostMemory.reserveTurn`) and
+ * the lane budget counts it (`LaneBudget`).
  */
-export const LANE_SESSION_MB = 300;
+export const LANE_SESSION_MB = 560;
 
 export interface HostMemory {
   level(): HostMemoryLevel;
