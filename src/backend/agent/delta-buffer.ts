@@ -26,9 +26,25 @@ export interface DeltaBufferOptions {
   hooks: DeltaBufferHooks;
 }
 
+/** The debounce of a flush when one or two messages stream. */
+const BASE_FLUSH_MS = 100;
+/** The longest debounce, so a streaming reply still moves about twice a second. */
+const MAX_FLUSH_MS = 500;
+
+/**
+ * The debounce of a message that starts to wait, given how many other messages wait now. Each flush is
+ * a write to the database and an event on the main process, so with many agents that stream together
+ * the flushes of all of them filled the main loop (F-20: 750 ms p99 with 4 to 8 turns, 3 ms idle).
+ * One or two streams keep 100 ms. Each two more streams add 100 ms, up to 500 ms.
+ */
+export function flushDelayMs(waiting: number): number {
+  return Math.min(MAX_FLUSH_MS, BASE_FLUSH_MS * Math.max(1, Math.ceil(waiting / 2)));
+}
+
 /**
  * Coalesces `item/agentMessage/delta` notifications into `conversation-delta`
- * events. Deltas accumulate per message and flush on a 100 ms debounce, an
+ * events. Deltas accumulate per message and flush on a debounce of 100 ms
+ * (`flushDelayMs` makes it longer while many messages stream), an
  * 8 KiB cap, item completion, or turn completion — whichever comes first.
  *
  * Owns the pending map and its timers. Persistence goes through the database,
@@ -56,7 +72,7 @@ export class DeltaBuffer {
       return;
     }
     const pending: BufferedDelta = { ...delta, timer: null };
-    pending.timer = setTimeout(() => this.flush(key), 100);
+    pending.timer = setTimeout(() => this.flush(key), flushDelayMs(this.#pending.size));
     this.#pending.set(key, pending);
   }
 

@@ -50,6 +50,18 @@ export class AgentRoster {
   }
 
   /**
+   * One agent by id, or undefined. A write on a streaming path asks for its own agent only: reading
+   * and parsing the JSON of every agent for each flush made the cost grow with the roster, ten times a
+   * second per streaming message.
+   */
+  getAgent(agentId: string): AgentSummary | undefined {
+    const row = databaseRow(
+      this.#core.connection.prepare("SELECT agent_json FROM projection_agents WHERE agent_id = ?").get(agentId),
+    );
+    return row ? JSON.parse(requiredStringColumn(row, "agent_json")) : undefined;
+  }
+
+  /**
    * Every thread row no agent claims as its own `thread_id`.
    *
    * `projection_threads.agent_id` carries no foreign key to `projection_agents`, the chat list is the

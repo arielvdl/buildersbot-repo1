@@ -248,6 +248,9 @@ const routingDescription = JSON.stringify({ ...routingDocument.schema, $defs: ro
 const RoutingDecision = Schema.Union([...RoutingOutcomes, Schema.Struct({ agentId: Schema.NonEmptyString })]);
 const decodeRoutingDecision = Schema.decodeUnknownResult(RoutingDecision, { onExcessProperty: "error" });
 
+/** The quiet time after a capture of a streaming reply, in ms. A later delta in it waits for the end. */
+const DELTA_CAPTURE_WINDOW_MS = 250;
+
 /**
  * Owns channel commands and assignment scheduling. It never starts provider turns itself.
  */
@@ -261,6 +264,14 @@ export class ChannelService {
   readonly #commandFibers = new Set<Fiber.Fiber<Channel | void, ChannelOperationError>>();
   readonly #interrupts = new Set<Fiber.Fiber<void>>();
   readonly #events = new Set<Fiber.Fiber<void>>();
+  /**
+   * The streaming threads whose channel rows are in a quiet window, by thread. A delta that comes in
+   * the window marks the entry as dirty, and the window end reads the newest text once.
+   */
+  readonly #deltaWindows = new Map<
+    string,
+    { agentId: string; turnId: string; dirty: boolean; timer: NodeJS.Timeout }
+  >();
   #stopped = false;
   readonly #wakeAgain = new Set<string>();
   /**
@@ -3072,20 +3083,34 @@ export class ChannelService {
   }
 
   event(event: AgentEvent): boolean {
-    if (event.type === "conversation") return this.capture(event.snapshot);
+    if (event.type === "conversation") {
+      // The whole snapshot holds the newest text, so a waiting delta capture has nothing left to add.
+      if (event.snapshot.threadId) this.#dropDeltaWindow(event.snapshot.threadId);
+      return this.capture(event.snapshot);
+    }
     if (event.type === "conversation-delta") {
       const channelId = this.store.channelForThread(event.threadId);
       if (!channelId) return false;
-      const loaded = this.hooks.loadedSnapshot?.(event.threadId);
-      const snapshot =
-        loaded?.agentId === event.agentId
-          ? loaded
-          : this.store.database.readConversation(event.agentId, event.threadId);
-      // Only the streaming turn changed. Each other message was captured by its own event.
-      this.capture(snapshot, event.turnId);
+      const window = this.#deltaWindows.get(event.threadId);
+      if (window) {
+        // A capture is one channel write and one `channels-changed`. With many agents that stream
+        // together, one for each flush filled the main loop (F-20), so the rows follow at most four
+        // times a second for each thread.
+        window.dirty = true;
+        window.turnId = event.turnId;
+        return true;
+      }
+      this.#captureDelta(event.threadId, event.agentId, event.turnId);
+      this.#deltaWindows.set(event.threadId, {
+        agentId: event.agentId,
+        turnId: event.turnId,
+        dirty: false,
+        timer: this.#startDeltaWindow(event.threadId),
+      });
       return true;
     }
     if (event.type === "turn-completed") {
+      this.#flushDeltaWindow(event.threadId);
       this.#providerTurns.delete(event.turnId);
       const channelId = this.store.channelForThread(event.threadId);
       if (!channelId) {
@@ -3127,6 +3152,49 @@ export class ChannelService {
       for (const channelId of waiting) this.#dispatchEvent(this.wake(channelId));
     }
     return false;
+  }
+
+  /** Reads the newest text of the streaming turn of a thread into its channel rows. */
+  #captureDelta(threadId: string, agentId: string, turnId: string): void {
+    const loaded = this.hooks.loadedSnapshot?.(threadId);
+    const snapshot = loaded?.agentId === agentId ? loaded : this.store.database.readConversation(agentId, threadId);
+    // Only the streaming turn changed. Each other message was captured by its own event.
+    this.capture(snapshot, turnId);
+  }
+
+  #startDeltaWindow(threadId: string): NodeJS.Timeout {
+    const timer = setTimeout(() => {
+      const window = this.#deltaWindows.get(threadId);
+      if (!window) return;
+      if (!window.dirty || this.#stopped) {
+        this.#deltaWindows.delete(threadId);
+        return;
+      }
+      window.dirty = false;
+      window.timer = this.#startDeltaWindow(threadId);
+      try {
+        this.#captureDelta(threadId, window.agentId, window.turnId);
+      } catch (error) {
+        this.hooks.error(error);
+      }
+    }, DELTA_CAPTURE_WINDOW_MS);
+    timer.unref();
+    return timer;
+  }
+
+  /** Captures the text that waits in a window now, then closes the window. */
+  #flushDeltaWindow(threadId: string): void {
+    const window = this.#deltaWindows.get(threadId);
+    if (!window) return;
+    this.#dropDeltaWindow(threadId);
+    if (window.dirty) this.#captureDelta(threadId, window.agentId, window.turnId);
+  }
+
+  #dropDeltaWindow(threadId: string): void {
+    const window = this.#deltaWindows.get(threadId);
+    if (!window) return;
+    clearTimeout(window.timer);
+    this.#deltaWindows.delete(threadId);
   }
 
   /** Native event callbacks and synchronous hooks own this work; stop drains it before closing the scope. */
@@ -4255,6 +4323,13 @@ export class ChannelService {
     this: ChannelService,
   ): Effect.fn.Return<void, ChannelOperationError> {
     this.#stopped = true;
+    for (const threadId of [...this.#deltaWindows.keys()]) {
+      try {
+        this.#flushDeltaWindow(threadId);
+      } catch (error) {
+        this.hooks.error(error);
+      }
+    }
     yield* Fiber.awaitAll([
       ...this.#events,
       ...this.#pumps.values(),

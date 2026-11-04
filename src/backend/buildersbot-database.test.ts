@@ -1067,6 +1067,29 @@ describe("BuildersBotDatabase", () => {
     database.close();
   });
 
+  it("writes a streamed message of the right agent when many agents exist, and refuses an unknown one", async () => {
+    const database = await createDatabase();
+    const agent = testAgent();
+    const other = { ...testAgent(), id: "second", threadId: "buildersbot-thread-second", name: "Second" };
+    database.replaceAgents("agents-import", [other, agent], "agents.imported");
+    const snapshot = streamingSnapshot(agent, 2);
+    database.persistConversation(snapshot, "turn.started", { turnId: "turn-1" });
+    const revision = database.persistStreamingMessage({
+      snapshot,
+      messageId: "assistant-live",
+      eventType: "response.delta-flushed",
+    });
+    expect(revision).toBeGreaterThan(0);
+    expect(() =>
+      database.persistStreamingMessage({
+        snapshot: { ...snapshot, agentId: "missing" },
+        messageId: "assistant-live",
+        eventType: "response.delta-flushed",
+      }),
+    ).toThrow("Unknown agent for conversation: missing");
+    database.close();
+  });
+
   it("writes only the streamed message and keeps one event for the whole run", async () => {
     const database = await createDatabase();
     const agent = testAgent();
