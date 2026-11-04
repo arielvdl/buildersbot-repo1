@@ -43,9 +43,16 @@ export interface ChannelContextParts {
 const CONTEXT_CHARACTERS = 120_000;
 // A person's messages between two saves to the channel memory.
 const MEMORY_EVERY = 4;
-const SUMMARY_CHARACTERS = 12_000;
+/**
+ * The ceilings of the history in one packet. A packet of a stress test (4 November 2026) was 70 KB, and
+ * 43% of it was recent messages and 17% was the summary. Each session read them again, so 16 agents paid
+ * about 288,000 tokens before any work. The older messages stay behind `channel_history`, by their source
+ * ID, and the summary covers them.
+ */
+const RECENT_CHARACTERS = 16_000;
+const SUMMARY_CHARACTERS = 6_000;
 // Models overshoot a length they are asked for, so the request leaves room under the ceiling.
-const SUMMARY_TARGET_CHARACTERS = 8_000;
+const SUMMARY_TARGET_CHARACTERS = 4_000;
 
 /** What the lead does about the channel memory for the person's nth message: announce it, save to it, or nothing. */
 export function memoryCueFor(personMessages: number): string | null {
@@ -246,6 +253,8 @@ export class ChannelHistory {
     > {
       const dependencies = yield* ChannelHistoryDependencies;
       const characterBudget = Math.min(CONTEXT_CHARACTERS, requestedBudget);
+      // The recent messages: half the handoff ceiling, and never more than `RECENT_CHARACTERS`.
+      const recentBudget = Math.min(characterBudget / 2, RECENT_CHARACTERS);
       const channel = yield* channelSync(() => dependencies.store.get(task.channelId));
       const topicId =
         task.topicId ?? (yield* channelSync(() => dependencies.store.firstTopic(task.channelId)?.id)) ?? "";
@@ -271,8 +280,8 @@ export class ChannelHistory {
           let summary = yield* channelSync(() => dependencies.store.summary(channel.id, topicId));
           if (spill) messages = conversation(yield* read(summary.throughSequence));
           let recent = messages.filter((message) => message.sequence > summary.throughSequence);
-          // Reserve half the handoff ceiling for instructions, requested sources, and provider overhead.
-          while (size(recent, messages) > characterBudget / 2 && recent.length > 1) {
+          // Reserve the rest of the handoff ceiling for instructions, requested sources, and provider overhead.
+          while (size(recent, messages) > recentBudget && recent.length > 1) {
             if (!lead) return yield* channelFailure(new Error(sourceText("error.backend.channelHistoryLeadRequired")));
             const selectedLead = lead;
             const old: ChannelMessage[] = [];
@@ -280,7 +289,7 @@ export class ChannelHistory {
             for (const message of recent.slice(0, -1)) {
               if (message.message.status === "streaming") break;
               const length = render([message]).length;
-              if (size + length > characterBudget / 2) break;
+              if (size + length > recentBudget) break;
               old.push(message);
               size += length;
             }
@@ -292,7 +301,7 @@ export class ChannelHistory {
             if (oversized?.message.status === "streaming")
               return yield* channelFailure(new Error(sourceText("error.backend.channelHistoryArriving")));
             if (oversized) old.push(oversized);
-            const inputs = oversized ? parts(render([oversized]), Math.floor(characterBudget / 2)) : [render(old)];
+            const inputs = oversized ? parts(render([oversized]), Math.floor(recentBudget)) : [render(old)];
             let text = summary.text;
             for (const input of inputs) {
               text = yield* dependencies.generate(
