@@ -37,6 +37,7 @@ import {
   BROWSER_BROKER_MCP_SERVER_ID,
   type BrowserBrokerAddress,
 } from "./playwright-browser-access";
+import { sharedMcpSignature } from "./shared-mcp-access";
 import { providerLabel } from "./thread-items";
 
 /**
@@ -88,6 +89,11 @@ export interface McpGatewayOptions {
    * handed to every agent as one shared http server, and no agent starts a Playwright of its own.
    */
   browserBroker?: () => BrowserBrokerAddress | null;
+  /**
+   * The address of the shared stdio host while it listens, or null. It joins the Codex fingerprint of the
+   * lines that are shared, so a resumed Codex session that holds another address is replaced.
+   */
+  sharedMcpFingerprint?: () => string | null;
   /** The agents, read when a server signed in through the proxy opens a session, for their names. */
   agents?: () => ReadonlyArray<{ id: string; name: string }>;
   /** The agent service logger, so a drop report keeps the `agent-service` prefix it always had. */
@@ -109,6 +115,7 @@ export class McpGateway {
   readonly #browserInApp: () => boolean;
   readonly #chromeAgents: () => boolean;
   readonly #browserBroker: () => BrowserBrokerAddress | null;
+  readonly #sharedMcpFingerprint: () => string | null;
   /**
    * What Builders Bot downloaded for the MCP servers, read at each use. It travels with the credentials
    * because both are the main process's knowledge of this machine, and because the clients already
@@ -145,6 +152,7 @@ export class McpGateway {
     this.#browserInApp = options.browserInApp ?? (() => false);
     this.#chromeAgents = options.chromeAgents ?? (() => false);
     this.#browserBroker = options.browserBroker ?? (() => null);
+    this.#sharedMcpFingerprint = options.sharedMcpFingerprint ?? (() => null);
     this.#toolRuntimes = () => credentials.mcpToolRuntimes?.() ?? NO_MCP_TOOL_RUNTIMES;
     this.#oauth = credentials.mcpOAuth ?? null;
     this.#logger = options.logger;
@@ -241,9 +249,18 @@ export class McpGateway {
     const broker = configs.some((config) => config.enabled && config.id === BROWSER_BROKER_MCP_SERVER_ID)
       ? this.#browserBroker()
       : null;
-    const brokerPart = broker ? [broker.url] : [];
+    // The host of the shared stdio lines: its address joins the fingerprint only while a line is shared,
+    // so a computer without one keeps the fingerprints it had.
+    const shared = configs.some((config) => config.enabled && sharedMcpSignature(config) !== null)
+      ? this.#sharedMcpFingerprint()
+      : null;
+    const brokerPart = [...(broker ? [broker.url] : []), ...(shared ? [shared] : [])];
     if (proxied.length === 0)
-      return broker ? JSON.stringify([null, [BROWSER_BROKER_MCP_SERVER_ID], ...brokerPart]) : null;
+      return broker
+        ? JSON.stringify([null, [BROWSER_BROKER_MCP_SERVER_ID], ...brokerPart])
+        : shared
+          ? JSON.stringify([null, [], ...brokerPart])
+          : null;
     const identity = yield* this.#proxy.identity().pipe(Effect.result);
     // The hand-off leaves these rows out in this case, and the manifest records that.
     if (Result.isFailure(identity)) return JSON.stringify([null, proxied, ...brokerPart]);

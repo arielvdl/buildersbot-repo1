@@ -147,6 +147,20 @@ export const messages = {
   "settings.analytics.title": "Analityka użycia",
   "settings.analytics.description":
     "Wyłączone. Builders Bot nie wysyła z tej aplikacji analityki użycia ani raportów o błędach.",
+  "settings.optimizations.description":
+    "Beta. Każda zmienia sposób działania agentów na tym komputerze. Większość jest wyłączona, dopóki jej nie włączysz; te, które tylko oszczędzają pamięć, włączają się od razu. Każdą możesz w każdej chwili wyłączyć lub włączyć.",
+  "settings.optimizations.leanIdleSessions.title": "Trzymaj mniej nieaktywnych agentów w gotowości",
+  "settings.optimizations.leanIdleSessions.description":
+    "Przy pamięci w trybie kart Load otwartych pozostaje najwyżej 3 sesje nieaktywnych agentów, a nie 8. Pozostałe zamykają się i otwierają ponownie z historii. Domyślnie włączone. Ryzyko: pierwsza wiadomość do zamkniętego agenta trwa kilka sekund dłużej.",
+  "settings.optimizations.idleBrowserTabs.title": "Zwalniaj karty przeglądarki agentów, z których nikt nie korzysta",
+  "settings.optimizations.idleBrowserTabs.description":
+    "Strona karty przeglądarki agenta, z której nikt nie korzystał przez 30 minut, zostaje zwolniona, aby odzyskać pamięć (po 5 minutach, gdy pamięci jest mało, a agent nic nie wykonuje). Ładuje się ponownie pod tym samym adresem, gdy agent znów z niej skorzysta. Domyślnie włączone. Karty czekające na ciebie, np. logowanie, pozostają załadowane. Ryzyko: strona z niewysłaną treścią traci tę treść.",
+  "settings.optimizations.mcpDirectBinary.title": "Uruchamiaj serwery narzędzi bez opakowania npx",
+  "settings.optimizations.mcpDirectBinary.description":
+    "Serwer narzędzi, który startuje z `npx -y nazwa@1.2.3`, uruchamia własny program bezpośrednio, gdy npx już go ma. Oszczędza to około 50 MB na agenta i startuje szybciej. We wszystkich innych przypadkach i przy każdym błędzie zostaje linia npx. Domyślnie włączone. Ryzyko: brak znanych; wyłącz, jeśli serwer narzędzi się nie uruchamia.",
+  "settings.optimizations.mcpSharedHost.title": "Współdziel jeden serwer narzędzi WhatsApp między agentami",
+  "settings.optimizations.mcpSharedHost.description":
+    "Serwer narzędzi WhatsApp (wazap) działa raz dla wszystkich agentów, a nie raz dla każdego agenta. Każdy agent zachowuje własną sesję, szkice i uprawnienia. Jeśli wspólny serwer się zatrzyma, następne wywołanie uruchomi go ponownie samo. Domyślnie włączone. Ryzyko: nowe lokalne połączenie na tym komputerze, tylko dla tej aplikacji; wyłącz, jeśli wywołanie WhatsApp się nie uda.",
   "settings.tab.general.title": "Ogólne",
   "settings.tab.general.description": "Określ, jak Builders Bot działa na tym komputerze.",
   "settings.tab.notifications.title": "Powiadomienia",

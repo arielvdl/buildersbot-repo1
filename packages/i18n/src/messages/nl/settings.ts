@@ -160,6 +160,20 @@ export const messages = {
   "settings.analytics.title": "Gebruiksanalyses",
   "settings.analytics.description":
     "Uit. Builders Bot verstuurt vanuit deze app geen gebruiksanalyses en geen foutrapporten.",
+  "settings.optimizations.description":
+    "Beta. Elk onderdeel verandert hoe agents op deze computer werken. De meeste staan uit tot je ze aanzet; de onderdelen die alleen geheugen besparen staan vanaf het begin aan. Je kunt elk onderdeel op elk moment uit- of aanzetten.",
+  "settings.optimizations.leanIdleSessions.title": "Minder inactieve agents open houden",
+  "settings.optimizations.leanIdleSessions.description":
+    "Met geheugen in de tabmodus Load blijven maximaal 3 sessies van inactieve agents open, niet 8. De andere sluiten en openen later weer vanuit de geschiedenis. Standaard aan. Risico: het eerste bericht aan een agent die gesloten was, duurt een paar seconden langer.",
+  "settings.optimizations.idleBrowserTabs.title": "Browsertabs van agents die niemand gebruikt, ontladen",
+  "settings.optimizations.idleBrowserTabs.description":
+    "De pagina van een browsertab van een agent die 30 minuten niemand heeft gebruikt, wordt ontladen om geheugen vrij te maken (na 5 minuten als het geheugen laag is en de agent niets uitvoert). Hij laadt opnieuw op hetzelfde adres de volgende keer dat de agent hem gebruikt. Standaard aan. Tabs die op jou wachten, zoals een aanmelding, blijven geladen. Risico: een pagina met iets dat niet is verzonden, verliest dat.",
+  "settings.optimizations.mcpDirectBinary.title": "Toolservers starten zonder de npx-wrapper",
+  "settings.optimizations.mcpDirectBinary.description":
+    "Een toolserver die start met `npx -y naam@1.2.3` start zijn eigen programma direct als npx het al heeft. Dat bespaart ongeveer 50 MB per agent en start sneller. In alle andere gevallen, en bij elke fout, blijft de npx-regel gelden. Standaard aan. Risico: geen bekend; zet het uit als een toolserver niet start.",
+  "settings.optimizations.mcpSharedHost.title": "Eén WhatsApp-toolserver delen tussen agents",
+  "settings.optimizations.mcpSharedHost.description":
+    "De WhatsApp-toolserver (wazap) draait één keer voor alle agents, niet één keer per agent. Elke agent houdt zijn eigen sessie, concepten en rechten. Als de gedeelde server stopt, start de volgende aanroep hem zelf opnieuw. Standaard aan. Risico: een nieuwe lokale verbinding op deze computer, alleen voor deze app; zet het uit als een WhatsApp-aanroep mislukt.",
   "settings.tab.general.title": "Algemeen",
   "settings.tab.general.description": "Bepaal hoe Builders Bot zich op deze computer gedraagt.",
   "settings.tab.agents.title": "Agents",

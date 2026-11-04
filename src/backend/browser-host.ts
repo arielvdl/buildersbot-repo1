@@ -394,6 +394,7 @@ export class BrowserHost {
   readonly #memoryLow: () => boolean;
   /** Whether an idle agent tab unloads after 5 min instead of 30: the reading of a server or of the Mac. */
   readonly #sleepSooner: (agentWorking: boolean) => boolean;
+  readonly #idleTabSleep: () => boolean;
   /** Whether an agent runs a turn now. Until the agent service sets it, each agent counts as working. */
   #agentWorking: (agentId: string) => boolean = () => true;
   readonly #siteSession: BrowserSiteSession;
@@ -421,6 +422,8 @@ export class BrowserHost {
        * it, `memoryLow` decides.
        */
       sleepSooner?: (agentWorking: boolean) => boolean;
+      /** Whether idle agent tabs unload at all (the switch `idle-browser-tabs`). Without it, they do. */
+      idleTabSleep?: () => boolean;
       /** The session that the new tabs of this agent open in. */
       browserProfile?: (agentId: string) => AgentBrowserProfile;
       /** Whether a named profile still exists. A tab never opens in a deleted profile. */
@@ -438,6 +441,7 @@ export class BrowserHost {
     const memoryLow = options.memoryLow ?? (() => false);
     this.#memoryLow = memoryLow;
     this.#sleepSooner = options.sleepSooner ?? (() => memoryLow());
+    this.#idleTabSleep = options.idleTabSleep ?? (() => true);
     this.#siteSession = options.siteSession ?? (async () => ({ status: "unavailable" }));
     this.#egress = options.egress ?? null;
     this.#egress?.subscribe(() => this.#applyWebRtcPolicy());
@@ -546,6 +550,7 @@ export class BrowserHost {
   });
 
   readonly #sleepIdleTabs = Effect.fn("BrowserHost.sleepIdleTabs")(function* (this: BrowserHost) {
+    if (!this.#idleTabSleep()) return;
     const now = Date.now();
     for (const tab of this.#tabs.values()) {
       if (tab.pendingRestore || !this.#maySleep(tab)) continue;

@@ -93,6 +93,7 @@ import {
   DEFAULT_GUARD_PREFERENCE,
   DEFAULT_MACHINE_ALERT_SETTINGS,
   DEFAULT_MEMORY_REVIEW_INTERVAL,
+  DEFAULT_ON_OPTIMIZATION_IDS,
   DEFAULT_PROMPT_CACHE_TTL,
   DEFAULT_PROVIDER_ACCOUNT_ID,
   DEFAULT_PROVIDER_DETECTION_SETTINGS,
@@ -482,7 +483,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
   let analyticsPreference = clone<AnalyticsPreference>(options.analyticsPreference ?? { enabled: true });
   let approvalAutomation = clone<ApprovalAutomationPreference>(DEFAULT_APPROVAL_AUTOMATION_PREFERENCE);
   let busyMessageMode: BusyMessageModePreference = { mode: DEFAULT_BUSY_MESSAGE_MODE };
-  let optimizationsOn: OptimizationId[] = [];
+  let optimizationsOn: OptimizationId[] = OPTIMIZATION_IDS.filter((id) => DEFAULT_ON_OPTIMIZATION_IDS.includes(id));
   let agentDefaults: AgentDefaults = { ...DEFAULT_AGENT_DEFAULTS };
   let agentMemoryLimit: AgentMemoryLimitPreference = { limit: DEFAULT_AGENT_MEMORY_LIMIT };
   let memoryReview: MemoryReviewPreference = { interval: DEFAULT_MEMORY_REVIEW_INTERVAL };

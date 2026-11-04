@@ -59,6 +59,22 @@ const OPTIMIZATION_TEXT = {
     title: "settings.optimizations.quickStatusReply.title",
     description: "settings.optimizations.quickStatusReply.description",
   },
+  "lean-idle-sessions": {
+    title: "settings.optimizations.leanIdleSessions.title",
+    description: "settings.optimizations.leanIdleSessions.description",
+  },
+  "idle-browser-tabs": {
+    title: "settings.optimizations.idleBrowserTabs.title",
+    description: "settings.optimizations.idleBrowserTabs.description",
+  },
+  "mcp-direct-binary": {
+    title: "settings.optimizations.mcpDirectBinary.title",
+    description: "settings.optimizations.mcpDirectBinary.description",
+  },
+  "mcp-shared-host": {
+    title: "settings.optimizations.mcpSharedHost.title",
+    description: "settings.optimizations.mcpSharedHost.description",
+  },
   "disable-memory-limit": {
     title: "settings.optimizations.disableMemoryLimit.title",
     description: "settings.optimizations.disableMemoryLimit.description",
@@ -74,7 +90,7 @@ interface OptimizationSettingsState {
 
 /**
  * Settings › General › Advanced optimizations (beta). One switch for each optimization of this computer,
- * each one off until the person turns it on, and two buttons that turn all of them on or off. Main owns
+ * each one off until the person turns it on (the ones that save memory start on), and two buttons that turn all of them on or off. Main owns
  * the file; this section reads it when it opens and shows the answer of each change.
  */
 export function OptimizationSettings() {

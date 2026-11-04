@@ -531,6 +531,8 @@ export interface AgentServiceOptions {
    * shared server, and no agent starts a Playwright of its own. The main process owns the broker.
    */
   browserBroker?: () => { url: string; bearer: string } | null;
+  /** The address of the shared stdio host while it listens, or null. See `McpGatewayOptions.sharedMcpFingerprint`. */
+  sharedMcpFingerprint?: () => string | null;
   /**
    * The built-in GitHub connection of this computer, or `null`. Read at each spawn and each hand-off,
    * for the same reason as `computerUseMcpServer`: the user connects and disconnects while Builders Bot runs.
@@ -733,6 +735,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       browserInApp = () => false,
       chromeAgents = () => false,
       browserBroker = () => null,
+      sharedMcpFingerprint = () => null,
       githubConnector = null,
       hostMemory = null,
       memoryPressure = null,
@@ -760,6 +763,7 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
       browserInApp,
       chromeAgents,
       browserBroker,
+      sharedMcpFingerprint,
       githubConnector,
       agents: () => store.list(),
       logger,
@@ -1059,7 +1063,10 @@ export class AgentService extends EventEmitter<AgentServiceEvents> {
         // itself when memory is critical.
         memoryLow: () => (memoryPressure?.level() ?? "ok") !== "ok",
         // The idle threads of Claude and ACP follow the memory budget in the `memory` tab mode.
-        idlePolicy: () => (options.channelTabsMode?.() === "memory" ? (this.#laneBudget?.idlePolicy() ?? null) : null),
+        idlePolicy: () =>
+          options.channelTabsMode?.() === "memory"
+            ? (this.#laneBudget?.idlePolicy(this.optimizations.optimizationEnabled("lean-idle-sessions")) ?? null)
+            : null,
         captureConfigRevision: () => this.#endpoints.committedRevision(),
         onProviderActivated: (provider, configRevision) =>
           Effect.gen({ self: this }, function* () {

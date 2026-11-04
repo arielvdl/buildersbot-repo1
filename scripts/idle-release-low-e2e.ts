@@ -101,6 +101,9 @@ try {
   await mkdir(OUT, { recursive: true });
   const store = new OptimizationStore(join(root, OPTIMIZATIONS_FILE));
   await Effect.runPromise(store.load());
+  // The switch starts on. A person who turned it off is the case 1 and 1b check.
+  assert.equal(store.optimizationEnabled("idle-release-low"), true, "the switch starts on");
+  await Effect.runPromise(store.set([{ id: "idle-release-low", enabled: false }]));
 
   // 1. Off.
   report.releasesOff = await releases(store, [LOW, LOW, CRITICAL, OK, LOW]);

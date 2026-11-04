@@ -139,6 +139,20 @@ export const messages = {
   "settings.notch.size.previewIsland": "外部ディスプレイ",
   "settings.analytics.title": "利用状況の分析",
   "settings.analytics.description": "オフ。Builders Bot はこのアプリから利用状況の分析もエラーレポートも送信しません。",
+  "settings.optimizations.description":
+    "ベータ版です。それぞれ、このコンピューターでエージェントが動く仕組みを変えます。ほとんどは、オンにするまでオフです。メモリを節約するだけのものは最初からオンです。いつでもオン・オフを切り替えられます。",
+  "settings.optimizations.leanIdleSessions.title": "アイドル状態のエージェントを開いておく数を減らす",
+  "settings.optimizations.leanIdleSessions.description":
+    "タブモード Load でメモリを使う設定のとき、アイドル状態のエージェントのセッションは 8 件ではなく最大 3 件まで開いたままになります。残りは閉じられ、次回は履歴から再び開きます。既定でオンです。リスク：閉じられたエージェントへの最初のメッセージは数秒余計にかかります。",
+  "settings.optimizations.idleBrowserTabs.title": "誰も使っていないエージェントのブラウザータブを解放する",
+  "settings.optimizations.idleBrowserTabs.description":
+    "30 分間誰も使っていないエージェントのブラウザータブのページは、メモリを空けるために解放されます（メモリが少なく、エージェントが処理を実行していない場合は 5 分後）。次回エージェントが使うとき、同じアドレスで再び読み込まれます。既定でオンです。サインインのように、あなたの操作を待つタブは読み込まれたままです。リスク：未送信の内容があるページは、その内容が失われます。",
+  "settings.optimizations.mcpDirectBinary.title": "npx のラッパーを使わずにツールサーバーを起動する",
+  "settings.optimizations.mcpDirectBinary.description":
+    "`npx -y 名前@1.2.3` で起動するツールサーバーは、npx が既に持っている場合、npx を介さず自身のプログラムを直接起動します。エージェントごとに約 50 MB 節約でき、起動も速くなります。それ以外の場合や失敗した場合は npx の行をそのまま使います。既定でオンです。リスク：既知のものはありません。ツールサーバーが起動しない場合はオフにしてください。",
+  "settings.optimizations.mcpSharedHost.title": "WhatsApp のツールサーバーをエージェント間で共有する",
+  "settings.optimizations.mcpSharedHost.description":
+    "WhatsApp のツールサーバー（wazap）は、エージェントごとではなく、すべてのエージェントで 1 つだけ動きます。各エージェントは自分のセッション、下書き、権限を保ちます。共有サーバーが止まった場合、次の呼び出しで自動的に再起動します。既定でオンです。リスク：このコンピューター上に、このアプリだけが使う新しいローカル接続ができます。WhatsApp の呼び出しが失敗する場合はオフにしてください。",
   "settings.tab.general.title": "一般",
   "settings.tab.general.description": "このコンピューターでの Builders Bot の動作を設定します。",
   "settings.tab.notifications.title": "通知",

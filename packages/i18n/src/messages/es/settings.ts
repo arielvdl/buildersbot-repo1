@@ -146,6 +146,20 @@ export const messages = {
   "settings.analytics.title": "Análisis de uso",
   "settings.analytics.description":
     "Desactivado. Builders Bot no envía análisis de uso ni informes de errores desde esta app.",
+  "settings.optimizations.description":
+    "Beta. Cada una cambia cómo trabajan los agentes en este equipo. La mayoría está desactivada hasta que la actives; las que solo ahorran memoria empiezan activadas. Puedes desactivar o activar cualquiera en cualquier momento.",
+  "settings.optimizations.leanIdleSessions.title": "Mantener menos agentes inactivos abiertos",
+  "settings.optimizations.leanIdleSessions.description":
+    "Con la memoria en el modo de pestañas Load, como máximo 3 sesiones de agentes inactivos quedan abiertas, no 8. Las demás se cierran y se vuelven a abrir desde su historial. Activado por defecto. Riesgo: el primer mensaje a un agente que se cerró tarda unos segundos más.",
+  "settings.optimizations.idleBrowserTabs.title": "Descargar pestañas del navegador de agentes que nadie usa",
+  "settings.optimizations.idleBrowserTabs.description":
+    "La página de una pestaña del navegador de un agente que nadie ha usado durante 30 minutos se descarga para liberar memoria (a los 5 minutos si hay poca memoria y el agente no está ejecutando nada). Vuelve a cargarse en la misma dirección la próxima vez que el agente la use. Activado por defecto. Las pestañas que esperan por ti, como un inicio de sesión, quedan cargadas. Riesgo: una página con algo sin enviar pierde ese contenido.",
+  "settings.optimizations.mcpDirectBinary.title": "Iniciar servidores de herramientas sin el envoltorio npx",
+  "settings.optimizations.mcpDirectBinary.description":
+    "Un servidor de herramientas que inicia con `npx -y nombre@1.2.3` inicia su propio programa directamente cuando npx ya lo tiene, lo que ahorra unos 50 MB por agente y arranca más rápido. En cualquier otro caso, y ante cualquier fallo, se mantiene la línea de npx. Activado por defecto. Riesgo: ninguno conocido; desactívalo si un servidor de herramientas no arranca.",
+  "settings.optimizations.mcpSharedHost.title": "Compartir un servidor de herramientas de WhatsApp entre agentes",
+  "settings.optimizations.mcpSharedHost.description":
+    "El servidor de herramientas de WhatsApp (wazap) se ejecuta una vez para todos los agentes, no una vez por cada agente. Cada agente conserva su propia sesión, sus borradores y sus permisos. Si el servidor compartido se detiene, la siguiente llamada lo vuelve a iniciar sola. Activado por defecto. Riesgo: una conexión local nueva en este equipo, solo para esta app; desactívalo si falla una llamada de WhatsApp.",
   "settings.tab.general.title": "General",
   "settings.tab.general.description": "Controla cómo funciona Builders Bot en este equipo.",
   "settings.tab.notifications.title": "Notificaciones",

@@ -3,6 +3,7 @@ import { Effect, Fiber } from "effect";
 import { toAgentRemovalFailed } from "../backend/agent/agent-removal";
 import { toHostedSiteOperationFailed } from "../backend/agent/hosted-site-coordinator";
 import { loadServerModelPolicy, MODEL_POLICY_FILE_ENV } from "../backend/agent/server-model-policy";
+import { sharedMcpSignature } from "../backend/agent/shared-mcp-access";
 import { AgentApiKeys } from "../backend/agent-api-keys";
 import { AgentDatabaseSupervisor } from "../backend/agent-data/agent-database-supervisor";
 import { AgentTables } from "../backend/agent-data/agent-tables";
@@ -342,6 +343,7 @@ import { ServerMode, type ServerModeEnvironment } from "./server-mode";
 import { ServerTimezonePreferenceStore } from "./server-timezone-preference-store";
 import { configureAttachmentProtocol, configureServerLogoProtocols } from "./session-configuration";
 import { readSetupState, writeSetupState } from "./setup-store";
+import { SharedMcpHost } from "./shared-mcp-host";
 import { SignInRelayClient } from "./sign-in-relay-client";
 import { agentPrintedLink, SignInRelayHost } from "./sign-in-relay-host";
 import { SignalIngress } from "./signal-ingress";
@@ -557,6 +559,7 @@ const TEARDOWN_ORDER = {
   storageUsage: 109,
   service: 110,
   // After the service, so no agent is cut off from the browser while its turn still ends.
+  sharedMcpHost: 110.4,
   browserBroker: 110.5,
   // After the service, as the broker: the person's Chrome keeps its tabs; only the socket closes.
   chromeBridge: 110.6,
@@ -1373,10 +1376,13 @@ export async function createApplicationServices({
   });
   // A server that is low on memory refuses a new tab and a popup. The Mac reading refuses nothing: it
   // only unloads sooner the idle tabs of the agents with no running turn (`setAgentWorking` below).
+  // Before the browser: the switch `idle-browser-tabs` is read by its sweep.
+  const optimizations = new OptimizationStore(join(app.getPath("userData"), OPTIMIZATIONS_FILE));
   const browserMemoryRules = browserMemory(hostMemory, macMemory);
   const browser = new BrowserHost(mainWindow, store.downloadsRoot, join(app.getPath("userData"), BROWSER_STATE_FILE), {
     memoryLow: browserMemoryRules.memoryLow,
     sleepSooner: browserMemoryRules.sleepSooner,
+    idleTabSleep: () => optimizations.optimizationEnabled("idle-browser-tabs"),
     browserProfile: (agentId) => {
       const agent = store.list().find((candidate) => candidate.id === agentId);
       return agent ? agentBrowserProfile(agent) : { kind: "shared" };
@@ -1455,7 +1461,6 @@ export async function createApplicationServices({
   const busyMessageMode = new BusyMessageModePreferenceStore(
     join(app.getPath("userData"), BUSY_MESSAGE_MODE_PREFERENCE_FILE),
   );
-  const optimizations = new OptimizationStore(join(app.getPath("userData"), OPTIMIZATIONS_FILE));
   const channelLane = new ChannelLanePreferenceStore(join(app.getPath("userData"), CHANNEL_LANE_PREFERENCE_FILE));
   const autoRecovery = new AutoRecoveryPreferenceStore(join(app.getPath("userData"), AUTO_RECOVERY_PREFERENCE_FILE));
   const taskWatch = new TaskWatchPreferenceStore(join(app.getPath("userData"), TASK_WATCH_PREFERENCE_FILE));
@@ -1682,12 +1687,46 @@ export async function createApplicationServices({
   // The tool runtimes with the egress proxy variables that each stdio MCP server starts with, read at
   // each spawn and each test. Nothing is added while the switch is off, so the fingerprints of the
   // sessions stay as they were.
+  // One process of a stdio tool server for every agent (switch `mcp-shared-host`), behind a host on 127.0.0.1.
+  // The listener starts at the first hand-off of a shared line. A running server that this app did not start is
+  // adopted, except with the egress proxy on: its traffic would not go through the proxy.
+  const sharedMcpHost = new SharedMcpHost({
+    // `service` is built below, and the host asks only when a request arrives.
+    lineEnabled: (serverId) => service.enabledMcpServers().some((config) => config.id === serverId),
+    adoptForeign: () => Object.keys(egressProxy.environment()).length === 0,
+  });
+  const sharedStdio: NonNullable<McpToolRuntimes["sharedStdio"]> = (line, agentId) =>
+    Effect.promise(async () => {
+      const signature = sharedMcpSignature(line.config);
+      if (!signature || agentId === null) return null;
+      try {
+        const route = await sharedMcpHost.route({
+          serverId: line.config.id,
+          agentId,
+          dataDirectory: signature.dataDirectory,
+          launch: { command: line.command, args: line.args, environment: line.environment },
+        });
+        if (!route) return null;
+        registerSecretValue(route.bearer);
+        return { url: route.url, authorization: route.bearer, proxied: true };
+      } catch (error) {
+        // Any failure: the line is handed over as stdio, as it was before the host.
+        logger.warn("A line could not be shared.", toLogValue(error));
+        return null;
+      }
+    });
   const mcpToolRuntimes = (): McpToolRuntimes => {
     const runtimes = providerRuntimes.mcpToolRuntimes();
     const launchEnvironment = egressProxy.environment();
-    return Object.keys(launchEnvironment).length > 0
-      ? { ...runtimes, launchEnvironment, fetch: egressProxy.fetch }
+    const withDirect: McpToolRuntimes = optimizations.optimizationEnabled("mcp-direct-binary")
+      ? { ...runtimes, directBinary: true }
       : runtimes;
+    const withSwitches: McpToolRuntimes = optimizations.optimizationEnabled("mcp-shared-host")
+      ? { ...withDirect, sharedStdio }
+      : withDirect;
+    return Object.keys(launchEnvironment).length > 0
+      ? { ...withSwitches, launchEnvironment, fetch: egressProxy.fetch }
+      : withSwitches;
   };
   const secretCipher = safeStorageCipher("error.app.secretStorageUnavailable");
   const customProviders = new CustomProviderStore({
@@ -2231,6 +2270,7 @@ export async function createApplicationServices({
       tabUrl: (tabId) => chromeAgents.host.tabUrl(tabId),
     },
     browserBroker: () => browserBroker?.endpoint() ?? null,
+    sharedMcpFingerprint: () => sharedMcpHost.fingerprint(),
     githubConnector: {
       mcpServer: () => githubConnector.mcpServer(),
       mcpAuthorization: () => githubConnector.mcpAuthorization().pipe(toMcpGatewayFailed),
@@ -2297,6 +2337,8 @@ export async function createApplicationServices({
   // A turn can wait for the approval of the person with a filled form on the page, so the idle tab of
   // an agent with a running turn keeps its page for 30 min also while the Mac is low on memory.
   browser.setAgentWorking((agentId) => service.runningTurns().some((turn) => turn.agentId === agentId));
+  // After the service, so no agent is cut off while its turn ends: the process of the shared tool server is this app's.
+  teardown.push(TEARDOWN_ORDER.sharedMcpHost, "the shared tool server", () => sharedMcpHost.stop());
   teardown.push(
     TEARDOWN_ORDER.browserBroker,
     "the shared browser connection",

@@ -150,4 +150,23 @@ describe("IdleThreadPool", () => {
     await Effect.runPromise(made.releaseIdle());
     expect(disposed.sort()).toEqual(["a", "q1"]);
   });
+
+  it("never closes a thread with a background task or no session on disk over the limit", async () => {
+    for (const id of ["task", "session", "plain1", "plain2"]) releasable.add(id);
+    releasable.delete("session");
+    const made = makePool({ idleLimit: 1 });
+    const withTask = thread("task");
+    // The oldest threads are the ones that must stay: the limit would pick them first.
+    withTask.background = 1;
+    const threads = [withTask, thread("session"), thread("plain1"), thread("plain2")];
+    for (const candidate of threads) {
+      made.add(candidate);
+      await vi.advanceTimersByTimeAsync(10);
+      await Effect.runPromise(made.markIdle(candidate));
+    }
+    // Only a plain thread goes; the limit never reaches the other two, and `releaseIdle` neither.
+    expect(disposed).toEqual(["plain1"]);
+    await Effect.runPromise(made.releaseIdle());
+    expect(disposed).toEqual(["plain1", "plain2"]);
+  });
 });

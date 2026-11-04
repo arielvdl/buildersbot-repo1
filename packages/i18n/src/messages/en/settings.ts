@@ -434,7 +434,7 @@ export const messages = defineMessages("settings", {
   "settings.optimizations.section": "Advanced optimizations (beta)",
   "settings.optimizations.title": "All optimizations",
   "settings.optimizations.description":
-    "Beta. Each one changes how agents run on this computer, and each one is off until you turn it on. You can turn any of them off again at any time.",
+    "Beta. Each one changes how agents run on this computer. Most are off until you turn them on; the ones that only save memory start on. You can turn any of them off or on at any time.",
   "settings.optimizations.allOn": "Turn all on",
   "settings.optimizations.allOff": "Turn all off",
   "settings.optimizations.queuePriorityUser.title": "Your messages first",
@@ -467,6 +467,18 @@ export const messages = defineMessages("settings", {
   "settings.optimizations.quickStatusReply.title": "Quick status when an agent is busy",
   "settings.optimizations.quickStatusReply.description":
     "When an agent has worked on one turn for 5 minutes or more and you write again, a second fast generation tells you in a short note what the agent does now. The turn and your message do not change. The note uses the agent's own model at low effort, so it adds a small cost for each note, at most one every 3 minutes for each agent. The app writes each one to its log. Risk: the note comes from the recent steps only, so it can be vague or wrong.",
+  "settings.optimizations.leanIdleSessions.title": "Keep fewer idle agents warm",
+  "settings.optimizations.leanIdleSessions.description":
+    "With memory in the Load tab mode, at most 3 idle agent sessions stay open, not 8. The others close and open again from their history. On by default. Risk: the first message to an agent that was closed takes a few seconds more.",
+  "settings.optimizations.idleBrowserTabs.title": "Unload agent browser tabs that nobody uses",
+  "settings.optimizations.idleBrowserTabs.description":
+    "The page of an agent's browser tab that nobody has used for 30 minutes unloads to free memory (after 5 minutes when memory is low and the agent runs no turn). It loads again on the same address the next time the agent uses it. On by default. Tabs that wait for you, such as a sign-in, stay loaded. Risk: a page with something unsent loses it.",
+  "settings.optimizations.mcpDirectBinary.title": "Start tool servers without the npx wrapper",
+  "settings.optimizations.mcpDirectBinary.description":
+    "A tool server that starts with `npx -y name@1.2.3` starts its own program directly when npx already holds it, which saves about 50 MB for each agent and starts faster. Anything else, and any failure, keeps the npx line. On by default. Risk: none known; turn it off if a tool server does not start.",
+  "settings.optimizations.mcpSharedHost.title": "Share one WhatsApp tool server between agents",
+  "settings.optimizations.mcpSharedHost.description":
+    "The WhatsApp tool server (wazap) runs once for all agents, not once for each agent. Each agent keeps its own session, drafts and permissions. If the shared server stops, the next call starts it again by itself. On by default. Risk: a new local connection on this computer, only for this app; turn it off if a WhatsApp call fails.",
   // The Settings window shell: its tab list, headers and save bar.
   "settings.tab.general.title": "General",
   "settings.tab.general.description": "Control how Builders Bot behaves on this computer.",

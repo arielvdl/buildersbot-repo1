@@ -145,6 +145,20 @@ export const messages = {
   "settings.analytics.title": "Analisi di utilizzo",
   "settings.analytics.description":
     "Disattivato. Builders Bot non invia analisi di utilizzo né segnalazioni di errore da questa app.",
+  "settings.optimizations.description":
+    "Beta. Ognuna cambia il modo in cui gli agenti lavorano su questo computer. La maggior parte è disattivata finché non la attivi; quelle che fanno solo risparmiare memoria partono attive. Puoi disattivare o attivare ognuna in qualsiasi momento.",
+  "settings.optimizations.leanIdleSessions.title": "Tieni meno agenti inattivi pronti",
+  "settings.optimizations.leanIdleSessions.description":
+    "Con la memoria nella modalità schede Load restano aperte al massimo 3 sessioni di agenti inattivi, non 8. Le altre si chiudono e si riaprono dalla cronologia. Attivo di default. Rischio: il primo messaggio a un agente chiuso richiede qualche secondo in più.",
+  "settings.optimizations.idleBrowserTabs.title": "Scarica le schede del browser degli agenti che nessuno usa",
+  "settings.optimizations.idleBrowserTabs.description":
+    "La pagina della scheda del browser di un agente che nessuno ha usato per 30 minuti viene scaricata per liberare memoria (dopo 5 minuti se la memoria è poca e l'agente non sta lavorando). Si ricarica allo stesso indirizzo la prossima volta che l'agente la usa. Attivo di default. Le schede che aspettano te, per esempio un accesso, restano caricate. Rischio: una pagina con qualcosa non inviato perde quel contenuto.",
+  "settings.optimizations.mcpDirectBinary.title": "Avvia i server degli strumenti senza il wrapper npx",
+  "settings.optimizations.mcpDirectBinary.description":
+    "Un server di strumenti che parte con `npx -y nome@1.2.3` avvia direttamente il proprio programma quando npx lo ha già, il che fa risparmiare circa 50 MB per agente e parte più in fretta. In ogni altro caso, e in caso di errore, resta la riga npx. Attivo di default. Rischio: nessuno noto; disattivalo se un server degli strumenti non parte.",
+  "settings.optimizations.mcpSharedHost.title": "Condividi un server degli strumenti WhatsApp tra gli agenti",
+  "settings.optimizations.mcpSharedHost.description":
+    "Il server degli strumenti WhatsApp (wazap) gira una sola volta per tutti gli agenti, non una volta per ogni agente. Ogni agente mantiene la propria sessione, le proprie bozze e i propri permessi. Se il server condiviso si ferma, la chiamata successiva lo riavvia da sola. Attivo di default. Rischio: una nuova connessione locale su questo computer, solo per questa app; disattivala se una chiamata WhatsApp non riesce.",
   "settings.tab.general.title": "Generali",
   "settings.tab.general.description": "Controlla come si comporta Builders Bot su questo computer.",
   "settings.tab.notifications.title": "Notifiche",

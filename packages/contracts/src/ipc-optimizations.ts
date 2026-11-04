@@ -1,5 +1,6 @@
-// The advanced optimizations (beta): switches that change how the app runs agents, each one off until
-// the person turns it on. With every switch off the app behaves as before the switches existed. The
+// The advanced optimizations (beta): switches that change how the app runs agents. Each one is off until
+// the person turns it on, except the few that save memory (`DEFAULT_ON_OPTIMIZATION_IDS`), which start on.
+// With every switch off the app behaves as before the switches existed. The
 // host process that runs the agents reads them (`optimizationEnabled` of `src/backend/optimizations.ts`),
 // and each host keeps its own file. See `docs/architecture/optimizations.md`.
 import { isBoolean, isDynamicRecord } from "./runtime-values";
@@ -20,9 +21,26 @@ export const OPTIMIZATION_IDS = [
   "routing",
   "streaming-checkpoints",
   "quick-status-reply",
+  "lean-idle-sessions",
+  "idle-browser-tabs",
+  "mcp-direct-binary",
+  "mcp-shared-host",
   "disable-memory-limit",
 ] as const;
 export type OptimizationId = (typeof OPTIMIZATION_IDS)[number];
+
+/**
+ * The switches that start on, because they only give back memory that nothing uses and what they
+ * close opens again by itself. A person who turns one off keeps it off: the file records that. Every
+ * other switch is off until the person turns it on.
+ */
+export const DEFAULT_ON_OPTIMIZATION_IDS: readonly OptimizationId[] = [
+  "idle-release-low",
+  "lean-idle-sessions",
+  "idle-browser-tabs",
+  "mcp-direct-binary",
+  "mcp-shared-host",
+];
 
 /**
  * The switches that remove a safety limit instead of adding a speed-up. "Turn all on" leaves them off:

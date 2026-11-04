@@ -7,6 +7,8 @@ const PRESSURE_RELEASE_MS = 2 * MINUTE_MS;
 const COMFORT_SPARE_SESSIONS = 16;
 /** A Claude session holds about 200 MB (measured with `footprint` on 3 November 2026), so 4 idle ones cost about 800 MB. */
 const MOST_WARM_SESSIONS = 4;
+/** The most warm sessions with the switch `lean-idle-sessions` on (the default). */
+const MOST_WARM_SESSIONS_LEAN = 3;
 const COMFORT_RELEASE_MS = 5 * MINUTE_MS;
 const LEAST_WARM_SESSIONS = 2;
 
@@ -79,18 +81,26 @@ export class LaneBudget {
    * | spare 0, or `low` | 2 | 2 min |
    * | `critical` | 0 | 2 min (the memory hold also closes them at once) |
    *
+   * With `lean`, the most warm sessions is 3, not 4: a measurement of the installed app found up to 8
+   * idle `claude` processes (about 400 MB each with their MCP servers) held for 10 minutes while the
+   * computer had 55% to 80% "free" memory and several GB of swap.
+   *
    * Null without a reading, and the client keeps its fixed values (2 sessions, 10 min). Values are a
    * first guess to confirm with a measurement.
    */
-  idlePolicy(): IdlePolicy | null {
+  idlePolicy(lean = false): IdlePolicy | null {
     const spare = this.spareSessions();
     if (spare === null || !this.#memory) return null;
     const level = this.#memory.level();
+    const most = lean ? MOST_WARM_SESSIONS_LEAN : MOST_WARM_SESSIONS;
     if (level === "critical") return { idleLimit: 0, releaseAfterMs: PRESSURE_RELEASE_MS };
     if (level === "low" || spare === 0) return { idleLimit: LEAST_WARM_SESSIONS, releaseAfterMs: PRESSURE_RELEASE_MS };
     if (spare < COMFORT_SPARE_SESSIONS)
-      return { idleLimit: Math.max(LEAST_WARM_SESSIONS, Math.floor(spare / 2)), releaseAfterMs: 5 * MINUTE_MS };
-    return { idleLimit: Math.min(MOST_WARM_SESSIONS, Math.floor(spare / 2)), releaseAfterMs: COMFORT_RELEASE_MS };
+      return {
+        idleLimit: Math.max(LEAST_WARM_SESSIONS, Math.min(most, Math.floor(spare / 2))),
+        releaseAfterMs: 5 * MINUTE_MS,
+      };
+    return { idleLimit: Math.min(most, Math.floor(spare / 2)), releaseAfterMs: COMFORT_RELEASE_MS };
   }
 
   /** Whether one extra tab may start. Without a reading it may: the fixed limit decides. */

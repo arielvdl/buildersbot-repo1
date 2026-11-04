@@ -26,6 +26,7 @@ import {
   mcpLaunchEnvironment,
   NO_MCP_TOOL_RUNTIMES,
   type ResolvedMcpServer,
+  storedLineTools,
   type UsableMcpServer,
   usableMcpServer,
 } from "./mcp-provider-shapes";
@@ -112,7 +113,8 @@ export const inspectMcpServer = Effect.fnUntraced(function* (
       Effect.gen(function* () {
         const server = yield* usableMcpServer(
           config,
-          tools,
+          // The test runs the line as it is stored, not the direct program or the shared host of a hand-off.
+          storedLineTools(tools),
           // The probe runs in this process, so it holds the token itself and never uses the proxy.
           oauth
             ? (subject) =>

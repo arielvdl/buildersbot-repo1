@@ -154,6 +154,20 @@ export const messages = {
   "settings.analytics.title": "Statistiques d’utilisation",
   "settings.analytics.description":
     "Désactivé. Builders Bot n’envoie aucune statistique d’utilisation ni aucun rapport d’erreur depuis cette app.",
+  "settings.optimizations.description":
+    "Bêta. Chacune change la façon dont les agents travaillent sur cet ordinateur. La plupart sont désactivées jusqu'à ce que vous les activiez ; celles qui ne font qu'économiser la mémoire sont activées dès le départ. Vous pouvez désactiver ou réactiver chacune à tout moment.",
+  "settings.optimizations.leanIdleSessions.title": "Garder moins d'agents inactifs ouverts",
+  "settings.optimizations.leanIdleSessions.description":
+    "En mode d'onglets Load avec la mémoire, 3 sessions d'agents inactifs au maximum restent ouvertes, et non 8. Les autres se ferment et se rouvrent à partir de leur historique. Activé par défaut. Risque : le premier message envoyé à un agent fermé prend quelques secondes de plus.",
+  "settings.optimizations.idleBrowserTabs.title": "Décharger les onglets de navigateur des agents inutilisés",
+  "settings.optimizations.idleBrowserTabs.description":
+    "La page d'un onglet de navigateur d'agent que personne n'a utilisé depuis 30 minutes est déchargée pour libérer de la mémoire (après 5 minutes si la mémoire est faible et que l'agent n'exécute rien). Elle se recharge à la même adresse la prochaine fois que l'agent l'utilise. Activé par défaut. Les onglets qui attendent votre action, comme une connexion, restent chargés. Risque : une page contenant un texte non envoyé perd ce texte.",
+  "settings.optimizations.mcpDirectBinary.title": "Démarrer les serveurs d'outils sans l'enveloppe npx",
+  "settings.optimizations.mcpDirectBinary.description":
+    "Un serveur d'outils lancé avec `npx -y nom@1.2.3` démarre directement son propre programme lorsque npx l'a déjà, ce qui économise environ 50 Mo par agent et démarre plus vite. Dans tous les autres cas, et en cas d'échec, la ligne npx est conservée. Activé par défaut. Risque : aucun connu ; désactivez-le si un serveur d'outils ne démarre pas.",
+  "settings.optimizations.mcpSharedHost.title": "Partager un serveur d'outils WhatsApp entre agents",
+  "settings.optimizations.mcpSharedHost.description":
+    "Le serveur d'outils WhatsApp (wazap) tourne une seule fois pour tous les agents, et non une fois par agent. Chaque agent garde sa propre session, ses brouillons et ses autorisations. Si le serveur partagé s'arrête, l'appel suivant le relance seul. Activé par défaut. Risque : une nouvelle connexion locale sur cet ordinateur, réservée à cette application ; désactivez-la si un appel WhatsApp échoue.",
   // The Settings window shell: its tab list, headers and save bar.
   "settings.tab.general.title": "Général",
   "settings.tab.general.description": "Contrôler le comportement d’Builders Bot sur cet ordinateur.",

@@ -38,10 +38,12 @@ export interface IdleThreadPoolOptions<Thread extends IdleThread, Released> {
   /**
    * When a thread that cannot be released keeps its process anyway. `canRelease` answers for the
    * state it can see; a provider that stops reporting one of those reasons would otherwise hold the
-   * process for the life of the app, because `#arm` never starts the timer. Three times the timeout
-   * is long enough for a real background task and short enough to bound the leak.
+   * process for the life of the app, because `#arm` never starts the timer. Omitted:
+   * `FORCE_RELEASE_AFTER_MS`, a fixed time that the idle time of the memory policy does not shorten.
    */
   forceReleaseAfterMs?: number;
+  /** How often a thread that cannot be released yet is looked at again. Omitted: `RETRY_UNRELEASABLE_MS`. */
+  retryUnreleasableMs?: number;
   /**
    * A group of threads with a limit of its own. Over `idleLimit` the threads of the group count apart
    * from the others, and a computer short of memory (`releaseIdle`) still closes them all.
@@ -64,6 +66,14 @@ export interface IdleThreadPoolOptions<Thread extends IdleThread, Released> {
  */
 /** How often a thread that cannot be released yet is looked at again. */
 const RETRY_UNRELEASABLE_MS = 60_000;
+
+/**
+ * How long a thread that cannot be released (a background task, or a session that is not saved) may stay
+ * idle before the pool takes its process anyway, for a provider that stops reporting the reason. Fixed:
+ * a cap that followed the idle time of the memory policy (2 minutes under pressure) closed a session with
+ * a live background task after 6 minutes. One hour is longer than a real background task.
+ */
+export const FORCE_RELEASE_AFTER_MS = 60 * 60_000;
 
 export class IdleThreadPool<Thread extends IdleThread, Released> {
   readonly #options: IdleThreadPoolOptions<Thread, Released>;
@@ -239,7 +249,7 @@ export class IdleThreadPool<Thread extends IdleThread, Released> {
         // idle past the hard cap. Without the retry no timer would ever be armed again, and without
         // the cap a reason that never clears holds the process until the app quits.
         if (!this.#options.canRelease(thread)) {
-          const forceAfter = this.#options.forceReleaseAfterMs ?? this.#releaseAfterMs() * 3;
+          const forceAfter = this.#options.forceReleaseAfterMs ?? FORCE_RELEASE_AFTER_MS;
           if (Date.now() - armedAt < forceAfter) {
             this.#arm(thread, armedAt);
             return;
@@ -248,7 +258,9 @@ export class IdleThreadPool<Thread extends IdleThread, Released> {
         Effect.runFork(this.#release(thread));
       },
       // A thread that cannot be released is re-checked every minute rather than every timeout.
-      this.#options.canRelease(thread) ? this.#releaseAfterMs() : RETRY_UNRELEASABLE_MS,
+      this.#options.canRelease(thread)
+        ? this.#releaseAfterMs()
+        : (this.#options.retryUnreleasableMs ?? RETRY_UNRELEASABLE_MS),
     );
     thread.idleRelease.unref?.();
   }
@@ -285,7 +297,10 @@ export class IdleThreadPool<Thread extends IdleThread, Released> {
           thread.idleRelease !== null &&
           thread.idleSince > 0 &&
           now - thread.idleSince >= minIdleMs &&
-          this.#isIdle(thread),
+          this.#isIdle(thread) &&
+          // A thread with a background task, or one with no session on disk, never closes before its
+          // timeout: closing it would end the task or lose the conversation.
+          this.#options.canRelease(thread),
       )
       .sort((left, right) => left.idleSince - right.idleSince);
     const separate = this.#options.separateLimit;

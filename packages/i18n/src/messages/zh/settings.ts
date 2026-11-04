@@ -156,6 +156,20 @@ export const messages = {
   "settings.notch.size.previewIsland": "外接显示器",
   "settings.analytics.title": "使用情况分析",
   "settings.analytics.description": "已关闭。Builders Bot 不会从此应用发送使用情况分析或错误报告。",
+  "settings.optimizations.description":
+    "测试版。每项都会改变助手在这台电脑上的运行方式。大多数默认关闭，直到你开启；只节省内存的几项默认开启。你可以随时开启或关闭任何一项。",
+  "settings.optimizations.leanIdleSessions.title": "保持更少的闲置助手处于就绪状态",
+  "settings.optimizations.leanIdleSessions.description":
+    "在 Load 标签模式下使用内存时，最多保留 3 个闲置助手会话，而不是 8 个。其余会话关闭，之后可从历史记录重新打开。默认开启。风险：向已关闭的助手发送的第一条消息会多花几秒。",
+  "settings.optimizations.idleBrowserTabs.title": "卸载无人使用的助手浏览器标签页",
+  "settings.optimizations.idleBrowserTabs.description":
+    "助手浏览器标签页中 30 分钟无人使用的页面会被卸载以释放内存（内存不足且助手没有在运行时，5 分钟后卸载）。下次助手使用时，会在同一地址重新加载。默认开启。等待你操作的标签页（例如登录）保持加载。风险：有未发送内容的页面会丢失这些内容。",
+  "settings.optimizations.mcpDirectBinary.title": "不经 npx 包装直接启动工具服务器",
+  "settings.optimizations.mcpDirectBinary.description":
+    "用 `npx -y 名称@1.2.3` 启动的工具服务器，如果 npx 已经有该包，就直接启动它自己的程序，每个助手约节省 50 MB，启动也更快。其他情况以及任何失败时，保留 npx 那一行。默认开启。风险：目前没有已知风险；如果某个工具服务器无法启动，请关闭。",
+  "settings.optimizations.mcpSharedHost.title": "在助手之间共享一个 WhatsApp 工具服务器",
+  "settings.optimizations.mcpSharedHost.description":
+    "WhatsApp 工具服务器（wazap）为所有助手只运行一次，而不是每个助手各运行一次。每个助手保留自己的会话、草稿和权限。如果共享服务器停止，下一次调用会自动重新启动它。默认开启。风险：这台电脑上会多一个仅供本应用使用的本地连接；如果 WhatsApp 调用失败，请关闭。",
   // The Settings window shell: its tab list, headers and save bar.
   "settings.tab.general.title": "通用",
   "settings.tab.general.description": "控制 Builders Bot 在这台电脑上的行为。",

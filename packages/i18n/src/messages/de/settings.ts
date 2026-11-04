@@ -146,6 +146,20 @@ export const messages = {
   "settings.analytics.title": "Nutzungsanalysen",
   "settings.analytics.description":
     "Aus. Builders Bot sendet aus dieser App keine Nutzungsanalysen und keine Fehlerberichte.",
+  "settings.optimizations.description":
+    "Beta. Jede ändert, wie Agenten auf diesem Computer arbeiten. Die meisten sind aus, bis du sie einschaltest; die, die nur Speicher sparen, sind von Anfang an aktiv. Du kannst jede jederzeit ein- oder ausschalten.",
+  "settings.optimizations.leanIdleSessions.title": "Weniger inaktive Agenten offen halten",
+  "settings.optimizations.leanIdleSessions.description":
+    "Im Tab-Modus Load bleiben höchstens 3 inaktive Agentensitzungen offen, nicht 8. Die anderen schließen sich und öffnen sich später wieder aus dem Verlauf. Standardmäßig an. Risiko: Die erste Nachricht an einen geschlossenen Agenten braucht ein paar Sekunden länger.",
+  "settings.optimizations.idleBrowserTabs.title": "Browser-Tabs von Agenten ohne Nutzung entladen",
+  "settings.optimizations.idleBrowserTabs.description":
+    "Die Seite eines Browser-Tabs eines Agenten, die 30 Minuten lang niemand genutzt hat, wird entladen, um Speicher freizugeben (bei wenig Speicher und wenn der Agent gerade nichts bearbeitet, schon nach 5 Minuten). Sie lädt beim nächsten Gebrauch wieder unter derselben Adresse. Standardmäßig an. Tabs, die auf dich warten, etwa eine Anmeldung, bleiben geladen. Risiko: Eine Seite mit nicht gesendetem Inhalt verliert ihn.",
+  "settings.optimizations.mcpDirectBinary.title": "Tool-Server ohne npx-Wrapper starten",
+  "settings.optimizations.mcpDirectBinary.description":
+    "Ein Tool-Server, der mit `npx -y name@1.2.3` startet, startet sein eigenes Programm direkt, wenn npx es schon hat. Das spart etwa 50 MB je Agent und startet schneller. In allen anderen Fällen und bei jedem Fehler bleibt die npx-Zeile. Standardmäßig an. Risiko: keines bekannt; schalte es aus, wenn ein Tool-Server nicht startet.",
+  "settings.optimizations.mcpSharedHost.title": "Einen WhatsApp-Tool-Server für alle Agenten teilen",
+  "settings.optimizations.mcpSharedHost.description":
+    "Der WhatsApp-Tool-Server (wazap) läuft einmal für alle Agenten, nicht einmal für jeden Agenten. Jeder Agent behält seine eigene Sitzung, seine Entwürfe und seine Berechtigungen. Wenn der gemeinsame Server stoppt, startet ihn der nächste Aufruf von selbst neu. Standardmäßig an. Risiko: eine neue lokale Verbindung auf diesem Computer, nur für diese App; schalte es aus, wenn ein WhatsApp-Aufruf fehlschlägt.",
   "settings.tab.general.title": "Allgemein",
   "settings.tab.general.description": "Lege fest, wie sich Builders Bot auf diesem Computer verhält.",
   "settings.tab.notifications.title": "Mitteilungen",

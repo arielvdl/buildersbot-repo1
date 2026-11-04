@@ -42,7 +42,7 @@ function server(id: string, name: string): McpServerConfig {
     transport: "stdio",
     enabled: true,
     command: "/bin/sh",
-    args: ["-c", "sleep 120"],
+    args: ["-c", `sleep 120 # ${id}`], // Each row starts its own program: one agent starts one copy of the same line (`onePerLaunch`).
     env: [],
     envPassthrough: [],
     workingDirectory: "",

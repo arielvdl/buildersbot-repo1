@@ -415,7 +415,7 @@ export const messages = {
   "settings.optimizations.section": "Otimizações avançadas (beta)",
   "settings.optimizations.title": "Todas as otimizações",
   "settings.optimizations.description":
-    "Beta. Cada uma muda como os agentes funcionam neste computador, e cada uma fica desligada até você ligar. Você pode desligar qualquer uma a qualquer momento.",
+    "Beta. Cada uma muda como os agentes funcionam neste computador. A maioria fica desligada até você ligar; as que só economizam memória começam ligadas. Você pode ligar ou desligar qualquer uma a qualquer momento.",
   "settings.optimizations.allOn": "Ligar todas",
   "settings.optimizations.allOff": "Desligar todas",
   "settings.optimizations.queuePriorityUser.title": "Suas mensagens primeiro",
@@ -448,6 +448,18 @@ export const messages = {
   "settings.optimizations.quickStatusReply.title": "Resposta rápida quando o agente está ocupado",
   "settings.optimizations.quickStatusReply.description":
     "Quando um agente trabalha há 5 minutos ou mais num turno e você escreve de novo, uma segunda geração rápida conta numa nota curta o que o agente está fazendo agora. O turno e a sua mensagem não mudam. A nota usa o modelo do próprio agente com esforço baixo, então cada nota tem um custo pequeno, no máximo uma a cada 3 minutos por agente. O app registra cada uma no log. Risco: a nota vem só dos passos recentes, então pode ficar vaga ou errada.",
+  "settings.optimizations.leanIdleSessions.title": "Manter menos agentes ociosos abertos",
+  "settings.optimizations.leanIdleSessions.description":
+    "Com a memória no modo de abas Carga, no máximo 3 sessões de agentes ociosos ficam abertas, não 8. As outras fecham e abrem de novo a partir do histórico. Ligado por padrão. Risco: a primeira mensagem para um agente que foi fechado leva alguns segundos a mais.",
+  "settings.optimizations.idleBrowserTabs.title": "Descarregar abas de navegador de agentes sem uso",
+  "settings.optimizations.idleBrowserTabs.description":
+    "A página de uma aba de navegador de agente que ninguém usou por 30 minutos é descarregada para liberar memória (após 5 minutos com pouca memória e o agente sem turno). Ela carrega de novo no mesmo endereço quando o agente usar a aba. Ligado por padrão. Abas que esperam por você, como um login, ficam carregadas. Risco: uma página com algo não enviado perde isso.",
+  "settings.optimizations.mcpDirectBinary.title": "Iniciar servidores de ferramentas sem o npx",
+  "settings.optimizations.mcpDirectBinary.description":
+    "Um servidor de ferramentas que inicia com `npx -y nome@1.2.3` inicia o próprio programa direto quando o npx já o tem, o que poupa cerca de 50 MB por agente e inicia mais rápido. Qualquer outro caso, e qualquer falha, mantém a linha do npx. Ligado por padrão. Risco: nenhum conhecido; desligue se um servidor de ferramentas não iniciar.",
+  "settings.optimizations.mcpSharedHost.title": "Compartilhar um servidor de ferramentas do WhatsApp entre agentes",
+  "settings.optimizations.mcpSharedHost.description":
+    "O servidor de ferramentas do WhatsApp (wazap) roda uma vez para todos os agentes, não uma vez para cada agente. Cada agente mantém a própria sessão, os próprios rascunhos e as próprias permissões. Se o servidor compartilhado parar, a próxima chamada o inicia de novo sozinha. Ligado por padrão. Risco: uma conexão local nova neste computador, só para este app; desligue se uma chamada do WhatsApp falhar.",
   "settings.tab.general.title": "Geral",
   "settings.tab.general.description": "Controle como o Builders Bot se comporta neste computador.",
   "settings.tab.promptShortcuts.title": "Atalhos de prompt",

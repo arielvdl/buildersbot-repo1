@@ -141,6 +141,20 @@ export const messages = {
   "settings.notch.size.previewIsland": "Harici ekran",
   "settings.analytics.title": "Kullanım analizi",
   "settings.analytics.description": "Kapalı. Builders Bot bu uygulamadan kullanım analizi ve hata raporu göndermez.",
+  "settings.optimizations.description":
+    "Beta. Her biri bu bilgisayarda ajanların nasıl çalıştığını değiştirir. Çoğu, siz açana kadar kapalıdır; yalnızca bellek tasarrufu sağlayanlar baştan açıktır. Her birini istediğiniz zaman kapatabilir veya açabilirsiniz.",
+  "settings.optimizations.leanIdleSessions.title": "Boşta bekleyen daha az ajanı açık tut",
+  "settings.optimizations.leanIdleSessions.description":
+    "Load sekme modunda bellek kullanılırken, boşta bekleyen ajan oturumlarından en fazla 3'ü açık kalır, 8 değil. Diğerleri kapanır ve geçmişinden yeniden açılır. Varsayılan olarak açık. Risk: kapanmış bir ajana gönderilen ilk mesaj birkaç saniye daha uzun sürer.",
+  "settings.optimizations.idleBrowserTabs.title": "Kimsenin kullanmadığı ajan tarayıcı sekmelerini boşalt",
+  "settings.optimizations.idleBrowserTabs.description":
+    "30 dakikadır kimsenin kullanmadığı bir ajan tarayıcı sekmesinin sayfası, bellek boşaltmak için boşaltılır (bellek azsa ve ajan bir işlem yürütmüyorsa 5 dakika sonra). Ajan sekmeyi bir sonraki kullanışında aynı adreste yeniden yüklenir. Varsayılan olarak açık. Oturum açma gibi sizi bekleyen sekmeler yüklü kalır. Risk: gönderilmemiş içeriği olan bir sayfa bu içeriği kaybeder.",
+  "settings.optimizations.mcpDirectBinary.title": "Araç sunucularını npx sarmalayıcısı olmadan başlat",
+  "settings.optimizations.mcpDirectBinary.description":
+    "`npx -y ad@1.2.3` ile başlayan bir araç sunucusu, npx paketi zaten tutuyorsa kendi programını doğrudan başlatır. Bu, ajan başına yaklaşık 50 MB tasarruf sağlar ve daha hızlı başlar. Diğer tüm durumlarda ve her hatada npx satırı korunur. Varsayılan olarak açık. Risk: bilinen bir risk yok; bir araç sunucusu başlamazsa kapatın.",
+  "settings.optimizations.mcpSharedHost.title": "WhatsApp araç sunucusunu ajanlar arasında paylaş",
+  "settings.optimizations.mcpSharedHost.description":
+    "WhatsApp araç sunucusu (wazap) her ajan için ayrı ayrı değil, tüm ajanlar için bir kez çalışır. Her ajan kendi oturumunu, taslaklarını ve izinlerini korur. Paylaşılan sunucu durursa bir sonraki çağrı onu kendiliğinden yeniden başlatır. Varsayılan olarak açık. Risk: bu bilgisayarda yalnızca bu uygulama için yeni bir yerel bağlantı; bir WhatsApp çağrısı başarısız olursa kapatın.",
   "settings.tab.general.title": "Genel",
   "settings.tab.general.description": "Builders Bot'un bu bilgisayarda nasıl davranacağını kontrol edin.",
   "settings.tab.notifications.title": "Bildirimler",

@@ -155,6 +155,20 @@ export const messages = {
   "settings.notch.size.previewIsland": "외부 디스플레이",
   "settings.analytics.title": "사용 분석",
   "settings.analytics.description": "꺼져 있어요. Builders Bot은 이 앱에서 사용 분석과 오류 보고서를 보내지 않아요.",
+  "settings.optimizations.description":
+    "베타예요. 각 항목은 이 컴퓨터에서 에이전트가 작동하는 방식을 바꿔요. 대부분은 켜기 전까지 꺼져 있고, 메모리만 아끼는 항목은 처음부터 켜져 있어요. 모든 항목을 언제든지 끄거나 켤 수 있어요.",
+  "settings.optimizations.leanIdleSessions.title": "유휴 에이전트를 덜 열어 두기",
+  "settings.optimizations.leanIdleSessions.description":
+    "탭 모드 Load에서 메모리를 쓸 때, 유휴 에이전트 세션은 8개가 아니라 최대 3개까지만 열려 있어요. 나머지는 닫혔다가 다음번에 기록에서 다시 열려요. 기본으로 켜져 있어요. 위험: 닫힌 에이전트에 처음 보내는 메시지는 몇 초 더 걸려요.",
+  "settings.optimizations.idleBrowserTabs.title": "아무도 쓰지 않는 에이전트 브라우저 탭 언로드",
+  "settings.optimizations.idleBrowserTabs.description":
+    "30분 동안 아무도 쓰지 않은 에이전트 브라우저 탭의 페이지는 메모리를 확보하려고 언로드돼요(메모리가 부족하고 에이전트가 작업을 하지 않으면 5분 뒤). 에이전트가 다음에 그 탭을 쓸 때 같은 주소로 다시 불러와요. 기본으로 켜져 있어요. 로그인처럼 사용자를 기다리는 탭은 불러온 상태로 남아요. 위험: 보내지 않은 내용이 있는 페이지는 그 내용을 잃어요.",
+  "settings.optimizations.mcpDirectBinary.title": "npx 래퍼 없이 도구 서버 시작",
+  "settings.optimizations.mcpDirectBinary.description":
+    "`npx -y 이름@1.2.3`으로 시작하는 도구 서버는 npx가 이미 가지고 있으면 npx를 거치지 않고 자체 프로그램을 바로 시작해요. 에이전트마다 약 50MB를 아끼고 더 빨리 시작해요. 그 밖의 경우와 모든 실패 시에는 npx 줄을 그대로 써요. 기본으로 켜져 있어요. 위험: 알려진 위험은 없어요. 도구 서버가 시작되지 않으면 끄세요.",
+  "settings.optimizations.mcpSharedHost.title": "WhatsApp 도구 서버를 에이전트끼리 공유",
+  "settings.optimizations.mcpSharedHost.description":
+    "WhatsApp 도구 서버(wazap)는 에이전트마다 따로 돌지 않고 모든 에이전트가 함께 한 번만 실행해요. 각 에이전트는 자기 세션, 초안, 권한을 그대로 유지해요. 공유 서버가 멈추면 다음 호출에서 스스로 다시 시작해요. 기본으로 켜져 있어요. 위험: 이 컴퓨터에 이 앱만 쓰는 새 로컬 연결이 생겨요. WhatsApp 호출이 실패하면 끄세요.",
   "settings.tab.general.title": "일반",
   "settings.tab.general.description": "이 컴퓨터에서 Builders Bot이 동작하는 방식을 설정해요.",
   "settings.tab.agents.title": "에이전트",

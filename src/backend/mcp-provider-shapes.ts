@@ -1,7 +1,8 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { delimiter, isAbsolute, join } from "node:path";
+import { basename, delimiter, dirname, isAbsolute, join, sep } from "node:path";
 import { promisify } from "node:util";
 import {
   type AgentProviderId,
@@ -13,6 +14,7 @@ import {
 import { type DynamicRecord, isDynamicRecord } from "@buildersbot/contracts/runtime-values";
 import { sourceText } from "@buildersbot/i18n/source";
 import { Deferred, Effect, Schema } from "effect";
+import { isProvenDirectPackage } from "./agent/shared-mcp-access";
 import { isWindowsRunnable, runInLoginShell } from "./cli";
 import { causeHelpers } from "./effect-boundary";
 import type { McpOperationError } from "./mcp-effects";
@@ -44,11 +46,37 @@ export interface McpToolRuntimes {
    */
   readonly launchEnvironment?: Readonly<Record<string, string>>;
   /**
+   * The switch `mcp-direct-binary`: a stdio line `npx -y <package>@<exact version> ...` that `npx` already
+   * has in its cache starts the package's own program, with no `npm exec` around it. A hand-off only;
+   * the test of the panel keeps the line as it is stored. See `resolveDirectBinary`.
+   */
+  readonly directBinary?: boolean;
+  /**
+   * The switch `mcp-shared-host`: for a stdio line that may be shared (`sharedMcpSignature`), the route
+   * of the host that serves every agent from one process, or `null` to hand the line over as stdio. A
+   * hand-off only: `storedLineTools` takes it away for the test of the panel.
+   */
+  readonly sharedStdio?: (line: SharedStdioLine, agentId: string | null) => Effect.Effect<McpEndpoint | null>;
+  /**
    * The `fetch` of an http server that this process reaches itself: the MCP test. The egress proxy's
    * own while its switch is on, so the test uses the proxy as the agents do. The platform fetch when
    * absent. A sign-in keeps its own fetch.
    */
   readonly fetch?: (input: string | URL, init?: RequestInit) => Promise<Response>;
+}
+
+/** The stdio line of one agent, as a process of its own would start it. */
+interface SharedStdioLine {
+  config: McpServerConfig;
+  command: string;
+  args: readonly string[];
+  environment: Readonly<Record<string, string>>;
+}
+
+/** The tools of a test of the panel: the line as it is stored, with no direct program and no shared host. */
+export function storedLineTools(tools: McpToolRuntimes): McpToolRuntimes {
+  const { sharedStdio: _shared, directBinary: _direct, ...stored } = tools;
+  return stored;
 }
 
 /** The machine exactly as it is. Used by every caller that has no runtime manager, including tests. */
@@ -153,6 +181,8 @@ export type UsableMcpServer =
       proxied: boolean;
       /** See `McpToolRuntimes.launchEnvironment`. Only a stdio server has it. */
       launchEnvironment?: Readonly<Record<string, string>>;
+      /** The arguments of `command`, when they are not the configured ones (`McpToolRuntimes.directBinary`). */
+      args?: readonly string[] | undefined;
       error?: undefined;
       reason?: undefined;
     }
@@ -165,6 +195,7 @@ export type UsableMcpServer =
       authorization?: undefined;
       proxied?: undefined;
       launchEnvironment?: undefined;
+      args?: undefined;
       error: string;
       /** Machine-readable beside the sentence, so a reporter never has to match on the wording. */
       reason: Exclude<McpDropReason, "working_directory_unsupported" | "name_conflict">;
@@ -175,6 +206,11 @@ type UnusableMcpServer = Extract<UsableMcpServer, { error: string }>;
 
 /** The arm a provider is actually given, for the readers that have already narrowed to it. */
 export type ResolvedMcpServer = Extract<UsableMcpServer, { error?: undefined }>;
+
+/** The arguments a stdio server starts with: the resolved ones, or the configured ones. */
+function mcpServerArgs(server: { config: McpServerConfig; args?: readonly string[] | undefined }): string[] {
+  return [...(server.args ?? server.config.args)];
+}
 
 /** A server that could not be resolved at all. Every provider refuses these for the same reason. */
 function unusableDrop(server: UnusableMcpServer): McpServerDrop {
@@ -207,13 +243,46 @@ export function mcpAgentParam(params: unknown): string | null {
   return isDynamicRecord(params) && typeof params.buildersbotAgentId === "string" ? params.buildersbotAgentId : null;
 }
 
+/**
+ * What a stdio server starts, with no name: two rows with the same line, the same working directory and
+ * the same environment start two copies of one program. An http row is not listed, because it starts
+ * nothing here.
+ */
+function stdioLaunchKey(config: McpServerConfig): string | null {
+  if (config.transport !== "stdio") return null;
+  return JSON.stringify([
+    config.command.trim(),
+    config.args,
+    config.workingDirectory.trim(),
+    config.envPassthrough,
+    config.env.map((pair) => [pair.key, pair.value]),
+  ]);
+}
+
+/**
+ * One agent starts one copy of each stdio program. A second row that launches the same program with
+ * the same arguments and environment (a row added twice, or the same server under two names) is left
+ * out, and the first one stays. A measurement of 4 November 2026 found 6 copies of one server in one
+ * run, each about 230 MB (F-16).
+ */
+export function onePerLaunch(configs: readonly McpServerConfig[]): McpServerConfig[] {
+  const seen = new Set<string>();
+  return configs.filter((config) => {
+    const key = stdioLaunchKey(config);
+    if (key === null) return true;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export const usableMcpServers = Effect.fnUntraced(function* (
   configs: readonly McpServerConfig[],
   tools: McpToolRuntimes = NO_MCP_TOOL_RUNTIMES,
   endpoint?: McpEndpointSource,
   agentId: string | null = null,
 ) {
-  const candidates = configs.filter((config) => config.enabled && !isReservedMcpServerName(config.name));
+  const candidates = onePerLaunch(configs.filter((config) => config.enabled && !isReservedMcpServerName(config.name)));
   return yield* Effect.forEach(candidates, (config) => usableMcpServer(config, tools, endpoint, agentId), {
     concurrency: "unbounded",
   });
@@ -247,16 +316,38 @@ export const usableMcpServer = Effect.fnUntraced(function* (
       error: sourceText("error.backend.mcpCommandNotFound", { command: config.command }),
       reason: "command_not_found",
     };
-  return {
+  const direct = tools.directBinary === true ? yield* resolveDirectBinary(config, command, path) : null;
+  const stdio = {
     config,
-    command,
+    command: direct?.command ?? command,
     workingDirectory: expandHomePath(config.workingDirectory),
-    path,
+    // The program starts with the `.bin` of its package first on the `PATH`, as `npx` would give it.
+    path: direct ? [direct.binDirectory, ...(path ?? process.env.PATH ?? "").split(delimiter)].join(delimiter) : path,
     url: "",
     authorization: null,
     proxied: false,
+    ...(direct ? { args: direct.args } : {}),
     ...(tools.launchEnvironment ? { launchEnvironment: tools.launchEnvironment } : {}),
   };
+  // A line that may be shared is handed over as the http route of the host, in the shape of an http
+  // server. Only the hand-off sees it: `config` of the stored row, which the instructions read, stays stdio.
+  if (tools.sharedStdio && agentId !== null) {
+    const shared = yield* tools.sharedStdio(
+      { config, command: stdio.command, args: mcpServerArgs(stdio), environment: mcpLaunchEnvironment(stdio) },
+      agentId,
+    );
+    if (shared)
+      return {
+        config: { ...config, transport: "http", url: shared.url, headers: [], command: "", args: [], env: [] },
+        command: "",
+        workingDirectory: "",
+        path: null,
+        url: shared.url,
+        authorization: shared.authorization,
+        proxied: true,
+      };
+  }
+  return stdio;
 });
 
 /**
@@ -343,6 +434,108 @@ const resolveMcpCommand = Effect.fn("McpShape.resolveCommand")(function* (comman
     Effect.uninterruptible,
   );
 });
+
+/** A package that `npx` runs, with the exact version: `name@1.2.3`, scoped or not. A range or a tag is not exact. */
+const EXACT_PACKAGE = /^((?:@[a-z0-9~][\w.~-]*\/)?[a-z0-9~][\w.~-]*)@(\d+\.\d+\.\d+(?:-[\w.]+)?)$/u;
+const DIRECT_BINARY_TIMEOUT_MS = 20_000;
+/** A package that `npx` could not give from its cache is not asked again for this long. */
+const DIRECT_BINARY_RETRY_MS = 60_000;
+
+interface DirectBinary {
+  command: string;
+  args: string[];
+  /** The `.bin` of the package's own install, which `npx` puts first on the `PATH` of its program. */
+  binDirectory: string;
+}
+
+const directBinaries = new Map<string, DirectBinary>();
+const directBinaryMisses = new Map<string, number>();
+
+/**
+ * The program of `npx -y <package>@<exact version> <args>` when `npx` already holds that package in its
+ * cache, so the line can start the program itself: no `npm exec` and no shell around it, which is about
+ * 50 MB for each agent and 1.3 seconds of start. `null` for anything else, and the line stays `npx`.
+ *
+ * Asked of `npx --offline`, so it never waits for a download: a package that is not cached yet is
+ * fetched by the `npx` line at its first start, and found here at the next hand-off. The one shell
+ * text is fixed (`printf` of the `PATH`), and the package goes in as an argument. `npx` puts the
+ * `.bin` of the package's own install first in that `PATH`; the answer is accepted only when the
+ * package there has the same name and version, and its program (`bin`) exists. Only macOS and Linux.
+ */
+const resolveDirectBinary = Effect.fn("McpShape.resolveDirectBinary")(function* (
+  config: McpServerConfig,
+  command: string,
+  path: string | null,
+) {
+  if (process.platform === "win32" || basename(command) !== "npx") return null;
+  const [flag, spec, ...rest] = config.args;
+  if ((flag !== "-y" && flag !== "--yes") || spec === undefined) return null;
+  const match = EXACT_PACKAGE.exec(spec);
+  if (!match?.[1] || !match[2] || !isProvenDirectPackage(match[1], match[2])) return null;
+  const key = `${command}\u0000${path ?? ""}\u0000${spec}`;
+  const known = directBinaries.get(key);
+  if (known) {
+    if (existsSync(known.command))
+      return { command: known.command, args: [...known.args, ...rest], binDirectory: known.binDirectory };
+    directBinaries.delete(key);
+  }
+  const missedAt = directBinaryMisses.get(key);
+  if (missedAt !== undefined && Date.now() - missedAt < DIRECT_BINARY_RETRY_MS) return null;
+  const found = yield* Effect.promise(() => lookUpDirectBinary(command, path, spec, match[1] ?? "", match[2] ?? ""));
+  if (!found) {
+    directBinaryMisses.set(key, Date.now());
+    return null;
+  }
+  directBinaryMisses.delete(key);
+  directBinaries.set(key, found);
+  return { command: found.command, args: [...found.args, ...rest], binDirectory: found.binDirectory };
+});
+
+async function lookUpDirectBinary(
+  npx: string,
+  path: string | null,
+  spec: string,
+  name: string,
+  version: string,
+): Promise<DirectBinary | null> {
+  try {
+    const { stdout } = await execFileAsync(npx, ["--offline", "-y", "-p", spec, "-c", 'printf %s "$PATH"'], {
+      timeout: DIRECT_BINARY_TIMEOUT_MS,
+      maxBuffer: 64 * 1024,
+      env: { ...process.env, ...(path === null ? {} : { PATH: path }) },
+    });
+    const binDirectory = stdout.trim().split(delimiter)[0] ?? "";
+    if (!isAbsolute(binDirectory) || basename(binDirectory) !== ".bin") return null;
+    const modules = dirname(binDirectory);
+    if (basename(modules) !== "node_modules") return null;
+    const manifest = JSON.parse(readFileSync(join(modules, ...name.split("/"), "package.json"), "utf8"));
+    if (!isDynamicRecord(manifest) || manifest.name !== name || manifest.version !== version) return null;
+    const unscoped = name.split("/").at(-1) ?? name;
+    const bins = manifest.bin;
+    // The program that `npx` runs for a package: the one named like it, or else the only one.
+    const programName =
+      typeof bins === "string"
+        ? unscoped
+        : isDynamicRecord(bins)
+          ? bins[unscoped] !== undefined
+            ? unscoped
+            : Object.keys(bins).length === 1
+              ? (Object.keys(bins)[0] ?? null)
+              : null
+          : null;
+    if (!programName || programName.includes("/") || programName.includes(sep)) return null;
+    const program = join(binDirectory, programName);
+    return existsSync(program) ? { command: program, args: [], binDirectory } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Forgets what the direct programs resolved to, for a test. */
+export function clearDirectBinaryCache(): void {
+  directBinaries.clear();
+  directBinaryMisses.clear();
+}
 
 /**
  * Forgets what every command resolved to.
@@ -442,7 +635,7 @@ export const needsManagedRuntime = Effect.fn("McpShape.needsManagedRuntime")(fun
   tools: McpToolRuntimes,
 ) {
   if (config.transport !== "stdio") return false;
-  const resolved = yield* usableMcpServer(config, tools);
+  const resolved = yield* usableMcpServer(config, storedLineTools(tools));
   return resolved.error !== undefined && resolved.reason === "command_not_found";
 });
 
@@ -506,7 +699,7 @@ export function claudeMcpServers(servers: readonly UsableMcpServer[]): McpHandof
         ? {
             type: "stdio",
             command: server.command,
-            args: [...config.args],
+            args: mcpServerArgs(server),
             env: mcpLaunchEnvironment(server),
             ...(server.workingDirectory ? { cwd: server.workingDirectory } : {}),
           }
@@ -563,7 +756,7 @@ export function acpMcpServers(servers: readonly UsableMcpServer[]): McpHandoff<A
       entries.push({
         name,
         command: server.command,
-        args: [...config.args],
+        args: mcpServerArgs(server),
         env: Object.entries(mcpLaunchEnvironment(server)).map(([name, value]) => ({ name, value })),
       });
     } else {
@@ -774,7 +967,7 @@ export function codexMcpServers(
     if (server.config.transport === "stdio") {
       record[name] = {
         command: server.command,
-        args: [...server.config.args],
+        args: mcpServerArgs(server),
         env: mcpLaunchEnvironment(server),
         ...(server.workingDirectory ? { cwd: server.workingDirectory } : {}),
       };
