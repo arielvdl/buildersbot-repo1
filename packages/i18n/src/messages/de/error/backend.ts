@@ -91,6 +91,8 @@ export const messages = {
   "error.backend.channelAssigneeReassign": "Das zugewiesene Mitglied ist nicht verfügbar. Weise diese Aufgabe neu zu.",
   "error.backend.channelAssignmentChanged": "Dieser Kanalauftrag wurde geändert.",
   "error.backend.channelMemberRequired": "Wähle ein verfügbares Mitglied dieses Kanals.",
+  "error.backend.channelAgentNotMember":
+    "{name} existiert, ist aber kein Mitglied dieses Kanals. Nur eine Person kann ein Mitglied hinzufügen: Bitte die Person darum und weise dann erneut zu.",
   "error.backend.memoryEssentialBudget":
     "Die wesentlichen Erinnerungen überschreiten das Prompt-Limit. Stelle einen Eintrag auf „Bei Bedarf suchen“ und versuche es erneut.",
   "error.backend.memorySelectionConflict": "Die Erinnerung hat sich geändert. Lade sie neu und versuche es erneut.",

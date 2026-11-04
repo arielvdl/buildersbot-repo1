@@ -100,6 +100,8 @@ export const messages = {
   "error.backend.channelAssigneeReassign": "O membro responsável está indisponível. Reatribua esta tarefa.",
   "error.backend.channelAssignmentChanged": "Esta tarefa atribuída pelo canal mudou.",
   "error.backend.channelMemberRequired": "Selecione um membro disponível deste canal.",
+  "error.backend.channelAgentNotMember":
+    "{name} existe, mas não é membro deste canal. Só uma pessoa pode adicionar um membro: peça à pessoa que o adicione e atribua de novo.",
   "error.backend.memoryEssentialBudget":
     "As memórias essenciais excedem o limite do prompt. Marque uma entrada para pesquisar quando necessário e tente de novo.",
   "error.backend.memorySelectionConflict": "A memória mudou. Recarregue-a e tente de novo.",

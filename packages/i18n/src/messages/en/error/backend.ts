@@ -94,6 +94,8 @@ export const messages = defineMessages("error.backend", {
   "error.backend.channelAssigneeReassign": "The assigned member is unavailable. Reassign this task.",
   "error.backend.channelAssignmentChanged": "This channel assignment has changed.",
   "error.backend.channelMemberRequired": "Select an available member of this channel.",
+  "error.backend.channelAgentNotMember":
+    "{name} exists but is not a member of this channel. Only a person can add a member: ask the person to add it, then assign again.",
   "error.backend.memoryEssentialBudget":
     "The essential memories exceed the prompt limit. Set an entry to search when needed, then try again.",
   "error.backend.memorySelectionConflict": "The memory changed. Reload it and try again.",

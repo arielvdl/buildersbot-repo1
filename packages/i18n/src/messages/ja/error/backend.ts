@@ -91,6 +91,8 @@ export const messages = {
     "割り当てられたメンバーを使用できません。このタスクを再割り当てしてください。",
   "error.backend.channelAssignmentChanged": "このチャンネルの割り当ては変更されました。",
   "error.backend.channelMemberRequired": "このチャンネルの使用可能なメンバーを選択してください。",
+  "error.backend.channelAgentNotMember":
+    "{name} は存在しますが、このチャンネルのメンバーではありません。メンバーを追加できるのは人だけです。追加を依頼してから、もう一度割り当ててください。",
   "error.backend.memoryEssentialBudget":
     "必須メモリーがプロンプトの上限を超えています。エントリーを「必要なときに検索」に設定してから、もう一度お試しください。",
   "error.backend.memorySelectionConflict": "メモリーが変更されました。再読み込みして、もう一度お試しください。",

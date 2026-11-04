@@ -88,6 +88,8 @@ export const messages = {
   "error.backend.channelAssigneeReassign": "Het toegewezen lid is niet beschikbaar. Wijs deze taak opnieuw toe.",
   "error.backend.channelAssignmentChanged": "Deze kanaalopdracht is gewijzigd.",
   "error.backend.channelMemberRequired": "Kies een beschikbaar lid van dit kanaal.",
+  "error.backend.channelAgentNotMember":
+    "{name} bestaat, maar is geen lid van dit kanaal. Alleen een persoon kan een lid toevoegen: vraag de persoon het toe te voegen en wijs daarna opnieuw toe.",
   "error.backend.memoryEssentialBudget":
     "De essentiële herinneringen overschrijden de promptlimiet. Stel een item in op zoeken wanneer nodig en probeer het opnieuw.",
   "error.backend.memorySelectionConflict": "Het geheugen is gewijzigd. Laad het opnieuw en probeer het nog eens.",

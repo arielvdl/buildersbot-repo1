@@ -85,6 +85,8 @@ export const messages = {
   "error.backend.channelAssigneeReassign": "Назначенный участник недоступен. Переназначьте эту задачу.",
   "error.backend.channelAssignmentChanged": "Это назначение в канале изменилось.",
   "error.backend.channelMemberRequired": "Выберите доступного участника этого канала.",
+  "error.backend.channelAgentNotMember":
+    "{name} существует, но не является участником этого канала. Добавить участника может только человек: попросите его добавить, затем назначьте снова.",
   "error.backend.memoryEssentialBudget":
     "Важные записи памяти превышают лимит промпта. Переведите какую-либо запись в режим «Искать при необходимости» и повторите попытку.",
   "error.backend.memorySelectionConflict": "Память изменилась. Перезагрузите её и повторите попытку.",

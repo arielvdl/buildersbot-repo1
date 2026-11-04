@@ -3922,11 +3922,12 @@ export class ChannelService {
   }).bind(this);
 
   private requireMember(channel: Channel, agentId: string): void {
-    if (
-      !channel.members.some((member) => member.agentId === agentId) ||
-      !this.hooks.agents().some((agent) => agent.id === agentId)
-    )
-      throw new Error(sourceText("error.backend.channelMemberRequired"));
+    const agent = this.hooks.agents().find((candidate) => candidate.id === agentId);
+    if (channel.members.some((member) => member.agentId === agentId) && agent) return;
+    // An agent that exists but is not a member needs a person to add it: say so, so that the caller
+    // does not retry. The stress test lost 36 calls to the generic text.
+    if (agent) throw new Error(sourceText("error.backend.channelAgentNotMember", { name: agent.name }));
+    throw new Error(sourceText("error.backend.channelMemberRequired"));
   }
 
   /** `requireMember` for new work: a hidden member keeps its membership but takes no new work. */

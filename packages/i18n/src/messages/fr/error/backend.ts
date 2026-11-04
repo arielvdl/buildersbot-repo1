@@ -91,6 +91,8 @@ export const messages = {
   "error.backend.channelAssigneeReassign": "Le membre assigné est indisponible. Réassignez cette tâche.",
   "error.backend.channelAssignmentChanged": "Cette tâche de canal a changé.",
   "error.backend.channelMemberRequired": "Sélectionnez un membre disponible de ce canal.",
+  "error.backend.channelAgentNotMember":
+    "{name} existe, mais n’est pas membre de ce canal. Seule une personne peut ajouter un membre : demandez-lui de l’ajouter, puis assignez à nouveau.",
   "error.backend.memoryEssentialBudget":
     "Les souvenirs essentiels dépassent la limite du prompt. Réglez une entrée sur « Rechercher au besoin », puis réessayez.",
   "error.backend.memorySelectionConflict": "Le souvenir a changé. Rechargez-le et réessayez.",

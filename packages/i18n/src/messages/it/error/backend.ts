@@ -89,6 +89,8 @@ export const messages = {
   "error.backend.channelAssigneeReassign": "Il membro assegnato non è disponibile. Riassegna questa attività.",
   "error.backend.channelAssignmentChanged": "Questa assegnazione del canale è cambiata.",
   "error.backend.channelMemberRequired": "Seleziona un membro disponibile di questo canale.",
+  "error.backend.channelAgentNotMember":
+    "{name} esiste, ma non è un membro di questo canale. Solo una persona può aggiungere un membro: chiedi alla persona di aggiungerlo, poi assegna di nuovo.",
   "error.backend.memoryEssentialBudget":
     "Le memorie essenziali superano il limite del prompt. Imposta una voce su «cerca quando serve» e riprova.",
   "error.backend.memorySelectionConflict": "La memoria è cambiata. Ricaricala e riprova.",

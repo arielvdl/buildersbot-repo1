@@ -84,6 +84,8 @@ export const messages = {
   "error.backend.channelAssigneeReassign": "배정된 멤버를 사용할 수 없어요. 이 작업을 다시 배정하세요.",
   "error.backend.channelAssignmentChanged": "이 채널 배정이 변경되었어요.",
   "error.backend.channelMemberRequired": "이 채널에서 사용 가능한 멤버를 선택하세요.",
+  "error.backend.channelAgentNotMember":
+    "{name}은(는) 존재하지만 이 채널의 멤버가 아니에요. 멤버는 사람만 추가할 수 있어요. 추가를 요청한 뒤 다시 배정하세요.",
   "error.backend.memoryEssentialBudget":
     "필수 메모리가 프롬프트 한도를 넘었어요. 항목 하나를 필요할 때 검색하도록 설정한 후 다시 시도해 주세요.",
   "error.backend.memorySelectionConflict": "메모리가 변경되었어요. 다시 불러온 후 시도해 주세요.",

@@ -96,6 +96,7 @@ const TERMINAL_KEYS = [
   "error.backend.channelTaskMemberRequired",
   "error.backend.channelRequestMemberRequired",
   "error.backend.channelMemberRequired",
+  "error.backend.channelAgentNotMember",
   "error.backend.channelHistoryLeadRequired",
   "error.backend.channelAssignmentStopped",
   "error.backend.channelAssignmentChanged",

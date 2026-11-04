@@ -87,6 +87,8 @@ export const messages = {
   "error.backend.channelAssigneeReassign": "Przydzielony członek jest niedostępny. Przydziel to zadanie ponownie.",
   "error.backend.channelAssignmentChanged": "Ten przydział kanału się zmienił.",
   "error.backend.channelMemberRequired": "Wybierz dostępnego członka tego kanału.",
+  "error.backend.channelAgentNotMember":
+    "{name} istnieje, ale nie jest członkiem tego kanału. Tylko osoba może dodać członka: poproś ją o dodanie, a potem przypisz ponownie.",
   "error.backend.memoryEssentialBudget":
     "Kluczowe wspomnienia przekraczają limit promptu. Ustaw wpis na wyszukiwanie w razie potrzeby i spróbuj ponownie.",
   "error.backend.memorySelectionConflict": "Wspomnienie się zmieniło. Wczytaj je ponownie i spróbuj jeszcze raz.",

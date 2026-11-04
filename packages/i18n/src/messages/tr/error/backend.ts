@@ -85,6 +85,8 @@ export const messages = {
   "error.backend.channelAssigneeReassign": "Atanan üye kullanılamıyor. Bu görevi yeniden atayın.",
   "error.backend.channelAssignmentChanged": "Bu kanal ataması değişti.",
   "error.backend.channelMemberRequired": "Bu kanalın kullanılabilir bir üyesini seçin.",
+  "error.backend.channelAgentNotMember":
+    "{name} var, ancak bu kanalın üyesi değil. Üyeyi yalnızca bir kişi ekleyebilir: kişiden eklemesini isteyin, sonra yeniden atayın.",
   "error.backend.memoryEssentialBudget":
     "Temel bellekler istem sınırını aşıyor. Bir girdiyi gerektiğinde aranacak şekilde ayarlayın, ardından tekrar deneyin.",
   "error.backend.memorySelectionConflict": "Bellek değişti. Yeniden yükleyin ve tekrar deneyin.",
