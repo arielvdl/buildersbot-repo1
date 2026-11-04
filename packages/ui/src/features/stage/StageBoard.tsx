@@ -20,6 +20,8 @@ import { pickScanFocus } from "./stage-scan";
 /** Up to this many agents, each has a bubble. Above it, only the first few (the ones that need attention). */
 const BUBBLE_ALL = 4;
 const BUBBLE_FOCUS = 3;
+/** Above this many agents the names above them would crowd the stage, so each shows only its logo. */
+const NAMES_ALL = 4;
 
 export interface StageBoardProps {
   actors: readonly StageActorData[];
@@ -118,6 +120,7 @@ export function StageBoard(props: StageBoardProps) {
                 actor={actor()}
                 geometry={geometry()}
                 bubble={props.bubbles !== false && (props.actors.length <= BUBBLE_ALL || index() < BUBBLE_FOCUS)}
+                compact={props.actors.length > NAMES_ALL}
                 delegateName={find(actor().delegatesTo)?.name ?? ""}
                 onSelect={props.onSelectActor ? () => props.onSelectActor?.(actor().id) : undefined}
                 selected={props.selectedActor === actor().id}

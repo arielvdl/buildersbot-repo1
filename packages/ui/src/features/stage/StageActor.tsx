@@ -78,6 +78,8 @@ export function StageActor(props: {
   delegateName: string;
   /** Whether the speech bubble shows. A crowded stage gives it to the agents that need attention first. */
   bubble?: boolean;
+  /** A crowded stage keeps only the logo above the agent. The name and the model show as the tooltip. */
+  compact?: boolean;
   /** The x of the agent that gets the work, so a delegating agent leans toward it. */
   targetX: number | null;
   leaving?: boolean;
@@ -102,6 +104,13 @@ export function StageActor(props: {
     return found.kind === "provider" ? found.id : null;
   };
   const modelName = () => family()?.name ?? props.actor.model ?? "";
+  /** The tooltip: the model on a normal stage, and the name with the model when only the logo shows. */
+  const tip = () =>
+    props.compact
+      ? modelName()
+        ? `${props.actor.name} · ${modelName()}`
+        : props.actor.name
+      : modelName() || undefined;
   const anchor = () => seatSide(props.actor.seat);
   /** The room between the figure and the edge of the stage on the side where the bubble opens. */
   const bubbleMax = () => {
@@ -243,6 +252,8 @@ export function StageActor(props: {
       data-lean={lean()}
       data-leaving={props.leaving ? "" : undefined}
       data-selected={props.selected ? "" : undefined}
+      data-compact={props.compact ? "" : undefined}
+      title={props.compact && !props.leaving ? tip() : undefined}
       aria-label={`${props.actor.name}, ${t(ACTIVITY_LABEL[props.actor.activity])}`}
       style={{
         left: `${place().x}px`,
@@ -263,11 +274,13 @@ export function StageActor(props: {
       >
         {/* The provider logo and the agent's name. The model is the tooltip: the name says who, the logo and the
             tooltip say what runs it, and the line under the feet keeps only what the agent does. */}
-        <span class="agent-stage-model" aria-hidden="true" title={modelName() || undefined}>
+        <span class="agent-stage-model" aria-hidden="true" title={props.compact ? undefined : tip()}>
           <Show when={logo()}>
             {(provider) => <ProviderLogo class="agent-stage-model-logo" provider={provider()} />}
           </Show>
-          <span>{props.actor.name}</span>
+          <Show when={!props.compact}>
+            <span>{props.actor.name}</span>
+          </Show>
         </span>
         <span
           class="agent-stage-ping"
