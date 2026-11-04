@@ -650,6 +650,48 @@ Before working this checklist, audit the changes since the last released tag wit
 installed user cannot undo — the in-place database migration, the `userData` files nothing backs up,
 the frozen Team API adapters, and the D1 migrations that race their own deploy.
 
+## Downloads on the website
+
+The installers on `https://buildersbot.culturabuilder.com` are not uploaded to the site. A
+release tag publishes them to GitHub Releases, and the site reads them from there, so each new
+release updates the download links with no change to the site.
+
+- `/download/macos/latest`, `/download/windows/latest` and `/download/linux/latest` read
+  `latest-mac.yml`, `latest.yml` and `latest-linux.yml` from `<releases>/latest/download/`, find the
+  `.dmg`, `.exe` or `.AppImage` in the manifest and redirect to it
+  (`apps/auth-api/src/server/latest-download.ts`). macOS takes `?arch=x64` for Intel.
+- The home page (`apps/auth-api/public/index.html`) links its two buttons to the first two. When a
+  link answers 404, the button shows "Em breve" by itself, and it turns into a download when the
+  link works. No edit of the page is needed.
+- One time, in the pull request that follows the **first** signed release: set `RELEASES_BASE_URL` in
+  `latest-download.ts` to `https://github.com/nextlevelcommunity/buildersbot/releases`. It is `null`
+  on purpose, so a link never leads to a release without installers. Merge it to `main`; the
+  production deploy picks it up.
+
+### Ask for a new build
+
+Release packages are built by `.github/workflows/release.yml` on a tag, never on a developer
+computer. To ask for a new build, ask an agent with write access (or run it yourself) to follow
+[Publish a version](#publish-a-version): `bun run release:patch` (or `minor`), merge the
+preparation commit, run `bun run release:preflight`, then push the signed tag `vX.Y.Z`. The
+workflow builds and publishes the macOS (Apple silicon and Intel) and Windows installers and the
+update manifests. The agent cannot sign the tag without the release key: the person who holds it
+pushes the tag.
+
+### Check that the site follows
+
+After the workflow ends, each command must answer `302` with a `location` that ends in the new
+installer:
+
+```sh
+curl -sI https://buildersbot.culturabuilder.com/download/macos/latest | head -3
+curl -sI https://buildersbot.culturabuilder.com/download/windows/latest | head -3
+```
+
+A `404` means `RELEASES_BASE_URL` is still `null`. A `302` to the releases page means the release
+has no `latest-mac.yml` or `latest.yml` among its assets: open the workflow run and find the failed
+job.
+
 ## Preflight checklist
 
 Before creating the first tag or any later release:

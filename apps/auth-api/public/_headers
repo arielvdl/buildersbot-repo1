@@ -17,3 +17,10 @@
 /site.webmanifest
   Cache-Control: public, max-age=0, must-revalidate
   Content-Type: application/manifest+json
+
+# The home page is a static file. A changed page must show at the next visit, so the edge and the
+# browser check it again each time.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
