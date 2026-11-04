@@ -41,3 +41,12 @@ export function stageActivityOfLine(line: string, kind?: TurnProgressKind): Live
   if (/gathering|searching|reading|reviewing the (information|sources)|looking/u.test(text)) return "reading";
   return "thinking";
 }
+
+/**
+ * Which activity decides the sentence in the bubble of an agent that has no step line. A wait, a failure and a
+ * finished run say their own sentence. Any other agent only has a pose that changes on a beat, so it keeps the one
+ * sentence "thinking": a new sentence at each beat would type in again and again.
+ */
+export function stageSayActivity(activity: StageActivity): "thinking" | "waiting" | "failed" | "done" {
+  return activity === "waiting" || activity === "failed" || activity === "done" ? activity : "thinking";
+}

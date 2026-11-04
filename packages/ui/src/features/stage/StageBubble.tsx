@@ -36,6 +36,8 @@ export function StageBubble(props: { activity: string; tone: string | null; sent
   let failsafe: ReturnType<typeof setTimeout> | undefined;
   let first = true;
   let lastActivity = props.activity;
+  /** The status and the line that the bubble shows, or is about to show when it opens. */
+  let target = { tone: props.tone, text: props.sentence };
 
   const stop = () => {
     run += 1;
@@ -99,6 +101,10 @@ export function StageBubble(props: { activity: string; tone: string | null; sent
         first = false;
         return;
       }
+      // Nothing that a person reads changed (an agent with no step changes pose on a beat, with the same
+      // sentence): the bubble stays as it is, with no pill and no new typing.
+      if (now.tone === target.tone && now.text === target.text) return;
+      target = now;
       if (before === activity) {
         // Same status, a new line: swap the text in place. No squeeze, no spring.
         stop();

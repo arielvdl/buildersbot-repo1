@@ -10,7 +10,7 @@ import { orbitFamily } from "../agents/agent-model-family";
 import { RollText } from "./RollText";
 import { StageActorEffects } from "./StageActorEffects";
 import { StageBubble } from "./StageBubble";
-import type { StageActivity } from "./stage-activity";
+import { type StageActivity, stageSayActivity } from "./stage-activity";
 import { FIGURE_HEIGHT, FIGURE_WIDTH, type StageGeometry, seatIsFront, seatPoint, seatSide } from "./stage-geometry";
 import { ENTER_EASING, ENTER_MS, FADE_MS, LEAVE_MS, prefersReducedMotion } from "./stage-motion";
 
@@ -115,7 +115,7 @@ export function StageActor(props: {
       return props.delegateName
         ? t("channel.stage.say.delegating", { name: props.delegateName })
         : t("channel.stage.say.delegatingGeneric");
-    return actor.line ? sourceText(actor.line) : t(ACTIVITY_SAY[actor.activity]);
+    return actor.line ? sourceText(actor.line) : t(ACTIVITY_SAY[stageSayActivity(actor.activity)]);
   };
   const mood = () =>
     props.actor.activity === "waiting"
