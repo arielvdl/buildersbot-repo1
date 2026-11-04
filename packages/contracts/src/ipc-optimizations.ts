@@ -20,8 +20,15 @@ export const OPTIMIZATION_IDS = [
   "routing",
   "streaming-checkpoints",
   "quick-status-reply",
+  "disable-memory-limit",
 ] as const;
 export type OptimizationId = (typeof OPTIMIZATION_IDS)[number];
+
+/**
+ * The switches that remove a safety limit instead of adding a speed-up. "Turn all on" leaves them off:
+ * the person turns each one on on purpose, after reading its risk.
+ */
+export const SAFETY_OPTIMIZATION_IDS: readonly OptimizationId[] = ["disable-memory-limit"];
 
 /** What the Settings page reads and what a change answers: the switches that are on, in list order. */
 export interface OptimizationState {

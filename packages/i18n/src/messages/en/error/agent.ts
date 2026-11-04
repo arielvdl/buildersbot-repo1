@@ -123,7 +123,7 @@ export const messages = defineMessages("error.agent", {
   "error.agent.lowMemoryServer":
     "This server is low on memory. Your message waits in the queue and starts when memory is free.",
   "error.agent.lowMemoryDesktop":
-    "This computer is low on memory. Your message waits in the queue and starts by itself when memory is free again. Closing apps that you do not use helps.",
+    "This computer is low on memory. Your message waits in the queue and starts by itself when memory is free again. Closing apps that you do not use helps. This limit is a safety feature on by default. You can turn it off in Settings › General › Advanced optimizations › Turn off the memory limit, but then your computer can overload and freeze.",
   "error.agent.workspaceOnlyToolMissing":
     "Workspace only needs {tool}, which Builders Bot did not find. Install it, or choose Full access in the agent settings.",
   "error.agent.claudeSandboxUnavailable":

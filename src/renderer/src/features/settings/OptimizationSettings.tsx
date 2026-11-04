@@ -1,4 +1,9 @@
-import { OPTIMIZATION_IDS, type OptimizationChange, type OptimizationId } from "@buildersbot/contracts/ipc";
+import {
+  OPTIMIZATION_IDS,
+  type OptimizationChange,
+  type OptimizationId,
+  SAFETY_OPTIMIZATION_IDS,
+} from "@buildersbot/contracts/ipc";
 import type { AppTextKey } from "@buildersbot/i18n";
 import {
   Button,
@@ -53,6 +58,10 @@ const OPTIMIZATION_TEXT = {
   "quick-status-reply": {
     title: "settings.optimizations.quickStatusReply.title",
     description: "settings.optimizations.quickStatusReply.description",
+  },
+  "disable-memory-limit": {
+    title: "settings.optimizations.disableMemoryLimit.title",
+    description: "settings.optimizations.disableMemoryLimit.description",
   },
 } as const satisfies Record<OptimizationId, { title: AppTextKey; description: AppTextKey }>;
 
@@ -110,7 +119,10 @@ export function OptimizationSettings() {
 
   const isOn = (id: OptimizationId) => state.on?.includes(id) === true;
   const locked = () => state.on === null || state.busy;
-  const setAll = (enabled: boolean) => change(OPTIMIZATION_IDS.map((id) => ({ id, enabled })));
+  const setAll = (enabled: boolean) =>
+    change(
+      OPTIMIZATION_IDS.filter((id) => !enabled || !SAFETY_OPTIMIZATION_IDS.includes(id)).map((id) => ({ id, enabled })),
+    );
 
   return (
     <SettingsSection title={t("settings.optimizations.section")}>

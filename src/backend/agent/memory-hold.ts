@@ -83,8 +83,16 @@ export class MemoryHold {
     this.#scope = Scope.makeUnsafe();
   }).bind(this);
 
+  /**
+   * The person turned the memory limit off (`disable-memory-limit`). It holds on a desktop only: a
+   * server has a fixed memory from its plan, and without the hold it would run out of it.
+   */
+  #limitOff(): boolean {
+    return this.#memory?.kind === "desktop" && this.#optimizations.optimizationEnabled("disable-memory-limit");
+  }
+
   mayDrain(_agentId: string): boolean {
-    return (this.#memory?.level() ?? "ok") === "ok";
+    return this.#limitOff() || (this.#memory?.level() ?? "ok") === "ok";
   }
 
   /**
@@ -115,7 +123,7 @@ export class MemoryHold {
 
   /** The most turns that run at the same time, or null for no limit. */
   turnLimit(): number | null {
-    return this.#memory?.turnLimit() ?? null;
+    return this.#limitOff() ? null : (this.#memory?.turnLimit() ?? null);
   }
 
   readonly #sampled = Effect.fn("MemoryHold.sampled")(function* (this: MemoryHold) {

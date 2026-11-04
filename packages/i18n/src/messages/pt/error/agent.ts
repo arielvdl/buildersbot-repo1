@@ -127,7 +127,7 @@ export const messages = {
   "error.agent.lowMemoryServer":
     "Este servidor está com pouca memória. Sua mensagem aguarda na fila e começa quando houver memória livre.",
   "error.agent.lowMemoryDesktop":
-    "O computador está com pouca memória. Sua mensagem aguarda na fila e começa sozinha quando a memória voltar. Fechar apps que você não usa ajuda.",
+    "O computador está com pouca memória. Sua mensagem aguarda na fila e começa sozinha quando a memória voltar. Fechar apps que você não usa ajuda. Esse limite é um recurso de segurança, ligado por padrão. Dá para desativar em Configurações › Geral › Otimizações avançadas › Desativar o limite de memória, mas aí o computador pode sobrecarregar e travar.",
   "error.agent.workspaceOnlyToolMissing":
     "O acesso Somente o espaço de trabalho exige {tool}, que o Builders Bot não encontrou. Instale a ferramenta ou escolha Acesso completo nas configurações do agente.",
   "error.agent.claudeSandboxUnavailable":
