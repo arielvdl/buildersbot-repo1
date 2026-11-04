@@ -221,7 +221,7 @@ export const messages = {
   "sidebar.channelMenu.delete": "Excluir canal",
   "sidebar.channelMenu.restore": "Restaurar canal",
   "sidebar.channel.noMessages": "Nenhuma mensagem ainda",
-  "sidebar.channel.workingPreview": "Trabalhando · {preview}",
+  "sidebar.channel.workingCount": "{count} trabalhando",
   "sidebar.channel.unread": { one: "{count} mensagem não lida", other: "{count} mensagens não lidas" },
   "sidebar.tabs.show": "Mostrar abas ({count})",
   "sidebar.tabs.close": "Fechar aba",

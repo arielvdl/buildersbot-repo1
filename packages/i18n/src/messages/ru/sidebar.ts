@@ -71,7 +71,7 @@ export const messages = {
   "sidebar.channelMenu.delete": "Удалить канал",
   "sidebar.channelMenu.restore": "Восстановить канал",
   "sidebar.channel.noMessages": "Сообщений пока нет",
-  "sidebar.channel.workingPreview": "Работает · {preview}",
+  "sidebar.channel.workingCount": "Работают: {count}",
   "sidebar.channel.unread": {
     one: "{count} непрочитанное сообщение",
     few: "{count} непрочитанных сообщения",

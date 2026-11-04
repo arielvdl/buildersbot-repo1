@@ -51,16 +51,23 @@ export function SidebarChannelRow(rowProps: { channel: ChannelSummary; waiting?:
   const picked = () => pickable() && selection.has(rowProps.channel.id);
   const [menuOpen, setMenuOpen] = createSignal(false);
   const title = () => rowProps.channel.title.trim();
-  /* Running work is a prefix on the preview line rather than a word beside the name: one line
-   * carries both and the row keeps the height every other row in the list has. */
-  const preview = () => {
-    // A waiting row previews the question, as on the agent row.
-    const text = wait()?.detail || (rowProps.channel.lastMessage?.text ?? t("sidebar.channel.noMessages"));
-    return rowProps.channel.activeTasks > 0 ? t("sidebar.channel.workingPreview", { preview: text }) : text;
+  /* A channel that runs work shows how many members work, not the last message: the message
+   * changes with every step and would rewrite this row all the time, which is costly in a long
+   * list. A waiting row still previews the question, as on the agent row. */
+  const workingCount = () => {
+    const working = channelWorkingMembers(rowProps.channel, props.agentMoods);
+    if (working === false) return 0;
+    return working === true ? rowProps.channel.members.length : working.size;
   };
-  // The wait label already reads the question, so the label does not say it twice, unless the
-  // preview also says that work runs.
-  const labelPreview = () => (wait()?.detail && rowProps.channel.activeTasks === 0 ? "" : `. ${preview()}`);
+  const preview = () => {
+    const question = wait()?.detail;
+    if (question) return question;
+    const count = workingCount();
+    if (count > 0) return t("sidebar.channel.workingCount", { count });
+    return rowProps.channel.lastMessage?.text ?? t("sidebar.channel.noMessages");
+  };
+  // The wait label already reads the question, so the label does not say it twice.
+  const labelPreview = () => (wait()?.detail ? "" : `. ${preview()}`);
   const row = (): JSX.Element => (
     <ContextMenu.Root modal={false} onOpenChange={setMenuOpen}>
       <ContextMenu.Trigger

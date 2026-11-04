@@ -71,7 +71,7 @@ export const messages = {
   "sidebar.channelMenu.delete": "Eliminar canal",
   "sidebar.channelMenu.restore": "Restaurar canal",
   "sidebar.channel.noMessages": "Aún no hay mensajes",
-  "sidebar.channel.workingPreview": "Trabajando · {preview}",
+  "sidebar.channel.workingCount": "{count} trabajando",
   "sidebar.channel.unread": {
     one: "{count} mensaje sin leer",
     other: "{count} mensajes sin leer",

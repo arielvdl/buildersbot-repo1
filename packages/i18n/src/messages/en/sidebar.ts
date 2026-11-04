@@ -221,7 +221,7 @@ export const messages = defineMessages("sidebar", {
   "sidebar.channelMenu.delete": "Delete channel",
   "sidebar.channelMenu.restore": "Restore channel",
   "sidebar.channel.noMessages": "No messages yet",
-  "sidebar.channel.workingPreview": "Working · {preview}",
+  "sidebar.channel.workingCount": "{count} working",
   "sidebar.channel.unread": { one: "{count} unread message", other: "{count} unread messages" },
   "sidebar.tabs.show": "Show tabs ({count})",
   "sidebar.tabs.close": "Close tab",

@@ -71,7 +71,7 @@ export const messages = {
   "sidebar.channelMenu.delete": "채널 삭제",
   "sidebar.channelMenu.restore": "채널 복원",
   "sidebar.channel.noMessages": "아직 메시지가 없어요",
-  "sidebar.channel.workingPreview": "작업 중 · {preview}",
+  "sidebar.channel.workingCount": "{count}명 작업 중",
   "sidebar.channel.unread": { other: "읽지 않은 메시지 {count}개" },
   "sidebar.people.online": "현재 온라인",
   "sidebar.people.offline": "오프라인",

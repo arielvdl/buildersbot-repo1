@@ -71,7 +71,7 @@ export const messages = {
   "sidebar.channelMenu.delete": "チャンネルを削除",
   "sidebar.channelMenu.restore": "チャンネルを復元",
   "sidebar.channel.noMessages": "メッセージはまだありません",
-  "sidebar.channel.workingPreview": "作業中 · {preview}",
+  "sidebar.channel.workingCount": "{count}人が作業中",
   "sidebar.channel.unread": { other: "未読メッセージ {count} 件" },
   "sidebar.people.online": "オンライン",
   "sidebar.people.offline": "オフライン",

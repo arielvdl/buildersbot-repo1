@@ -71,7 +71,7 @@ export const messages = {
   "sidebar.channelMenu.delete": "Kanalı sil",
   "sidebar.channelMenu.restore": "Kanalı geri yükle",
   "sidebar.channel.noMessages": "Henüz mesaj yok",
-  "sidebar.channel.workingPreview": "Çalışıyor · {preview}",
+  "sidebar.channel.workingCount": "{count} çalışıyor",
   "sidebar.channel.unread": { one: "{count} okunmamış mesaj", other: "{count} okunmamış mesaj" },
   "sidebar.people.online": "Şu anda çevrim içi",
   "sidebar.people.offline": "Çevrim dışı",

@@ -71,7 +71,7 @@ export const messages = {
   "sidebar.channelMenu.delete": "Supprimer le canal",
   "sidebar.channelMenu.restore": "Restaurer le canal",
   "sidebar.channel.noMessages": "Aucun message pour l’instant",
-  "sidebar.channel.workingPreview": "En cours · {preview}",
+  "sidebar.channel.workingCount": "{count} en cours",
   "sidebar.channel.unread": { one: "{count} message non lu", other: "{count} messages non lus" },
   "sidebar.people.online": "En ligne",
   "sidebar.people.offline": "Hors ligne",
