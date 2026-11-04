@@ -66,6 +66,7 @@ export function remoteServerSummaries(
         ...(server.hosted === undefined ? {} : { hosted: server.hosted }),
         ...(changedAt === undefined ? {} : { keyChangedAt: changedAt }),
         ...(isThisComputer(server.id) ? { thisComputer: true as const } : {}),
+        ...(server.username ? { memberUsername: server.username } : {}),
         compatibility: status.compatibility,
         issue: status.issue,
         connectionSequence: status.connectionSequence,

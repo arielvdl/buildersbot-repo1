@@ -3,6 +3,7 @@ import { createMemo, createSignal, flush, onSettled } from "solid-js";
 import { EMPTY_TEAM_PRESENCE } from "../../app-defaults";
 import { createSimpleContext } from "../../simple-context";
 import { useAuth } from "../account/account-context";
+import { useServers } from "../servers/servers-context";
 import { teamPort } from "./team-port";
 
 /**
@@ -28,14 +29,24 @@ const Presence = createSimpleContext({
   name: "Presence",
   init: () => {
     const { centralAuth } = useAuth();
+    const { activeServer } = useServers();
     const [teamPresence, setTeamPresence] = createSignal<TeamPresenceSnapshot>(EMPTY_TEAM_PRESENCE);
 
     const currentTeamMember = createMemo(() => {
       const state = centralAuth();
       if (state.status !== "signed_in") return undefined;
       const email = state.user.email.trim().toLowerCase();
-      return teamPresence().members.find(
-        (member) => member.email?.trim().toLowerCase() === email || member.username.trim().toLowerCase() === email,
+      // The session names its own member: a server on this computer signs the app in as "owner",
+      // whose address is never the account email.
+      const sessionUsername = activeServer()?.memberUsername?.trim().toLowerCase();
+      const members = teamPresence().members;
+      return (
+        (sessionUsername
+          ? members.find((member) => member.username.trim().toLowerCase() === sessionUsername)
+          : undefined) ??
+        members.find(
+          (member) => member.email?.trim().toLowerCase() === email || member.username.trim().toLowerCase() === email,
+        )
       );
     });
 

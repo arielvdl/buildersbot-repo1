@@ -101,6 +101,13 @@ export interface ServerSummary {
    * is reached as a joined server, so `kind` stays `"remote"`. Absent for every other server.
    */
   thisComputer?: true;
+  /**
+   * The username of the member this app signs in as on a joined server: the account email on a server
+   * it joined by invite, and the host's own member name (such as "owner") on a server on this
+   * computer. It names who the reader is without a match on the account email, which a server on
+   * this computer never shares. Absent for the local server and from an older main process.
+   */
+  memberUsername?: string;
   compatibility?: ServerCompatibility | null;
   issue?: ServerConnectionIssue | null;
   connectionSequence?: number;

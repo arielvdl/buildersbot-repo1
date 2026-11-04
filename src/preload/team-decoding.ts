@@ -275,6 +275,7 @@ function server(summary: DynamicRecord): ServerSummary {
     hosted,
     keyChangedAt,
     thisComputer,
+    memberUsername,
   } = summary;
   if (!isOneOf(SERVER_NOTIFICATION_LEVELS, notificationLevel)) throw new Error("Invalid notificationLevel.");
   if (!isOneOf(SERVER_KINDS, kind)) throw new Error("Invalid kind.");
@@ -291,6 +292,7 @@ function server(summary: DynamicRecord): ServerSummary {
     throw new Error("Invalid keyChangedAt.");
   }
   if (thisComputer !== undefined && thisComputer !== true) throw new Error("Invalid thisComputer.");
+  if (memberUsername !== undefined && typeof memberUsername !== "string") throw new Error("Invalid memberUsername.");
   return {
     notificationsMuted: requiredBoolean(summary, "notificationsMuted"),
     notificationsMutedUntil: nullableNumber(summary, "notificationsMutedUntil"),
@@ -320,6 +322,7 @@ function server(summary: DynamicRecord): ServerSummary {
     ...(hosted === undefined ? {} : { hosted }),
     ...(keyChangedAt === undefined ? {} : { keyChangedAt }),
     ...(thisComputer === undefined ? {} : { thisComputer }),
+    ...(memberUsername === undefined ? {} : { memberUsername }),
   };
 }
 
