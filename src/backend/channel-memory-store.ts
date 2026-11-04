@@ -13,6 +13,15 @@ const CHANNEL_MEMORY_TABLES: MemoryTables = {
   limitMessage: (limit) => sourceText("error.backend.channelMemoryLimit", { limit }),
 };
 
+/**
+ * An automatic memory that no turn updated for this long expires. A memory that a person wrote or
+ * edited (`origin` `manual`) is fixed: it never expires.
+ */
+export const CHANNEL_MEMORY_EXPIRY_DAYS = 45;
+/** The count of memories at which the packet tells the lead to fold related ones (`INPUT_LIMITS.channelMemories` is 32). */
+export const CHANNEL_MEMORY_FOLD_AT = 28;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 /** The channel twin of `AgentMemoryStore`: the same `MemoryStore`, with a channel for an owner. */
 export class ChannelMemoryStore extends MemoryStore {
   constructor(database: BuildersBotDatabase) {
@@ -44,6 +53,27 @@ export class ChannelMemoryStore extends MemoryStore {
     const memory = this.saveAutomaticEntry(channelId, { text, sourceTurnId, commandId });
     if (!memory) throw new Error(sourceText("error.backend.memoryGone"));
     return { ...memory, channelId };
+  }
+
+  /**
+   * Deletes the automatic memories of a channel that no turn updated for `CHANNEL_MEMORY_EXPIRY_DAYS`.
+   * Every memory goes in each packet, so an old fact that nobody saved again competes with the current
+   * ones. A manual memory is fixed and stays. Returns how many it deleted.
+   */
+  expireStale(channelId: string, nowMs: number = Date.now(), maxAgeDays: number = CHANNEL_MEMORY_EXPIRY_DAYS): number {
+    const limit = nowMs - maxAgeDays * DAY_MS;
+    let deleted = 0;
+    for (const memory of this.list(channelId)) {
+      const updated = Date.parse(memory.updatedAt);
+      if (
+        memory.origin === "automatic" &&
+        Number.isFinite(updated) &&
+        updated < limit &&
+        this.delete(channelId, memory.id)
+      )
+        deleted += 1;
+    }
+    return deleted;
   }
 
   /**

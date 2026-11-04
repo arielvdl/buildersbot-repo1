@@ -11,7 +11,7 @@ import { Context, Effect, Layer, Semaphore } from "effect";
 import { REASONING_ID } from "./agent/handoff-tool-steps";
 import { keptMessageIds, partHash, spillText } from "./channel-context-spill";
 import { type ChannelOperationError, channelFailure, channelSync } from "./channel-effects";
-import type { ChannelMemoryStore } from "./channel-memory-store";
+import { CHANNEL_MEMORY_FOLD_AT, type ChannelMemoryStore } from "./channel-memory-store";
 import type { ChannelStore } from "./channel-store";
 
 /**
@@ -337,6 +337,14 @@ export class ChannelHistory {
       );
       const { messages, summary } = summarized;
       let { recent } = summarized;
+      // An old automatic memory expires before the packet reads the list. A failure here never stops a packet.
+      yield* channelSync(() => {
+        try {
+          dependencies.memories.expireStale(channel.id);
+        } catch {
+          // The memories stay as they are, and the next packet tries again.
+        }
+      });
       const memories = yield* channelSync(() => dependencies.memories.list(channel.id));
       // The model does not count messages. The packet says when a person's first message arrives and
       // on every fourth one after it, and only to the lead, so that the members do not repeat it.
@@ -464,7 +472,14 @@ export class ChannelHistory {
         members: channel.members,
         leadAgentId: channel.leadAgentId,
       };
-      const memoryText = memories.map((memory) => memory.text).join("\n");
+      // Near the cap, the lead folds related facts before it saves one more: a fold is the work of the model.
+      const foldNotice =
+        memories.length >= CHANNEL_MEMORY_FOLD_AT
+          ? [
+              `Channel memory holds ${memories.length} of ${INPUT_LIMITS.channelMemories}. Before you save a new fact, fold related ones into one fact.`,
+            ]
+          : [];
+      const memoryText = [...memories.map((memory) => memory.text), ...foldNotice].join("\n");
       const fixedParts: ChannelContextParts | null = spill
         ? {
             rules: partHash([...rules, memoryRules].join("\n")),
