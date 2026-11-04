@@ -2,7 +2,7 @@
   "name": "buildersbot",
   "productName": "Builders Bot",
   "desktopName": "buildersbot.desktop",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A local-first multi-agent desktop workspace for Codex, Claude, and Grok.",
   "author": {
     "name": "CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA",

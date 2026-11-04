@@ -1,10 +1,10 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "highlights": [
-    "Agents do many browser actions in one step, so browser tasks finish sooner and use fewer tokens, and Cloudflare checks pass in the built-in browser.",
-    "Right-click an agent message and select Mark unread to come back to it later.",
-    "Hide the Local server when you have another server; its agents, chats and files stay on your computer.",
-    "Choose the sound that plays when a task finishes, in Settings › Notifications.",
-    "Each provider CLI now uses about half the disk space, and Builders Bot uses the CLI you installed when it is as new as its own copy."
+    "A joined server, also one on this computer, now has the same section tools as your local server: color, icon, markers and reordering of sections.",
+    "Channel tabs now work on a joined server: create, rename, switch and close tabs, each with its own messages and tasks.",
+    "A message you send on a server on this computer no longer shows up twice or as Not sent.",
+    "Click a channel title to see the list of its tabs, with their age and the ones that are running first.",
+    "Agents that fail to start a task try again by themselves and then fall back to a backup model."
   ]
 }
