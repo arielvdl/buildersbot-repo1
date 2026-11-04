@@ -982,14 +982,27 @@ export class WorkControl {
    */
   #stoppedRefs(): (StoppedRef & { reason: string })[] {
     const agents = this.#agents();
-    return stoppedRuns(this.#channelInputs(), Number.POSITIVE_INFINITY).map(({ channel, task }) => ({
-      channelId: channel.id,
-      taskId: task.id,
-      channelName: channel.name,
-      agentName: task.ownerAgentId ? (agents.get(task.ownerAgentId)?.name ?? null) : null,
-      reason: task.error,
-      resumable: resumable(task.error, task.ownerAgentId !== null && !agents.has(task.ownerAgentId)),
-    }));
+    const inputs = this.#channelInputs();
+    const parents = new Map(
+      inputs.map((channel) => [channel.id, new Map(channel.tasks.map((t) => [t.id, t.parentTaskId]))]),
+    );
+    return (
+      stoppedRuns(inputs, Number.POSITIVE_INFINITY)
+        // A run that the person stopped is theirs to start again: "Resume by itself" leaves it, as the
+        // task reviewer does (`DeliberateStops`), so a stop is not undone by the next look.
+        .filter(
+          ({ channel, task }) =>
+            !this.#stops.covers(channel.id, task.id, (id) => parents.get(channel.id)?.get(id) ?? null),
+        )
+        .map(({ channel, task }) => ({
+          channelId: channel.id,
+          taskId: task.id,
+          channelName: channel.name,
+          agentName: task.ownerAgentId ? (agents.get(task.ownerAgentId)?.name ?? null) : null,
+          reason: task.error,
+          resumable: resumable(task.error, task.ownerAgentId !== null && !agents.has(task.ownerAgentId)),
+        }))
+    );
   }
 
   /** Why a stopped run has nothing left that it belongs to. The deleted source first. */

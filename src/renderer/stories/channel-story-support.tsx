@@ -178,7 +178,13 @@ export function StoryChannelConversation(props: ChannelStoryProps) {
             <For each={sent()}>{(entry) => <li>{`${entry.tab}: ${entry.text}`}</li>}</For>
           </ul>
         </Show>
-        <ChannelStoppedTasks tasks={props.stopped ?? []} members={members} name={agentName} onResume={fn()} />
+        <ChannelStoppedTasks
+          tasks={props.stopped ?? []}
+          members={members}
+          name={agentName}
+          onResume={fn()}
+          onDismiss={fn()}
+        />
       </>
     ),
     EmptyState: () => (

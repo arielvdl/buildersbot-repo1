@@ -7,6 +7,13 @@ export const messages = defineMessages("channel", {
   "channel.stoppedTask.label": "Stopped task for {name}",
   "channel.stoppedTask.reassignLabel": "Reassign the stopped task of {name}",
   "channel.stoppedTask.reassign": "Reassign",
+  "channel.stoppedTask.barLabel": "Actions for all stopped tasks",
+  "channel.stoppedTask.barCount": { one: "{count} stopped task", other: "{count} stopped tasks" },
+  "channel.stoppedTask.continueAll": "Continue all",
+  "channel.stoppedTask.dismissAll": "Dismiss all",
+  "channel.stoppedTask.dismiss": "Dismiss",
+  "channel.stoppedTask.dismissed": { one: "{count} stopped task dismissed", other: "{count} stopped tasks dismissed" },
+  "channel.stoppedTask.undo": "Undo",
   "channel.task.retrying": "{name} did not start. Trying again ({attempt}/{max}), next in {seconds} s",
   "channel.task.onBackup": "{name} runs on the backup model {model}",
   "channel.task.resuming":

@@ -518,6 +518,24 @@ describe("the automatic recovery in the app", () => {
     expect(control.overview().recovery.recent[0]).toMatchObject({ action: "resumed", channelName: "cadastro" });
   });
 
+  it("leaves a run that the person stopped, until the person starts it again", async () => {
+    const { control, clock, channels, taskId } = await setup({
+      preference: { enabled: true, intervalMinutes: 30, reassign: false },
+    });
+    channels.store.update(channels.store.get("c1"), {
+      tasks: channels.store.tasks("c1").map((task) => ({ ...task, state: "running" as const, error: null })),
+    });
+    await control.stopWork({ turnId: "t", agentId: "alpha", channelId: "c1", taskId });
+    const state = () => channels.store.tasks("c1").find((entry) => entry.id === taskId)?.state;
+    expect(state()).toBe("paused");
+    await control.tick();
+    clock.now += 3 * 60 * 60_000;
+    await control.tick();
+    await control.tick();
+    expect(state()).toBe("paused");
+    expect(control.overview().recovery.recent).toEqual([]);
+  });
+
   it("shows on the row that it waits its turn", async () => {
     const { control } = await setup({ preference: { enabled: true, intervalMinutes: 30, reassign: false } });
     await control.tick();
@@ -587,7 +605,7 @@ describe("the task reviewer in the app", () => {
     ["the Stop of the channel", "stop:1"],
     ["a client that names its stop like a stop of the app", `${AUTO_OPERATION_PREFIX}forged`],
   ])(
-    "never touches a task that the person stopped with %s, also after the automatic recovery started it again",
+    "never touches a task that the person stopped with %s, neither the reviewer nor the automatic recovery",
     async (_name, stopId) => {
       const { control, clock, channels, taskId } = await setup({
         preference: { enabled: true, intervalMinutes: 30, reassign: false },
@@ -603,8 +621,9 @@ describe("the task reviewer in the app", () => {
       await control.tick();
       clock.now += 30 * MIN;
       await control.tick();
-      // The automatic recovery started it again; the reviewer still knows that the person stopped it.
-      expect(control.overview().recovery.recent[0]).toMatchObject({ action: "resumed" });
+      // The automatic recovery leaves it too, so the stop is not undone by the next look.
+      expect(control.overview().recovery.recent).toEqual([]);
+      expect(task(channels, taskId)?.state).toBe("paused");
       const revision = task(channels, taskId)?.revision;
       for (let look = 0; look < 12; look += 1) {
         clock.now += 15 * MIN;

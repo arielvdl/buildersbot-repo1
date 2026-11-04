@@ -283,8 +283,16 @@ the same. So:
   panel, or of a member of the team. `WorkControl` keeps the operation id of each of its own
   commands until the command applies. The `work-auto:` start of those ids only makes the logs easy
   to read: a client can send any operation id, so it proves nothing. The reviewer then does not
-  touch that task or a task below it for the rest of the run of the app, also when "Resume by
-  itself" started it again. A `resume` or `reassign` by the person removes the mark.
+  touch that task or a task below it for the rest of the run of the app, and "Resume by itself"
+  leaves it too (`WorkControl.#stoppedRefs` skips what `DeliberateStops` covers), so a Stop is not
+  undone by the next look. A `resume` or `reassign` by the person removes the mark. The mark lives in
+  memory only: to make a stop last past a restart, the person dismisses the run (below).
+- Dismiss: the blue block above the message field of a channel has Dismiss on each stopped run, and,
+  with two or more, a bar with "Continue all" and "Dismiss all" (`ChannelStoppedTasks`). Dismiss is
+  `bulkStoppedWork` with `remove` (`ChannelService.closeStopped`): the run becomes `cancelled`, is no
+  longer stopped work, and neither "Resume by itself" nor the reviewer sees it. It stays in the
+  history, and "Undo" in the same block opens it again for `STOPPED_WORK_UNDO_MS` (10 s). Only on this
+  computer's host: a remote host has no such command, so the buttons are hidden there.
 
 ## Settings
 

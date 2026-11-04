@@ -60,6 +60,20 @@
   margin-top: 0;
 }
 
+.channel-paused-tasks-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--buildersbot-space-2);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--buildersbot-space-2) var(--buildersbot-space-3);
+  border-bottom: 1px solid var(--buildersbot-accent-soft);
+  font-size: var(--buildersbot-text-sm);
+}
+.channel-paused-tasks-count {
+  margin: 0;
+  font-weight: 600;
+}
 .channel-paused-task {
   display: flex;
   flex-wrap: wrap;

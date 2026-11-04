@@ -11,6 +11,14 @@ export function ChannelStoppedTasks(props: {
   /** The face, provider and model of a member, for the Reassign menu. Absent shows the names only. */
   agent?: ((agentId: string) => AgentPickerAgent | undefined) | undefined;
   onResume: (taskId: string, recipientAgentId: string | null) => Promise<boolean>;
+  /**
+   * Closes stopped runs for good, so nothing starts them again: not "Resume by itself" and not the task
+   * reviewer, which only look at work that is still stopped. Absent hides Dismiss, as on a host that
+   * is not this computer.
+   */
+  onDismiss?: ((taskIds: string[]) => Promise<unknown>) | undefined;
+  /** The runs closed a moment ago, and the way to open them again. Shown for a few seconds. */
+  undo?: { count: number; run: () => void } | undefined;
 }) {
   const { t, sourceText } = useText();
   /** The members that can take the task: every member but its owner. */
@@ -18,9 +26,48 @@ export function ChannelStoppedTasks(props: {
     props.members
       .filter((member) => member.agentId !== ownerAgentId)
       .map((member) => ({ ...props.agent?.(member.agentId), id: member.agentId, name: props.name(member.agentId) }));
+  /** The tasks that Continue can start: a task whose owner left the channel needs Reassign. */
+  const continuable = () =>
+    props.tasks.filter(
+      (task) => !task.ownerAgentId || props.members.some((member) => member.agentId === task.ownerAgentId),
+    );
   return (
-    <Show when={props.tasks.length}>
+    <Show when={props.tasks.length || props.undo}>
       <div class="channel-paused-tasks">
+        {/* With two or more stopped runs, one bar acts on all of them: after a "stop everything" the
+            list can be long, and each row alone would take a click per run. */}
+        <Show when={props.tasks.length > 1 && props.onDismiss}>
+          {(dismiss) => (
+            <section class="channel-paused-tasks-bar" aria-label={t("channel.stoppedTask.barLabel")}>
+              <p class="channel-paused-tasks-count">
+                {t("channel.stoppedTask.barCount", { count: props.tasks.length })}
+              </p>
+              <div class="channel-paused-task-actions">
+                <Button
+                  size="xs"
+                  onClick={() => void Promise.all(continuable().map((task) => props.onResume(task.id, null)))}
+                >
+                  {t("channel.stoppedTask.continueAll")}
+                </Button>
+                <Button size="xs" onClick={() => void dismiss()(props.tasks.map((task) => task.id))}>
+                  {t("channel.stoppedTask.dismissAll")}
+                </Button>
+              </div>
+            </section>
+          )}
+        </Show>
+        <Show when={props.undo}>
+          {(undo) => (
+            <div class="channel-paused-tasks-bar" role="status">
+              <p class="channel-paused-tasks-count">{t("channel.stoppedTask.dismissed", { count: undo().count })}</p>
+              <div class="channel-paused-task-actions">
+                <Button size="xs" onClick={() => undo().run()}>
+                  {t("channel.stoppedTask.undo")}
+                </Button>
+              </div>
+            </div>
+          )}
+        </Show>
         <For each={props.tasks}>
           {(task) => (
             <section
@@ -53,6 +100,13 @@ export function ChannelStoppedTasks(props: {
                 >
                   {t("channel.stoppedTask.reassign")}
                 </AgentPicker>
+                <Show when={props.onDismiss}>
+                  {(dismiss) => (
+                    <Button size="xs" onClick={() => void dismiss()([task.id])}>
+                      {t("channel.stoppedTask.dismiss")}
+                    </Button>
+                  )}
+                </Show>
               </div>
             </section>
           )}

@@ -4,6 +4,7 @@
  * data, so each part reads the open channel from `useChannels()`.
  */
 
+import { STOPPED_WORK_UNDO_MS } from "@buildersbot/contracts/ipc";
 import { Button, Dialog, ErrorReference, IconButton, Settings, X } from "@buildersbot/ui";
 import { SettingsPanel, SettingsPanelContent, SettingsPanelHeader } from "@buildersbot/ui/components/SettingsPanel";
 import { ChannelAvatar } from "@buildersbot/ui/features/channels/ChannelAvatar";
@@ -11,7 +12,17 @@ import { ChannelStartRetryNotice } from "@buildersbot/ui/features/channels/Chann
 import { ChannelStoppedTasks } from "@buildersbot/ui/features/channels/ChannelStoppedTasks";
 import { ChannelTaskWaitNotice } from "@buildersbot/ui/features/channels/ChannelTaskWaitNotice";
 import { useText } from "@buildersbot/ui/text";
-import { createEffect, createMemo, createSignal, createStore, createUniqueId, onSettled, Show } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  createStore,
+  createUniqueId,
+  onCleanup,
+  onSettled,
+  Show,
+} from "solid-js";
+import { appPort } from "../../app-port";
 import { createSettingsPanelWidth, saveSettingsPanelWidth } from "../../components/settings-panel-width";
 import { AgentMemoriesSettings } from "../conversation/AgentMemoriesSettings";
 import { AgentRoutinesSettings } from "../conversation/AgentRoutinesSettings";
@@ -19,6 +30,7 @@ import type { ConversationChannelSettingsPaneProps } from "../conversation/conve
 import { channelMemoriesPort } from "../conversation/memories-port";
 import { desktopEventRoutinesApi } from "../conversation/routine-webhooks-api";
 import { channelRoutinesPort, eventRoutinesPort } from "../conversation/routines-port";
+import { useServers } from "../servers/servers-context";
 import { ChannelEditor } from "./ChannelEditor";
 import { ChannelTabOverview } from "./ChannelTabOverview";
 import { ChannelTabsFor } from "./ChannelTabs";
@@ -200,6 +212,31 @@ export function ChannelAboveComposer(props: { channelId: string }) {
       taskId,
       recipientAgentId,
     });
+  const { activeServer } = useServers();
+  const [undo, setUndo] = createSignal<{ undoId: string; count: number } | null>(null);
+  let undoTimer: ReturnType<typeof setTimeout> | undefined;
+  onCleanup(() => clearTimeout(undoTimer));
+  // Closing a stopped run is the app's own action on the work of this computer, so a remote host,
+  // whose channel commands have no such action, gets no Dismiss.
+  const dismissTasks = async (taskIds: string[]) => {
+    const result = await appPort().bulkStoppedWork({
+      action: "remove",
+      items: taskIds.map((taskId) => ({ channelId: props.channelId, taskId })),
+    });
+    clearTimeout(undoTimer);
+    if (!result.undoId || !result.done) return result;
+    const undoId = result.undoId;
+    setUndo({ undoId, count: result.done });
+    undoTimer = setTimeout(() => setUndo(null), STOPPED_WORK_UNDO_MS);
+    return result;
+  };
+  const undoDismiss = () => {
+    const pending = undo();
+    if (!pending) return;
+    clearTimeout(undoTimer);
+    setUndo(null);
+    void appPort().bulkStoppedWork({ action: "undo", undoId: pending.undoId });
+  };
   return (
     <Show when={page()}>
       {(current) => (
@@ -212,6 +249,8 @@ export function ChannelAboveComposer(props: { channelId: string }) {
             name={name}
             agent={(id) => channels.agents().find((agent) => agent.id === id)}
             onResume={resumeTask}
+            onDismiss={activeServer()?.kind === "local" ? dismissTasks : undefined}
+            undo={undo() ? { count: undo()?.count ?? 0, run: undoDismiss } : undefined}
           />
           <Show when={!current().channel.archived && !current().channel.members.length}>
             <p>{t("channel.conversation.noMembers")}</p>

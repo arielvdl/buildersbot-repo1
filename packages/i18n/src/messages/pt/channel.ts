@@ -8,6 +8,16 @@ export const messages = {
   "channel.stoppedTask.label": "Tarefa de {name} interrompida",
   "channel.stoppedTask.reassignLabel": "Reatribuir a tarefa interrompida de {name}",
   "channel.stoppedTask.reassign": "Reatribuir",
+  "channel.stoppedTask.barLabel": "Ações para todas as tarefas paradas",
+  "channel.stoppedTask.barCount": { one: "{count} tarefa parada", other: "{count} tarefas paradas" },
+  "channel.stoppedTask.continueAll": "Continuar tudo",
+  "channel.stoppedTask.dismissAll": "Descartar tudo",
+  "channel.stoppedTask.dismiss": "Descartar",
+  "channel.stoppedTask.dismissed": {
+    one: "{count} tarefa parada descartada",
+    other: "{count} tarefas paradas descartadas",
+  },
+  "channel.stoppedTask.undo": "Desfazer",
   "channel.task.retrying": "{name} não começou. Tentando de novo ({attempt}/{max}), próxima em {seconds} s",
   "channel.task.onBackup": "{name} roda no modelo de reserva {model}",
   "channel.task.resuming":
