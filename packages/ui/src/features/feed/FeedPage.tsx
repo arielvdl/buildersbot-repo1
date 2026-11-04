@@ -1,10 +1,12 @@
 import type { FeedActionInput, FeedActionResult, FeedItem, FeedItemState } from "@buildersbot/contracts/ipc";
+import { Button, ChevronDown, ChevronUp } from "@buildersbot/ui";
 import { useText } from "@buildersbot/ui/text";
 import { createEffect, createMemo, createSignal, createStore, onSettled, Show, untrack } from "solid-js";
 import { FeedBulkBar } from "./FeedBulkBar";
 import { FeedFilters } from "./FeedFilters";
 import type { FeedAvatar } from "./FeedItemCard";
 import { FeedJumpBar } from "./FeedJumpBar";
+import { FeedStopAll } from "./FeedStopAll";
 import { FeedTables } from "./FeedTables";
 import { FeedTimeline, type FeedTimelineControl } from "./FeedTimeline";
 import { createFeedActionsController } from "./feed-actions-controller";
@@ -28,6 +30,9 @@ export interface FeedPageProps {
   /** The reader folded the tables at the top into a strip. Kept by the caller, on this computer. */
   tablesFolded?: boolean | undefined;
   onTablesFoldedChange?: ((folded: boolean) => void) | undefined;
+  /** The reader folded the list under the tables into a bar. Kept by the caller, on this computer. */
+  dockFolded?: boolean | undefined;
+  onDockFoldedChange?: ((folded: boolean) => void) | undefined;
   loading: boolean;
   error: string | null;
   /** Opens the conversation or the channel of a card. */
@@ -53,6 +58,8 @@ export function FeedPage(props: FeedPageProps) {
   const [view, setView] = createStore({ following: true, fresh: 0 });
   const [announcement, setAnnouncement] = createSignal("");
   const [folded, setFolded] = createSignal(untrack(() => props.tablesFolded ?? false));
+  /** The list at the bottom is open. The tables above it have the rest of the page. */
+  const [dockOpen, setDockOpen] = createSignal(!untrack(() => props.dockFolded ?? false));
   let timeline: FeedTimelineControl | undefined;
   let search: HTMLInputElement | undefined;
   /** The card that the last counter showed, so the next click goes on from there. */
@@ -119,6 +126,18 @@ export function FeedPage(props: FeedPageProps) {
       <header class="feed-page-header">
         <h1 id="feed-page-title">{t("app.feed.title")}</h1>
         <p class="feed-page-subtitle">{t("app.feed.subtitle")}</p>
+        <Show when={props.onAct && (actions.stopAll.count() > 0 || actions.stopAll.busy())}>
+          <div class="feed-page-stop">
+            <FeedStopAll
+              count={actions.stopAll.count()}
+              armed={actions.stopAll.armed()}
+              busy={actions.stopAll.busy()}
+              onArm={actions.stopAll.arm}
+              onCancel={actions.stopAll.cancel}
+              onConfirm={actions.stopAll.confirm}
+            />
+          </div>
+        </Show>
       </header>
       <div class="feed-page-body">
         <section class="feed-page-main" aria-labelledby="feed-page-title">
@@ -143,78 +162,105 @@ export function FeedPage(props: FeedPageProps) {
               props.onTablesFoldedChange?.(next);
             }}
           />
-          <FeedFilters
-            filters={filters}
-            projects={projects()}
-            agents={agents()}
-            shown={cardCount()}
-            total={props.items.length}
-            searchRef={(element) => {
-              search = element;
-            }}
-            onChange={(change) =>
-              setFilters((draft) => {
-                Object.assign(draft, change);
-              })
-            }
-          />
-          <FeedJumpBar following={view.following} fresh={view.fresh} counts={counts()} onJump={jump} />
-          <Show when={props.onAct}>
-            <div class="feed-action-bar">
-              <FeedBulkBar
-                selected={actions.bulk.selected()}
-                selectable={actions.bulk.selectable()}
-                candidates={actions.bulk.candidates()}
-                recipient={actions.bulk.recipient()}
-                busy={actions.bulk.busy()}
-                onSelectAll={actions.bulk.selectAll}
-                onClear={actions.bulk.clear}
-                onResume={actions.bulk.resume}
-                onRecipient={actions.bulk.setRecipient}
-                onReassign={actions.bulk.reassign}
-              />
-              <p class="feed-shortcuts">{t("app.feed.shortcuts")}</p>
+          <section class="feed-dock" data-open={dockOpen() ? "" : undefined} aria-label={t("app.feed.dock.title")}>
+            <div class="feed-dock-bar">
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                class="feed-dock-toggle"
+                aria-expanded={dockOpen() ? "true" : "false"}
+                aria-label={dockOpen() ? t("app.feed.dock.hide") : t("app.feed.dock.show")}
+                onClick={() => {
+                  const next = !dockOpen();
+                  setDockOpen(next);
+                  props.onDockFoldedChange?.(!next);
+                }}
+              >
+                <Show when={dockOpen()} fallback={<ChevronUp aria-hidden="true" />}>
+                  <ChevronDown aria-hidden="true" />
+                </Show>
+                {t("app.feed.dock.title")}
+                <span class="feed-count">{props.items.length}</span>
+              </Button>
+              <FeedJumpBar following={view.following} fresh={view.fresh} counts={counts()} onJump={jump} />
+              <Show when={dockOpen()}>
+                <FeedFilters
+                  filters={filters}
+                  projects={projects()}
+                  agents={agents()}
+                  shown={cardCount()}
+                  total={props.items.length}
+                  searchRef={(element) => {
+                    search = element;
+                  }}
+                  onChange={(change) =>
+                    setFilters((draft) => {
+                      Object.assign(draft, change);
+                    })
+                  }
+                />
+              </Show>
             </div>
-          </Show>
-          <Show when={props.error}>
-            {(error) => (
-              <p class="feed-error" role="alert">
-                {t("app.feed.loadFailed")} {error()}
-              </p>
-            )}
-          </Show>
-          <FeedTimeline
-            rows={rows()}
-            cardCount={cardCount()}
-            avatar={avatar}
-            loading={props.loading}
-            empty={props.items.length === 0 ? t("app.feed.empty") : t("app.feed.emptyFiltered")}
-            expanded={expanded()}
-            onToggleSteps={(id) => {
-              const next = new Set(expanded());
-              if (next.has(id)) next.delete(id);
-              else next.add(id);
-              setExpanded(next);
-            }}
-            onOpen={props.onOpen}
-            controlOf={props.onAct ? actions.controlOf : undefined}
-            selected={actions.selectedIds()}
-            onIntent={props.onAct ? actions.intent : undefined}
-            onShortcut={props.onAct ? actions.shortcut : undefined}
-            onFollowChange={(following) =>
-              setView((draft) => {
-                draft.following = following;
-              })
-            }
-            onFreshChange={(fresh) =>
-              setView((draft) => {
-                draft.fresh = fresh;
-              })
-            }
-            control={(control) => {
-              timeline = control;
-            }}
-          />
+            <Show when={dockOpen()}>
+              <Show when={props.onAct}>
+                <div class="feed-action-bar">
+                  <FeedBulkBar
+                    selected={actions.bulk.selected()}
+                    selectable={actions.bulk.selectable()}
+                    candidates={actions.bulk.candidates()}
+                    recipient={actions.bulk.recipient()}
+                    busy={actions.bulk.busy()}
+                    onSelectAll={actions.bulk.selectAll}
+                    onClear={actions.bulk.clear}
+                    onResume={actions.bulk.resume}
+                    onRecipient={actions.bulk.setRecipient}
+                    onReassign={actions.bulk.reassign}
+                  />
+                  <p class="feed-shortcuts">{t("app.feed.shortcuts")}</p>
+                </div>
+              </Show>
+              <Show when={props.error}>
+                {(error) => (
+                  <p class="feed-error" role="alert">
+                    {t("app.feed.loadFailed")} {error()}
+                  </p>
+                )}
+              </Show>
+              <FeedTimeline
+                rows={rows()}
+                cardCount={cardCount()}
+                avatar={avatar}
+                loading={props.loading}
+                empty={props.items.length === 0 ? t("app.feed.empty") : t("app.feed.emptyFiltered")}
+                expanded={expanded()}
+                onToggleSteps={(id) => {
+                  const next = new Set(expanded());
+                  if (next.has(id)) next.delete(id);
+                  else next.add(id);
+                  setExpanded(next);
+                }}
+                onOpen={props.onOpen}
+                controlOf={props.onAct ? actions.controlOf : undefined}
+                selected={actions.selectedIds()}
+                onIntent={props.onAct ? actions.intent : undefined}
+                onShortcut={props.onAct ? actions.shortcut : undefined}
+                onFollowChange={(following) =>
+                  setView((draft) => {
+                    draft.following = following;
+                  })
+                }
+                onFreshChange={(fresh) =>
+                  setView((draft) => {
+                    draft.fresh = fresh;
+                  })
+                }
+                control={(control) => {
+                  timeline = control;
+                }}
+              />
+            </Show>
+          </section>
           <p class="sr-only" role="status" aria-live="polite">
             {announcement()}
           </p>

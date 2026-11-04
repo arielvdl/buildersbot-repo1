@@ -26,8 +26,10 @@ import {
   sameFeedTables,
 } from "./feed-tables-model";
 
-/** The widest table: a feed table is a small version of the table of a channel. */
-const TABLE_MAX_WIDTH = 164;
+/** The widest table: the tables grow with the page, up to this size. */
+const TABLE_MAX_WIDTH = 280;
+/** How far the agents of a table grow when the page gives it room. */
+const TABLE_MAX_SCALE = 1.8;
 
 export interface FeedTablesProps {
   items: readonly FeedItem[];
@@ -161,6 +163,7 @@ function FeedTableView(props: {
           links={props.table.links}
           bubbles={false}
           maxTable={TABLE_MAX_WIDTH}
+          maxScale={TABLE_MAX_SCALE}
           suspended={props.suspended}
           selectedActor={props.agent}
           onSelectActor={(id) => props.onAgent(props.agent === id ? null : id)}
@@ -179,9 +182,10 @@ function FeedTableView(props: {
           class="feed-table-name"
           aria-pressed={chosen() ? "true" : "false"}
           aria-label={t("app.feed.tables.filterBy", { name: name() })}
+          title={name()}
           onClick={() => props.onProject(chosen() ? null : props.table.key)}
         >
-          {name()}
+          <span class="feed-table-name-text">{name()}</span>
         </Button>
         <Show when={props.table.now}>
           {(now) => <p class="feed-table-now">{t("app.feed.tables.now", { title: now() })}</p>}

@@ -32,6 +32,8 @@ export interface StageBoardProps {
   scan?: boolean | undefined;
   /** The widest the table gets, in pixels. */
   maxTable?: number | undefined;
+  /** How much a small table and its agents may grow when the box is larger than usual. 1: they do not. */
+  maxScale?: number | undefined;
   /** The window is hidden: the caller reads the page visibility once and passes it to every board. */
   suspended?: boolean | undefined;
   /** Makes each cube a button. `selected` is the id of the agent that the caller has chosen. */
@@ -76,7 +78,7 @@ export function StageBoard(props: StageBoardProps) {
     },
   );
 
-  const geometry = createMemo(() => stageGeometry(size().width, size().height, props.maxTable));
+  const geometry = createMemo(() => stageGeometry(size().width, size().height, props.maxTable, props.maxScale));
   const ready = () => size().width > 0 && size().height > 0;
   const paused = () => !onScreen() || props.suspended === true;
   /** An agent works now: not a wait, a failure or a finished run. */

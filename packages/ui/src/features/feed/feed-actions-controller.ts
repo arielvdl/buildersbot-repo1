@@ -51,6 +51,7 @@ export function createFeedActionsController(options: FeedActionsControllerOption
   );
   const [chosen, setChosen] = createSignal<ReadonlySet<string>>(new Set());
   const [bulk, setBulk] = createStore({ recipient: "", busy: false });
+  const [stopAllArmed, setStopAllArmed] = createSignal(false);
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
   onCleanup(() => {
     for (const timer of timers.values()) clearTimeout(timer);
@@ -85,6 +86,8 @@ export function createFeedActionsController(options: FeedActionsControllerOption
   const selectedIds = createMemo(() => new Set(selected().map((item) => item.id)));
   const selectable = createMemo(() => options.shown().filter((item) => item.actions.includes("resume")));
   const candidates = createMemo(() => feedBulkCandidates(selected()));
+  /** The runs that Stop can end now: main offers the action, and no other action of the card runs. */
+  const stoppable = createMemo(() => options.items().filter((item) => feedCan(item, controls[item.id], "stop")));
 
   const settleLater = (id: string) => {
     clearTimeout(timers.get(id));
@@ -100,9 +103,9 @@ export function createFeedActionsController(options: FeedActionsControllerOption
     );
   };
 
-  async function run(input: FeedActionInput, ids: readonly string[], name?: string): Promise<void> {
+  async function run(input: FeedActionInput, ids: readonly string[], name?: string, quiet = false): Promise<number> {
     const act = options.act();
-    if (!act || ids.length === 0) return;
+    if (!act || ids.length === 0) return 0;
     const action: FeedChange = input.action;
     const cards = byId();
     setControls((draft) => {
@@ -152,6 +155,7 @@ export function createFeedActionsController(options: FeedActionsControllerOption
         if (action === "reassign") control.recipient = undefined;
       }
     });
+    if (quiet) return result.failed.length;
     if (ids.length === 1) {
       const id = ids[0] ?? "";
       const item = cards.get(id);
@@ -163,6 +167,7 @@ export function createFeedActionsController(options: FeedActionsControllerOption
           : t("app.feed.announce.done", { title }),
       );
     } else options.announce(t("app.feed.bulk.result", { done: result.done, failed: result.failed.length }));
+    return result.failed.length;
   }
 
   const arm = (item: FeedItem, step: FeedConfirmable) => {
@@ -338,9 +343,51 @@ export function createFeedActionsController(options: FeedActionsControllerOption
     }
   }
 
+  /** Stops every run that is working now, `FEED_BULK_LIMIT` at a time. Each card keeps its own answer. */
+  async function runStopAll(): Promise<void> {
+    const cards = stoppable();
+    setStopAllArmed(false);
+    if (cards.length === 0 || bulk.busy) return;
+    setBulk((draft) => {
+      draft.busy = true;
+    });
+    let failed = 0;
+    try {
+      for (let start = 0; start < cards.length; start += FEED_BULK_LIMIT) {
+        const chunk = cards.slice(start, start + FEED_BULK_LIMIT);
+        const results = await Promise.all(
+          chunk.map((item) =>
+            run(
+              { v: FEED_ACTION_VERSION, action: "stop", itemId: item.id, startedAt: item.startedAt },
+              [item.id],
+              undefined,
+              true,
+            ),
+          ),
+        );
+        failed += results.reduce((total, count) => total + count, 0);
+      }
+    } finally {
+      setBulk((draft) => {
+        draft.busy = false;
+      });
+    }
+    options.announce(t("app.feed.bulk.result", { done: cards.length - failed, failed }));
+  }
+
   return {
     controlOf,
     intent,
+    stopAll: {
+      count: () => stoppable().length,
+      armed: stopAllArmed,
+      busy: () => bulk.busy,
+      arm: () => {
+        if (stoppable().length > 0) setStopAllArmed(true);
+      },
+      cancel: () => setStopAllArmed(false),
+      confirm: () => void runStopAll(),
+    },
     shortcut,
     selectedIds,
     bulk: {

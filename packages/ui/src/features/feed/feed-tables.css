@@ -6,9 +6,9 @@
 
 .feed-tables {
   display: flex;
-  flex: none;
+  flex: 0 1 auto;
   flex-direction: column;
-  border-bottom: 1px solid var(--feed-edge);
+  min-height: 0;
   background: var(--buildersbot-bg-canvas);
 }
 
@@ -28,6 +28,7 @@
 
 .feed-tables-strip {
   display: flex;
+  flex: none;
   height: var(--buildersbot-control-xl);
   margin: 0;
   align-items: center;
@@ -37,19 +38,24 @@
   font-size: var(--buildersbot-text-sm);
 }
 
+/* The tables share the width and the height that the list leaves, so the agents are as large as the page allows. */
 .feed-tables-row {
   display: flex;
-  align-items: flex-start;
+  flex: 1 1 auto;
+  align-items: stretch;
   gap: var(--buildersbot-space-3);
+  min-height: 0;
   padding: 0 var(--buildersbot-space-6) var(--buildersbot-space-3);
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: thin;
 }
 
 .feed-table {
   display: flex;
-  width: 320px;
-  flex: 0 0 320px;
+  min-width: 280px;
+  max-width: 560px;
+  flex: 1 1 320px;
   flex-direction: column;
   border-radius: var(--buildersbot-radius-lg);
 }
@@ -62,10 +68,23 @@
 /* The board of a table fills this box. The box has a size of its own, so the board can measure it. */
 .feed-table-stage {
   position: relative;
-  /* A little shorter on a low window. Below this the names would not fit: a low window opens folded. */
-  height: clamp(248px, 30vh, 252px);
+  /* The tables take about half of the window, and no more than a stage that is too large for its agents.
+     Below this height the names would not fit: a low window opens folded. */
+  flex: 0 1 auto;
+  height: clamp(240px, 52vh, 560px);
+  min-height: 200px;
   overflow: hidden;
   contain: layout paint;
+}
+
+/* With the list folded, the tables take the page. */
+.feed-page-main:has(.feed-dock:not([data-open])) .feed-tables {
+  flex: 1 1 auto;
+}
+
+.feed-page-main:has(.feed-dock:not([data-open])) .feed-table-stage {
+  flex: 1 1 0;
+  height: auto;
 }
 
 .feed-table-overflow,
@@ -94,13 +113,26 @@
   display: grid;
   gap: var(--buildersbot-space-0-5);
   min-width: 0;
+  /* Three lines for every table, so the boards have the same height whether a table has a "Now" line or not. */
+  min-height: 3.6em;
+  align-content: start;
   padding: 0 var(--buildersbot-space-2);
 }
 
 .feed-table-name {
   justify-self: start;
+  min-width: 0;
   max-width: 100%;
   font-weight: var(--buildersbot-weight-semibold);
+}
+
+/* A long name of a project is cut at the end and shows in full as the tooltip. */
+.feed-table-name-text {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .feed-table-now,
@@ -140,5 +172,5 @@
 
 /* A small table keeps the names short: the name above the agent, cut with an ellipsis. */
 .feed-table-stage .agent-stage-model {
-  max-width: max(var(--stage-width, 80px), 96px);
+  max-width: clamp(96px, var(--stage-width, 80px), 200px);
 }

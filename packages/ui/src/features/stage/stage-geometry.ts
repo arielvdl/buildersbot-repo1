@@ -50,10 +50,13 @@ export interface StageGeometry {
 /**
  * `maxTable` is the widest the table gets: the stage of a channel draws a big one, a feed table a small
  * one. A small table scales with its height (`unit`), so a short box keeps the agents apart and in the box.
+ * `maxScale` lets a small table grow with a box that is larger than the usual one.
  */
-export function stageGeometry(width: number, height: number, maxTable = 380): StageGeometry {
+export function stageGeometry(width: number, height: number, maxTable = 380, maxScale = 1): StageGeometry {
   const small = maxTable < 380;
-  const unit = small ? Math.max(0.82, Math.min(1, height / 282)) : 1;
+  // A small table may grow past 1 with its box (`maxScale`), as far as the width holds the seats at its sides (a seat at the side stands 0.2 of the width and 71 px of the unit away).
+  const room = maxScale > 1 ? Math.min(height / 282, width / 240) : height / 282;
+  const unit = small ? Math.max(0.82, Math.min(maxScale, room)) : 1;
   const tableWidth = Math.max(small ? 96 : 120, Math.min(maxTable * unit, width * 0.4, (height * 0.5) / TABLE_RATIO));
   return {
     width,

@@ -348,4 +348,13 @@ export const messages = {
   "app.feed.bulk.clear": "Limpar",
   "app.feed.bulk.result": "{done} feitas, {failed} não feitas",
   "app.feed.shortcuts": "J K navegar · A aprovar · N negar · R retomar",
+  "app.feed.stopAll": "Parar tudo ({count})",
+  "app.feed.stopAll.hint": {
+    one: "Parar a {count} execução que roda agora?",
+    other: "Parar as {count} execuções que rodam agora?",
+  },
+  "app.feed.stopAll.confirm": "Parar tudo agora",
+  "app.feed.dock.title": "Lista",
+  "app.feed.dock.show": "Mostrar a lista",
+  "app.feed.dock.hide": "Esconder a lista",
 } as const satisfies PartialTranslation<typeof source>;

@@ -5,6 +5,7 @@ import { useText } from "@buildersbot/ui/text";
 import { createMemo } from "solid-js";
 import { useAgents } from "../agents/agents-context";
 import { useServers } from "../servers/servers-context";
+import { createFeedDockFold } from "./feed-dock-storage";
 import { createFeedOpener } from "./feed-open";
 import { feedPort } from "./feed-port";
 import { createFeedTablesFold } from "./feed-tables-storage";
@@ -31,6 +32,7 @@ export function WorkspaceFeed() {
     })),
   );
   const tables = createFeedTablesFold();
+  const dock = createFeedDockFold();
   const open = createFeedOpener();
   return (
     <FeedPage
@@ -38,6 +40,8 @@ export function WorkspaceFeed() {
       agents={faces()}
       tablesFolded={tables.folded()}
       onTablesFoldedChange={tables.setFolded}
+      dockFolded={dock.folded()}
+      onDockFoldedChange={dock.setFolded}
       loading={feed.state.loading}
       error={feed.state.error}
       onOpen={open}

@@ -160,6 +160,17 @@ many runs work or need the person.
 - **Filters.** The name of a project filters the feed by it, and a cube filters it by that agent; the
   same click clears it. The table itself is only a picture. "Fold the tables" keeps the choice on this
   computer (`buildersbot:feed-tables:v1`, `src/renderer/src/features/feed/feed-tables-storage.ts`).
+- **Size.** The tables take about half of the window (52vh, 240 to 560 px) and share its width. A small
+  table and its agents may grow up to 1.8 times with the room they have (`maxScale` of
+  `stageGeometry`; 1 by default, so the stage of a channel does not change). The growth stops where the
+  width no longer holds the seats at the sides of the table.
+- **The list.** The cards are in a drawer under the tables, one quiet line for each run, with no frame
+  and no coloured edge: a dot shows the state. A card opens under its line only for a request, a stop,
+  a slow run, an action that runs or opened steps. "List" folds the drawer into a bar and gives the
+  page to the tables; the choice is kept on this computer
+  (`buildersbot:feed-dock:v1`, `src/renderer/src/features/feed/feed-dock-storage.ts`).
+- **Stop all.** The button at the top asks first, then stops every run that offers `stop`, `FEED_BULK_LIMIT`
+  at a time. Each card keeps its own answer, as for one stop.
 - **Not in the tables yet.** The link and the flying cube between a delegating agent and the agent that
   gets the work need the card to say who delegated (`FeedItem.delegatedBy`, a field main does not send).
   The agent of a joined server shows with the default colour and no model chip: the card has neither.

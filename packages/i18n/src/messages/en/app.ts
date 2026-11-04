@@ -342,4 +342,13 @@ export const messages = defineMessages("app", {
   "app.feed.bulk.clear": "Clear",
   "app.feed.bulk.result": "{done} done, {failed} not done",
   "app.feed.shortcuts": "J K move · A approve · N deny · R resume",
+  "app.feed.stopAll": "Stop all ({count})",
+  "app.feed.stopAll.hint": {
+    one: "Stop the {count} run that works now?",
+    other: "Stop the {count} runs that work now?",
+  },
+  "app.feed.stopAll.confirm": "Stop all now",
+  "app.feed.dock.title": "List",
+  "app.feed.dock.show": "Show the list",
+  "app.feed.dock.hide": "Hide the list",
 });

@@ -11,14 +11,15 @@ import type { FeedRow } from "./feed-view";
 /** Within this distance of the end, the reader follows the newest card. */
 const FOLLOW_DISTANCE = 80;
 /**
- * The height of a row, from the stylesheet: a card has one line for each part, so the estimate is the
- * height. A good estimate keeps the virtualizer from moving the reader when it measures a row.
+ * The height of a row, from the stylesheet: a card is one line, and the part under it opens only for a
+ * request, a stop or a slow run. A good estimate keeps the virtualizer from moving the reader when it
+ * measures a row.
  */
 const ROW_SIZE: Readonly<Record<"card" | "line" | "block" | "group", number>> = {
-  card: 136,
+  card: 36,
   line: 24,
-  block: 42,
-  group: 36,
+  block: 38,
+  group: 32,
 };
 
 function estimateRow(row: FeedRow | undefined): number {
@@ -26,11 +27,10 @@ function estimateRow(row: FeedRow | undefined): number {
   if (row.kind === "group") return ROW_SIZE.group;
   const item = row.item;
   let size = ROW_SIZE.card;
-  if (!item.lastStep && item.state !== "waiting") size -= ROW_SIZE.line;
   if (item.need || item.stop) size += ROW_SIZE.block;
   if (item.quiet) size += ROW_SIZE.line;
   // The row of buttons, and the choices and the field of a question.
-  if (item.actions.length > 1) size += ROW_SIZE.block;
+  if ((item.need || item.stop) && item.actions.length > 1) size += ROW_SIZE.block;
   if (item.need?.form) size += ROW_SIZE.block;
   if (item.need?.risk || item.need?.access) size += ROW_SIZE.block;
   return size;

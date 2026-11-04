@@ -8,7 +8,6 @@ import {
   Play,
   Send,
   Spinner,
-  Square,
   TriangleAlert,
   UserRoundPlus,
   X,
@@ -280,7 +279,7 @@ export function FeedCardActions(props: FeedCardActionsProps) {
                   class="feed-card-action feed-card-stop-action"
                   onClick={() => props.onIntent({ type: "stop" })}
                 >
-                  <Square aria-hidden="true" />
+                  <span class="feed-stop-glyph" aria-hidden="true" />
                   {t("app.feed.action.stop")}
                 </Button>
               </Show>
