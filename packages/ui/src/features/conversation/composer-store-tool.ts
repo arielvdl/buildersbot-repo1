@@ -28,3 +28,20 @@ export const STORE_TOOL_PATTERN = /\[tool-catalog: ([^\][\n]{1,200}) \(([a-z0-9]
 export function isStoreQuery(query: string): boolean {
   return query.length >= 3 && /^\p{L}[\p{L}\p{N} _-]*$/u.test(query);
 }
+
+/**
+ * A whole platform of the store in a draft (`/youtube`): the person's clear request that the agent may use the
+ * tools of that platform, which are paid. The text holds the platform name and its vendor slug, so the agent can
+ * search with `platform`. The editor shows it as a chip and sends the same text.
+ */
+export function storePlatformText(platform: { name: string; platformId: string }): string {
+  return `[tool-catalog platform: ${storeToolTitle(platform.name)} (${platform.platformId})]`;
+}
+
+export const STORE_PLATFORM_PATTERN = /\[tool-catalog platform: ([^\][\n]{1,200}) \(([a-z0-9][a-z0-9._-]{0,63})\)\]/gu;
+
+/** The vendor slug of a store tile: its id is `<connection id>:<platform id>`. Null when the id has no platform. */
+export function storeTilePlatformId(tileId: string): string | null {
+  const platformId = tileId.slice(tileId.indexOf(":") + 1);
+  return tileId.includes(":") && /^[a-z0-9][a-z0-9._-]{0,63}$/u.test(platformId) ? platformId : null;
+}

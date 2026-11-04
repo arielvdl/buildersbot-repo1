@@ -40,6 +40,7 @@ export const messages = {
   "composer.picker.toolMaxCost": "çağrı başına en fazla {amount}",
   "composer.picker.storeLabel": "Mağaza aracı ekle",
   "composer.token.storeTool": "Mağaza aracı {name}",
+  "composer.token.storePlatform": "Mağaza platformu {name}",
   "composer.picker.badge.channel": "Kanal",
   "composer.picker.skillLabel": "Beceri veya MCP sunucusu ekle",
   "composer.picker.mentionLabel": "Bahsetme ekle",

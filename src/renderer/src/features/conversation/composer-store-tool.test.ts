@@ -1,7 +1,10 @@
 import type { HubEndpointHit } from "@buildersbot/contracts/ipc";
 import {
   isStoreQuery,
+  STORE_PLATFORM_PATTERN,
   STORE_TOOL_PATTERN,
+  storePlatformText,
+  storeTilePlatformId,
   storeToolText,
   storeToolTitle,
 } from "@buildersbot/ui/features/conversation/composer-store-tool";
@@ -40,5 +43,20 @@ describe("the title of a store tool in the draft", () => {
     expect(storeToolTitle("Company [beta]\n data")).toBe("Company beta data");
     expect(storeToolText({ title: "A [x] b", endpointId: "a.b" })).toBe("[tool-catalog: A x b (a.b)]");
     expect(Array.from("[tool-catalog: A x b (a.b)]".matchAll(STORE_TOOL_PATTERN))[0]?.[2]).toBe("a.b");
+  });
+});
+
+describe("a whole platform of the store in the draft", () => {
+  it("leaves the platform name and its slug in the draft, apart from a single tool", () => {
+    const text = storePlatformText({ name: "YouTube [beta]", platformId: "youtube" });
+    expect(text).toBe("[tool-catalog platform: YouTube beta (youtube)]");
+    expect(text.match(STORE_PLATFORM_PATTERN)).toEqual([text]);
+    expect(text.match(STORE_TOOL_PATTERN)).toBeNull();
+  });
+
+  it("reads the platform id of a tile, and refuses a tile with none", () => {
+    expect(storeTilePlatformId("tool-catalog:youtube")).toBe("youtube");
+    expect(storeTilePlatformId("tool-catalog")).toBeNull();
+    expect(storeTilePlatformId("tool-catalog:Bad Slug")).toBeNull();
   });
 });

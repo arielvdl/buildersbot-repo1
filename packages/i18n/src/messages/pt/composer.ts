@@ -40,6 +40,7 @@ export const messages = {
   "composer.picker.toolMaxCost": "até {amount} por chamada",
   "composer.picker.storeLabel": "Inserir ferramenta da loja",
   "composer.token.storeTool": "Ferramenta da loja {name}",
+  "composer.token.storePlatform": "Plataforma da loja {name}",
   "composer.picker.badge.channel": "Canal",
   "composer.picker.skillLabel": "Inserir habilidade ou servidor MCP",
   "composer.picker.mentionLabel": "Inserir menção",

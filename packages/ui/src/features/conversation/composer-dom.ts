@@ -1,7 +1,7 @@
 import { serializeAttachmentReference } from "@buildersbot/contracts/attachment-references";
 import { serializeChatTagReference } from "@buildersbot/contracts/chat-tag-references";
 import { markdownListLineBreak } from "@buildersbot/contracts/markdown-lists";
-import { storeToolText } from "./composer-store-tool";
+import { storePlatformText, storeToolText } from "./composer-store-tool";
 
 export function serializeEditor(editor: HTMLDivElement): string {
   return Array.from(editor.childNodes).map(serializeNode).join("");
@@ -72,6 +72,10 @@ function serializeNode(node: Node): string {
   const mcpId = node.dataset.mcpId;
   const mcpName = node.dataset.mcpName;
   if (mcpId && mcpName) return serializeChatTagReference("mcp", mcpName, mcpId);
+  const storePlatformId = node.dataset.storePlatformId;
+  const storePlatformName = node.dataset.storePlatformName;
+  if (storePlatformId && storePlatformName)
+    return storePlatformText({ name: storePlatformName, platformId: storePlatformId });
   const storeEndpointId = node.dataset.storeEndpointId;
   const storeTitle = node.dataset.storeTitle;
   if (storeEndpointId && storeTitle) return storeToolText({ title: storeTitle, endpointId: storeEndpointId });

@@ -93,6 +93,16 @@ that a routine started, at any distance; it keeps the owner's Chrome closed alon
   (`narrowFlowOrigin`). A workflow step has no stored routine, so it is closed.
 - The Hub gets `origin` `owner_ui`, `routine` or `agent` only.
 
+Every call is paid, so the agent spends only when the person put a store chip in the conversation (`PAID_DATA_RULE`).
+A tool chip (`[tool-catalog: … (id)]`) is the person's request to use that tool: the agent describes and calls it in
+the same turn, and the cost approval below stays with the app. A platform chip (`[tool-catalog platform: YouTube (youtube)]`,
+made by choosing a platform tile after `/`; `createStorePlatformToken`) is a macro request: the agent searches with
+`platform` once for each job, lists the matches with prices (a search gives at most 10), gives the expected total, and
+calls the tools that fit after one agreement. With the store's name only in words, the agent does not search or call: it
+tells the person to type `/` and the name. Every endpoint reads only, so a request to post or upload is refused in
+words. With a chip but no tool in `tool_search`, the agent says why (signed out, connection off for this agent, or a
+turn from another agent or a chat app) and does not fall back to the browser silently.
+
 `tool-catalog` has three operations: `search` (by job), `describe` (closed schema and price) and
 `call`. The texts that the agent reads are Builders Bot's own (`HUB_CONNECTION_GUIDANCE`), in
 English, without vendor text. The vendor lines of the treg design §2.2 are masked in every Hub text

@@ -54,7 +54,7 @@ import {
   pickerOptionText,
   skillMatchRank,
 } from "./composer-picker";
-import { isStoreQuery } from "./composer-store-tool";
+import { isStoreQuery, storeTilePlatformId } from "./composer-store-tool";
 import {
   type AttachmentTokenActions,
   createAttachmentToken,
@@ -62,6 +62,7 @@ import {
   createMentionToken,
   createQuoteToken,
   createSkillToken,
+  createStorePlatformToken,
   createStoreToolToken,
   MENTION_PATTERN,
   renderEditorValue,
@@ -691,8 +692,9 @@ export function ComposerEditor(props: ComposerEditorProps) {
     const range = rangeFromTextOffsets(editor, context.start, context.end);
     if (!range) return;
     range.deleteContents();
-    if (option.type === "store-tile") {
-      /* A tile is a step, not an answer: its name goes after the `/` and the tools of the platform show. */
+    const platformId = option.type === "store-tile" ? storeTilePlatformId(option.tile.id) : null;
+    if (option.type === "store-tile" && !platformId) {
+      /* A tile with no platform id is only a step: its name goes after the `/` and the tools show. */
       const selection = window.getSelection();
       selection?.removeAllRanges();
       selection?.addRange(range);
@@ -712,7 +714,9 @@ export function ComposerEditor(props: ComposerEditorProps) {
               ? createMcpToken(option.server)
               : option.type === "tool"
                 ? createStoreToolToken(option.hit.title, option.hit.endpointId)
-                : createAttachmentToken(option.attachment, attachmentTokenActions);
+                : option.type === "store-tile"
+                  ? createStorePlatformToken(option.tile.name, platformId ?? "")
+                  : createAttachmentToken(option.attachment, attachmentTokenActions);
     const trailingSpace = document.createTextNode(" ");
     range.insertNode(trailingSpace);
     range.insertNode(token);

@@ -34,7 +34,7 @@ export type PickerOption =
   | { type: "mcp"; server: ComposerMcpServer }
   /** A tool of the store (the Hub's tool catalog). Choosing it writes its name and id into the draft. */
   | { type: "tool"; hit: HubEndpointHit }
-  /** A tile of the Store. Choosing it writes its name after the `/`, so the tools of the platform show. */
+  /** A tile of the Store. Choosing it writes a platform chip: the person's clear request to use that platform's paid tools. */
   | { type: "store-tile"; tile: ComposerStoreTile }
   | { type: "attachment"; attachment: DraftAttachment };
 

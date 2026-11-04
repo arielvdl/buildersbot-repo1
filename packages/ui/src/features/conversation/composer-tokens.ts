@@ -6,7 +6,7 @@ import { createStaticAvatarSvg } from "../../bloub-avatar";
 import type { ComposerAgent, ComposerMcpServer, ComposerSkill } from "../../data";
 import { currentText } from "../../text";
 import { appendAttachmentReferenceVisual } from "./AttachmentReference";
-import { STORE_TOOL_PATTERN, storeToolTitle } from "./composer-store-tool";
+import { STORE_PLATFORM_PATTERN, STORE_TOOL_PATTERN, storeToolTitle } from "./composer-store-tool";
 
 export const MENTION_PATTERN = /@\[([^\]]+)]\(([^)]+)\)/g;
 
@@ -243,6 +243,28 @@ export function createStoreToolToken(rawTitle: string, endpointId: string): HTML
   return token;
 }
 
+/** A whole platform of the store as a chip. It serializes to `storePlatformText`, so only text is sent. */
+export function createStorePlatformToken(rawName: string, platformId: string): HTMLSpanElement {
+  const name = storeToolTitle(rawName);
+  const token = document.createElement("span");
+  token.className = `composer-mention-token ${referenceChipClasses.root}`;
+  token.dataset.kind = "store-platform";
+  token.title = name;
+  token.contentEditable = "false";
+  token.dataset.storePlatformId = platformId;
+  token.dataset.storePlatformName = name;
+  token.setAttribute("aria-label", currentText().t("composer.token.storePlatform", { name }));
+  const iconWrap = document.createElement("span");
+  iconWrap.className = referenceChipClasses.icon;
+  iconWrap.setAttribute("aria-hidden", "true");
+  iconWrap.append(createChipGlyph("store", STORE_GLYPH));
+  const label = document.createElement("span");
+  label.className = referenceChipClasses.name;
+  label.textContent = name;
+  token.replaceChildren(iconWrap, label);
+  return token;
+}
+
 export function createMcpToken(server: ComposerMcpServer): HTMLSpanElement {
   const token = document.createElement("span");
   updateMcpToken(token, server);
@@ -416,15 +438,22 @@ function scheduleStaticMentionAvatar(avatar: HTMLElement, agent: ComposerAgent):
   });
 }
 
-/** Text, with each `[tool-catalog: title (id)]` shown as its chip. */
+/** Text, with each `[tool-catalog: title (id)]` and `[tool-catalog platform: name (id)]` shown as its chip. */
 function appendTextWithStoreTools(editor: HTMLDivElement, text: string): void {
+  const pattern = new RegExp(`${STORE_TOOL_PATTERN.source}|${STORE_PLATFORM_PATTERN.source}`, "gu");
   let cursor = 0;
-  for (const match of text.matchAll(STORE_TOOL_PATTERN)) {
+  for (const match of text.matchAll(pattern)) {
     const index = match.index ?? 0;
-    const [whole, title, endpointId] = match;
-    if (!title || !endpointId) continue;
+    const [whole, toolTitle, endpointId, platformName, platformId] = match;
+    const chip =
+      toolTitle && endpointId
+        ? createStoreToolToken(toolTitle, endpointId)
+        : platformName && platformId
+          ? createStorePlatformToken(platformName, platformId)
+          : null;
+    if (!chip) continue;
     if (index > cursor) editor.append(document.createTextNode(text.slice(cursor, index)));
-    editor.append(createStoreToolToken(title, endpointId));
+    editor.append(chip);
     cursor = index + whole.length;
   }
   if (cursor < text.length) editor.append(document.createTextNode(text.slice(cursor)));

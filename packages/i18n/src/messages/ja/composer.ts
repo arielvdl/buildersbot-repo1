@@ -39,6 +39,7 @@ export const messages = {
   "composer.picker.toolMaxCost": "1回あたり最大 {amount}",
   "composer.picker.storeLabel": "ストアのツールを挿入",
   "composer.token.storeTool": "ストアのツール {name}",
+  "composer.token.storePlatform": "ストアのプラットフォーム {name}",
   "composer.picker.badge.channel": "チャンネル",
   "composer.picker.skillLabel": "スキルまたは MCP サーバーを挿入",
   "composer.picker.mentionLabel": "メンションを挿入",

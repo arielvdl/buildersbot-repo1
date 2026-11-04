@@ -38,6 +38,7 @@ export const messages = {
   "composer.picker.toolMaxCost": "每次调用最多 {amount}",
   "composer.picker.storeLabel": "插入商店工具",
   "composer.token.storeTool": "商店工具 {name}",
+  "composer.token.storePlatform": "商店平台 {name}",
   "composer.picker.badge.channel": "频道",
   "composer.picker.skillLabel": "插入技能或 MCP 服务器",
   "composer.picker.mentionLabel": "插入提及",

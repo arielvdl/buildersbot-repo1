@@ -38,6 +38,7 @@ export const messages = {
   "composer.picker.toolMaxCost": "호출당 최대 {amount}",
   "composer.picker.storeLabel": "스토어 도구 삽입",
   "composer.token.storeTool": "스토어 도구 {name}",
+  "composer.token.storePlatform": "스토어 플랫폼 {name}",
   "composer.picker.badge.channel": "채널",
   "composer.picker.skillLabel": "스킬 또는 MCP 서버 삽입",
   "composer.picker.mentionLabel": "멘션 삽입",

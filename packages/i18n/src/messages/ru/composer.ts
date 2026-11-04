@@ -39,6 +39,7 @@ export const messages = {
   "composer.picker.toolMaxCost": "до {amount} за вызов",
   "composer.picker.storeLabel": "Вставить инструмент магазина",
   "composer.token.storeTool": "Инструмент магазина {name}",
+  "composer.token.storePlatform": "Платформа магазина {name}",
   "composer.picker.badge.channel": "Канал",
   "composer.picker.skillLabel": "Вставить навык или сервер MCP",
   "composer.picker.mentionLabel": "Вставить упоминание",

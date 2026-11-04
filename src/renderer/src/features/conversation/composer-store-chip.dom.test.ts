@@ -1,5 +1,9 @@
 import { serializeEditor } from "@buildersbot/ui/features/conversation/composer-dom";
-import { createStoreToolToken, renderEditorValue } from "@buildersbot/ui/features/conversation/composer-tokens";
+import {
+  createStorePlatformToken,
+  createStoreToolToken,
+  renderEditorValue,
+} from "@buildersbot/ui/features/conversation/composer-tokens";
 import { describe, expect, it } from "vitest";
 
 const ACTIONS = {
@@ -32,5 +36,26 @@ describe("a store tool chip in the message box", () => {
     const editor = document.createElement("div");
     editor.append(createStoreToolToken("Company [x]", "company.enrich"));
     expect(serializeEditor(editor)).toBe("[tool-catalog: Company x (company.enrich)]");
+  });
+});
+
+describe("a store platform chip in the message box", () => {
+  const PLATFORM_TEXT =
+    "Use [tool-catalog platform: YouTube (youtube)] e [tool-catalog: Company data (company.enrich)] aqui";
+
+  it("shows both kinds of chip from a draft and sends the same text back", () => {
+    const editor = document.createElement("div");
+    renderEditorValue(editor, PLATFORM_TEXT, [], [], [], [], ACTIONS);
+    expect(editor.querySelector<HTMLElement>("[data-store-platform-id]")?.dataset.storePlatformId).toBe("youtube");
+    expect(editor.querySelector<HTMLElement>("[data-store-endpoint-id]")?.dataset.storeEndpointId).toBe(
+      "company.enrich",
+    );
+    expect(serializeEditor(editor)).toBe(PLATFORM_TEXT);
+  });
+
+  it("serializes a chip made by the picker to the same text", () => {
+    const editor = document.createElement("div");
+    editor.append(createStorePlatformToken("YouTube", "youtube"));
+    expect(serializeEditor(editor)).toBe("[tool-catalog platform: YouTube (youtube)]");
   });
 });
