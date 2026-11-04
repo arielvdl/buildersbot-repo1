@@ -18,6 +18,16 @@ export function toggleChannelMember(draft: ChannelDraft, agentId: string, presen
   draft.members = present
     ? [...draft.members.filter((member) => member.agentId !== agentId), { agentId }]
     : draft.members.filter((member) => member.agentId !== agentId);
+  keepLeadOnMember(draft);
+}
+
+/** Removes several members at once, and keeps the lead on a current member like `toggleChannelMember`. */
+export function removeChannelMembers(draft: ChannelDraft, agentIds: ReadonlySet<string>): void {
+  draft.members = draft.members.filter((member) => !agentIds.has(member.agentId));
+  keepLeadOnMember(draft);
+}
+
+function keepLeadOnMember(draft: ChannelDraft): void {
   if (!draft.leadAgentId || !draft.members.some((member) => member.agentId === draft.leadAgentId))
     draft.leadAgentId = draft.members[0]?.agentId ?? null;
 }

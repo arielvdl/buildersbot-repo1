@@ -1129,3 +1129,67 @@ input.channel-tab-overview-search:focus-visible {
   font-size: var(--buildersbot-text-sm);
   text-align: center;
 }
+
+/* Bulk selection of members. The head keeps the title's line, so the Select button sits where the
+   eye already is, and the bar floats at the foot of the list while the panel scrolls. */
+.channel-members-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--buildersbot-space-2);
+  min-height: var(--buildersbot-control-md);
+}
+.channel-members-select:is(.ui-button) {
+  color: var(--buildersbot-accent);
+}
+.channel-members-select-all {
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  padding-inline: var(--buildersbot-space-2);
+  color: var(--buildersbot-text);
+  font-size: var(--buildersbot-text-sm);
+  cursor: pointer;
+}
+.channel-members-count {
+  color: var(--buildersbot-text-muted);
+}
+.channel-member-select-entry {
+  display: block;
+  cursor: pointer;
+}
+.channel-member-select-entry[data-locked] {
+  cursor: not-allowed;
+}
+.channel-member-select-entry[data-locked] .channel-member {
+  opacity: 0.7;
+}
+.channel-member-lead-mark {
+  width: var(--buildersbot-icon-md);
+  height: var(--buildersbot-icon-md);
+  color: var(--buildersbot-text-muted);
+}
+.channel-bulk-bar {
+  position: sticky;
+  bottom: var(--buildersbot-space-2);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--buildersbot-space-2);
+  margin-top: var(--buildersbot-space-2);
+  padding: var(--buildersbot-space-2);
+  border: 1px solid var(--buildersbot-border);
+  border-radius: var(--buildersbot-radius-lg);
+  background: var(--buildersbot-surface-raised, var(--buildersbot-surface));
+  box-shadow: var(--buildersbot-shadow-raised);
+}
+.channel-bulk-count,
+.channel-bulk-confirm {
+  margin-inline-end: auto;
+  padding-inline-start: var(--buildersbot-space-1);
+  font-size: var(--buildersbot-text-sm);
+  font-weight: var(--buildersbot-weight-semibold);
+}
+.channel-bulk-confirm {
+  color: var(--buildersbot-danger, var(--buildersbot-text));
+}

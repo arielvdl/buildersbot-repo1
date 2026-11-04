@@ -3,6 +3,7 @@ import type { Channel, ChannelDraft } from "@buildersbot/contracts/ipc";
 import {
   Button,
   buttonVariants,
+  Checkbox,
   Crown,
   Input,
   ItemActions,
@@ -25,10 +26,12 @@ import { ContentExitMotion } from "@buildersbot/ui/menu-motion";
 import { useText } from "@buildersbot/ui/text";
 import { createEffect, createSignal, createStore, For, onSettled, Show } from "solid-js";
 import { useAgents } from "../agents/agents-context";
+import { ChannelBulkModelDialog } from "./ChannelBulkModelDialog";
 import { ChannelMemberDialog } from "./ChannelMemberDialog";
+import { bulkSelectionState, pruneSelection, selectableMemberIds, toggleAllSelection } from "./channel-bulk-select";
 import { channelMemberModel } from "./channel-member-model";
 import { useChannels } from "./channels-context";
-import { matchesAgentSearch, toggleChannelMember } from "./channels-draft";
+import { matchesAgentSearch, removeChannelMembers, toggleChannelMember } from "./channels-draft";
 
 interface ChannelEditorProps {
   memoryCount: number;
@@ -107,6 +110,57 @@ export function ChannelEditor(props: ChannelEditorProps) {
       agentId: member.agentId,
       agent: agentList().find((agent) => agent.id === member.agentId),
     }));
+  /**
+   * Bulk mode: the Select button turns the list into checkboxes, and one bar acts on everyone
+   * marked. The lead is never marked, so the channel keeps the member it needs.
+   */
+  const [selecting, setSelecting] = createSignal(false);
+  const [selected, setSelected] = createSignal<ReadonlySet<string>>(new Set());
+  const [confirmingRemove, setConfirmingRemove] = createSignal(false);
+  const [bulkModelOpen, setBulkModelOpen] = createSignal(false);
+  const selectable = () =>
+    selectableMemberIds(
+      members().map((entry) => entry.agentId),
+      channel()?.leadAgentId ?? null,
+    );
+  const selectedCount = () => selectable().filter((id) => selected().has(id)).length;
+  const selectedAgents = () =>
+    members().flatMap((entry) => (entry.agent && selected().has(entry.agentId) ? [entry.agent] : []));
+  // A member who left, or who has just been made the lead, falls out of the selection.
+  createEffect(
+    () => selectable(),
+    (ids) => {
+      setSelected((current) => pruneSelection(current, ids));
+      if (!ids.length) setSelecting(false);
+    },
+  );
+  // Another channel starts with no selection.
+  createEffect(
+    () => channel()?.id,
+    () => endSelecting(),
+  );
+  function endSelecting() {
+    setSelecting(false);
+    setSelected(new Set<string>());
+    setConfirmingRemove(false);
+    setBulkModelOpen(false);
+  }
+  function toggleSelected(agentId: string, checked: boolean) {
+    setConfirmingRemove(false);
+    setSelected((current) => {
+      const next = new Set(current);
+      if (checked) next.add(agentId);
+      else next.delete(agentId);
+      return next;
+    });
+  }
+  function removeSelected() {
+    const ids = new Set(selectable().filter((id) => selected().has(id)));
+    if (!ids.size) return;
+    setConfirmingRemove(false);
+    setSelected(new Set<string>());
+    void commit((draft) => removeChannelMembers(draft, ids));
+  }
   const available = () =>
     agentList().filter((agent) => !channel()?.members.some((member) => member.agentId === agent.id));
 
@@ -289,6 +343,122 @@ export function ChannelEditor(props: ChannelEditorProps) {
     };
   }
 
+  function memberRow(entry: { agentId: string; agent: ReturnType<typeof members>[number]["agent"] }) {
+    return (
+      <ChannelMemberRow
+        agent={entry.agent}
+        fallbackName={t("channel.members.unavailable", { id: entry.agentId })}
+        onActivate={entry.agent && !selecting() ? () => openMemberForm(entry.agentId) : undefined}
+        leading={
+          selecting() ? (
+            <Checkbox
+              id={`channel-bulk-${entry.agentId}`}
+              checked={selected().has(entry.agentId)}
+              disabled={entry.agentId === channel()?.leadAgentId}
+              title={entry.agentId === channel()?.leadAgentId ? t("channel.members.bulk.leadLocked") : undefined}
+              onChange={(event) => toggleSelected(entry.agentId, event.currentTarget.checked)}
+            />
+          ) : undefined
+        }
+        model={entry.agent ? channelMemberModel(entry.agent, agents.modelOptions()) : undefined}
+        actions={
+          <Show
+            when={!selecting()}
+            fallback={
+              <Show when={entry.agentId === channel()?.leadAgentId}>
+                <ItemActions>
+                  <Crown class="channel-member-lead-mark" aria-label={t("channel.members.lead")} />
+                </ItemActions>
+              </Show>
+            }
+          >
+            <ItemActions>
+              <Show when={entry.agent}>
+                {(agent) => (
+                  <Tooltip.Root openDelay={250} closeDelay={75} placement="top" gutter={8}>
+                    <Tooltip.Trigger
+                      type="button"
+                      class={buttonVariants({
+                        variant: "ghost",
+                        size: "icon-xs",
+                        class: "ui-icon-button channel-member-edit",
+                      })}
+                      aria-label={t("channel.members.editLabel", { name: agent().name })}
+                      onClick={() => openMemberForm(entry.agentId)}
+                    >
+                      <Pencil aria-hidden="true" />
+                    </Tooltip.Trigger>
+                    <Tooltip.Portal>
+                      <Tooltip.Content class="ui-tooltip">{t("channel.members.edit")}</Tooltip.Content>
+                    </Tooltip.Portal>
+                  </Tooltip.Root>
+                )}
+              </Show>
+              <Show when={entry.agent}>
+                {(agent) => (
+                  <Tooltip.Root openDelay={250} closeDelay={75} placement="top" gutter={8}>
+                    {/* The trigger is the button itself, the way `ServerRail` does it: an
+                            `IconButton` inside a trigger would carry a `title` as well, and the
+                            crown would answer twice, once styled and once by the platform. */}
+                    <Tooltip.Trigger
+                      type="button"
+                      class={buttonVariants({
+                        variant: "ghost",
+                        size: "icon-xs",
+                        class: "ui-icon-button channel-lead-toggle",
+                      })}
+                      aria-pressed={channel()?.leadAgentId === entry.agentId ? "true" : "false"}
+                      aria-label={
+                        channel()?.leadAgentId === entry.agentId
+                          ? t("channel.members.isLead", { name: agent().name })
+                          : t("channel.members.makeLeadLabel", { name: agent().name })
+                      }
+                      onClick={() =>
+                        void commit((draft) => {
+                          draft.leadAgentId = entry.agentId;
+                        })
+                      }
+                    >
+                      <Crown aria-hidden="true" />
+                    </Tooltip.Trigger>
+                    <Tooltip.Portal>
+                      <Tooltip.Content class="ui-tooltip">
+                        {channel()?.leadAgentId === entry.agentId
+                          ? t("channel.members.lead")
+                          : t("channel.members.makeLead")}
+                      </Tooltip.Content>
+                    </Tooltip.Portal>
+                  </Tooltip.Root>
+                )}
+              </Show>
+              <Tooltip.Root openDelay={250} closeDelay={75} placement="top" gutter={8}>
+                <Tooltip.Trigger
+                  type="button"
+                  class={buttonVariants({
+                    variant: "destructive-ghost",
+                    size: "icon-xs",
+                    class: "ui-icon-button channel-member-remove",
+                  })}
+                  aria-label={
+                    entry.agent
+                      ? t("channel.members.remove", { name: entry.agent.name })
+                      : t("channel.members.removeUnavailable", { id: entry.agentId })
+                  }
+                  onClick={() => void commit((draft) => toggleChannelMember(draft, entry.agentId, false))}
+                >
+                  <X aria-hidden="true" />
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Content class="ui-tooltip">{t("channel.members.removeFromChannel")}</Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+            </ItemActions>
+          </Show>
+        }
+      />
+    );
+  }
+
   return (
     <div class="channel-editor">
       <SettingsField label={t("channel.form.nameShort")}>
@@ -359,99 +529,58 @@ export function ChannelEditor(props: ChannelEditorProps) {
         />
       </SettingsLinkGroup>
       <section class="channel-members" aria-label={t("channel.members.title")}>
-        <h3 class="channel-members-title">{t("channel.members.title")}</h3>
+        <Show
+          when={selecting()}
+          fallback={
+            <div class="channel-members-head">
+              <h3 class="channel-members-title">{t("channel.members.title")}</h3>
+              <Show when={selectable().length}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  class="channel-members-select"
+                  onClick={() => setSelecting(true)}
+                >
+                  {t("channel.members.bulk.select")}
+                </Button>
+              </Show>
+            </div>
+          }
+        >
+          <div class="channel-members-head channel-members-head-selecting">
+            <label class="channel-members-select-all" for="channel-bulk-select-all">
+              <Checkbox
+                id="channel-bulk-select-all"
+                checked={bulkSelectionState(selected(), selectable()) === "all"}
+                onChange={() => {
+                  setConfirmingRemove(false);
+                  setSelected((current) => toggleAllSelection(current, selectable()));
+                }}
+              />
+              <span>{t("channel.members.bulk.selectAll")}</span>
+              <span class="channel-members-count">
+                {t("channel.members.bulk.countOf", { count: selectedCount(), total: selectable().length })}
+              </span>
+            </label>
+            <Button type="button" variant="ghost" size="sm" onClick={endSelecting}>
+              {t("channel.members.bulk.done")}
+            </Button>
+          </div>
+        </Show>
         <ItemGroup class="channel-member-list">
           <For each={members()}>
             {(entry) => (
-              <ChannelMemberRow
-                agent={entry.agent}
-                fallbackName={t("channel.members.unavailable", { id: entry.agentId })}
-                onActivate={entry.agent ? () => openMemberForm(entry.agentId) : undefined}
-                model={entry.agent ? channelMemberModel(entry.agent, agents.modelOptions()) : undefined}
-                actions={
-                  <ItemActions>
-                    <Show when={entry.agent}>
-                      {(agent) => (
-                        <Tooltip.Root openDelay={250} closeDelay={75} placement="top" gutter={8}>
-                          <Tooltip.Trigger
-                            type="button"
-                            class={buttonVariants({
-                              variant: "ghost",
-                              size: "icon-xs",
-                              class: "ui-icon-button channel-member-edit",
-                            })}
-                            aria-label={t("channel.members.editLabel", { name: agent().name })}
-                            onClick={() => openMemberForm(entry.agentId)}
-                          >
-                            <Pencil aria-hidden="true" />
-                          </Tooltip.Trigger>
-                          <Tooltip.Portal>
-                            <Tooltip.Content class="ui-tooltip">{t("channel.members.edit")}</Tooltip.Content>
-                          </Tooltip.Portal>
-                        </Tooltip.Root>
-                      )}
-                    </Show>
-                    <Show when={entry.agent}>
-                      {(agent) => (
-                        <Tooltip.Root openDelay={250} closeDelay={75} placement="top" gutter={8}>
-                          {/* The trigger is the button itself, the way `ServerRail` does it: an
-                            `IconButton` inside a trigger would carry a `title` as well, and the
-                            crown would answer twice, once styled and once by the platform. */}
-                          <Tooltip.Trigger
-                            type="button"
-                            class={buttonVariants({
-                              variant: "ghost",
-                              size: "icon-xs",
-                              class: "ui-icon-button channel-lead-toggle",
-                            })}
-                            aria-pressed={channel()?.leadAgentId === entry.agentId ? "true" : "false"}
-                            aria-label={
-                              channel()?.leadAgentId === entry.agentId
-                                ? t("channel.members.isLead", { name: agent().name })
-                                : t("channel.members.makeLeadLabel", { name: agent().name })
-                            }
-                            onClick={() =>
-                              void commit((draft) => {
-                                draft.leadAgentId = entry.agentId;
-                              })
-                            }
-                          >
-                            <Crown aria-hidden="true" />
-                          </Tooltip.Trigger>
-                          <Tooltip.Portal>
-                            <Tooltip.Content class="ui-tooltip">
-                              {channel()?.leadAgentId === entry.agentId
-                                ? t("channel.members.lead")
-                                : t("channel.members.makeLead")}
-                            </Tooltip.Content>
-                          </Tooltip.Portal>
-                        </Tooltip.Root>
-                      )}
-                    </Show>
-                    <Tooltip.Root openDelay={250} closeDelay={75} placement="top" gutter={8}>
-                      <Tooltip.Trigger
-                        type="button"
-                        class={buttonVariants({
-                          variant: "destructive-ghost",
-                          size: "icon-xs",
-                          class: "ui-icon-button channel-member-remove",
-                        })}
-                        aria-label={
-                          entry.agent
-                            ? t("channel.members.remove", { name: entry.agent.name })
-                            : t("channel.members.removeUnavailable", { id: entry.agentId })
-                        }
-                        onClick={() => void commit((draft) => toggleChannelMember(draft, entry.agentId, false))}
-                      >
-                        <X aria-hidden="true" />
-                      </Tooltip.Trigger>
-                      <Tooltip.Portal>
-                        <Tooltip.Content class="ui-tooltip">{t("channel.members.removeFromChannel")}</Tooltip.Content>
-                      </Tooltip.Portal>
-                    </Tooltip.Root>
-                  </ItemActions>
-                }
-              />
+              <Show when={selecting()} fallback={memberRow(entry)}>
+                {/* The label is the row: pointing anywhere on it marks the member. */}
+                <label
+                  class="channel-member-select-entry"
+                  for={`channel-bulk-${entry.agentId}`}
+                  data-locked={entry.agentId === channel()?.leadAgentId ? "" : undefined}
+                >
+                  {memberRow(entry)}
+                </label>
+              </Show>
             )}
           </For>
           <Popover.Root
@@ -535,10 +664,49 @@ export function ChannelEditor(props: ChannelEditorProps) {
             </Popover.Portal>
           </Popover.Root>
         </ItemGroup>
+        <Show when={selecting() && selectedCount() > 0}>
+          <div class="channel-bulk-bar" role="toolbar" aria-label={t("channel.members.bulk.toolbar")}>
+            <Show
+              when={!confirmingRemove()}
+              fallback={
+                <>
+                  <span class="channel-bulk-confirm">
+                    {t("channel.members.bulk.removeConfirm", { count: selectedCount() })}
+                  </span>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmingRemove(false)}>
+                    {t("common.cancel")}
+                  </Button>
+                  <Button type="button" variant="destructive" size="sm" onClick={removeSelected}>
+                    {t("common.remove")}
+                  </Button>
+                </>
+              }
+            >
+              <span class="channel-bulk-count">{t("channel.members.bulk.selected", { count: selectedCount() })}</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!selectedAgents().length}
+                onClick={() => setBulkModelOpen(true)}
+              >
+                {t("channel.members.bulk.changeModel")}
+              </Button>
+              <Button type="button" variant="destructive-ghost" size="sm" onClick={() => setConfirmingRemove(true)}>
+                {t("channel.members.bulk.remove")}
+              </Button>
+            </Show>
+          </div>
+        </Show>
         <Show when={!members().length}>
           <p class="channel-members-note">{t("channel.members.empty")}</p>
         </Show>
       </section>
+      <ChannelBulkModelDialog
+        open={bulkModelOpen()}
+        members={selectedAgents()}
+        onClose={() => setBulkModelOpen(false)}
+      />
       <ChannelMemberDialog
         open={memberForm() !== null}
         agent={memberFormAgent()}
