@@ -1,7 +1,7 @@
 // What the Guard does with one item, from the level, the local check and the reviewer. Pure: the
 // same input always gives the same decision, so the policy is the part a test can hold.
 
-import type { GuardAvailableLevel, GuardCategory } from "@buildersbot/contracts/ipc";
+import type { GuardAvailableLevel, GuardCategory, GuardCustomRules } from "@buildersbot/contracts/ipc";
 import type { GuardDirection, GuardJudgeVerdict } from "./guard-judge";
 import {
   type GuardTriage,
@@ -69,9 +69,29 @@ export interface GuardDecision {
  * needs no review either.
  */
 export function guardNeedsJudge(level: GuardAvailableLevel, direction: GuardDirection, triage: GuardTriage): boolean {
-  if (level !== "light" || triage.level !== "suspicious") return false;
+  if (level === "off" || triage.level !== "suspicious") return false;
   if (direction === "outbound" && triage.incomplete) return false;
   return triage.hits.some((hit) => guardFindingNeedsReview(hit.code));
+}
+
+/**
+ * What a level does with a suspicious item that the Guard cannot clear. The reviewer's ask or block,
+ * a high finding, an action that was not read in full and a secret that would leave decide the same at
+ * every level; the levels differ only here.
+ */
+const LEVEL_RULES = {
+  /** Calm: content passes with a note, an action passes, and a covered "allow" of the reviewer clears. */
+  light: { content: "note", actions: "allow", modelCanClear: true },
+  /** Asks whenever the reviewer did not clear the item, for content and for actions. */
+  strict: { content: "ask", actions: "ask", modelCanClear: true },
+  /** The reviewer never clears a suspicious item: the person decides each one. */
+  "very-strict": { content: "ask", actions: "ask", modelCanClear: false },
+} as const satisfies Record<string, GuardCustomRules>;
+
+function guardRules(level: GuardAvailableLevel, custom: GuardCustomRules | undefined): GuardCustomRules {
+  if (level === "custom") return custom ?? LEVEL_RULES.light;
+  if (level === "strict" || level === "very-strict") return LEVEL_RULES[level];
+  return LEVEL_RULES.light;
 }
 
 const GUARD_ALLOW: GuardDecision = {
@@ -84,7 +104,7 @@ const GUARD_ALLOW: GuardDecision = {
 };
 
 /**
- * The Light level. Its concern is prompt injection, and it must not stop the work:
+ * The Light level, which the other levels build on. Its concern is prompt injection, and it must not stop the work:
  * - An action that sends a cookie, a session or a sign-in token to a third party: it stops, and no
  *   model or card can let it go.
  * - Clean: the item passes, and no model is asked.
@@ -101,11 +121,14 @@ const GUARD_ALLOW: GuardDecision = {
  */
 export function decideGuard(input: {
   level: GuardAvailableLevel;
+  /** The rules of the Custom level. Other levels ignore them. */
+  custom?: GuardCustomRules;
   direction: GuardDirection;
   triage: GuardTriage;
   judge: GuardJudgeOutcome;
 }): GuardDecision {
   const { triage, judge } = input;
+  const rules = guardRules(input.level, input.custom);
   if (input.level === "off") return { ...GUARD_ALLOW, by: "off" };
   if (triage.level === "clean") return GUARD_ALLOW;
   const reason = triageReason(triage);
@@ -130,14 +153,12 @@ export function decideGuard(input: {
         modelReason: verdict.reason,
       };
     }
-    if (judge.covered) return { ...GUARD_ALLOW, by: "model" };
-    if (outbound) return { action: "ask", ...local, by: "model" };
+    if (judge.covered && rules.modelCanClear) return { ...GUARD_ALLOW, by: "model" };
+    if (!judge.covered && outbound) return { action: "ask", ...local, by: "model" };
   }
   if (outbound && judge.kind === "failed" && judge.failure === "busy")
     return { action: "ask", ...local, by: "fallback" };
-  return {
-    action: input.direction === "inbound" ? "annotate" : "allow",
-    ...local,
-    by: judge.kind === "not-needed" ? "local" : "fallback",
-  };
+  const by = judge.kind === "not-needed" ? "local" : "fallback";
+  if (outbound) return { action: rules.actions === "ask" ? "ask" : "allow", ...local, by };
+  return { action: rules.content === "ask" ? "ask" : "annotate", ...local, by };
 }

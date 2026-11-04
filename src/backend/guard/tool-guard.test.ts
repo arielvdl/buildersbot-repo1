@@ -1,7 +1,12 @@
 // The Guard at run time with a fake reviewer: when it asks a model, what it does when the model
 // fails or answers outside the schema, and what it writes to the log. The log is a record that
 // leaves the check, so it must hold verdicts and times only, never the content.
-import { DEFAULT_GUARD_PREFERENCE, type GuardJudgeChoice, type GuardPreference } from "@buildersbot/contracts/ipc";
+import {
+  DEFAULT_GUARD_CUSTOM_RULES,
+  DEFAULT_GUARD_PREFERENCE,
+  type GuardJudgeChoice,
+  type GuardPreference,
+} from "@buildersbot/contracts/ipc";
 import { Effect, Fiber } from "effect";
 import { describe, expect, it } from "vitest";
 import { judgeExcerpt } from "./guard-excerpt";
@@ -320,7 +325,7 @@ describe("decideGuard", () => {
       }).ownerOnly,
     ).toBe(true);
   });
-  it("treats a planned level as Light, and off as off", () => {
+  it("runs every level as itself, and off as off", () => {
     expect(
       decideGuard({ level: "off", direction: "outbound", triage: suspicious, judge: { kind: "not-needed" } }),
     ).toMatchObject({ action: "allow", by: "off" });
@@ -343,6 +348,60 @@ describe("decideGuard", () => {
         judge: { kind: "verdict", verdict: { verdict: "allow", category: "none", reason: "r" }, covered: false },
       }),
     ).toMatchObject({ action: "annotate" });
+  });
+
+  describe("the stricter levels", () => {
+    const covered = {
+      kind: "verdict",
+      verdict: { verdict: "allow", category: "none", reason: "r" },
+      covered: true,
+    } as const;
+    const noVerdict = { kind: "unavailable" } as const;
+    const run = (
+      level: "light" | "strict" | "very-strict" | "custom",
+      direction: "inbound" | "outbound",
+      judge: Parameters<typeof decideGuard>[0]["judge"],
+      custom?: Parameters<typeof decideGuard>[0]["custom"],
+    ) => decideGuard({ level, direction, triage: suspicious, judge, ...(custom ? { custom } : {}) }).action;
+
+    it("Strict asks when the model gave no verdict, and lets a covered allow clear", () => {
+      expect(run("light", "inbound", noVerdict)).toBe("annotate");
+      expect(run("light", "outbound", noVerdict)).toBe("allow");
+      expect(run("strict", "inbound", noVerdict)).toBe("ask");
+      expect(run("strict", "outbound", noVerdict)).toBe("ask");
+      expect(run("strict", "inbound", covered)).toBe("allow");
+      expect(run("strict", "outbound", covered)).toBe("allow");
+    });
+
+    it("Very strict never lets the model clear a suspicious item", () => {
+      expect(run("very-strict", "inbound", covered)).toBe("ask");
+      expect(run("very-strict", "outbound", covered)).toBe("ask");
+    });
+
+    it("Custom follows the rules, and starts as Light", () => {
+      expect(run("custom", "inbound", noVerdict, DEFAULT_GUARD_CUSTOM_RULES)).toBe("annotate");
+      expect(run("custom", "outbound", noVerdict, DEFAULT_GUARD_CUSTOM_RULES)).toBe("allow");
+      expect(run("custom", "inbound", noVerdict, { content: "ask", actions: "allow", modelCanClear: true })).toBe(
+        "ask",
+      );
+      expect(run("custom", "outbound", noVerdict, { content: "note", actions: "ask", modelCanClear: true })).toBe(
+        "ask",
+      );
+      expect(run("custom", "inbound", covered, { content: "note", actions: "allow", modelCanClear: false })).toBe(
+        "annotate",
+      );
+      expect(run("custom", "outbound", covered, { content: "note", actions: "allow", modelCanClear: false })).toBe(
+        "allow",
+      );
+    });
+
+    it("never blocks by itself at any level", () => {
+      for (const level of ["strict", "very-strict", "custom"] as const) {
+        expect(run(level, "outbound", { kind: "failed", failure: "timeout" }, DEFAULT_GUARD_CUSTOM_RULES)).not.toBe(
+          "block",
+        );
+      }
+    });
   });
 
   it("never blocks at Light", () => {
@@ -386,7 +445,11 @@ describe("ToolGuard.ask, for the task reviewer of the load panel", () => {
       },
     };
     const guard = new ToolGuard({
-      preference: () => ({ level: "off", judge: { provider: "codex", model: "gpt-5" } }),
+      preference: () => ({
+        level: "off",
+        judge: { provider: "codex", model: "gpt-5" },
+        custom: DEFAULT_GUARD_CUSTOM_RULES,
+      }),
       models: [gateway.port, codex],
       log: { info: () => {} },
       timeoutMs: 50,

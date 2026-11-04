@@ -1,4 +1,10 @@
-import { GUARD_LEVELS, type GuardLevel, guardEffectiveLevel, isGuardAvailableLevel } from "@buildersbot/contracts/ipc";
+import {
+  DEFAULT_GUARD_CUSTOM_RULES,
+  GUARD_LEVELS,
+  type GuardLevel,
+  guardEffectiveLevel,
+  isGuardAvailableLevel,
+} from "@buildersbot/contracts/ipc";
 import type { AppTextKey } from "@buildersbot/i18n";
 import {
   Alert,
@@ -20,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
   SettingsSection,
+  SwitchField,
   TriangleAlert,
 } from "@buildersbot/ui";
 import { GuardLevelChoice, GuardSirenHero, type GuardSirenStatus } from "@buildersbot/ui/features/guard/GuardSiren";
@@ -36,6 +43,15 @@ const LEVEL_LABEL = {
 } as const satisfies Record<GuardLevel, AppTextKey>;
 
 /** The points of "When the Guard asks you" and "What leaves the computer". */
+/** What each level says about itself, under the level choice. */
+const LEVEL_EXPLAIN = {
+  off: "guard.level.offExplain",
+  light: "guard.level.lightExplain",
+  strict: "guard.level.strictExplain",
+  "very-strict": "guard.level.veryStrictExplain",
+  custom: "guard.level.customExplain",
+} as const satisfies Record<GuardLevel, AppTextKey>;
+
 const ASK = ["guard.ask.card", "guard.ask.remember", "guard.ask.owner"] as const satisfies ReadonlyArray<AppTextKey>;
 const LEAVES = [
   "guard.leaves.suspicious",
@@ -80,10 +96,8 @@ export function SettingsGuardTab(props: {
   const level = () => savedLevel() ?? "light";
   const judge = () => guard()?.preference.judge ?? null;
   const busy = () => guard() === null || props.store.state.saving;
-  const levelLabel = (value: GuardLevel) =>
-    isGuardAvailableLevel(value)
-      ? t(LEVEL_LABEL[value])
-      : t("guard.level.comingSoon", { level: t(LEVEL_LABEL[value]) });
+  const levelLabel = (value: GuardLevel) => t(LEVEL_LABEL[value]);
+  const custom = () => guard()?.preference.custom ?? DEFAULT_GUARD_CUSTOM_RULES;
   const rowLabel = (row: GuardModelRow | undefined) => {
     const name = guardModelName(row, t);
     return row?.recommended ? t("guard.model.recommended", { name }) : name;
@@ -138,7 +152,6 @@ export function SettingsGuardTab(props: {
                 options={[...GUARD_LEVELS]}
                 value={level()}
                 disabled={busy()}
-                optionDisabled={(option) => !isGuardAvailableLevel(option)}
                 onChange={chooseLevel}
                 placement="bottom-end"
                 itemComponent={(itemProps) => (
@@ -154,11 +167,35 @@ export function SettingsGuardTab(props: {
           </Item>
           <Item class="settings-modal-row">
             <ItemContent>
-              <ItemDescription>
-                {level() === "off" ? t("guard.level.offExplain") : t("guard.level.lightExplain")}
-              </ItemDescription>
+              <ItemDescription>{t(LEVEL_EXPLAIN[level()])}</ItemDescription>
             </ItemContent>
           </Item>
+          <Show when={level() === "custom"}>
+            <SwitchField
+              data-settings-row="guard.custom.content.title"
+              checked={custom().content === "ask"}
+              disabled={busy()}
+              onChange={(checked) => props.store.setCustom({ ...custom(), content: checked ? "ask" : "note" })}
+              label={t("guard.custom.content.title")}
+              description={t("guard.custom.content.description")}
+            />
+            <SwitchField
+              data-settings-row="guard.custom.actions.title"
+              checked={custom().actions === "ask"}
+              disabled={busy()}
+              onChange={(checked) => props.store.setCustom({ ...custom(), actions: checked ? "ask" : "allow" })}
+              label={t("guard.custom.actions.title")}
+              description={t("guard.custom.actions.description")}
+            />
+            <SwitchField
+              data-settings-row="guard.custom.model.title"
+              checked={custom().modelCanClear}
+              disabled={busy()}
+              onChange={(checked) => props.store.setCustom({ ...custom(), modelCanClear: checked })}
+              label={t("guard.custom.model.title")}
+              description={t("guard.custom.model.description")}
+            />
+          </Show>
           <Show when={level() !== "off"}>
             <Item data-settings-row="guard.model.title" class="settings-modal-row">
               <ItemContent>

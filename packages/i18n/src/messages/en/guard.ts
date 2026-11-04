@@ -13,14 +13,27 @@ export const messages = defineMessages("guard", {
   "guard.level.strict": "Strict",
   "guard.level.veryStrict": "Very strict",
   "guard.level.custom": "Custom",
-  "guard.level.comingSoon": "{level} (coming soon)",
   "guard.level.choose": "Choose the level",
   "guard.level.chosen": "Chosen",
-  "guard.level.soon": "Soon",
   "guard.level.offExplain":
     "The Guard is asleep and checks nothing. Choose Off only to turn the Guard off completely. You can turn it on again at any time.",
   "guard.level.lightExplain":
     "At Light, the Guard looks for prompt injection. It checks content that enters an agent's work, such as web pages and tool results, and actions that leave it, such as URLs, typed text and chat posts. A fast local check reads everything first. A small model reviews only what looks suspicious. When the Guard finds a clear risk, it asks you on the approval card. It never stops the work by itself.",
+  "guard.level.strictExplain":
+    "At Strict, the Guard does everything Light does, and it also asks you when it cannot clear a suspicious item: content and actions both wait for your answer on the approval card unless the review model clears them. It never stops the work by itself, except for a cookie, a session or a sign-in token that would leave this computer.",
+  "guard.level.veryStrictExplain":
+    "At Very strict, the review model never clears a suspicious item. Every suspicious item, content that enters and action that leaves alike, waits for your answer on the approval card. The model still reads it first, so the card can tell you why it looks risky.",
+  "guard.level.customExplain":
+    "At Custom, you choose what happens to a suspicious item that the Guard cannot clear. A clear risk still asks you, and a cookie, a session or a sign-in token that would leave this computer still stops, at every level.",
+  "guard.custom.content.title": "Ask before suspicious content passes",
+  "guard.custom.content.description":
+    "Off, suspicious content from a page or a tool passes with a note to the agent that it is data, not instructions.",
+  "guard.custom.actions.title": "Ask before a suspicious action leaves",
+  "guard.custom.actions.description":
+    "Off, a suspicious action, such as a URL, typed text or a chat post, goes through without asking.",
+  "guard.custom.model.title": "Let the review model clear suspicious items",
+  "guard.custom.model.description":
+    "Off, the model can still raise a question, but it can never clear an item: the two choices above decide.",
   "guard.model.title": "Review model",
   "guard.model.description":
     "The model that reviews suspicious items. It gets only a short part of the item, at most 2,000 characters, with secrets masked. It never gets the conversation.",
@@ -35,7 +48,7 @@ export const messages = defineMessages("guard", {
   "guard.notice.localOnly": "The Guard uses only the local check. Nothing goes over the network.",
   "guard.notice.unavailable.title": "The review model is not available",
   "guard.notice.unavailable.description":
-    "The Guard uses only the local check now: suspicious content gets a note, and a suspicious action passes. Choose another model, or connect its provider again.",
+    "The Guard uses only the local check now, and the model cannot clear a suspicious item: the rules of the level decide it (at Light, content gets a note and an action passes). Choose another model, or connect its provider again.",
   "guard.coverage.title": "What the Guard checks now",
   "guard.coverage.description":
     "Pages that the built-in browser and the shared Playwright browser read; the URLs, text, scripts and files that the browser sends; chat posts, attachments, sites and new MCP servers; and the commands that an agent asks you to approve. Tools that a provider runs in its own process, and MCP servers that it reaches directly, are not checked yet.",

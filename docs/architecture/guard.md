@@ -9,17 +9,20 @@ tool results while the turn runs.
 
 ## Levels
 
-| Level | Saved value | State |
+| Level | Saved value | What it does |
 | --- | --- | --- |
-| Off (asleep) | `off` | Runs now. The Guard checks nothing. |
-| Light | `light` | Runs now. The default. |
-| Strict | `strict` | Planned. Shows as "coming soon". |
-| Very strict | `very-strict` | Planned. Shows as "coming soon". |
-| Custom | `custom` | Planned. Shows as "coming soon". |
+| Off (asleep) | `off` | The Guard checks nothing. |
+| Light | `light` | The default. Content with no clear verdict passes with a note; an action passes. |
+| Strict | `strict` | Light, and a suspicious item that the reviewer did not clear asks the person, content and actions alike. |
+| Very strict | `very-strict` | The reviewer never clears a suspicious item: each one asks the person. |
+| Custom | `custom` | The person sets the rules (`GuardCustomRules`): ask or note for content, ask or allow for actions, and whether the reviewer may clear. It starts as Light. |
 
 The list in `GUARD_LEVELS` (`packages/contracts/src/ipc-guard.ts`) is stable: a saved value never
-changes its meaning. A window can choose only a level of `GUARD_AVAILABLE_LEVELS`. A saved planned
-level runs as Light until it exists (`guardEffectiveLevel`).
+changes its meaning. Every level can be chosen. The levels differ only for a suspicious item that
+the Guard cannot clear (`LEVEL_RULES` in `guard-policy.ts`). At every level, a high finding asks, an
+action that was not read in full asks, a secret that would leave still stops, and the reviewer can
+raise a question but never lower one. The rules of Custom are saved beside the level in
+`buildersbot-guard-v1.json`; a file from before them reads as the Light rules.
 
 ## Light
 

@@ -3,6 +3,7 @@ import {
   type ClientAgentModelOption,
   DEFAULT_GUARD_JUDGE,
   type GuardAvailableLevel,
+  type GuardCustomRules,
   type GuardJudgeChoice,
   type GuardPreferenceChange,
   type GuardState,
@@ -152,6 +153,7 @@ export function createSettingsGuardStore(active: () => boolean) {
     state,
     rows: () => guardModelRows(state.models, state.guard?.preference.judge ?? null),
     setLevel: (level: GuardAvailableLevel) => save({ level }),
+    setCustom: (custom: GuardCustomRules) => save({ custom }),
     setJudge: (choice: GuardJudgeChoice | null) => save({ judge: choice }),
   };
 }

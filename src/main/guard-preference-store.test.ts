@@ -1,10 +1,14 @@
 // @vitest-environment node
 // The Guard preference: its default, a damaged file, and the change a window sends across the
-// renderer-to-main boundary. A window can choose only a level that this version runs.
+// renderer-to-main boundary. A window can choose every level and set the rules of Custom.
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_GUARD_PREFERENCE, parseGuardPreferenceChange } from "@buildersbot/contracts/ipc";
+import {
+  DEFAULT_GUARD_CUSTOM_RULES,
+  DEFAULT_GUARD_PREFERENCE,
+  parseGuardPreferenceChange,
+} from "@buildersbot/contracts/ipc";
 import { Effect } from "effect";
 import { afterEach, describe, expect, it } from "vitest";
 import { decodeGuardState } from "../preload/guard-decoding";
@@ -27,7 +31,21 @@ describe("the Guard preference", () => {
     expect(store.get()).toEqual({
       level: "light",
       judge: { provider: "cultura-builder", model: "cultura-builder/builder-fast" },
+      custom: DEFAULT_GUARD_CUSTOM_RULES,
     });
+  });
+
+  it("reads a file from before the Custom level with the default rules, and keeps saved rules", async () => {
+    const file = await path();
+    await writeFile(file, JSON.stringify({ version: 1, level: "off", judge: null }));
+    const old = new GuardPreferenceStore(file);
+    await Effect.runPromise(old.load());
+    expect(old.get()).toEqual({ level: "off", judge: null, custom: DEFAULT_GUARD_CUSTOM_RULES });
+    const rules = { content: "ask", actions: "ask", modelCanClear: false } as const;
+    await Effect.runPromise(old.set({ level: "custom", custom: rules }));
+    const again = new GuardPreferenceStore(file);
+    await Effect.runPromise(again.load());
+    expect(again.get()).toEqual({ level: "custom", judge: null, custom: rules });
   });
 
   it("reads a damaged file, another version or another shape as the default, never as off", async () => {
@@ -38,6 +56,7 @@ describe("the Guard preference", () => {
       JSON.stringify({ version: 1, level: "asleep", judge: null }),
       JSON.stringify({ version: 1, level: "off", judge: { provider: "nobody", model: "x" } }),
       JSON.stringify({ version: 1, level: "off" }),
+      JSON.stringify({ version: 1, level: "off", judge: null, custom: { content: "maybe" } }),
     ]) {
       await writeFile(file, content);
       const store = new GuardPreferenceStore(file);
@@ -53,9 +72,9 @@ describe("the Guard preference", () => {
     await Effect.runPromise(first.set({ judge: null }));
     const again = new GuardPreferenceStore(file);
     await Effect.runPromise(again.load());
-    expect(again.get()).toEqual({ level: "off", judge: null });
+    expect(again.get()).toEqual({ level: "off", judge: null, custom: DEFAULT_GUARD_CUSTOM_RULES });
     await Effect.runPromise(again.set({ level: "light" }));
-    expect(again.get()).toEqual({ level: "light", judge: null });
+    expect(again.get()).toEqual({ level: "light", judge: null, custom: DEFAULT_GUARD_CUSTOM_RULES });
   });
 });
 
@@ -63,6 +82,10 @@ describe("parseGuardPreferenceChange", () => {
   it("accepts a level that this version runs, a model choice, or none", () => {
     expect(parseGuardPreferenceChange({ level: "off" })).toEqual({ level: "off" });
     expect(parseGuardPreferenceChange({ judge: null })).toEqual({ judge: null });
+    for (const level of ["strict", "very-strict", "custom"] as const)
+      expect(parseGuardPreferenceChange({ level })).toEqual({ level });
+    const custom = { content: "ask", actions: "allow", modelCanClear: false } as const;
+    expect(parseGuardPreferenceChange({ custom })).toEqual({ custom });
     expect(
       parseGuardPreferenceChange({ level: "light", judge: { provider: "claude", model: "claude-haiku" } }),
     ).toEqual({ level: "light", judge: { provider: "claude", model: "claude-haiku" } });
@@ -71,8 +94,8 @@ describe("parseGuardPreferenceChange", () => {
   it.each([
     ["nothing", undefined],
     ["an empty change", {}],
-    ["a planned level", { level: "strict" }],
-    ["a custom level", { level: "custom" }],
+    ["rules with an unknown value", { custom: { content: "maybe", actions: "allow", modelCanClear: true } }],
+    ["rules with a missing field", { custom: { content: "ask", actions: "allow" } }],
     ["an unknown level", { level: "asleep" }],
     ["an unknown field", { level: "off", timeoutMs: 1 }],
     ["an unknown provider", { judge: { provider: "evil", model: "x" } }],
@@ -89,6 +112,11 @@ describe("decodeGuardState", () => {
     const state = { preference: DEFAULT_GUARD_PREFERENCE, judgeReady: false };
     expect(decodeGuardState(state)).toEqual(state);
     expect(() => decodeGuardState({ preference: DEFAULT_GUARD_PREFERENCE })).toThrow();
-    expect(() => decodeGuardState({ preference: { level: "x", judge: null }, judgeReady: true })).toThrow();
+    expect(() =>
+      decodeGuardState({
+        preference: { level: "x", judge: null, custom: DEFAULT_GUARD_CUSTOM_RULES },
+        judgeReady: true,
+      }),
+    ).toThrow();
   });
 });

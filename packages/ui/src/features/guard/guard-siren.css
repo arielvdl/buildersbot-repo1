@@ -475,7 +475,7 @@
   height: 44px;
 }
 
-/* A level that comes later shows its box faded. */
+/* While the level loads, the cards show their boxes faded. */
 .guard-level-card[data-disabled] .guard-level-box {
   opacity: 0.45;
 }
@@ -490,12 +490,6 @@
 
 .guard-level-card[data-checked] .guard-level-name {
   font-weight: var(--buildersbot-weight-bold);
-}
-
-.guard-level-soon {
-  color: var(--buildersbot-text-muted);
-  font-size: var(--buildersbot-text-sm);
-  line-height: var(--buildersbot-leading-sm);
 }
 
 @media (prefers-reduced-motion: reduce) {

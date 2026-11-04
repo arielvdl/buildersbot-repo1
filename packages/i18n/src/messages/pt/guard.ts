@@ -13,14 +13,27 @@ export const messages = {
   "guard.level.strict": "Exigente",
   "guard.level.veryStrict": "Muito exigente",
   "guard.level.custom": "Personalizado",
-  "guard.level.comingSoon": "{level} (em breve)",
   "guard.level.choose": "Escolha o nível",
   "guard.level.chosen": "Escolhido",
-  "guard.level.soon": "Em breve",
   "guard.level.offExplain":
     "O Guarda está dormindo e não confere nada. Escolha Desligado só para desligar o Guarda por completo. Você pode ligá-lo de novo quando quiser.",
   "guard.level.lightExplain":
     "No nível Leve, o Guarda procura injeção de prompt. Ele confere o conteúdo que entra no trabalho de um agente, como páginas da web e resultados de ferramentas, e as ações que saem, como URLs, texto digitado e posts em chats. Uma verificação local rápida lê tudo primeiro. Um modelo pequeno revisa só o que parece suspeito. Quando o Guarda encontra um risco claro, ele pergunta a você no cartão de aprovação. Ele nunca para o trabalho sozinho.",
+  "guard.level.strictExplain":
+    "No nível Exigente, o Guarda faz tudo o que o Leve faz e também pergunta a você quando não consegue liberar um item suspeito: conteúdo e ações esperam sua resposta no cartão de aprovação, a menos que o modelo de revisão libere. Ele nunca para o trabalho sozinho, exceto por um cookie, uma sessão ou um token de login que sairia deste computador.",
+  "guard.level.veryStrictExplain":
+    "No nível Muito exigente, o modelo de revisão nunca libera um item suspeito. Todo item suspeito, conteúdo que entra ou ação que sai, espera sua resposta no cartão de aprovação. O modelo ainda lê o item antes, para o cartão dizer por que ele parece arriscado.",
+  "guard.level.customExplain":
+    "No nível Personalizado, você escolhe o que acontece com um item suspeito que o Guarda não consegue liberar. Um risco claro ainda pergunta a você, e um cookie, uma sessão ou um token de login que sairia deste computador ainda é barrado, em todos os níveis.",
+  "guard.custom.content.title": "Perguntar antes de deixar passar conteúdo suspeito",
+  "guard.custom.content.description":
+    "Desligado, o conteúdo suspeito de uma página ou ferramenta passa com uma nota para o agente de que é dado, não instrução.",
+  "guard.custom.actions.title": "Perguntar antes de uma ação suspeita sair",
+  "guard.custom.actions.description":
+    "Desligado, uma ação suspeita, como uma URL, um texto digitado ou um post em chat, segue sem perguntar.",
+  "guard.custom.model.title": "Deixar o modelo de revisão liberar itens suspeitos",
+  "guard.custom.model.description":
+    "Desligado, o modelo ainda pode levantar uma pergunta, mas nunca libera um item: as duas escolhas acima decidem.",
   "guard.model.title": "Modelo de revisão",
   "guard.model.description":
     "O modelo que revisa os itens suspeitos. Ele recebe só um trecho curto do item, no máximo 2.000 caracteres, com os segredos mascarados. Ele nunca recebe a conversa.",
@@ -35,7 +48,7 @@ export const messages = {
   "guard.notice.localOnly": "O Guarda usa só a verificação local. Nada vai pela rede.",
   "guard.notice.unavailable.title": "O modelo revisor não está disponível",
   "guard.notice.unavailable.description":
-    "Agora o Guarda usa só a verificação local: conteúdo suspeito recebe uma nota, e uma ação suspeita passa. Escolha outro modelo ou conecte o provedor dele de novo.",
+    "Agora o Guarda usa só a verificação local, e o modelo não libera item suspeito: as regras do nível decidem (no Leve, conteúdo recebe uma nota e uma ação passa). Escolha outro modelo ou conecte o provedor dele de novo.",
   "guard.coverage.title": "O que o Guarda confere agora",
   "guard.coverage.description":
     "As páginas que o navegador interno e o navegador Playwright compartilhado leem; as URLs, o texto, os scripts e os arquivos que o navegador envia; posts em chats, anexos, sites e novos servidores MCP; e os comandos que um agente pede para você aprovar. As ferramentas que um provedor roda no próprio processo, e os servidores MCP que ele acessa direto, ainda não são conferidos.",

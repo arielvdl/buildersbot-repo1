@@ -134,7 +134,7 @@ export class ToolGuard {
     const judge: GuardJudgeOutcome = guardNeedsJudge(level, item.direction, triage)
       ? yield* this.#review(preference.judge, item, triage)
       : { kind: "not-needed" };
-    const decision = decideGuard({ level, direction: item.direction, triage, judge });
+    const decision = decideGuard({ level, custom: preference.custom, direction: item.direction, triage, judge });
     const result: GuardResult = {
       ...decision,
       durationMs: Math.round(this.#now() - started),

@@ -10,13 +10,13 @@ import { isDynamicRecord, isOneOf } from "./runtime-values";
 
 /**
  * Every level of the Guard, from off to the most careful. The list is stable: a saved level never
- * changes its meaning. Only `GUARD_AVAILABLE_LEVELS` can be chosen now; the others are planned.
+ * changes its meaning. Every level can be chosen.
  */
 export const GUARD_LEVELS = ["off", "light", "strict", "very-strict", "custom"] as const;
 export type GuardLevel = (typeof GUARD_LEVELS)[number];
 
-/** The levels that this version runs. The other levels show as "coming soon". */
-export const GUARD_AVAILABLE_LEVELS = ["off", "light"] as const satisfies readonly GuardLevel[];
+/** The levels that this version runs: all of them. */
+export const GUARD_AVAILABLE_LEVELS = GUARD_LEVELS satisfies readonly GuardLevel[];
 export type GuardAvailableLevel = (typeof GUARD_AVAILABLE_LEVELS)[number];
 
 export function isGuardAvailableLevel(value: unknown): value is GuardAvailableLevel {
@@ -64,16 +64,37 @@ export const GUARD_JUDGE_TIMEOUT_MS = 4_000;
 /** The most characters of one suspicious item that the reviewer receives, after secrets are masked. */
 export const GUARD_JUDGE_EXCERPT_LIMIT = 2_000;
 
+/**
+ * The rules of the Custom level, for a suspicious item that the Guard cannot clear:
+ * - `content`: what happens to content that enters. `note` passes it with a note to the agent; `ask`
+ *   asks the person first.
+ * - `actions`: what happens to an action that leaves. `allow` lets it go; `ask` asks the person first.
+ * - `modelCanClear`: whether the reviewer model may clear a suspicious item. Off, a suspicious item is
+ *   always handled by the two rules above, whatever the model says.
+ * A clear risk (a high finding) still asks, and a secret that would leave still stops, at every level.
+ */
+export interface GuardCustomRules {
+  content: "note" | "ask";
+  actions: "allow" | "ask";
+  modelCanClear: boolean;
+}
+
+/** The starting rules of Custom: the same as Light. */
+export const DEFAULT_GUARD_CUSTOM_RULES: GuardCustomRules = { content: "note", actions: "allow", modelCanClear: true };
+
 export interface GuardPreference {
   /** Light by default. */
   level: GuardLevel;
   /** The reviewer of suspicious items. Null uses the local check only, and sends nothing out. */
   judge: GuardJudgeChoice | null;
+  /** The rules that the Custom level uses. The other levels ignore them. */
+  custom: GuardCustomRules;
 }
 
 export const DEFAULT_GUARD_PREFERENCE: GuardPreference = {
   level: "light",
   judge: DEFAULT_GUARD_JUDGE,
+  custom: DEFAULT_GUARD_CUSTOM_RULES,
 };
 
 /** What the settings screen shows: the preference, and whether the chosen reviewer can run now. */
@@ -90,6 +111,16 @@ export interface GuardState {
 export interface GuardPreferenceChange {
   level?: GuardAvailableLevel;
   judge?: GuardJudgeChoice | null;
+  custom?: GuardCustomRules;
+}
+
+export function isGuardCustomRules(value: unknown): value is GuardCustomRules {
+  return (
+    isDynamicRecord(value) &&
+    (value.content === "note" || value.content === "ask") &&
+    (value.actions === "allow" || value.actions === "ask") &&
+    typeof value.modelCanClear === "boolean"
+  );
 }
 
 export function isGuardJudgeChoice(value: unknown): value is GuardJudgeChoice {
@@ -108,7 +139,8 @@ export function isGuardPreference(value: unknown): value is GuardPreference {
   return (
     isDynamicRecord(value) &&
     isOneOf(GUARD_LEVELS, value.level) &&
-    (value.judge === null || isGuardJudgeChoice(value.judge))
+    (value.judge === null || isGuardJudgeChoice(value.judge)) &&
+    isGuardCustomRules(value.custom)
   );
 }
 
@@ -124,7 +156,8 @@ export function parseGuardPreferenceChange(input: unknown): GuardPreferenceChang
   if (!isDynamicRecord(input)) throw new Error("The Guard change is required.");
   const change: GuardPreferenceChange = {};
   for (const key of Object.keys(input)) {
-    if (key !== "level" && key !== "judge") throw new Error("The Guard change has an unknown field.");
+    if (key !== "level" && key !== "judge" && key !== "custom")
+      throw new Error("The Guard change has an unknown field.");
   }
   if ("level" in input) {
     if (!isGuardAvailableLevel(input.level)) throw new Error("The Guard level is invalid.");
@@ -134,11 +167,16 @@ export function parseGuardPreferenceChange(input: unknown): GuardPreferenceChang
     if (input.judge !== null && !isGuardJudgeChoice(input.judge)) throw new Error("The Guard model is invalid.");
     change.judge = input.judge === null ? null : { provider: input.judge.provider, model: input.judge.model };
   }
+  if ("custom" in input) {
+    if (!isGuardCustomRules(input.custom)) throw new Error("The Guard rules are invalid.");
+    const { content, actions, modelCanClear } = input.custom;
+    change.custom = { content, actions, modelCanClear };
+  }
   if (Object.keys(change).length === 0) throw new Error("The Guard change is required.");
   return change;
 }
 
-/** The level that the Guard runs for a saved level. A planned level runs as Light until it exists. */
+/** The level that the Guard runs for a saved level. Every level runs as itself. */
 export function guardEffectiveLevel(level: GuardLevel): GuardAvailableLevel {
-  return level === "off" ? "off" : "light";
+  return level;
 }

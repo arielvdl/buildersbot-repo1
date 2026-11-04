@@ -340,6 +340,21 @@ export const navItems: ReadonlyArray<SettingsNavItem> = [
         descriptionKey: "guard.model.description",
         keywordsKey: "settings.search.keywords.guardModel",
       },
+      {
+        anchor: "guard.custom.content.title",
+        descriptionKey: "guard.custom.content.description",
+        keywordsKey: "settings.search.keywords.guardCustomContent",
+      },
+      {
+        anchor: "guard.custom.actions.title",
+        descriptionKey: "guard.custom.actions.description",
+        keywordsKey: "settings.search.keywords.guardCustomActions",
+      },
+      {
+        anchor: "guard.custom.model.title",
+        descriptionKey: "guard.custom.model.description",
+        keywordsKey: "settings.search.keywords.guardCustomModel",
+      },
       { anchor: "guard.ask.title", descriptionKey: "guard.ask.card", keywordsKey: "settings.search.keywords.guardAsk" },
       {
         anchor: "guard.leaves.title",

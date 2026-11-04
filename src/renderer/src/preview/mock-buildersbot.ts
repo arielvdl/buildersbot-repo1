@@ -1780,6 +1780,7 @@ export function createMockBuildersBot(options: MockBuildersBotOptions = {}): Moc
         guardPreference = {
           level: change.level ?? guardPreference.level,
           judge: change.judge === undefined ? guardPreference.judge : change.judge,
+          custom: change.custom ?? guardPreference.custom,
         };
         return { preference: clone(guardPreference), judgeReady: false };
       },

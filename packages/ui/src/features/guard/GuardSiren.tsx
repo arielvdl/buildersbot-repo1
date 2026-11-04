@@ -227,9 +227,8 @@ export function GuardSirenHero(props: { level: GuardLevel | null; status: GuardS
 
 /**
  * The level cards under the siren, as in the approved P1 mockup: one card for each level, with the
- * Guard's box of that level. Off and Light can be chosen; the stricter levels show "Soon". The card of
- * the chosen level is lifted and marked, in neutral colors. It is a radio group, so the arrow keys
- * move between the levels that can be chosen.
+ * Guard's box of that level. Every level can be chosen. The card of the chosen level is lifted and
+ * marked, in neutral colors. It is a radio group, so the arrow keys move between the levels.
  */
 export function GuardLevelChoice(props: {
   /** Null while the level is not known: no card is chosen. */
@@ -251,7 +250,7 @@ export function GuardLevelChoice(props: {
     >
       <For each={GUARD_LEVELS}>
         {(level) => (
-          <RadioGroup.Item class="guard-level-option" value={level} disabled={!isGuardAvailableLevel(level)}>
+          <RadioGroup.Item class="guard-level-option" value={level}>
             <RadioGroup.ItemInput />
             <RadioGroup.ItemControl class="guard-level-card">
               <span class="guard-level-chosen" aria-hidden="true">
@@ -259,11 +258,6 @@ export function GuardLevelChoice(props: {
               </span>
               <GuardBox level={level} class="guard-level-box" />
               <RadioGroup.ItemLabel class="guard-level-name">{t(LEVEL_NAME[level])}</RadioGroup.ItemLabel>
-              <Show when={!isGuardAvailableLevel(level)}>
-                <RadioGroup.ItemDescription class="guard-level-soon">
-                  {t("guard.level.soon")}
-                </RadioGroup.ItemDescription>
-              </Show>
             </RadioGroup.ItemControl>
           </RadioGroup.Item>
         )}
