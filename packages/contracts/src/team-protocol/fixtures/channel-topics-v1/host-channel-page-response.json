@@ -1,0 +1,66 @@
+{
+  "channel": {
+    "name": "launch",
+    "title": "Launch",
+    "instructions": "",
+    "members": [
+      {
+        "agentId": "agent-1"
+      },
+      {
+        "agentId": "agent-2"
+      }
+    ],
+    "leadAgentId": "agent-1",
+    "id": "channel-1",
+    "archived": false,
+    "revision": 3,
+    "createdAt": "2026-10-20T09:00:00.000Z"
+  },
+  "topicId": "buildersbot-topic-2",
+  "messages": [
+    {
+      "id": "channel-message-1",
+      "channelId": "channel-1",
+      "topicId": "buildersbot-topic-2",
+      "sequence": 1,
+      "author": {
+        "kind": "member",
+        "id": "member-1",
+        "name": "Grace"
+      },
+      "taskId": "task-1",
+      "superseded": false,
+      "message": {
+        "id": "message-1",
+        "author": "user",
+        "text": "Draft the docs.",
+        "createdAt": "2026-10-21T08:30:00.000Z",
+        "status": "completed"
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-1",
+      "channelId": "channel-1",
+      "topicId": "buildersbot-topic-2",
+      "parentTaskId": null,
+      "rootTaskId": "task-1",
+      "ownerAgentId": "agent-1",
+      "requestMessageId": "channel-message-1",
+      "instruction": "Draft the docs.",
+      "attachmentDraftIds": [],
+      "expectedResult": "Complete the requested work and report the result.",
+      "sourceMessageIds": ["channel-message-1"],
+      "dependencies": [],
+      "resources": [],
+      "state": "running",
+      "revision": 1,
+      "assignmentCount": 1,
+      "error": null
+    }
+  ],
+  "olderCursor": null,
+  "throughSequence": 1
+}

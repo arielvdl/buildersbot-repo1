@@ -35,6 +35,7 @@ export interface RemoteJsonRequestOptions {
   capabilities?: readonly TeamCurrentCapability[] | undefined;
   preserveSemanticTags?: boolean | undefined;
   agentCreateModel?: boolean | undefined;
+  channelTopics?: boolean | undefined;
   timeoutMs?: number | undefined;
 }
 
@@ -68,7 +69,7 @@ export const requestJson = Effect.fn("RemoteHttp.requestJson")(function* <T>(
         ? {}
         : {
             body: sideRoute
-              ? JSON.stringify(sideRoute.request(path, options.body))
+              ? JSON.stringify(sideRoute.request(path, options.body, { channelTopics: options.channelTopics === true }))
               : codec.encodeRequest(method, path, options.body, {
                   ...(options.preserveSemanticTags === undefined
                     ? {}
@@ -100,6 +101,7 @@ export const requestJson = Effect.fn("RemoteHttp.requestJson")(function* <T>(
           ? sideRoute.response(path, response.status, input, {
               historyExtent: true,
               channelAttention: true,
+              channelTopics: true,
               agentTaskUiBlocks: true,
             })
           : codec.decodeResponse(method, path, response.status, input),

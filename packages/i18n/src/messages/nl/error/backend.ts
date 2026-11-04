@@ -43,6 +43,7 @@ export const messages = {
   "error.backend.moonlightWebExited": "Moonlight Web is gestopt voordat {url} klaar was.",
   "error.backend.moonlightWebNotReady": "Moonlight Web is niet klaar geworden.",
   "error.backend.channelDeleteUnsupported": "Deze server ondersteunt het verwijderen van kanalen niet.",
+  "error.backend.channelTopicsUnsupported": "Deze server ondersteunt geen kanaaltabbladen.",
   "error.backend.browserNavigateUnsupported":
     "Deze externe host ondersteunt geen navigatie via de adresbalk in een bestaand tabblad.",
   "error.backend.browserUserControlBusy":

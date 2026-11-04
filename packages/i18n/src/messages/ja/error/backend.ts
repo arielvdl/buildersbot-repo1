@@ -41,6 +41,7 @@ export const messages = {
   "error.backend.moonlightWebExited": "Moonlight Web は {url} の準備ができる前に終了しました。",
   "error.backend.moonlightWebNotReady": "Moonlight Web の準備ができませんでした。",
   "error.backend.channelDeleteUnsupported": "このサーバーはチャンネルの削除に対応していません。",
+  "error.backend.channelTopicsUnsupported": "このサーバーはチャンネルのタブに対応していません。",
   "error.backend.browserNavigateUnsupported":
     "このリモートホストは、既存のタブでのアドレスバーによる移動に対応していません。",
   "error.backend.browserUserControlBusy":

@@ -4,7 +4,8 @@
 // that a refused request did not reach them. The checks cover the protocol and auth gates, sign-in
 // and account tickets, the admin-only routes, the host's Bitwarden connection over a fake `bw`, the
 // host's Vault (`vault-v1`, its API keys through `vault-v2`, and the CSV import of `vault-import-v1`)
-// over the real service and store,
+// over the real service and store, the tabs of a channel (`channel-topics-v1`) over the real
+// channel service and the real client request path, with an older peer that has no tabs,
 // a password that an admin saves from the secure card (`browser-secret-vault-v1`),
 // direct-message isolation, agents hidden from an older
 // protocol, the queue routes, the attachment and file routes with their size limits, and the error
@@ -27,9 +28,13 @@ import {
   type AttachmentDataInput,
   type BitwardenConnectorStatus,
   type CentralAuthUser,
+  CHANNEL_CHATS_CAPABILITY,
   type CustomProviderResult,
   type CustomProviderSummary,
   DEFAULT_AGENT_DEFAULTS,
+  decodeChannel,
+  decodeChannelPage,
+  decodeChannelSummaries,
   type HiddenAgentsSnapshot,
   isSidebarLayoutSnapshot,
   type QueueSnapshot,
@@ -73,6 +78,11 @@ import {
   BROWSER_SECRET_VAULT_CAPABILITY,
   BROWSER_SECRET_VAULT_ROUTES,
 } from "@buildersbot/contracts/team-protocol/browser-secret-vault-v1";
+import { CHANNEL_ROUTES } from "@buildersbot/contracts/team-protocol/channels-v1";
+import {
+  TEAM_CHANNEL_TOPICS_CAPABILITY,
+  type TeamCurrentCapability,
+} from "@buildersbot/contracts/team-protocol/current";
 import {
   CUSTOM_PROVIDER_HARNESS_CAPABILITY,
   CUSTOM_PROVIDER_HARNESS_CODECS,
@@ -128,7 +138,9 @@ import { AgentLifecycleFailed } from "../src/backend/agent-service";
 import { BrowserProfileStore } from "../src/backend/browser-profiles/browser-profile-store";
 import type { BrowserTabSession } from "../src/backend/browser-state";
 import { BuildersBotDatabase } from "../src/backend/buildersbot-database";
+import { ChannelService } from "../src/backend/channel-service";
 import { runCauseEffect } from "../src/backend/effect-boundary";
+import { MailboxStore } from "../src/backend/mailbox-store";
 import { RoutineResultError } from "../src/backend/routine-results/routine-results";
 import { SidebarLayoutStore } from "../src/backend/sidebar-layout-store";
 import { TeamChatStore } from "../src/backend/team-chat-store";
@@ -144,6 +156,7 @@ import { EgressProxyStore } from "../src/main/egress-proxy-store";
 import { MachineAlertMonitor, MachineAlertPreferenceStore } from "../src/main/machine-alerts";
 import { MemoryReviewPreferenceStore } from "../src/main/memory-review-preference-store";
 import { RemoteEventRefresh } from "../src/main/remote-server-event-refresh";
+import { requestJson } from "../src/main/remote-server-http";
 import { RemoteWorkflowError } from "../src/main/remote-service-effects";
 import type { TeamApiAgents, TeamApiBrowser, TeamApiMailbox } from "../src/main/team-api/dependencies";
 import { isPeerHiddenProvider } from "../src/main/team-api/provider-visibility";
@@ -758,12 +771,32 @@ try {
     },
   });
 
+  // The real channel service on the same database, with a real mailbox and hooks that start no agent
+  // turn: a request is stored and queued, and nothing answers it. That is all the tab checks need.
+  const channelMailboxRoot = join(root, "channel-mailbox");
+  mkdirSync(channelMailboxRoot, { recursive: true });
+  const channelMailbox = new MailboxStore(channelMailboxRoot, channelMailboxRoot, database);
+  await runCauseEffect(channelMailbox.initialize());
+  const channelService = new ChannelService(database, channelMailbox, {
+    agents: () => agents,
+    generate: () => Effect.succeed("{}"),
+    schedule: () => {},
+    interrupt: (agentId) => Effect.sync(() => record("interruptChannelTurn", agentId)),
+    busy: () => false,
+    usageLimited: () => false,
+    lane: () => ({ enabled: false, order: [] }),
+    awaitDrain: () => Effect.void,
+    changed: () => {},
+    error: (error) => logged.push(String(error)),
+  });
+
   server = new TeamApiServer({
     appVersion: APP_VERSION,
     store,
     agents: fakeAgents,
     sidebarLayout,
     mailbox,
+    channels: channelService,
     browser,
     chat: new TeamChatStore(database),
     // The real host-settings service, over an agent writer that records each change.
@@ -4515,6 +4548,388 @@ try {
         newLines.every((line) => !line.includes(FAKE_SECRET)) &&
         newLines.some((line) => line.includes("[redacted]")),
       { lines: newLines.length },
+    );
+  }
+
+  // ---- Channel tabs (channel-topics-v1) ----
+  // The real host and the real channel service. A peer that negotiated the capability creates,
+  // renames, writes in and deletes tabs; a peer that did not gets exactly the channels-v1 wire.
+  {
+    const newPeerCapabilities: TeamCurrentCapability[] = [
+      TEAM_LONG_CAPABILITY_LISTS_CAPABILITY,
+      CHANNEL_CHATS_CAPABILITY,
+      "channel-attention-v1",
+      TEAM_CHANNEL_TOPICS_CAPABILITY,
+    ];
+    const newPeer = { protocol: TEAM_PROTOCOL_V9, capabilities: newPeerCapabilities };
+    const oldPeer = { protocol: 7, capabilities: [CHANNEL_CHATS_CAPABILITY] };
+    const channelId = "channel-tabs-e2e";
+    const firstTab = `buildersbot-topic-${channelId}`;
+    const docsTab = "buildersbot-topic-docs-e2e";
+    let operation = 0;
+    const command = (token: string, peer: CallOptions, body: Record<string, Json>) =>
+      call("POST", CHANNEL_ROUTES.command, {
+        token,
+        ...peer,
+        json: { channelId, operationId: `tabs-e2e-${++operation}`, ...body },
+      });
+    const read = (token: string, peer: CallOptions, body: Record<string, Json> = {}) =>
+      call("POST", CHANNEL_ROUTES.read, { token, ...peer, json: { channelId, ...body } });
+    const summaryOf = async (token: string, peer: CallOptions) => {
+      const reply = await call("GET", CHANNEL_ROUTES.list, { token, ...peer });
+      return { reply, channel: list(reply.body).find((item) => field(item, "id") === channelId) };
+    };
+    const tabsOf = (channel: Json | undefined) => list(field(channel, "topics"));
+    const tabNames = (channel: Json | undefined) => tabsOf(channel).map((tab) => field(tab, "name"));
+    const messageTexts = (page: Reply) =>
+      list(field(page.body, "messages")).map((entry) => field(entry, "message", "text"));
+
+    check(
+      "the host lists channel-topics-v1 for a protocol 9 peer, and for no older peer",
+      list(
+        field((await call("GET", TEAM_API_ROUTES.compatibility, { token: adaToken, ...newPeer })).body, "capabilities"),
+      ).includes(TEAM_CHANNEL_TOPICS_CAPABILITY) &&
+        !list(
+          field(
+            (
+              await call("GET", TEAM_API_ROUTES.compatibility, {
+                token: adaToken,
+                protocol: 8,
+                capabilities: [CHANNEL_CHATS_CAPABILITY],
+              })
+            ).body,
+            "capabilities",
+          ),
+        ).includes(TEAM_CHANNEL_TOPICS_CAPABILITY) &&
+        !list(
+          field(
+            (await call("GET", TEAM_API_ROUTES.compatibility, { token: adaToken, ...oldPeer })).body,
+            "capabilities",
+          ),
+        ).includes(TEAM_CHANNEL_TOPICS_CAPABILITY),
+    );
+
+    // The channel is made by a peer with tabs; its first tab is written with it.
+    const created = await command(adaToken, newPeer, {
+      type: "save",
+      draft: {
+        name: "tabs",
+        title: "",
+        instructions: "",
+        members: [{ agentId: "agent-ada" }],
+        leadAgentId: null,
+      },
+    });
+    check("a channel is created over the Team API", created.status === 200, summary(created));
+    const first = await summaryOf(adaToken, newPeer);
+    check(
+      "a peer with channel-topics-v1 reads the first tab in the channel summary",
+      first.reply.status === 200 &&
+        tabsOf(first.channel).length === 1 &&
+        field(first.channel, "topics", 0, "id") === firstTab &&
+        field(first.channel, "topics", 0, "name") === "Main" &&
+        field(first.channel, "topics", 0, "unreadCount") === 0 &&
+        field(first.channel, "topics", 0, "messageCount") === 0,
+      summary(first.reply),
+    );
+
+    // Create and rename. A plain member may do both.
+    const made = await command(bobToken, newPeer, {
+      type: "topic-create",
+      topicId: docsTab,
+      name: "Docs",
+    });
+    const afterCreate = await summaryOf(adaToken, newPeer);
+    check(
+      "a member creates a tab and every peer lists it after the first one",
+      made.status === 200 &&
+        isDeepStrictEqual(tabNames(afterCreate.channel), ["Main", "Docs"]) &&
+        field(afterCreate.channel, "topics", 1, "id") === docsTab,
+      { made: summary(made), tabs: tabNames(afterCreate.channel) },
+    );
+    const renamed = await command(bobToken, newPeer, { type: "topic-rename", topicId: docsTab, name: "Documentation" });
+    const afterRename = await summaryOf(adaToken, newPeer);
+    check(
+      "a member renames a tab and the new name is listed",
+      renamed.status === 200 && isDeepStrictEqual(tabNames(afterRename.channel), ["Main", "Documentation"]),
+      { renamed: summary(renamed), tabs: tabNames(afterRename.channel) },
+    );
+    const duplicate = await command(bobToken, newPeer, { type: "topic-create", topicId: docsTab });
+    check("a tab id that exists is refused", duplicate.status >= 400, summary(duplicate));
+    // The id of a tab is the key of the table across channels: another channel cannot reuse it.
+    const otherChannel = await call("POST", CHANNEL_ROUTES.command, {
+      token: adaToken,
+      ...newPeer,
+      json: {
+        type: "save",
+        channelId: "channel-tabs-other-e2e",
+        operationId: "tabs-e2e-other",
+        draft: { name: "other", title: "", instructions: "", members: [{ agentId: "agent-ada" }], leadAgentId: null },
+      },
+    });
+    const crossChannel = await call("POST", CHANNEL_ROUTES.command, {
+      token: bobToken,
+      ...newPeer,
+      json: {
+        type: "topic-create",
+        channelId: "channel-tabs-other-e2e",
+        operationId: "tabs-e2e-cross",
+        topicId: firstTab,
+        name: "Hijacked",
+      },
+    });
+    const afterCross = await summaryOf(adaToken, newPeer);
+    check(
+      "a tab id that another channel holds is refused and renames nothing there",
+      otherChannel.status === 200 && crossChannel.status >= 400 && tabNames(afterCross.channel).includes("Main"),
+      { cross: summary(crossChannel), tabs: tabNames(afterCross.channel) },
+    );
+    const renameUnknown = await command(bobToken, newPeer, {
+      type: "topic-rename",
+      topicId: "buildersbot-topic-missing",
+      name: "x",
+    });
+    check("renaming a tab that does not exist is refused", renameUnknown.status >= 400, summary(renameUnknown));
+
+    // A message in one tab stays in that tab, with its task.
+    const sent = await command(bobToken, newPeer, {
+      type: "send",
+      topicId: docsTab,
+      text: "Draft the docs.",
+      recipientAgentId: null,
+      replyToMessageId: null,
+      attachmentDraftIds: [],
+    });
+    const docsPage = await read(adaToken, newPeer, { topicId: docsTab });
+    const firstPage = await read(adaToken, newPeer);
+    check(
+      "a message sent in a tab is in that tab's page, with the tab on the page, the message and its task",
+      sent.status === 200 &&
+        field(docsPage.body, "topicId") === docsTab &&
+        messageTexts(docsPage).includes("Draft the docs.") &&
+        list(field(docsPage.body, "messages")).every((entry) => field(entry, "topicId") === docsTab) &&
+        list(field(docsPage.body, "tasks")).length === 1 &&
+        field(docsPage.body, "tasks", 0, "topicId") === docsTab,
+      summary(docsPage),
+    );
+    check(
+      "a read that names no tab reads the first tab, and it holds nothing of the other tab",
+      firstPage.status === 200 &&
+        field(firstPage.body, "topicId") === firstTab &&
+        !messageTexts(firstPage).includes("Draft the docs.") &&
+        list(field(firstPage.body, "tasks")).length === 0,
+      summary(firstPage),
+    );
+    const unknownRead = await read(adaToken, newPeer, { topicId: "buildersbot-topic-missing" });
+    check("a read of a tab that does not exist gets 404", unknownRead.status === 404, summary(unknownRead));
+    const unknownSend = await command(bobToken, newPeer, {
+      type: "send",
+      topicId: "buildersbot-topic-missing",
+      text: "Nowhere.",
+      recipientAgentId: null,
+      replyToMessageId: null,
+      attachmentDraftIds: [],
+    });
+    check(
+      "a send to a tab that does not exist is refused and writes nothing",
+      unknownSend.status >= 400,
+      summary(unknownSend),
+    );
+
+    // Unread is per tab, against the reader's own cursor for the tab.
+    const unreadBefore = await summaryOf(adaToken, newPeer);
+    check(
+      "the other member's message is unread in its own tab only",
+      field(unreadBefore.channel, "topics", 1, "unreadCount") === 1 &&
+        field(unreadBefore.channel, "topics", 1, "messageCount") === 1 &&
+        field(unreadBefore.channel, "topics", 0, "unreadCount") === 0 &&
+        field(unreadBefore.channel, "topics", 1, "firstMessage") === "Draft the docs." &&
+        Number(field(unreadBefore.channel, "topics", 1, "openTasks")) === 1,
+      { topics: field(unreadBefore.channel, "topics") ?? null },
+    );
+    const throughSequence = field(docsPage.body, "throughSequence") ?? null;
+    const marked = await command(adaToken, newPeer, {
+      type: "read",
+      topicId: docsTab,
+      throughSequence,
+    });
+    const unreadAfter = await summaryOf(adaToken, newPeer);
+    check(
+      "a read that names the tab clears the unread of that tab",
+      marked.status === 200 && field(unreadAfter.channel, "topics", 1, "unreadCount") === 0,
+      { marked: summary(marked), topics: field(unreadAfter.channel, "topics") ?? null },
+    );
+
+    // What the real desktop client does with these bytes: its HTTP request path, then the IPC decoders.
+    {
+      const apiUrl = `http://127.0.0.1:${port}`;
+      const asClient = (channelTopics: boolean) => ({
+        token: adaToken,
+        protocol: TEAM_PROTOCOL_V9,
+        appVersion: APP_VERSION,
+        capabilities: newPeerCapabilities,
+        channelTopics,
+      });
+      const clientList = await Effect.runPromise(
+        requestJson(apiUrl, CHANNEL_ROUTES.list, decodeChannelSummaries, asClient(true)),
+      );
+      const clientPage = await Effect.runPromise(
+        requestJson(apiUrl, CHANNEL_ROUTES.read, decodeChannelPage, {
+          ...asClient(true),
+          method: "POST",
+          body: { channelId, topicId: docsTab },
+        }),
+      );
+      check(
+        "the desktop client request path keeps the tabs of the list and of a page",
+        clientList
+          .find((item) => item.id === channelId)
+          ?.topics?.map((tab) => tab.name)
+          .join(",") === "Main,Documentation" &&
+          clientPage.topicId === docsTab &&
+          clientPage.messages.every((entry) => entry.topicId === docsTab) &&
+          clientPage.tasks.every((task) => task.topicId === docsTab),
+        { topics: clientList.find((item) => item.id === channelId)?.topics?.length ?? null, page: clientPage.topicId },
+      );
+      const clientCreated = await Effect.runPromise(
+        requestJson(apiUrl, CHANNEL_ROUTES.command, decodeChannel, {
+          ...asClient(true),
+          method: "POST",
+          body: {
+            type: "topic-create",
+            channelId,
+            operationId: "tabs-e2e-client-create",
+            topicId: "buildersbot-topic-client",
+            name: "From client",
+          },
+        }),
+      );
+      const afterClient = await summaryOf(adaToken, newPeer);
+      check(
+        "the desktop client creates a tab over the real request path",
+        clientCreated.id === channelId && tabNames(afterClient.channel).includes("From client"),
+        { tabs: tabNames(afterClient.channel) },
+      );
+      // A host that did not negotiate the capability gets the old wire: the client drops the tab and
+      // the command fails before it leaves.
+      const clientDropped = await Effect.runPromise(
+        requestJson(apiUrl, CHANNEL_ROUTES.read, decodeChannelPage, {
+          ...asClient(false),
+          method: "POST",
+          body: { channelId, topicId: docsTab },
+        }),
+      );
+      check(
+        "a client that did not negotiate channel-topics-v1 does not send the tab, and the host answers the first tab",
+        clientDropped.topicId === firstTab,
+        { topicId: clientDropped.topicId },
+      );
+      let refused = "sent";
+      try {
+        await Effect.runPromise(
+          requestJson(apiUrl, CHANNEL_ROUTES.command, decodeChannel, {
+            ...asClient(false),
+            method: "POST",
+            body: {
+              type: "topic-create",
+              channelId,
+              operationId: "tabs-e2e-client-create-old",
+              topicId: "buildersbot-topic-old-client",
+            },
+          }),
+        );
+      } catch {
+        refused = "refused";
+      }
+      check("a client without the capability cannot encode a tab command", refused === "refused", { refused });
+      await command(adaToken, newPeer, { type: "topic-delete", topicId: "buildersbot-topic-client" });
+    }
+
+    // An older peer: the first tab only, and exactly the old wire.
+    const oldList = await summaryOf(adaToken, oldPeer);
+    check(
+      "a peer without channel-topics-v1 reads the channels-v1 summary with no tab key",
+      oldList.reply.status === 200 &&
+        isDeepStrictEqual(objectKeys(oldList.channel).sort(), [
+          "activeTasks",
+          "archived",
+          "createdAt",
+          "id",
+          "instructions",
+          "lastMessage",
+          "leadAgentId",
+          "members",
+          "name",
+          "revision",
+          "title",
+          "unreadCount",
+        ]),
+      { keys: objectKeys(oldList.channel) },
+    );
+    const oldPage = await read(adaToken, oldPeer, { topicId: docsTab });
+    check(
+      "a read that names a tab, from a peer without the capability, answers the first tab with no tab key",
+      oldPage.status === 200 &&
+        !("topicId" in (isDynamicRecord(oldPage.body) ? oldPage.body : {})) &&
+        !messageTexts(oldPage).includes("Draft the docs.") &&
+        list(field(oldPage.body, "messages")).every((entry) => !("topicId" in (isDynamicRecord(entry) ? entry : {}))),
+      { keys: objectKeys(oldPage.body) },
+    );
+    const oldCreate = await command(adaToken, oldPeer, { type: "topic-create", topicId: "buildersbot-topic-old" });
+    check(
+      "a tab command from a peer without the capability is refused",
+      oldCreate.status === 400 &&
+        tabsOf((await summaryOf(adaToken, newPeer)).channel).every(
+          (tab) => field(tab, "id") !== "buildersbot-topic-old",
+        ),
+      summary(oldCreate),
+    );
+    const oldSend = await command(adaToken, oldPeer, {
+      type: "send",
+      topicId: docsTab,
+      text: "From an old peer.",
+      recipientAgentId: null,
+      replyToMessageId: null,
+      attachmentDraftIds: [],
+    });
+    const firstAfterOld = await read(adaToken, newPeer);
+    const docsAfterOld = await read(adaToken, newPeer, { topicId: docsTab });
+    check(
+      "a send from a peer without the capability lands in the first tab, whatever tab it names",
+      oldSend.status === 200 &&
+        messageTexts(firstAfterOld).includes("From an old peer.") &&
+        !messageTexts(docsAfterOld).includes("From an old peer."),
+      { first: messageTexts(firstAfterOld), docs: messageTexts(docsAfterOld) },
+    );
+
+    // Delete: only an admin, never the last tab, and the work of the tab goes with it.
+    const memberDelete = await command(bobToken, newPeer, { type: "topic-delete", topicId: docsTab });
+    check(
+      "a member cannot delete a tab",
+      errorIs(memberDelete, 403, sourceText("error.team.membersCannotDeleteChannelTabs")),
+      summary(memberDelete),
+    );
+    const adminDelete = await command(adaToken, newPeer, { type: "topic-delete", topicId: docsTab });
+    const afterDelete = await summaryOf(adaToken, newPeer);
+    const deletedRead = await read(adaToken, newPeer, { topicId: docsTab });
+    check(
+      "an admin deletes a tab, which leaves the list, and its page is gone",
+      adminDelete.status === 200 &&
+        !tabNames(afterDelete.channel).includes("Documentation") &&
+        deletedRead.status === 404,
+      { delete: summary(adminDelete), tabs: tabNames(afterDelete.channel), read: deletedRead.status },
+    );
+    // Close the other tabs that the checks made; the last one cannot go.
+    for (const tab of tabsOf(afterDelete.channel).map((item) => field(item, "id"))) {
+      if (tab === firstTab || typeof tab !== "string") continue;
+      await command(adaToken, newPeer, { type: "topic-delete", topicId: tab });
+    }
+    const lastTab = await command(adaToken, newPeer, { type: "topic-delete", topicId: firstTab });
+    const finalList = await summaryOf(adaToken, newPeer);
+    check(
+      "the last tab of a channel cannot be deleted",
+      lastTab.status >= 400 && tabsOf(finalList.channel).length === 1,
+      { last: summary(lastTab), tabs: tabNames(finalList.channel) },
     );
   }
 

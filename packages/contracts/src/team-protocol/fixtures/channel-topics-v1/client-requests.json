@@ -1,0 +1,61 @@
+[
+  {
+    "path": "/v1/channels/read",
+    "body": {
+      "channelId": "channel-1",
+      "topicId": "buildersbot-topic-2"
+    }
+  },
+  {
+    "path": "/v1/channels/commands",
+    "body": {
+      "type": "send",
+      "operationId": "op-1",
+      "channelId": "channel-1",
+      "topicId": "buildersbot-topic-2",
+      "text": "Draft the docs.",
+      "recipientAgentId": null,
+      "replyToMessageId": null,
+      "attachmentDraftIds": []
+    }
+  },
+  {
+    "path": "/v1/channels/commands",
+    "body": {
+      "type": "read",
+      "operationId": "op-2",
+      "channelId": "channel-1",
+      "topicId": "buildersbot-topic-2",
+      "throughSequence": 1
+    }
+  },
+  {
+    "path": "/v1/channels/commands",
+    "body": {
+      "type": "topic-create",
+      "operationId": "op-3",
+      "channelId": "channel-1",
+      "topicId": "buildersbot-topic-3",
+      "name": "Review"
+    }
+  },
+  {
+    "path": "/v1/channels/commands",
+    "body": {
+      "type": "topic-rename",
+      "operationId": "op-4",
+      "channelId": "channel-1",
+      "topicId": "buildersbot-topic-3",
+      "name": "Review 2"
+    }
+  },
+  {
+    "path": "/v1/channels/commands",
+    "body": {
+      "type": "topic-delete",
+      "operationId": "op-5",
+      "channelId": "channel-1",
+      "topicId": "buildersbot-topic-3"
+    }
+  }
+]

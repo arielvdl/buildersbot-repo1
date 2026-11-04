@@ -412,6 +412,7 @@ export class TeamWebRtcClientTransport extends EventEmitter<TeamWebRtcClientTran
       body?: unknown;
       preserveSemanticTags?: boolean | undefined;
       agentCreateModel?: boolean | undefined;
+      channelTopics?: boolean | undefined;
       timeoutMs?: number | undefined;
     } = {},
   ): Effect.fn.Return<TeamProtocolV2Json | undefined, RemoteWorkflowError> {
@@ -432,6 +433,7 @@ export class TeamWebRtcClientTransport extends EventEmitter<TeamWebRtcClientTran
       contentType?: string | undefined;
       preserveSemanticTags?: boolean | undefined;
       agentCreateModel?: boolean | undefined;
+      channelTopics?: boolean | undefined;
       timeoutMs?: number | undefined;
     } = {},
   ): Effect.fn.Return<
@@ -481,7 +483,7 @@ export class TeamWebRtcClientTransport extends EventEmitter<TeamWebRtcClientTran
               body: binary
                 ? null
                 : sideRoute
-                  ? sideRoute.request(path, init.body)
+                  ? sideRoute.request(path, init.body, { channelTopics: init.channelTopics === true })
                   : encodeTeamProtocolV8WebRtcHttpRequest(method, path, init.body, {
                       ...(init.preserveSemanticTags === undefined
                         ? {}
@@ -535,6 +537,7 @@ export class TeamWebRtcClientTransport extends EventEmitter<TeamWebRtcClientTran
                 ? sideRoute.response(path, status, envelope.body, {
                     historyExtent: true,
                     channelAttention: true,
+                    channelTopics: true,
                     agentTaskUiBlocks: true,
                   })
                 : decodeTeamProtocolV9WebRtcHttpResponse(method, path, status, envelope.body),

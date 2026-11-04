@@ -26,6 +26,7 @@ import {
   supportsTeamSemanticTags,
   TEAM_AGENT_CREATE_MODEL_CAPABILITY,
   TEAM_BOOTSTRAP_CAPABILITIES,
+  TEAM_CHANNEL_TOPICS_CAPABILITY,
   type TeamCurrentCapability,
   teamCapabilitiesForProtocol,
 } from "@buildersbot/contracts/team-protocol/current";
@@ -68,6 +69,7 @@ export interface RemoteHostRequestTransport {
       body?: unknown;
       preserveSemanticTags?: boolean | undefined;
       agentCreateModel?: boolean | undefined;
+      channelTopics?: boolean | undefined;
       timeoutMs?: number | undefined;
     },
   ) => Effect.Effect<unknown, RemoteWorkflowError>;
@@ -165,6 +167,7 @@ export class RemoteServerClient {
           ...init,
           preserveSemanticTags: supportsTeamSemanticTags(compatibility.capabilities),
           agentCreateModel: this.supportsAgentCreateModel(path, init, compatibility.capabilities),
+          channelTopics: compatibility.capabilities.includes(TEAM_CHANNEL_TOPICS_CAPABILITY),
         });
         // Decoding is outside the transport's catch on purpose. A frame that arrived intact and then
         // failed its route decoder is a protocol failure, not a request that happened to fail, and
@@ -180,6 +183,8 @@ export class RemoteServerClient {
         // A host without the capability drops the fields in its frozen projection and starts the
         // agent on its own default, so the pair is only encoded for hosts that read it.
         agentCreateModel: this.supportsAgentCreateModel(path, init, compatibility.capabilities),
+        // An older host receives exactly the channels-v1 wire: no tab key and no tab command.
+        channelTopics: compatibility.capabilities.includes(TEAM_CHANNEL_TOPICS_CAPABILITY),
         ...this.requestProtocol(compatibility),
       }).pipe(
         Effect.mapError(
@@ -623,7 +628,13 @@ export class RemoteServerClient {
     this: RemoteServerClient,
     serverId: string,
     path: string,
-    init: { method?: string; body?: unknown; preserveSemanticTags?: boolean; agentCreateModel?: boolean } = {},
+    init: {
+      method?: string;
+      body?: unknown;
+      preserveSemanticTags?: boolean;
+      agentCreateModel?: boolean;
+      channelTopics?: boolean;
+    } = {},
   ): Effect.fn.Return<unknown, RemoteWorkflowError> {
     return yield* Effect.gen({ self: this }, function* () {
       return yield* this.#requireTransport().request(serverId, path, init);

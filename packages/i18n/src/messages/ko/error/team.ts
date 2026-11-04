@@ -58,6 +58,7 @@ export const messages = {
   "error.team.channelsUnsupported": "이 연결에서는 채널 채팅을 지원하지 않아요.",
   "error.team.channelDeleteUnsupported": "이 연결에서는 채널 삭제를 지원하지 않아요.",
   "error.team.membersCannotDeleteChannels": "멤버는 채널을 삭제할 수 없어요.",
+  "error.team.membersCannotDeleteChannelTabs": "멤버는 채널 탭을 삭제할 수 없어요.",
   "error.team.membersCannotArchiveChannels": "멤버는 채널을 보관할 수 없어요.",
   "error.team.membersCannotRestoreChannels": "멤버는 채널을 복원할 수 없어요.",
   "error.team.sharedDataUnsupported": "이 연결에서는 공유 데이터를 지원하지 않아요.",

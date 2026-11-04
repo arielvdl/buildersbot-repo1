@@ -60,6 +60,7 @@ export const messages = {
   "error.team.channelsUnsupported": "Это подключение не поддерживает чаты каналов.",
   "error.team.channelDeleteUnsupported": "Это подключение не поддерживает удаление каналов.",
   "error.team.membersCannotDeleteChannels": "Участники не могут удалять каналы.",
+  "error.team.membersCannotDeleteChannelTabs": "Участники не могут удалять вкладки каналов.",
   "error.team.membersCannotArchiveChannels": "Участники не могут архивировать каналы.",
   "error.team.membersCannotRestoreChannels": "Участники не могут восстанавливать каналы.",
   "error.team.sharedDataUnsupported": "Это подключение не поддерживает общие данные.",

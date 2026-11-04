@@ -63,6 +63,7 @@ export const messages = {
   "error.team.channelsUnsupported": "Le chat dei canali non sono supportate da questa connessione.",
   "error.team.channelDeleteUnsupported": "L'eliminazione dei canali non è supportata da questa connessione.",
   "error.team.membersCannotDeleteChannels": "I membri non possono eliminare i canali.",
+  "error.team.membersCannotDeleteChannelTabs": "I membri non possono eliminare le schede dei canali.",
   "error.team.membersCannotArchiveChannels": "I membri non possono archiviare i canali.",
   "error.team.membersCannotRestoreChannels": "I membri non possono ripristinare i canali.",
   "error.team.sharedDataUnsupported": "I dati condivisi non sono supportati da questa connessione.",

@@ -8,11 +8,13 @@ import {
   parseChannelRead,
 } from "@buildersbot/contracts/ipc";
 import type { DynamicRecord } from "@buildersbot/contracts/runtime-values";
+import { channelTopicsRequest } from "@buildersbot/contracts/team-protocol/channel-topics-v1";
 import {
   CHANNEL_ROUTES,
   channelRequest,
   isChannelSettingsRoute,
 } from "@buildersbot/contracts/team-protocol/channels-v1";
+import { TEAM_CHANNEL_TOPICS_CAPABILITY } from "@buildersbot/contracts/team-protocol/current";
 import { sourceText } from "@buildersbot/i18n/source";
 import type { ChannelService } from "../../backend/channel-service";
 import { runCauseEffect } from "../../backend/effect-boundary";
@@ -68,9 +70,12 @@ export async function routeChannels(
   if (!list && !read && !command && !remove && !settings) return "unmatched";
   if (!channels || !capabilities.has(CHANNEL_CHATS_CAPABILITY))
     throw new HttpError(400, sourceText("error.team.channelsUnsupported"));
+  // `readJson` has already decoded the body with the same codec. A peer without channel-topics-v1
+  // is decoded as channels-v1 decodes it, so it names no tab and reads and writes the first one.
+  const wire = capabilities.has(TEAM_CHANNEL_TOPICS_CAPABILITY) ? channelTopicsRequest : channelRequest;
   if (list) return json(200, channels.store.list(member.id));
   if (read) {
-    const input = parseChannelRead(channelRequest(url.pathname, await readJson(request)));
+    const input = parseChannelRead(wire(url.pathname, await readJson(request)));
     const topic =
       input.topicId === undefined
         ? channels.store.firstTopic(input.channelId)
@@ -88,7 +93,11 @@ export async function routeChannels(
     return empty(204);
   }
   if (settings) return routeChannelSettings(context, agents);
-  const input = parseChannelCommand(channelRequest(url.pathname, await readJson(request)));
+  const input = parseChannelCommand(wire(url.pathname, await readJson(request)));
+  // A deleted tab loses its messages and its work for good, so it asks for the role that a deleted
+  // channel asks for. A tab that was created or renamed is as open as the rest of the channel.
+  if (input.type === "topic-delete" && !canAdministerServer(member.role))
+    throw new HttpError(403, sourceText("error.team.membersCannotDeleteChannelTabs"));
   if (input.type === "archive" && !canAdministerServer(member.role))
     throw new HttpError(403, sourceText("error.team.membersCannotArchiveChannels"));
   // A restore undoes a delete, so only the people who can delete a channel can restore it.

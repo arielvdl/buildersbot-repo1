@@ -1,0 +1,75 @@
+[
+  {
+    "unreadCount": 1,
+    "activeTasks": 1,
+    "lastMessage": {
+      "authorName": "Ada",
+      "text": "The release notes are ready.",
+      "at": "2026-10-21T10:00:00.000Z",
+      "author": {
+        "kind": "agent",
+        "id": "agent-1"
+      },
+      "status": "completed"
+    },
+    "name": "launch",
+    "title": "Launch",
+    "instructions": "",
+    "members": [
+      {
+        "agentId": "agent-1"
+      },
+      {
+        "agentId": "agent-2"
+      }
+    ],
+    "leadAgentId": "agent-1",
+    "id": "channel-1",
+    "archived": false,
+    "revision": 3,
+    "createdAt": "2026-10-20T09:00:00.000Z",
+    "openTasks": 1,
+    "threads": [
+      {
+        "agentId": "agent-1",
+        "threadId": "thread-1",
+        "topicId": "buildersbot-topic-channel-1"
+      },
+      {
+        "agentId": "agent-2",
+        "threadId": "thread-2",
+        "topicId": "buildersbot-topic-2"
+      }
+    ],
+    "topics": [
+      {
+        "id": "buildersbot-topic-channel-1",
+        "channelId": "channel-1",
+        "name": "Main",
+        "createdAt": "2026-10-20T09:00:00.000Z",
+        "revision": 0,
+        "updatedAt": "2026-10-21T10:00:00.000Z",
+        "unreadCount": 1,
+        "activeTasks": 0,
+        "openTasks": 0,
+        "messageCount": 2,
+        "firstMessage": "Draft the release notes.",
+        "lastUserMessage": "Draft the release notes."
+      },
+      {
+        "id": "buildersbot-topic-2",
+        "channelId": "channel-1",
+        "name": "Docs",
+        "createdAt": "2026-10-21T08:00:00.000Z",
+        "revision": 1,
+        "updatedAt": "2026-10-21T08:00:00.000Z",
+        "unreadCount": 0,
+        "activeTasks": 1,
+        "openTasks": 1,
+        "messageCount": 0,
+        "firstMessage": "",
+        "lastUserMessage": ""
+      }
+    ]
+  }
+]

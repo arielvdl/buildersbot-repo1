@@ -41,6 +41,7 @@ export const messages = {
   "error.backend.moonlightWebExited": "{url} hazır olmadan önce Moonlight Web kapandı.",
   "error.backend.moonlightWebNotReady": "Moonlight Web hazır hale gelmedi.",
   "error.backend.channelDeleteUnsupported": "Kanal silme bu sunucu tarafından desteklenmiyor.",
+  "error.backend.channelTopicsUnsupported": "Bu sunucu kanal sekmelerini desteklemiyor.",
   "error.backend.browserNavigateUnsupported":
     "Bu uzak ana makine mevcut bir sekmede adres çubuğuyla gezinmeyi desteklemiyor.",
   "error.backend.browserUserControlBusy":

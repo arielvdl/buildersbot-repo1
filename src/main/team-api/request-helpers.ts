@@ -46,6 +46,7 @@ import {
   isTeamCurrentCapability,
   supportsTeamSemanticTags,
   TEAM_AGENT_CREATE_MODEL_CAPABILITY,
+  TEAM_CHANNEL_TOPICS_CAPABILITY,
 } from "@buildersbot/contracts/team-protocol/current";
 import { teamHttpCodec } from "@buildersbot/contracts/team-protocol/http-codecs";
 import { teamSideRouteCodec } from "@buildersbot/contracts/team-protocol/side-routes";
@@ -262,12 +263,12 @@ export async function readJson(request: IncomingMessage): Promise<DynamicRecord>
     const value = JSON.parse(body.toString("utf8"));
     const path = request.url ?? "/";
     const sideRoute = teamSideRouteCodec(path);
+    const capabilities = requestCapabilities(request);
     if (sideRoute) {
-      const input = sideRoute.request(path, value);
+      const input = sideRoute.request(path, value, { channelTopics: capabilities.has(TEAM_CHANNEL_TOPICS_CAPABILITY) });
       if (!isDynamicRecord(input)) throw new Error("Invalid side-protocol request.");
       return input;
     }
-    const capabilities = requestCapabilities(request);
     return teamHttpCodec(requestProtocol(request)).decodeRequest(request.method ?? "GET", path, value, {
       preserveSemanticTags: supportsTeamSemanticTags(capabilities),
       agentCreateModel: capabilities.has(TEAM_AGENT_CREATE_MODEL_CAPABILITY),

@@ -59,6 +59,7 @@ export const messages = {
   "error.team.channelsUnsupported": "To połączenie nie obsługuje czatów kanałów.",
   "error.team.channelDeleteUnsupported": "To połączenie nie obsługuje usuwania kanałów.",
   "error.team.membersCannotDeleteChannels": "Członkowie nie mogą usuwać kanałów.",
+  "error.team.membersCannotDeleteChannelTabs": "Członkowie nie mogą usuwać kart kanałów.",
   "error.team.membersCannotArchiveChannels": "Członkowie nie mogą archiwizować kanałów.",
   "error.team.membersCannotRestoreChannels": "Członkowie nie mogą przywracać kanałów.",
   "error.team.sharedDataUnsupported": "To połączenie nie obsługuje wspólnych danych.",

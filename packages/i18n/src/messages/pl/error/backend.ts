@@ -42,6 +42,7 @@ export const messages = {
   "error.backend.moonlightWebExited": "Moonlight Web zakończył działanie, zanim {url} był gotowy.",
   "error.backend.moonlightWebNotReady": "Moonlight Web nie osiągnął gotowości.",
   "error.backend.channelDeleteUnsupported": "Ten serwer nie obsługuje usuwania kanałów.",
+  "error.backend.channelTopicsUnsupported": "Ten serwer nie obsługuje kart kanałów.",
   "error.backend.browserNavigateUnsupported":
     "Ten zdalny host nie obsługuje nawigacji z paska adresu w istniejącej karcie.",
   "error.backend.browserUserControlBusy":

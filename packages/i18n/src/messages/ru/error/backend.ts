@@ -42,6 +42,7 @@ export const messages = {
   "error.backend.moonlightWebExited": "Moonlight Web завершился до того, как {url} стал готов.",
   "error.backend.moonlightWebNotReady": "Moonlight Web не стал готов.",
   "error.backend.channelDeleteUnsupported": "Этот сервер не поддерживает удаление каналов.",
+  "error.backend.channelTopicsUnsupported": "Этот сервер не поддерживает вкладки каналов.",
   "error.backend.browserNavigateUnsupported":
     "Этот удалённый хост не поддерживает переход через адресную строку в существующей вкладке.",
   "error.backend.browserUserControlBusy": "Эта вкладка браузера ждёт секрет. Сначала ответьте на запрос секрета.",

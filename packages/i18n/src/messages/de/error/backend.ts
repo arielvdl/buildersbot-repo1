@@ -41,6 +41,7 @@ export const messages = {
   "error.backend.moonlightWebExited": "Moonlight Web wurde beendet, bevor {url} bereit war.",
   "error.backend.moonlightWebNotReady": "Moonlight Web wurde nicht bereit.",
   "error.backend.channelDeleteUnsupported": "Dieser Server unterstützt das Löschen von Kanälen nicht.",
+  "error.backend.channelTopicsUnsupported": "Dieser Server unterstützt keine Kanal-Tabs.",
   "error.backend.browserNavigateUnsupported":
     "Dieser entfernte Host unterstützt die Navigation über die Adressleiste in einem vorhandenen Tab nicht.",
   "error.backend.browserUserControlBusy":

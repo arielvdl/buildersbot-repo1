@@ -28,6 +28,7 @@ import {
   teamProtocolV2AuthenticationTranscript,
   teamProtocolV2Channel,
 } from "@buildersbot/contracts/team-protocol";
+import { TEAM_CHANNEL_TOPICS_CAPABILITY } from "@buildersbot/contracts/team-protocol/current";
 import { optionalTeamEvent, optionalTeamEventToCurrent } from "@buildersbot/contracts/team-protocol/optional-events";
 import { teamSideRouteCodec } from "@buildersbot/contracts/team-protocol/side-routes";
 import { addUiBlockAutoAnswers } from "@buildersbot/contracts/team-protocol/ui-block-auto-answer-v1";
@@ -505,6 +506,8 @@ export function createRemoteTeamPeer(actions: ActionsRef, options: { waitForHost
   // A new peer of a known host sends the capabilities of its last protocol. With the bootstrap
   // capabilities, the host would hide the agents of the providers that protocol 7 does not know.
   const hostProtocols = new Map<string, number>();
+  /** The hosts that advertised channel-topics-v1 on their last compatibility read. */
+  const channelTopicHosts = new Set<string>();
 
   return {
     async sendHostStreamData(data: string | ArrayBuffer) {
@@ -1433,8 +1436,11 @@ export function createRemoteTeamPeer(actions: ActionsRef, options: { waitForHost
           const status = frame.result.status;
           const body = frame.result.body;
           if (pending.method === "GET" && pending.path === TEAM_API_ROUTES.compatibility && status === 200) {
-            state.hostProtocol = (yield* peerDecode(() => decodeTeamProtocolSupportV9(body))).protocol.maximum;
+            const support = yield* peerDecode(() => decodeTeamProtocolSupportV9(body));
+            state.hostProtocol = support.protocol.maximum;
             hostProtocols.set(state.hostId, state.hostProtocol);
+            if (support.capabilities.includes(TEAM_CHANNEL_TOPICS_CAPABILITY)) channelTopicHosts.add(state.hostId);
+            else channelTopicHosts.delete(state.hostId);
           }
           pending.resolve({
             status: frame.result.status,
@@ -1443,6 +1449,7 @@ export function createRemoteTeamPeer(actions: ActionsRef, options: { waitForHost
                   sideRoute.response(pending.path, status, body, {
                     historyExtent: true,
                     channelAttention: true,
+                    channelTopics: true,
                     agentTaskUiBlocks: true,
                   }),
                 )
@@ -1595,7 +1602,9 @@ export function createRemoteTeamPeer(actions: ActionsRef, options: { waitForHost
         const payloadBody = upload
           ? null
           : sideRoute
-            ? yield* peerDecode(() => sideRoute.request(path, body))
+            ? yield* peerDecode(() =>
+                sideRoute.request(path, body, { channelTopics: channelTopicHosts.has(state.hostId) }),
+              )
             : // A caller names a provider and model on agent creation only when the host advertises
               // `agent-create-model`, so the pair is kept whenever it is present.
               yield* peerDecode(() =>

@@ -41,6 +41,7 @@ export const messages = {
   "error.backend.moonlightWebExited": "在 {url} 就绪之前，Moonlight Web 已退出。",
   "error.backend.moonlightWebNotReady": "Moonlight Web 未能就绪。",
   "error.backend.channelDeleteUnsupported": "该服务器不支持删除频道。",
+  "error.backend.channelTopicsUnsupported": "此服务器不支持频道标签页。",
   "error.backend.browserNavigateUnsupported": "该远程主机不支持在已打开的标签页中通过地址栏跳转。",
   "error.backend.browserUserControlBusy": "该浏览器标签页正在等待一个密钥。请先回答密钥请求。",
   "error.backend.browserUserControlUnsupported": "该远程主机不支持接管浏览器标签页。",

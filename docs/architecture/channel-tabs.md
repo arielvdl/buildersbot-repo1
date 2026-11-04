@@ -24,6 +24,8 @@ older event replay and a client without tabs send.
 - `packages/contracts/src/ipc-chat-channels.ts`: `ChannelTopic`, the `topicId` of a message, a task
   and a page, and the `topic-create`, `topic-rename`, `topic-delete` commands. The capability is
   `channel-topics-v1`.
+- `packages/contracts/src/team-protocol/channel-topics-v1.ts`: the frozen wire of the same keys and
+  commands for a joined server (see [Joined servers](#joined-servers)).
 - `src/backend/channel-schema.ts`: the tables, and `CHANNEL_TOPICS_MIGRATION_SQL` (migration 48).
 - `src/backend/channel-store.ts`: `topics`, `firstTopic`, `topic`, `addTopic`, `renameTopic`,
   `deleteTopic`, `topicThreads`, `deleteThreads`, the tab in every query that reads a
@@ -53,6 +55,9 @@ older event replay and a client without tabs send.
 ## Rules that are easy to break
 
 - The last tab of a channel cannot be deleted; a channel without a tab cannot be opened.
+- A new tab cannot take an id that any channel holds. The id is the primary key of the tab table, and
+  a write with the id of another channel's tab would change that tab's name (`topicIdTaken`). A joined
+  server makes this reachable, because a member chooses the id.
 - The first tab's id is `buildersbot-topic-<channelId>`, so the migration is idempotent and a channel
   created by the service is written with its first tab in the same command.
 - A routine, the Team API and an older client name no tab, so they land in the first one.
@@ -157,6 +162,23 @@ declares no resource and never waits for them. Instead, when a tab of the agent 
 resources. The browser tab belongs to the thread, so the chat and a tab do not use the same page. Wait cycles through dependencies are refused when the agent makes them
 (`channel_assign`), and the waits above wait only for work that runs or for the person, so they make
 no cycle. `scripts/channel-tab-lanes-e2e.ts` checks the rules with the real services and a fake Codex.
+
+## Joined servers
+
+A joined server, also one on this computer that the app reaches over the Team API, has tabs when it
+advertises `channel-topics-v1` (protocol 9 peers only). The wire adds `topics` and the per-tab
+counters to the channel list, `topicId` to the page, its messages and its tasks, `topicId` to the
+read request and to the `send` and `read` commands, and the three tab commands. See
+[Channel tabs](servers.md#channel-tabs) for the shape and the host rules.
+
+- The desktop and the web client send a tab only to a host that advertises the capability. A host
+  without it sends no `topics`, so the channel has one conversation, no tab bar and no new-tab
+  button, and its pages name no tab (`ChannelPage.topicId` is empty).
+- A tab that a member deletes needs the admin role on the host, because the messages and the work go
+  with it.
+- Not on the wire: the close report (it stays on the computer that closes the tab: a tab closed on a
+  joined server writes no record, and `agent.listChannelTabReports` is null there), a routine request,
+  the order, the pins and the last open tab (device preferences), and the tab lane `wait` of a task.
 
 ## Merges
 

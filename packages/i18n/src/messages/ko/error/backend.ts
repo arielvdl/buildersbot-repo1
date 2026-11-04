@@ -43,6 +43,7 @@ export const messages = {
   "error.backend.moonlightWebExited": "{url}이(가) 준비되기 전에 Moonlight Web이 종료되었어요.",
   "error.backend.moonlightWebNotReady": "Moonlight Web이 준비되지 않았어요.",
   "error.backend.channelDeleteUnsupported": "이 서버는 채널 삭제를 지원하지 않아요.",
+  "error.backend.channelTopicsUnsupported": "이 서버는 채널 탭을 지원하지 않아요.",
   "error.backend.browserNavigateUnsupported": "이 원격 호스트는 기존 탭에서 주소 표시줄 이동을 지원하지 않아요.",
   "error.backend.browserUserControlBusy": "이 브라우저 탭이 비밀 값을 기다리고 있어요. 먼저 비밀 값 요청에 답하세요.",
   "error.backend.browserUserControlUnsupported": "이 원격 호스트는 브라우저 탭 제어권 가져오기를 지원하지 않아요.",

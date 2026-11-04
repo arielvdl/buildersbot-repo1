@@ -108,6 +108,7 @@ import {
   supportsTeamSemanticTags,
   TEAM_AGENT_ACTIVITY_CAPABILITY,
   TEAM_CHANNEL_ATTENTION_CAPABILITY,
+  TEAM_CHANNEL_TOPICS_CAPABILITY,
   TEAM_CONTEXT_USAGE_CAPABILITY,
   TEAM_CURRENT_CAPABILITIES,
   TEAM_HISTORY_EXTENT_CAPABILITY,
@@ -1881,6 +1882,7 @@ export class TeamApiServer {
       preserveSemanticTags: supportsTeamSemanticTags(route.capabilities),
       historyExtent: route.capabilities.has(TEAM_HISTORY_EXTENT_CAPABILITY),
       channelAttention: route.capabilities.has(TEAM_CHANNEL_ATTENTION_CAPABILITY),
+      channelTopics: route.capabilities.has(TEAM_CHANNEL_TOPICS_CAPABILITY),
       agentTaskUiBlocks: route.capabilities.has(AGENT_TASK_UI_BLOCKS_CAPABILITY),
       uiBlocks: route.capabilities.has(TEAM_UI_BLOCKS_CAPABILITY),
       subagents: route.capabilities.has(TEAM_SUBAGENTS_CAPABILITY),
@@ -2043,7 +2045,11 @@ export class TeamApiServer {
       capabilities: teamCapabilitiesVisibleToProtocol(TEAM_CURRENT_CAPABILITIES, protocol ?? TEAM_PROTOCOL_V1).filter(
         (capability) => {
           if (!expanded && !legacyTeamCapabilities([capability]).length) return false;
-          if (capability === "channel-chats-v1" || capability === CHANNEL_DELETE_CAPABILITY)
+          if (
+            capability === "channel-chats-v1" ||
+            capability === CHANNEL_DELETE_CAPABILITY ||
+            capability === TEAM_CHANNEL_TOPICS_CAPABILITY
+          )
             return this.#options.channels !== undefined;
           // Advertised only when this host can serve it: a client that negotiated it gets a route,
           // and one that did not never shows the panel.

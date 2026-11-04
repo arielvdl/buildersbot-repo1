@@ -1027,7 +1027,8 @@ export class ChannelService {
     const topics = this.store.topics(channel.id);
     if (command.type === "topic-create") {
       if (topics.length >= CHANNEL_TOPIC_LIMIT) throw new Error(sourceText("error.backend.channelTopicLimit"));
-      if (topics.some((topic) => topic.id === command.topicId))
+      // The id is the key of the table across channels: a tab of another channel must not be reached.
+      if (topics.some((topic) => topic.id === command.topicId) || this.store.topicIdTaken(command.topicId))
         throw new Error(sourceText("error.backend.channelTopicExists"));
       const name = command.name?.trim() || CHANNEL_DEFAULT_TOPIC_NAME;
       return { topics: [...topics, { ...this.newTopic(channel.id, command.topicId, name) }] };

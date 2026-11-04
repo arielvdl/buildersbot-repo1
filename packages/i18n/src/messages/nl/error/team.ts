@@ -60,6 +60,7 @@ export const messages = {
   "error.team.channelsUnsupported": "Deze verbinding ondersteunt geen kanaalchats.",
   "error.team.channelDeleteUnsupported": "Deze verbinding ondersteunt het verwijderen van kanalen niet.",
   "error.team.membersCannotDeleteChannels": "Leden kunnen geen kanalen verwijderen.",
+  "error.team.membersCannotDeleteChannelTabs": "Leden kunnen geen kanaaltabbladen verwijderen.",
   "error.team.membersCannotArchiveChannels": "Leden kunnen geen kanalen archiveren.",
   "error.team.membersCannotRestoreChannels": "Leden kunnen geen kanalen herstellen.",
   "error.team.sharedDataUnsupported": "Deze verbinding ondersteunt geen gedeelde gegevens.",

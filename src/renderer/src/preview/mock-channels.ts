@@ -67,12 +67,14 @@ export function createMockChannels(
   const addedTopics = new Map<string, ChannelTopic[]>();
   /** Channels whose first tab was closed. The first tab is not in `addedTopics`, so it needs a mark. */
   const closedFirstTopics = new Set<string>();
+  /** The name that `topic-rename` gave to the first tab of a channel, which is not in `addedTopics` either. */
+  const firstTopicNames = new Map<string, string>();
   /** The close records, as the real store keeps them: no link to the channel, so they outlive it. */
   const tabReports: ChannelTabReport[] = structuredClone([...tabReportSeeds]);
   const firstTopic = (channel: Channel): ChannelTopic => ({
     id: MOCK_CHANNEL_TOPIC_ID,
     channelId: channel.id,
-    name: "General",
+    name: firstTopicNames.get(channel.id) ?? "General",
     createdAt: channel.createdAt,
     revision: 1,
   });
@@ -194,6 +196,19 @@ export function createMockChannels(
             revision: 1,
           },
         ]);
+      }
+      if (input.type === "topic-rename") {
+        const name = input.name.trim();
+        if (!name) throw new Error("Give the tab a name.");
+        if (!allTopics(channel).some((topic) => topic.id === input.topicId)) throw new Error("Channel tab not found.");
+        if (input.topicId === MOCK_CHANNEL_TOPIC_ID) firstTopicNames.set(channel.id, name);
+        else
+          addedTopics.set(
+            channel.id,
+            (addedTopics.get(channel.id) ?? []).map((topic) =>
+              topic.id === input.topicId ? { ...topic, name, revision: topic.revision + 1 } : topic,
+            ),
+          );
       }
       if (input.type === "topic-delete") closeTopic(channel, input);
       const work = tasks.get(channel.id) ?? [];

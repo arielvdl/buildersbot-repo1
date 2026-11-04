@@ -59,6 +59,7 @@ export const messages = {
   "error.team.channelsUnsupported": "この接続ではチャンネルのチャットを利用できません。",
   "error.team.channelDeleteUnsupported": "この接続ではチャンネルを削除できません。",
   "error.team.membersCannotDeleteChannels": "メンバーはチャンネルを削除できません。",
+  "error.team.membersCannotDeleteChannelTabs": "メンバーはチャンネルのタブを削除できません。",
   "error.team.membersCannotArchiveChannels": "メンバーはチャンネルをアーカイブできません。",
   "error.team.membersCannotRestoreChannels": "メンバーはチャンネルを復元できません。",
   "error.team.sharedDataUnsupported": "この接続では共有データを利用できません。",

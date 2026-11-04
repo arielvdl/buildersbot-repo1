@@ -418,6 +418,20 @@ export class ChannelStore {
   }
 
   /**
+   * Whether any channel has a tab with this id. The id is the primary key of the table, so a new tab
+   * cannot reuse the id of a tab in another channel: the write would change that tab's name.
+   */
+  topicIdTaken(topicId: string): boolean {
+    return (
+      databaseRow(
+        this.database.connection
+          .prepare("SELECT 1 AS taken FROM projection_channel_topics WHERE topic_id = ?")
+          .get(topicId),
+      ) !== null
+    );
+  }
+
+  /**
    * Adds a tab. It is written with the channel in the same command, so a channel and its first tab
    * cannot exist apart.
    */

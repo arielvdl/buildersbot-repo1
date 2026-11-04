@@ -65,6 +65,7 @@ import {
 import { AGENT_THREADS_CAPABILITY, AGENT_THREADS_ROUTES } from "@buildersbot/contracts/team-protocol/agent-threads-v1";
 import { CHANNEL_ROUTES } from "@buildersbot/contracts/team-protocol/channels-v1";
 import { CONTEXT_RESET_CAPABILITY, CONTEXT_RESET_ROUTES } from "@buildersbot/contracts/team-protocol/context-reset-v1";
+import { TEAM_CHANNEL_TOPICS_CAPABILITY } from "@buildersbot/contracts/team-protocol/current";
 import {
   PROVIDER_ACCOUNTS_CAPABILITY,
   PROVIDER_ACCOUNTS_ROUTES,
@@ -421,10 +422,17 @@ export function agentIpcHandlers({
       }),
       channelCommand: scopedHandler(parseChannelCommand, {
         local: (input) => runCauseEffect(service.channels.command(input, host.channelActor())),
-        remote: (input, serverId) =>
-          runCauseEffect(
+        remote: async (input, serverId) => {
+          // A host without channel-topics-v1 has one conversation per channel and no tab command.
+          if (
+            (input.type === "topic-create" || input.type === "topic-rename" || input.type === "topic-delete") &&
+            !remoteServers.supportsCapability(serverId, TEAM_CHANNEL_TOPICS_CAPABILITY)
+          )
+            throw new Error(sourceText("error.backend.channelTopicsUnsupported"));
+          return runCauseEffect(
             remoteServers.request(serverId, CHANNEL_ROUTES.command, decodeChannel, { method: "POST", body: input }),
-          ),
+          );
+        },
       }),
       // The close records are in the SQLite of this computer. A joined server has none to give.
       listChannelTabReports: scopedHandler(parseChannelTabReportsInput, {

@@ -41,6 +41,7 @@ export const messages = {
   "error.backend.moonlightWebExited": "Moonlight Web si è chiuso prima che {url} fosse pronto.",
   "error.backend.moonlightWebNotReady": "Moonlight Web non è diventato pronto.",
   "error.backend.channelDeleteUnsupported": "Questo server non supporta l'eliminazione dei canali.",
+  "error.backend.channelTopicsUnsupported": "Questo server non supporta le schede dei canali.",
   "error.backend.browserNavigateUnsupported":
     "Questo host remoto non supporta la navigazione dalla barra degli indirizzi in una scheda esistente.",
   "error.backend.browserUserControlBusy":

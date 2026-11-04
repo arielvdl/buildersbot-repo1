@@ -42,6 +42,7 @@ export const messages = defineMessages("error.backend", {
   "error.backend.moonlightWebExited": "Moonlight Web exited before {url} became ready.",
   "error.backend.moonlightWebNotReady": "Moonlight Web did not become ready.",
   "error.backend.channelDeleteUnsupported": "Channel deletion is not supported by this server.",
+  "error.backend.channelTopicsUnsupported": "Channel tabs are not supported by this server.",
   "error.backend.browserNavigateUnsupported":
     "This remote host does not support address-bar navigation in an existing tab.",
   "error.backend.browserUserControlBusy": "This browser tab waits for a secret. Answer the secret request first.",

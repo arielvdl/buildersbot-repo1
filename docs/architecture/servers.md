@@ -369,6 +369,49 @@ sentence. Only a protocol 9 peer gets the capability (`TEAM_PROTOCOL_V9_ONLY_CAP
 desktop client (`agent:force-queued-message`) and the web client send the route only to a host that
 advertises it. `scripts/team-api-routes-e2e.ts` checks the route.
 
+### Channel tabs
+
+`channel-topics-v1` carries the tabs of a channel (see [the tabs of a channel](channel-tabs.md)) to a
+joined server, which includes a server on this computer that the app reaches over the Team API. The
+frozen channels-v1 codec keeps only the keys it lists, so before this capability a joined channel had
+one conversation, and every message, task and read landed in its first tab. The codec is
+`packages/contracts/src/team-protocol/channel-topics-v1.ts`; fixtures are in
+`fixtures/channel-topics-v1/`. It adds, beside the frozen keys:
+
+| Where | What |
+| --- | --- |
+| `GET /v1/channels`, each summary | `topics`: at most 32 tabs, each `{ id, channelId, name, createdAt, revision }` with the optional `updatedAt`, `unreadCount`, `activeTasks`, `openTasks`, `messageCount`, `firstMessage`, `lastUserMessage`. The counters are of that tab; the totals on the summary still count every tab. `threads[].topicId` is added when `channel-attention-v1` sends threads |
+| `POST /v1/channels/read` | request: `topicId`. Page: `topicId`, and `topicId` on each message and task |
+| `POST /v1/channels/commands` | `topicId` on `send` and `read`. The commands `topic-create` `{ topicId, name? }`, `topic-rename` `{ topicId, name }` and `topic-delete` `{ topicId }`, each answered with the channel |
+
+A host serves the capability when it has a channel service, and only a protocol 9 peer gets it
+(`TEAM_PROTOCOL_V9_ONLY_CAPABILITIES`). `teamSideRouteCodec` takes the negotiated capability for the
+request (`channelTopics`) and for the response, on every transport. A host decodes and projects the
+tab keys only for a peer that negotiated it, so a peer without it reads and writes exactly the
+channels-v1 wire: a read or a send that names a tab is decoded without it and lands in the first tab,
+and a tab command is refused with 400. A client keeps the keys whenever they are present, and a
+malformed value fails closed. The desktop client encodes a tab only for a host that advertises the
+capability (`RemoteServerClient.request`), and `channelCommand` refuses a tab command for another
+host with a sentence. A host without it has no `topics`, so the app shows one conversation and no tab
+bar, as before.
+
+Rules of the host route (`src/main/team-api/route-channels.ts`):
+
+- Any member can create and rename a tab. Deleting one needs `canAdministerServer`, as deleting a
+  channel does, because it removes the messages and the work of the tab for good (403 otherwise).
+- A read or a send of a tab that does not exist fails, as on this computer. The last tab cannot be
+  deleted.
+- The close report (`report` of `topic-delete`) is not on the wire. Its record stays on the computer
+  that closes the tab, and a tab that a joined server closes writes none.
+- A routine request (`request` command) is not a wire command, so it carries no tab. The routine of a
+  joined server still lands in its first tab.
+- `channels-changed` carries no tab. A client reads the list and the open page again, which is how
+  a tab made, renamed or deleted on another device shows.
+
+`scripts/team-api-routes-e2e.ts` checks create, rename, send in a tab, read, unread and delete over
+the Team API with the real channel service and the real client request path, and a peer without the
+capability.
+
 ### Sidebar style
 
 The released `GET /v1/sidebar-layout` and `POST /v1/sidebar-layout/actions` carry five keys, and their
