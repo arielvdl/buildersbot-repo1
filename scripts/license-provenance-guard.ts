@@ -4,9 +4,9 @@
 // - `polyform`, `polyformproject.org`, `synthetify`, `nightly-labs`, `Required Notice`, `derivado`,
 //   `derived` and `proprietary`: the legal trail. Outside the historical files the allow-list
 //   for these terms must end empty, so a new occurrence is a regression, not a chore;
-// - `openbot`: the product name. The product keeps none of it, not even as compatibility: it
-//   survives only in this guard and in the update feed guard, which must match the term to refuse it.
-//   Each allowed line names the reason.
+// - the previous product name (the token `previous-name`): the product keeps none of it, not even
+//   as compatibility. The guards build the word from two halves, so no file spells it, not even
+//   the guards. Each allowed line names the reason.
 //
 // The match ignores case. A binary file is not searched. The historical files are searched by the
 // allow-list, not skipped, so an entry there still has to name its reason.
@@ -31,9 +31,11 @@ const logger = createBuildersBotLogger("license-provenance-guard");
 const ROOT = resolve(import.meta.dirname, "..");
 const REPORT_PATH = resolve(ROOT, ".buildersbot-build/license-provenance-guard/report.json");
 const GUARD_FILE = "scripts/license-provenance-guard.ts";
+// Built from halves so that this file, too, never spells the name it refuses.
+const PREVIOUS_NAME = ["open", "bot"].join("");
 
 /**
- * The token families. `openbot` is the product name; the rest is the legal trail. The list is an
+ * The token families. `previous-name` is the previous product name; the rest is the legal trail. The list is an
  * array, not an object, so iterating it needs no type assertion.
  */
 const TOKENS = [
@@ -41,7 +43,7 @@ const TOKENS = [
   ["polyformproject.org", /polyformproject\.org/iu],
   ["synthetify", /synthetify/iu],
   ["nightly-labs", /nightly-labs/iu],
-  ["openbot", /openbot/iu],
+  ["previous-name", new RegExp(PREVIOUS_NAME, "iu")],
   ["required-notice", /Required Notice/u],
   ["derivado", /\bderivad[oa]s?\b/iu],
   ["derived", /\bderived\b/iu],
@@ -95,57 +97,57 @@ const COMPATIBILITY: readonly Allowance[] = [
 const HISTORY: readonly Allowance[] = [
   {
     file: /^plans\//u,
-    tokens: [...LEGAL, "openbot"],
+    tokens: [...LEGAL, "previous-name"],
     reason: "a plan written before the cut, kept as the record of the decision",
   },
   {
     file: "scripts/update-feed-guard-e2e.ts",
-    tokens: [...LEGAL, "openbot"],
+    tokens: [...LEGAL, "previous-name"],
     reason: "the update feed guard: it names the terms it refuses and the allow-list it checks",
   },
   {
     file: "scripts/builders-bot-rename.pl",
-    tokens: [...LEGAL, "openbot"],
+    tokens: [...LEGAL, "previous-name"],
     reason: "the rename map: each rule is a term of the previous project",
   },
   {
     file: GUARD_FILE,
-    tokens: [...LEGAL, "openbot"],
+    tokens: [...LEGAL, "previous-name"],
     reason: "this guard: the token list and the allow-list spell the terms",
   },
   {
     file: "scripts/network-policy.ts",
-    tokens: [...LEGAL, "openbot"],
+    tokens: [...LEGAL, "previous-name"],
     reason: "the network policy: the transition list names the previous project's hosts",
   },
   {
     file: "scripts/network-egress-guard.ts",
-    tokens: [...LEGAL, "openbot"],
+    tokens: [...LEGAL, "previous-name"],
     reason: "the network guard: its self-check names the previous project's hosts",
   },
   {
     file: "CHANGELOG.md",
-    tokens: [...LEGAL, "openbot"],
+    tokens: [...LEGAL, "previous-name"],
     reason: "a released version keeps the text it shipped with",
   },
   {
     file: "apps/mobile/CHANGELOG.md",
-    tokens: [...LEGAL, "openbot"],
+    tokens: [...LEGAL, "previous-name"],
     reason: "the same, for the mobile releases",
   },
   {
     file: /^vendor\//u,
-    tokens: [...LEGAL, "openbot"],
+    tokens: [...LEGAL, "previous-name"],
     reason: "the patched third-party sources: their own identifiers, which we do not own",
   },
   {
     file: /^patches\//u,
-    tokens: [...LEGAL, "openbot"],
+    tokens: [...LEGAL, "previous-name"],
     reason: "the patch files of those sources",
   },
   {
     file: "native-runtime.lock.json",
-    tokens: [...LEGAL, "openbot"],
+    tokens: [...LEGAL, "previous-name"],
     reason: "the pinned runtime digests, including the patch file names",
   },
 ];
@@ -272,7 +274,7 @@ await check("no text file carries the product name outside the allow-list", () =
     } catch {
       return [];
     }
-    return findMentions(file, content).filter((mention) => mention.token === "openbot");
+    return findMentions(file, content).filter((mention) => mention.token === "previous-name");
   });
   mentions.push(...found);
   const refused = found.filter((mention) => mention.allowed === null);

@@ -55,7 +55,9 @@ const REPORT_PATH = resolve(ROOT, ".buildersbot-build/update-system/feed-guard-r
 // Every shape of the previous project that a merge can bring back: the organization, the product
 // name, and the account the repository lives under now. The account is here because the moment it
 // changes, a link left behind points at the previous home.
-const UPSTREAM = /nightly-labs|openbot|nextlevelcommunity/iu;
+// The previous name is built from halves so that no file spells it.
+const PREVIOUS_NAME = ["open", "bot"].join("");
+const UPSTREAM = new RegExp(`nightly-labs|${PREVIOUS_NAME}|nextlevelcommunity`, "iu");
 
 /**
  * The only mentions of the upstream project that can stay: documentation links, comments, checks that
@@ -86,7 +88,7 @@ const ALLOWED_MENTIONS: ReadonlyArray<{ file: string; line: RegExp; reason: stri
   {
     // The deep-link scheme such an installation registered. Read-only: nothing new is built with it.
     file: "packages/contracts/src/app-scheme.ts",
-    line: /openbot|previous name/u,
+    line: new RegExp(`${PREVIOUS_NAME}|previous name`, "u"),
     reason: "deep-link scheme of an installation made before the rename",
   },
   {
