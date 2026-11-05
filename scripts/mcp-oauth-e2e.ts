@@ -729,7 +729,7 @@ async function proxyCases(auth: Awaited<ReturnType<typeof startAuthorizationServ
       name: "buildersbot",
       title,
       version: "9.9.9-e2e",
-      websiteUrl: "https://openbot.run",
+      websiteUrl: "https://buildersbot.culturabuilder.com",
     });
     assert.deepEqual(resource.clients.at(-1), buildersbotClient("Builders Bot"));
     assert.ok(upstream.every((hit) => hit.userAgent === "Builders Bot/9.9.9-e2e"));

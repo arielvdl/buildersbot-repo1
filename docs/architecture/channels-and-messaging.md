@@ -745,7 +745,7 @@ the answer. Every answer comes from Builders Bot.
   page `/slack/connect` opens `buildersbot://slack-workspace`. Only the account that linked a workspace
   can move it to another of its hosts; another account gets `slack_workspace_taken`.
 - **Events.** Slack posts every workspace's events and button presses to one URL,
-  `https://signal.openbot.run/v1/slack/events`. Signal checks Slack's signature with the app's
+  `https://signal.buildersbot.culturabuilder.com/v1/slack/events`. Signal checks Slack's signature with the app's
   signing secret, answers `url_verification`, and reads only the app ID and the workspace ID. Each
   signing secret is bound to its app, and a route is one app in one workspace, so the production and
   development apps can share a workspace. It passes the exact body to the `ingress` socket (`SignalIngress` in main, a plain `ws` client: no WebRTC, so no hidden
@@ -774,7 +774,7 @@ must not reach any host. Only Signal has it (`TELEGRAM_BOT_TOKENS`), and the con
   connection only on that flag, because anyone in a routed chat can send a `/start` with any code.
   The open code holds the host's socket until the link or its expiry, as no connection may hold it. Another
   account's host gets `telegram_chat_taken`.
-- **Updates.** Telegram posts to `https://signal.openbot.run/v1/telegram/updates/<bot ID>` with a
+- **Updates.** Telegram posts to `https://signal.buildersbot.culturabuilder.com/v1/telegram/updates/<bot ID>` with a
   secret header that Signal derives for each bot. Signal reads only the chat ID, a link code and a
   callback query ID, and sends `telegram-delivery` to the socket that holds the chat. It always
   answers 200: Telegram would hold back the bot's other chats behind one offline host. The Telegram

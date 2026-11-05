@@ -1,6 +1,6 @@
 name: Status page
 
-# The public status page at https://status.openbot.run. GitHub hosts it, so it stays up when
+# The public status page at https://status.buildersbot.culturabuilder.com. GitHub hosts it, so it stays up when
 # Cloudflare does not. Each run checks the services, keeps the check history in `state.json` on the
 # `status-data` branch, opens or closes the automatic incident issues, and publishes the page with
 # the `status` issues. See apps/status/scripts/update.ts. The `notify` job sends the status webhooks
@@ -342,7 +342,7 @@ jobs:
             failed=$(gh api -X GET "repos/$GH_REPO/actions/runs/$previous/jobs" \
               --jq '[.jobs[] | select((.name == "Check and publish" or .name == "Deploy") and .conclusion == "failure")] | length')
             if [ "$failed" = "0" ]; then exit 0; fi
-            gh issue create --title "$title" --body "The status page workflow failed 2 times in a row, so https://status.openbot.run can show old data. The page shows \"Checks are late\" after some minutes.
+            gh issue create --title "$title" --body "The status page workflow failed 2 times in a row, so https://status.buildersbot.culturabuilder.com can show old data. The page shows \"Checks are late\" after some minutes.
 
           Last failed run: $RUN_URL
 

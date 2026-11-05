@@ -6,7 +6,7 @@
 import { LANDING_FAQ_STRUCTURED_DATA } from "./landing-faq";
 import { BUILDERSBOT_ALTERNATE_DOWNLOAD_LINKS, BUILDERSBOT_DOWNLOAD_LINKS } from "./landing-links";
 
-export const BUILDERSBOT_SITE_URL = "https://openbot.run/";
+export const BUILDERSBOT_SITE_URL = "https://buildersbot.culturabuilder.com/";
 export const BUILDERSBOT_SITE_TITLE = "Builders Bot: Run a team of AI agents on your computer";
 export const BUILDERSBOT_SITE_DESCRIPTION =
   "A free desktop app that runs AI agents as a team on your own computer, with the ChatGPT, Claude, Gemini or Grok plan you already pay for, or your own model.";
@@ -36,13 +36,13 @@ export const BUILDERSBOT_SOCIAL_IMAGE_META = [
 ] as const;
 
 // The hosts production answers on. Both serve the same pages, and those pages go by
-// openbot.run.
-const BUILDERSBOT_PRODUCTION_HOSTS = new Set(["openbot.run", "api.openbot.run"]);
+// buildersbot.culturabuilder.com.
+const BUILDERSBOT_PRODUCTION_HOSTS = new Set(["buildersbot.culturabuilder.com", "api.buildersbot.culturabuilder.com"]);
 
 /**
  * The site that the head tags of a page served at `pageUrl` name. Social sites fetch
  * `og:url` and `og:image` themselves and show no card when those answer 404. A
- * pull-request preview serves pages and images that openbot.run does not have yet,
+ * pull-request preview serves pages and images that buildersbot.culturabuilder.com does not have yet,
  * so any host other than production names itself. Cloudflare marks preview URLs
  * `noindex`, so a preview canonical does not compete with production.
  */

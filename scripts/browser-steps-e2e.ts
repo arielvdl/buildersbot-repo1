@@ -10,7 +10,7 @@ import { withoutElectronRuntimeFlags } from "./electron-spawn-env";
 class FixtureProcessTimeout extends Error {}
 
 const projectRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const buildRoot = await mkdtemp(join(tmpdir(), "openbot-browser-steps-"));
+const buildRoot = await mkdtemp(join(tmpdir(), "buildersbot-browser-steps-"));
 const reportPath = join(projectRoot, ".buildersbot-build/browser-steps-e2e/report.json");
 const runId = randomUUID();
 let sourceSha: string | undefined;

@@ -7,7 +7,7 @@ process.stdout.write(
   [
     `WEB_PUSH_PUBLIC_KEY=${keys.publicKey}`,
     `WEB_PUSH_PRIVATE_KEY=${JSON.stringify(keys.privateKeyJwk)}`,
-    "WEB_PUSH_SUBJECT=mailto:ops@openbot.run",
+    "WEB_PUSH_SUBJECT=mailto:ops@buildersbot.culturabuilder.com",
     "",
   ].join("\n"),
 );

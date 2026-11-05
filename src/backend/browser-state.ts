@@ -32,8 +32,8 @@ export type BrowserTabSession = { kind: "agent"; key: string } | { kind: "profil
 /** The directory name of a session under `Partitions`. Its partition is `persist:` and this name. */
 export function browserTabPartition(tabSession: BrowserTabSession): string {
   return tabSession.kind === "agent"
-    ? `openbot-browser-agent-${tabSession.key}`
-    : `openbot-browser-profile-${tabSession.profileId}`;
+    ? `buildersbot-browser-agent-${tabSession.key}`
+    : `buildersbot-browser-profile-${tabSession.profileId}`;
 }
 
 /** The session of a saved tab. Undefined: the shared session. */

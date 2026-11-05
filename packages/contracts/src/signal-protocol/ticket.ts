@@ -48,7 +48,7 @@ export interface RemoteTicketClaims {
   clientPublicKey?: string;
   // The ID of the Signal machine that holds the host's room, when the account API gives the host a
   // home Signal. A Signal with another ID refuses the ticket. Without it, only the machine that
-  // `signal.openbot.run` names accepts the ticket. Older verifiers ignore it.
+  // `signal.buildersbot.culturabuilder.com` names accepts the ticket. Older verifiers ignore it.
   signal?: string;
   iat: number;
   exp: number;

@@ -19,7 +19,7 @@ export interface SignalEntryHooks {
 }
 
 /**
- * Whether this Signal is the entry: the machine that `SIGNAL_ENTRY_HOST` (`signal.openbot.run`) names.
+ * Whether this Signal is the entry: the machine that `SIGNAL_ENTRY_HOST` (`signal.buildersbot.culturabuilder.com`) names.
  * The entry takes the tickets without a `signal` claim (released hosts and their clients, `ingress`
  * sockets) and the bots. A load balancer in failover mode moves the name when the entry machine stops.
  *

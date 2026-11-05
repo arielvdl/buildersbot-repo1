@@ -18,7 +18,7 @@ import { type DynamicRecord, isDynamicRecord } from "@buildersbot/contracts/runt
 import { sourceText } from "@buildersbot/i18n/source";
 import { Effect } from "effect";
 import { profileToolErrorMessage } from "../src/backend/agent/profile-tools";
-import { openBotToolFailure } from "../src/backend/agent/routine-tools";
+import { buildersBotToolFailure } from "../src/backend/agent/routine-tools";
 import { ToolOperationFailed } from "../src/backend/agent/tool-operation";
 import { handleUpdateAgentsTool } from "../src/backend/agent/update-agents-tool";
 import { AgentStore } from "../src/backend/agent-store";
@@ -111,7 +111,7 @@ try {
         },
         coordinator.id,
         hooks,
-      ).pipe(Effect.catch((failure) => Effect.succeed(openBotToolFailure(profileToolErrorMessage(failure.cause))))),
+      ).pipe(Effect.catch((failure) => Effect.succeed(buildersBotToolFailure(profileToolErrorMessage(failure.cause))))),
     );
     const item = response.contentItems[0];
     assert.ok(item && item.type === "inputText", "The answer is text.");

@@ -1,15 +1,15 @@
 {
   "project_info": {
     "project_number": "1006722609038",
-    "project_id": "openbot-a3328",
-    "storage_bucket": "openbot-a3328.firebasestorage.app"
+    "project_id": "buildersbot-a3328",
+    "storage_bucket": "buildersbot-a3328.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
         "mobilesdk_app_id": "1:1006722609038:android:e356f83f470297b6373edf",
         "android_client_info": {
-          "package_name": "run.openbot.mobile"
+          "package_name": "run.buildersbot.mobile"
         }
       },
       "oauth_client": [],

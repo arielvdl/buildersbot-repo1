@@ -907,7 +907,7 @@ async function main(): Promise<void> {
     // are the engine's own declarations (`src/backend/browser-cdp-values.ts`), and the run checks that
     // the table holds them.
     const READY = "function() { return document.readyState !== 'loading'; }";
-    const ENGINE_WORLD = "openbot-browser-automation";
+    const ENGINE_WORLD = "buildersbot-browser-automation";
     const resultOf = (answer: DynamicRecord): DynamicRecord => (isDynamicRecord(answer.result) ? answer.result : {});
     /** A command that reaches the tab and changes nothing. */
     const probe = (handle: string) => app.request("cdp.send", { handle, method: "Target.getTargetInfo", params: {} });

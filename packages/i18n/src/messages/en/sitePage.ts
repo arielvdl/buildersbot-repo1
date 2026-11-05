@@ -65,7 +65,7 @@ export const messages = defineMessages("sitePage", {
   "sitePage.billing.cancelledBody": "Nothing was charged. Go back to Builders Bot.",
   "sitePage.report.pageTitle": "Report a hosted site — Builders Bot",
   "sitePage.report.title": "Report a hosted site",
-  "sitePage.report.intro": "Send a report about harmful or unlawful content on an openbot.site address.",
+  "sitePage.report.intro": "Send a report about harmful or unlawful content on an sites.buildersbot.culturabuilder.com address.",
   "sitePage.report.hostnameLabel": "Site address",
   "sitePage.report.hostnameMissing": "Enter the site address",
   "sitePage.report.reasonLabel": "Reason",

@@ -30,7 +30,7 @@ export const messages = {
   "onboarding.setup.defaultProviderHint":
     "Yeni yerel ajanlar için kullanılır. Daha sonra her ajan için değiştirebilirsiniz.",
   "onboarding.setup.invitation": "Ana makine daveti",
-  "onboarding.setup.invitationPlaceholder": "Bir https://openbot.run/join davet bağlantısı yapıştırın",
+  "onboarding.setup.invitationPlaceholder": "Bir https://buildersbot.culturabuilder.com/join davet bağlantısı yapıştırın",
   "onboarding.setup.otherInvitation": "Başka bir davet kullan",
   "onboarding.setup.joinNote":
     "{email} olarak katılacaksınız. E-posta davetleri yalnızca onları alan adres için çalışır.",

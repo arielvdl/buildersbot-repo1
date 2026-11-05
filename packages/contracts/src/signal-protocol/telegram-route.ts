@@ -3,7 +3,7 @@
 //
 // One Builders Bot bot serves every user. Its token is in Signal only: a host that had it could read and
 // post in every chat of every user. Telegram posts each update to
-// `https://signal.openbot.run/v1/telegram/updates/<bot ID>` with a secret header. Signal checks the
+// `https://signal.buildersbot.culturabuilder.com/v1/telegram/updates/<bot ID>` with a secret header. Signal checks the
 // header, reads the chat ID, and passes the update to the `ingress` socket that holds a route ticket
 // for that chat. The host calls the Bot API through the same socket (`telegram-call`): Signal
 // accepts only the methods below, with only the parameters below, and only for the chats routed to

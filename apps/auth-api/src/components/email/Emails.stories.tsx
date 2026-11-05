@@ -10,7 +10,7 @@ import {
 // `<style>` block apply, and Storybook's stylesheet does not leak in.
 
 const INVITE_URL =
-  "https://openbot.run/join?api=https%3A%2F%2Fstudio-mac-k7m4q2pz-host.openbot.run%2F&server=00000000-0000-4000-8000-000000000000&fingerprint=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&invite=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+  "https://buildersbot.culturabuilder.com/join?api=https%3A%2F%2Fstudio-mac-k7m4q2pz-host.buildersbot.culturabuilder.com%2F&server=00000000-0000-4000-8000-000000000000&fingerprint=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&invite=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
 interface EmailPreviewProps {
   email: RenderedEmail;
@@ -102,7 +102,7 @@ export const TeamInviteAdminDark: Story = {
     scheme: "dark",
     email: renderTeamInviteEmail({
       inviterEmail: "norbert@example.com",
-      serverName: "Nightly Labs Build Server",
+      serverName: "Builders Bot Build Server",
       inviteUrl: INVITE_URL,
       role: "admin",
     }),
@@ -126,7 +126,7 @@ export const Welcome: Story = {
 };
 
 export const WelcomeDark: Story = {
-  args: { scheme: "dark", email: renderWelcomeEmail({ plan: "pro", serverName: "Nightly Labs Build Server" }) },
+  args: { scheme: "dark", email: renderWelcomeEmail({ plan: "pro", serverName: "Builders Bot Build Server" }) },
 };
 
 export const WelcomeMobile: Story = {

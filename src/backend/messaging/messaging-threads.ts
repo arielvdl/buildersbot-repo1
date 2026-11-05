@@ -11,7 +11,7 @@ import {
 } from "@buildersbot/contracts/ipc";
 import { sourceText } from "@buildersbot/i18n/source";
 import { Deferred, Effect, Result, Schema, type Scope } from "effect";
-import { type BuildersBotToolResponse, openBotToolFailure, openBotToolResult } from "../agent/routine-tools";
+import { type BuildersBotToolResponse, buildersBotToolFailure, buildersBotToolResult } from "../agent/routine-tools";
 import type { BuildersBotDatabase } from "../buildersbot-database";
 import { causeHelpers } from "../effect-boundary";
 import type { DeliveryContext, MailboxStore, MessagingOrigin } from "../mailbox-store";
@@ -245,10 +245,10 @@ export class MessagingThreads {
     args: unknown,
   ): Effect.fn.Return<BuildersBotToolResponse> {
     const call = parseMessagingOutboundTool(tool, args);
-    if ("error" in call) return openBotToolFailure(call.error);
+    if ("error" in call) return buildersBotToolFailure(call.error);
     const enabled = this.store.connections().filter((record) => record.enabled);
     if (call.tool === "messaging_list_places" && !call.connection)
-      return openBotToolResult({
+      return buildersBotToolResult({
         connections: enabled.map((record) => ({
           connection: record.connectionId,
           platform: PLATFORM_NAMES[record.platform],
@@ -257,11 +257,11 @@ export class MessagingThreads {
       });
     const record = enabled.find((candidate) => candidate.connectionId === call.connection);
     if (!record)
-      return openBotToolFailure(
+      return buildersBotToolFailure(
         "No enabled connection has that id. Call buildersbot.messaging_list_places for the ids.",
       );
     const outbound = this.#outbound;
-    if (!outbound) return openBotToolFailure(MESSAGING_NOT_RUNNING);
+    if (!outbound) return buildersBotToolFailure(MESSAGING_NOT_RUNNING);
     // No deadline on a post: one that ended late could be sent again by the agent.
     const answer =
       call.tool === "messaging_list_places"
@@ -274,7 +274,7 @@ export class MessagingThreads {
             { platformChannelId: call.place, replyThreadId: call.replyTo },
             call.text,
           );
-    return "error" in answer ? openBotToolFailure(answer.error) : openBotToolResult(answer);
+    return "error" in answer ? buildersBotToolFailure(answer.error) : buildersBotToolResult(answer);
   });
 
   /**
@@ -337,11 +337,11 @@ export class MessagingThreads {
     args: unknown,
   ): Effect.fn.Return<BuildersBotToolResponse> {
     const call = parseMessagingTool(tool, args);
-    if ("error" in call) return openBotToolFailure(call.error);
+    if ("error" in call) return buildersBotToolFailure(call.error);
     switch (call.tool) {
       case "messaging_remember": {
         if (link.isDirect)
-          return openBotToolFailure(
+          return buildersBotToolFailure(
             "A direct message is private. Facts from it are not saved for the whole workspace.",
           );
         const saved = Result.try(() =>
@@ -353,8 +353,8 @@ export class MessagingThreads {
           }),
         );
         if (Result.isFailure(saved))
-          return openBotToolFailure(saved.failure instanceof Error ? saved.failure.message : String(saved.failure));
-        return openBotToolResult({
+          return buildersBotToolFailure(saved.failure instanceof Error ? saved.failure.message : String(saved.failure));
+        return buildersBotToolResult({
           accepted: true,
           memoryId: saved.success.id,
           count: this.memories.count(link.connectionId),
@@ -363,8 +363,8 @@ export class MessagingThreads {
       }
       case "messaging_forget_memory":
         return this.memories.delete(link.connectionId, call.memoryId)
-          ? openBotToolResult({ accepted: true })
-          : openBotToolResult({ accepted: false, reason: "No saved fact of this workspace has that memoryId." });
+          ? buildersBotToolResult({ accepted: true })
+          : buildersBotToolResult({ accepted: false, reason: "No saved fact of this workspace has that memoryId." });
       case "messaging_history": {
         const source = this.#historySource;
         const history = source
@@ -375,9 +375,9 @@ export class MessagingThreads {
             )
           : null;
         if (!history)
-          return openBotToolFailure("The platform did not answer, or it limits reads now. Try again in a minute.");
-        if (!history.value) return openBotToolFailure(MESSAGING_NOT_RUNNING);
-        return openBotToolResult({
+          return buildersBotToolFailure("The platform did not answer, or it limits reads now. Try again in a minute.");
+        if (!history.value) return buildersBotToolFailure(MESSAGING_NOT_RUNNING);
+        return buildersBotToolResult({
           place: history.value.place,
           scope: call.scope,
           messages: boundedHistory(history.value.messages),

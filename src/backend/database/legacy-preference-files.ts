@@ -6,7 +6,7 @@
 import { copyFileSync, existsSync, readdirSync, renameSync } from "node:fs";
 import { join } from "node:path";
 
-export const LEGACY_FILE_PREFIX = "openbot-";
+export const LEGACY_FILE_PREFIX = "buildersbot-";
 export const FILE_PREFIX = "buildersbot-";
 
 export function migrateLegacyPreferenceFiles(userDataPath: string): void {

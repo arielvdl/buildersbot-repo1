@@ -1,7 +1,7 @@
 # Analytics
 
 > **Builders Bot sends none of these events.** The events target the OpenPanel service at
-> `analytics.openbot.run`, which runs apart from the app. The telemetry destination guard
+> `analytics.buildersbot.culturabuilder.com`, which runs apart from the app. The telemetry destination guard
 > (`bun run test:telemetry-guard`) fails when a change brings a client or transport back: the
 > `Telemetry destination guard` workflow runs it on each pull request and each push to `main`, the
 > package scripts run it on `out/` and on the packaged app, and the package checks scan `app.asar`.
@@ -32,7 +32,7 @@ semantics and native verification steps are in [the mobile README](../../apps/mo
 ## Website analytics
 
 Public website tracking lives in `apps/auth-api/src/lib/analytics.ts`. It is limited to the
-production `openbot.run` hostname. Landing and invitation events carry a bounded
+production `buildersbot.culturabuilder.com` hostname. Landing and invitation events carry a bounded
 `source_platform`, the existing `acquisition_source` category, and a domain-only referrer.
 
 A recognized `utm_source` tag takes precedence over the referring domain. Exact domain and

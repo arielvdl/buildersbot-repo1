@@ -51,9 +51,9 @@ export function isExternalLinkAppPath(value: unknown): value is string {
 
 export function decodeExternalLinkTarget(value: unknown): ExternalLinkTarget | null {
   if (!isDynamicRecord(value)) return null;
-  // `openbot` is the kind that a preference file written before the rename holds.
+  // `buildersbot` is the kind that a preference file written before the rename holds.
   if (value.kind === "default" || value.kind === "buildersbot") return { kind: value.kind };
-  if (value.kind === "openbot") return { kind: "buildersbot" };
+  if (value.kind === "buildersbot") return { kind: "buildersbot" };
   if (value.kind === "app" && isExternalLinkAppPath(value.path)) return { kind: "app", path: value.path };
   return null;
 }

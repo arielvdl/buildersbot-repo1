@@ -30,7 +30,7 @@ export const messages = {
   "onboarding.setup.defaultProviderHint":
     "Используется для новых локальных агентов. Позже его можно изменить для каждого агента.",
   "onboarding.setup.invitation": "Приглашение на хост",
-  "onboarding.setup.invitationPlaceholder": "Вставьте ссылку-приглашение https://openbot.run/join",
+  "onboarding.setup.invitationPlaceholder": "Вставьте ссылку-приглашение https://buildersbot.culturabuilder.com/join",
   "onboarding.setup.otherInvitation": "Использовать другое приглашение",
   "onboarding.setup.joinNote":
     "Вы присоединитесь как {email}. Приглашения по почте работают только для адреса, на который они пришли.",

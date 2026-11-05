@@ -3,16 +3,16 @@ import { type DynamicRecord, isBoolean, isDynamicRecord, isNumber, isString } fr
 export const TEAM_PROTOCOL_V1 = 1;
 export const TEAM_PROTOCOL_VERSION_HEADER = "X-BuildersBot-Protocol-Version";
 /** The same header of a client or a host made before the rename. Read it after the new one. */
-export const TEAM_PROTOCOL_VERSION_LEGACY = "OpenBot-Protocol-Version";
+export const TEAM_PROTOCOL_VERSION_LEGACY = "BuildersBot-Protocol-Version";
 export const TEAM_APP_VERSION_HEADER = "X-BuildersBot-App-Version";
 /** The same header of a client or a host made before the rename. Read it after the new one. */
-export const TEAM_APP_VERSION_LEGACY = "OpenBot-App-Version";
+export const TEAM_APP_VERSION_LEGACY = "BuildersBot-App-Version";
 export const TEAM_CAPABILITIES_HEADER = "X-BuildersBot-Capabilities";
 /** The same header of a client or a host made before the rename. Read it after the new one. */
-export const TEAM_CAPABILITIES_LEGACY = "OpenBot-Capabilities";
+export const TEAM_CAPABILITIES_LEGACY = "BuildersBot-Capabilities";
 export const TEAM_PROTOCOL_V1_WEBSOCKET = "buildersbot-team-v1";
 /** The same subprotocol of a client or a host made before the rename. Both are offered and accepted. */
-export const TEAM_PROTOCOL_V1_WEBSOCKET_LEGACY = "openbot-team-v1";
+export const TEAM_PROTOCOL_V1_WEBSOCKET_LEGACY = "buildersbot-team-v1";
 
 /** Whether a subprotocol is the v1 events channel, under either name. */
 export function isTeamProtocolV1WebSocket(protocol: string): boolean {

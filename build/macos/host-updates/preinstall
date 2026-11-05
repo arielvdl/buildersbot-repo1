@@ -39,12 +39,12 @@ console_user=$(stat -f %Su /dev/console)
 if [ -n "$console_user" ] && [ "$console_user" != root ]; then
   console_uid=$(id -u "$console_user" 2>/dev/null) || console_uid=
   if [ -n "$console_uid" ]; then
-    launchctl bootout "gui/$console_uid/app.openbot.desktop.relaunch" >/dev/null 2>&1 || true
+    launchctl bootout "gui/$console_uid/app.buildersbot.desktop.relaunch" >/dev/null 2>&1 || true
   fi
 fi
-rm -f /Library/LaunchAgents/app.openbot.desktop.relaunch.plist
+rm -f /Library/LaunchAgents/app.buildersbot.desktop.relaunch.plist
 # The package moved its folder and its command from the old product name. Remove the old copy, so no
 # second daemon and no stale binary stay behind. Only after the jobs are gone: a running daemon
 # restarts from its old path until it is booted out.
-rm -rf '/Library/Application Support/OpenBot'
-rm -f /usr/local/bin/openbot-host
+rm -rf '/Library/Application Support/BuildersBot'
+rm -f /usr/local/bin/buildersbot-host

@@ -41,11 +41,11 @@ export type PushNotificationLevel = "all" | "needs-me";
  */
 export const PUSH_NOTIFICATION_SOUNDS = ["buildersbot", "warm", "mech", "bubble", "press", "default", "none"] as const;
 export type PushNotificationSound = (typeof PUSH_NOTIFICATION_SOUNDS)[number];
-/** The names that a registration may carry: the current ones, and `openbot` from a host made before the rename. */
-export const PUSH_NOTIFICATION_SOUND_NAMES = [...PUSH_NOTIFICATION_SOUNDS, "openbot"] as const;
-/** The sound of a registration, with `openbot` read as its new name. */
+/** The names that a registration may carry: the current ones, and `buildersbot` from a host made before the rename. */
+export const PUSH_NOTIFICATION_SOUND_NAMES = [...PUSH_NOTIFICATION_SOUNDS, "buildersbot"] as const;
+/** The sound of a registration, with `buildersbot` read as its new name. */
 export function pushNotificationSound(value: unknown): PushNotificationSound | null {
-  if (value === "openbot") return "buildersbot";
+  if (value === "buildersbot") return "buildersbot";
   return PUSH_NOTIFICATION_SOUNDS.find((known) => known === value) ?? null;
 }
 

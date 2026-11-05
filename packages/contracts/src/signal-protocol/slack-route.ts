@@ -1,7 +1,7 @@
 // The Slack route: how a Slack request finds the host that answers it.
 //
 // The Builders Bot Slack app has one request URL for every workspace that installs it,
-// `https://signal.openbot.run/v1/slack/events`. Signal checks Slack's signature, reads the workspace
+// `https://signal.buildersbot.culturabuilder.com/v1/slack/events`. Signal checks Slack's signature, reads the workspace
 // ID (`team_id`) from the body, and passes the request to the `ingress` socket that holds a route
 // ticket for that workspace.
 //

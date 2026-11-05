@@ -8,13 +8,13 @@
   "preview_urls": false,
   "routes": [
     {
-      "pattern": "*.openbot.site/*",
-      "zone_name": "openbot.site"
+      "pattern": "*.sites.buildersbot.culturabuilder.com/*",
+      "zone_name": "sites.buildersbot.culturabuilder.com"
     }
   ],
   "vars": {
     // The account service origin. The report route `/_buildersbot/report` and the links on error pages use it.
-    "ACCOUNT_ORIGIN": "https://openbot.run"
+    "ACCOUNT_ORIGIN": "https://buildersbot.culturabuilder.com"
   },
   "r2_buckets": [
     {

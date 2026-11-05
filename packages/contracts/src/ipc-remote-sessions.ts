@@ -25,11 +25,11 @@ export function isRemoteNetworkRoute(value: unknown): value is RemoteNetworkRout
 }
 
 /**
- * A stored route, where `openbot` is the value of a preference file written before the rename. The
+ * A stored route, where `buildersbot` is the value of a preference file written before the rename. The
  * current route is returned, so a file is read as if it already held the new name.
  */
 export function readRemoteNetworkRoute(value: unknown): RemoteNetworkRoute | null {
-  if (value === "openbot") return DEFAULT_REMOTE_NETWORK_ROUTE;
+  if (value === "buildersbot") return DEFAULT_REMOTE_NETWORK_ROUTE;
   return isRemoteNetworkRoute(value) ? value : null;
 }
 

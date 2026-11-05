@@ -15,30 +15,30 @@ antigo até ser refeita.
 - **DNS:** `signal.buildersbot.culturabuilder.com`, `turn.buildersbot.culturabuilder.com`,
   `status.buildersbot.culturabuilder.com`, `updates.buildersbot.culturabuilder.com` e
   `*.sites.buildersbot.culturabuilder.com` ainda não resolvem. Até lá o código continua lendo os
-  hosts `*.openbot.run` e `*.openbot.site`.
+  hosts `*.buildersbot.culturabuilder.com` e `*.sites.buildersbot.culturabuilder.com`.
 - **Publicação:** feita em 02/11/2026: um commit, `origin` único, `v1.0.0` assinada, release publicada
   e `main` protegida. O build de release ainda depende dos dois itens acima.
 
 ## Imagens a regerar
 
-Todas mostram `OpenBot` ou `Meet OpenBot` na interface. Regenere com uma build atual e mantenha o
+Todas mostram `BuildersBot` ou `Meet BuildersBot` na interface. Regenere com uma build atual e mantenha o
 mesmo enquadramento, para que a legenda continue verdadeira.
 
 | Caminho | O que mostra hoje com o nome antigo |
 | --- | --- |
-| `apps/auth-api/src/content/guides/media/buildersbot-101/a-thread.webp` | Título da janela "OpenBot Local Dev Host" e a menção "OpenBot documentation" na resposta. |
-| `apps/auth-api/src/content/guides/media/buildersbot-101/a-channel.webp` | Título da janela e "OpenBot 1.0" na mensagem da conversa. |
+| `apps/auth-api/src/content/guides/media/buildersbot-101/a-thread.webp` | Título da janela "BuildersBot Local Dev Host" e a menção "BuildersBot documentation" na resposta. |
+| `apps/auth-api/src/content/guides/media/buildersbot-101/a-channel.webp` | Título da janela e "BuildersBot 1.0" na mensagem da conversa. |
 | `apps/auth-api/src/content/guides/media/buildersbot-101/a-routine.webp` | Título da janela e o painel lateral do routine. |
 | `apps/auth-api/src/content/guides/media/buildersbot-101/pick-a-model.webp` | Título da janela no seletor de modelo. |
-| `apps/auth-api/src/content/guides/media/buildersbot-marketplace/marketplace.png` | Cada listagem aparece "by OpenBot". |
+| `apps/auth-api/src/content/guides/media/buildersbot-marketplace/marketplace.png` | Cada listagem aparece "by BuildersBot". |
 | `apps/auth-api/src/content/guides/media/buildersbot-marketplace/marketplace-menu.png` | Menu do Marketplace sob o nome antigo. |
 | `apps/auth-api/src/content/guides/media/buildersbot-marketplace/agent-detail.png` | Listagem de agente com o crédito antigo. |
 | `apps/auth-api/src/content/guides/media/buildersbot-marketplace/github-plugin.png` | Listagem de plugin com o crédito antigo. |
-| `apps/auth-api/src/content/guides/media/buildersbot-hosted-servers/pricing.png` | Rodapé "We can run OpenBot on a dedicated Mac mini". |
+| `apps/auth-api/src/content/guides/media/buildersbot-hosted-servers/pricing.png` | Rodapé "We can run BuildersBot on a dedicated Mac mini". |
 | `apps/auth-api/src/content/guides/media/import-grok-bot-agents/import-source.png` | Tela de importação sob o nome antigo. |
-| `apps/auth-api/src/content/guides/media/import-grok-bot-agents/add-migrator.png` | Agente "Migrator by OpenBot" no Grok Bot. |
+| `apps/auth-api/src/content/guides/media/import-grok-bot-agents/add-migrator.png` | Agente "Migrator by BuildersBot" no Grok Bot. |
 | `apps/auth-api/src/content/guides/media/import-grok-bot-agents/export-instructions.png` | Instruções de exportação com o nome antigo. |
-| `apps/auth-api/src/content/guides/media/import-hermes-agents/import-source.png` | "OpenBot copies them to this computer" e "Another OpenBot computer". |
+| `apps/auth-api/src/content/guides/media/import-hermes-agents/import-source.png` | "BuildersBot copies them to this computer" e "Another BuildersBot computer". |
 | `apps/auth-api/src/content/guides/media/import-hermes-agents/read-folder.png` | Controles de importação sob o nome antigo. |
 | `apps/auth-api/src/content/guides/media/import-hermes-agents/install-command.png` | Comando de instalação da skill com o nome antigo. |
 | `apps/auth-api/src/content/guides/media/import-hermes-agents/manual-setup.png` | Passo manual sob o nome antigo. |

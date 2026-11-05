@@ -89,7 +89,7 @@ const rect: CdpParamRule = {
 const empty = { params: {} } as const;
 
 /** The isolated world of the browser engine, the only world that a command may make. */
-export const ENGINE_WORLD_NAME = "openbot-browser-automation";
+export const ENGINE_WORLD_NAME = "buildersbot-browser-automation";
 
 export const CDP_ALLOWLIST: Readonly<Record<string, CdpMethodRule>> = {
   "Accessibility.enable": empty,

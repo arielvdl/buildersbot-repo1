@@ -35,7 +35,7 @@ validation window.
 ## Slack requests
 
 The Builders Bot Slack app sends the events and button presses of every workspace to one request URL,
-`https://signal.openbot.run/v1/slack/events`. Signal checks Slack's signature with the app's signing
+`https://signal.buildersbot.culturabuilder.com/v1/slack/events`. Signal checks Slack's signature with the app's signing
 secret, answers Slack's `url_verification` challenge, and reads only the app ID (`api_app_id`), the
 workspace ID, and the event's type, channel type, thread and bot ID (to know whether it addresses
 Builders Bot, not its text). `SLACK_SIGNING_SECRET` is a comma-separated list of `<app ID>:<signing secret>`,
@@ -153,19 +153,19 @@ service before Signal.
 
 - Linux with Docker Engine and Docker Compose.
 - A static public IPv4 address.
-- `signal.openbot.run` and `turn.openbot.run` records in DNS only mode.
+- `signal.buildersbot.culturabuilder.com` and `turn.buildersbot.culturabuilder.com` records in DNS only mode.
 - Open ports TCP 443, TCP/UDP 3478, TCP 5349 and UDP 49152-65535.
-- A Cloudflare token scoped to DNS edit for the `openbot.run` zone.
+- A Cloudflare token scoped to DNS edit for the `buildersbot.culturabuilder.com` zone.
 
-The `signal.openbot.run` and `turn.openbot.run` records must be in **DNS only** mode. Do not enable the
-Cloudflare proxy for them. `api.openbot.run` stays a Cloudflare Worker.
+The `signal.buildersbot.culturabuilder.com` and `turn.buildersbot.culturabuilder.com` records must be in **DNS only** mode. Do not enable the
+Cloudflare proxy for them. `api.buildersbot.culturabuilder.com` stays a Cloudflare Worker.
 
 If you already run a reverse proxy on port `443`, set `REMOTE_SIGNAL_BIND_ADDRESS=127.0.0.1`,
 `REMOTE_SIGNAL_PUBLIC_PORT=8081`, `REMOTE_SIGNAL_PORT=8081` and `REMOTE_TLS_DISABLED=true`. The reverse proxy
 must terminate TLS and forward the WebSocket to `http://127.0.0.1:8081`. Also set
 `REMOTE_TRUST_PROXY=true` so the IP limits use the client address from `X-Forwarded-For`.
 
-The configuration in `nginx/signal.openbot.run.conf` uses the certificate from the ACME volume. Install
+The configuration in `nginx/signal.buildersbot.culturabuilder.com.conf` uses the certificate from the ACME volume. Install
 `buildersbot-remote-nginx-reload.path` and `buildersbot-remote-nginx-reload.service` into `/etc/systemd/system/` as
 well. The unit reloads Nginx after the certificate is renewed:
 
@@ -201,10 +201,10 @@ acknowledged offset once the service is back.
 ## Two Signal machines
 
 Two Signal machines can run at the same time. Each machine has its own name, and one more name, the
-entry (`signal.openbot.run`), goes to one of them. Set these on each machine:
+entry (`signal.buildersbot.culturabuilder.com`), goes to one of them. Set these on each machine:
 
 - `SIGNAL_ID`: the name of this machine in the `signal` ticket claim, `^[a-z0-9-]{1,32}$`.
-- `SIGNAL_ENTRY_HOST`: the entry name, for example `signal.openbot.run`.
+- `SIGNAL_ENTRY_HOST`: the entry name, for example `signal.buildersbot.culturabuilder.com`.
 - `SIGNAL_PUBLIC_IPV4`: the public IPv4 address of this machine.
 
 Set `SIGNAL_ENTRY_HOST` and `SIGNAL_PUBLIC_IPV4` together, or Signal does not start. Without them, the
@@ -252,7 +252,7 @@ Signal picks then, and restarts ICE. `/metrics` shows the last probe of each
 relay as `buildersbot_remote_turn_relay_available{host="<relay>"}`. `/health/turn` still reports only the
 relay of `TURN_HOST`; the Signal on the machine of each other relay reports that relay.
 
-Production uses `turn2.openbot.run` on the standby host as the second relay; see
+Production uses `turn2.buildersbot.culturabuilder.com` on the standby host as the second relay; see
 [the deployment procedure](../docs/remote-session-deployment.md#standby-signal).
 
 Current hosts advertise `multiplex: true` and support independent device sessions at the same time.

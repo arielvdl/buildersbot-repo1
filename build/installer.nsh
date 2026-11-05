@@ -43,17 +43,17 @@
   WriteRegStr SHCTX "Software\Classes\buildersbot\DefaultIcon" "" "$appExe,0"
   WriteRegStr SHCTX "Software\Classes\buildersbot\shell\open\command" "" '"$appExe" "%1"'
   ; A link made before the rename still opens this app.
-  WriteRegStr SHCTX "Software\Classes\openbot" "" "URL:Builders Bot invitations"
-  WriteRegStr SHCTX "Software\Classes\openbot" "URL Protocol" ""
-  WriteRegStr SHCTX "Software\Classes\openbot\DefaultIcon" "" "$appExe,0"
-  WriteRegStr SHCTX "Software\Classes\openbot\shell\open\command" "" '"$appExe" "%1"'
+  WriteRegStr SHCTX "Software\Classes\buildersbot" "" "URL:Builders Bot invitations"
+  WriteRegStr SHCTX "Software\Classes\buildersbot" "URL Protocol" ""
+  WriteRegStr SHCTX "Software\Classes\buildersbot\DefaultIcon" "" "$appExe,0"
+  WriteRegStr SHCTX "Software\Classes\buildersbot\shell\open\command" "" '"$appExe" "%1"'
   !insertmacro buildersBotRemoveAppFromDataFolder
 !macroend
 
 ; Builders Bot keeps the agent workspaces in %USERPROFILE%\Builders Bot (`src/backend/agent-store.ts`)
 ; and its user data in %APPDATA%\Builders Bot (`app.setName` in `src/main/index.ts`). Both names are
 ; the product name, so the checks use ${PRODUCT_NAME} and not a fixed name. The app of the previous
-; name keeps its data in %USERPROFILE%\OpenBot and %APPDATA%\OpenBot on the same computer until the
+; name keeps its data in %USERPROFILE%\BuildersBot and %APPDATA%\BuildersBot on the same computer until the
 ; profile migration runs, so these stay protected too. The uninstaller deletes the installation folder, and an update moves each file in it
 ; to a temporary folder that it then deletes. An installation folder must not be one of these folders
 ; or a folder that holds one.
@@ -72,8 +72,8 @@
     !insertmacro buildersBotHolds ${PATH} "$APPDATA\${PRODUCT_NAME}" ${OUT}
     !insertmacro buildersBotHolds ${PATH} "$PROFILE\Builders Bot" ${OUT}
     !insertmacro buildersBotHolds ${PATH} "$APPDATA\Builders Bot" ${OUT}
-    !insertmacro buildersBotHolds ${PATH} "$PROFILE\OpenBot" ${OUT}
-    !insertmacro buildersBotHolds ${PATH} "$APPDATA\OpenBot" ${OUT}
+    !insertmacro buildersBotHolds ${PATH} "$PROFILE\BuildersBot" ${OUT}
+    !insertmacro buildersBotHolds ${PATH} "$APPDATA\BuildersBot" ${OUT}
   ${endIf}
   Pop $R9
   Pop $R8
@@ -206,9 +206,9 @@
     ${if} $0 == '"$INSTDIR\${APP_EXECUTABLE_FILENAME}" "%1"'
       DeleteRegKey SHCTX "Software\Classes\buildersbot"
     ${endIf}
-    ReadRegStr $0 SHCTX "Software\Classes\openbot\shell\open\command" ""
+    ReadRegStr $0 SHCTX "Software\Classes\buildersbot\shell\open\command" ""
     ${if} $0 == '"$INSTDIR\${APP_EXECUTABLE_FILENAME}" "%1"'
-      DeleteRegKey SHCTX "Software\Classes\openbot"
+      DeleteRegKey SHCTX "Software\Classes\buildersbot"
     ${endIf}
     Pop $0
   ${endIf}

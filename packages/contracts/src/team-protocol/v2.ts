@@ -8,9 +8,9 @@ export const TEAM_PROTOCOL_V2_CHANNELS = {
 } as const;
 /** The same data-channel labels of a peer made before the rename. A channel keeps its label for the connection. */
 export const TEAM_PROTOCOL_V2_CHANNELS_LEGACY = {
-  rpc: "openbot-team-v2-rpc",
-  events: "openbot-team-v2-events",
-  files: "openbot-team-v2-files",
+  rpc: "buildersbot-team-v2-rpc",
+  events: "buildersbot-team-v2-events",
+  files: "buildersbot-team-v2-files",
 } as const;
 
 export type TeamProtocolV2Channel = keyof typeof TEAM_PROTOCOL_V2_CHANNELS;
@@ -25,7 +25,7 @@ export function teamProtocolV2Channel(label: string): TeamProtocolV2Channel | nu
 
 /** The data channel of the remote desktop, and the label that a peer made before the rename uses. */
 export const TEAM_PROTOCOL_DESKTOP_CHANNEL = "buildersbot.remote-desktop.signal.v1";
-export const TEAM_PROTOCOL_DESKTOP_CHANNEL_LEGACY = "openbot.remote-desktop.signal.v1";
+export const TEAM_PROTOCOL_DESKTOP_CHANNEL_LEGACY = "buildersbot.remote-desktop.signal.v1";
 
 /** Whether a label is the remote desktop channel, under either name. */
 export function isTeamProtocolDesktopChannel(label: string): boolean {
@@ -313,7 +313,7 @@ export function teamProtocolV2AuthenticationTranscriptLegacy(input: {
   clientFingerprint: string;
   hostFingerprint: string;
 }): string {
-  return authenticationTranscript("openbot-team-v2-auth", input);
+  return authenticationTranscript("buildersbot-team-v2-auth", input);
 }
 
 /** Both texts of one authentication, the new one first, for a verifier. */

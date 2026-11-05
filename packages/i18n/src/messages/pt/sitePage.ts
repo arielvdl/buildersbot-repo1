@@ -59,7 +59,7 @@ export const messages = {
   "sitePage.billing.cancelledBody": "Nada foi cobrado. Volte ao Builders Bot.",
   "sitePage.report.pageTitle": "Denunciar um site hospedado — Builders Bot",
   "sitePage.report.title": "Denunciar um site hospedado",
-  "sitePage.report.intro": "Envie uma denúncia sobre conteúdo prejudicial ou ilegal em um endereço openbot.site.",
+  "sitePage.report.intro": "Envie uma denúncia sobre conteúdo prejudicial ou ilegal em um endereço sites.buildersbot.culturabuilder.com.",
   "sitePage.report.hostnameLabel": "Endereço do site",
   "sitePage.report.hostnameMissing": "Digite o endereço do site",
   "sitePage.report.reasonLabel": "Motivo",

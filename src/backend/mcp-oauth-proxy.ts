@@ -330,7 +330,7 @@ function clientInfo(client: McpOAuthProxyClient, agentKey: string | null): Clien
     name: "buildersbot",
     title: name ? `${name} (Builders Bot)` : "Builders Bot",
     version: client.version,
-    websiteUrl: "https://openbot.run",
+    websiteUrl: "https://buildersbot.culturabuilder.com",
   };
 }
 

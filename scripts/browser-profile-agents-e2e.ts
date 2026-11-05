@@ -25,7 +25,7 @@ import { MailboxStore } from "../src/backend/mailbox-store";
 import { type BrowserProfileService, createBrowserProfileService } from "../src/main/browser-profile-service";
 
 const OUT = resolve(import.meta.dirname, "../.buildersbot-build/browser-profile-agents-e2e");
-const root = await mkdtemp(join(tmpdir(), "openbot-browser-profile-agents-"));
+const root = await mkdtemp(join(tmpdir(), "buildersbot-browser-profile-agents-"));
 const userData = join(root, "user-data");
 const home = join(root, "home");
 mkdirSync(home, { recursive: true });

@@ -4,8 +4,8 @@
 import { Link } from "@tanstack/solid-router";
 
 const LICENSES_EMAIL = "licenses@culturabuilder.com";
-const PRICING_URL = "https://openbot.run/pricing";
-const PRICING_LABEL = "openbot.run/pricing";
+const PRICING_URL = "https://buildersbot.culturabuilder.com/pricing";
+const PRICING_LABEL = "buildersbot.culturabuilder.com/pricing";
 
 export function CommercialLicense() {
   return (
@@ -153,7 +153,7 @@ export function CommercialLicense() {
         (e) the number of connected devices.
         <br />
         The Licensor processes this data as controller, in accordance with its privacy policy published at{" "}
-        <Link to="/privacy-policy">https://openbot.run/privacy</Link>, and only for the purposes of providing the
+        <Link to="/privacy-policy">https://buildersbot.culturabuilder.com/privacy</Link>, and only for the purposes of providing the
         Software, verifying Seats, billing, and support.
       </p>
       <p>
@@ -245,7 +245,7 @@ export function CommercialLicense() {
       <p>
         6.3 Trademarks. The Licensee may refer to Builders Bot by name to state that it uses Builders Bot, provided that
         it does not alter the name or logo, does not suggest endorsement by the Licensor, and follows the trademark
-        guidelines published at <Link to="/brand">openbot.run/branding</Link>, as updated from time to time. All rights
+        guidelines published at <Link to="/brand">buildersbot.culturabuilder.com/branding</Link>, as updated from time to time. All rights
         in the Builders Bot name and logo remain with the Licensor.
       </p>
       <p>

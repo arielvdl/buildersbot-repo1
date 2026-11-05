@@ -633,7 +633,7 @@ for (const item of got.filter((entry) => entry.subscription === "team" || entry.
   const body = JSON.parse(item.body);
   assert.equal(body.version, 1);
   assert.equal(body.type, item.headers["x-buildersbot-event"]);
-  assert.equal(body.page, "https://status.openbot.run");
+  assert.equal(body.page, "https://status.buildersbot.culturabuilder.com");
   assert.match(item.headers["x-buildersbot-delivery-id"] ?? "", /^[0-9a-f]{32}$/);
 }
 const created = JSON.parse(

@@ -13,15 +13,15 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const authApiRoot = join(projectRoot, "apps", "auth-api");
 const executableSuffix = process.platform === "win32" ? ".exe" : "";
 const wrangler = join(projectRoot, "node_modules", ".bin", `wrangler${executableSuffix}`);
-const productionApiUrl = "https://api.openbot.run";
+const productionApiUrl = "https://api.buildersbot.culturabuilder.com";
 const productionDatabase = "buildersbot-auth";
 const productionBucket = "buildersbot-skills";
 const owner = {
   id: "buildersbot-production-catalog",
   identityKey: "buildersbot-production-catalog",
-  email: "catalog@openbot.run",
+  email: "catalog@buildersbot.culturabuilder.com",
   name: "Builders Bot",
-  avatarUrl: "https://openbot.run/icon-192x192.png",
+  avatarUrl: "https://buildersbot.culturabuilder.com/icon-192x192.png",
 } as const;
 
 interface PublishedSkill {

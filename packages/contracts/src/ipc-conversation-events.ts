@@ -214,7 +214,7 @@ function isHostedSiteHostname(value: string): boolean {
       parsed.pathname === "/" &&
       parsed.search === "" &&
       parsed.hash === "" &&
-      value.endsWith(".openbot.site")
+      value.endsWith(".sites.buildersbot.culturabuilder.com")
     );
   } catch {
     return false;
@@ -239,13 +239,13 @@ export function isHostedSiteConversationEventUrl(value: unknown, hostname: unkno
     if (parsed.protocol === "https:") return parsed.hostname === hostname && parsed.port === "";
     if (parsed.protocol !== "http:" || !parsed.port) return false;
     const port = Number(parsed.port);
-    const label = hostname.slice(0, -".openbot.site".length);
+    const label = hostname.slice(0, -".sites.buildersbot.culturabuilder.com".length);
     return (
       Number.isInteger(port) &&
       port >= 1_024 &&
       port <= 65_535 &&
       // A development host made before the rename publishes the old local suffix.
-      (parsed.hostname === `${label}.buildersbot.localhost` || parsed.hostname === `${label}.openbot.localhost`)
+      (parsed.hostname === `${label}.buildersbot.localhost` || parsed.hostname === `${label}.buildersbot.localhost`)
     );
   } catch {
     return false;

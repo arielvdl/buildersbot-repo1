@@ -116,7 +116,7 @@ export function createMockAuth(options: MockAuthOptions, { emit }: MockRuntime) 
     },
     createMobileConnect: async () => ({
       qrData:
-        "buildersbot://mobile-connect?api=https%3A%2F%2Fapi.openbot.run&ticket=preview-mobile-ticket_1234567890abcdef",
+        "buildersbot://mobile-connect?api=https%3A%2F%2Fapi.buildersbot.culturabuilder.com&ticket=preview-mobile-ticket_1234567890abcdef",
       expiresAt: Date.now() + 120_000,
     }),
     cancelMobileConnect: async () => undefined,
@@ -125,7 +125,7 @@ export function createMockAuth(options: MockAuthOptions, { emit }: MockRuntime) 
     getMobileWebAppUrl: async () => "https://buildersbot.culturabuilder.com/app",
     createMobileConnectLink: async () => {
       mobileConnectLink = {
-        url: `buildersbot://mobile-connect?api=https%3A%2F%2Fapi.openbot.run&ticket=preview-mobile-link_${crypto.randomUUID().replaceAll("-", "")}`,
+        url: `buildersbot://mobile-connect?api=https%3A%2F%2Fapi.buildersbot.culturabuilder.com&ticket=preview-mobile-link_${crypto.randomUUID().replaceAll("-", "")}`,
         createdAt: Date.now(),
       };
       return clone(mobileConnectLink);

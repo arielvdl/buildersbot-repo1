@@ -99,16 +99,16 @@ jobs:
           join_status="$(curl --silent --show-error --retry 5 --retry-all-errors \
             --max-redirs 0 --dump-header "$verification_dir/join.headers" \
             --output "$verification_dir/join.html" --write-out '%{http_code}' \
-            https://openbot.run/join)"
+            https://buildersbot.culturabuilder.com/join)"
           test "$join_status" = "200"
           tr -d '\r' < "$verification_dir/join.headers" | grep -Eiq '^cache-control:.*no-store'
           association_status="$(curl --silent --show-error --retry 5 --retry-all-errors \
             --max-redirs 0 --dump-header "$verification_dir/association.headers" \
             --output "$verification_dir/association.json" --write-out '%{http_code}' \
-            https://openbot.run/.well-known/apple-app-site-association)"
+            https://buildersbot.culturabuilder.com/.well-known/apple-app-site-association)"
           test "$association_status" = "200"
           tr -d '\r' < "$verification_dir/association.headers" | grep -Eiq '^content-type: application/json'
-          jq -e '.applinks.details == [{"appID":"ZTRDTUL87R.app.openbot.desktop","paths":["/join"]},{"appID":"ZTRDTUL87R.run.openbot.mobile","paths":["/join","/agents/*"]}]' \
+          jq -e '.applinks.details == [{"appID":"ZTRDTUL87R.app.buildersbot.desktop","paths":["/join"]},{"appID":"ZTRDTUL87R.run.buildersbot.mobile","paths":["/join","/agents/*"]}]' \
             "$verification_dir/association.json" >/dev/null
 
   host-signing:
@@ -401,7 +401,7 @@ jobs:
           test -s "$RUNNER_TEMP/buildersbot-entitlements.plist"
           plutil -lint "$RUNNER_TEMP/buildersbot-entitlements.plist"
           /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.associated-domains:0' \
-            "$RUNNER_TEMP/buildersbot-entitlements.plist" | grep -Fx 'applinks:openbot.run'
+            "$RUNNER_TEMP/buildersbot-entitlements.plist" | grep -Fx 'applinks:buildersbot.culturabuilder.com'
           /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.team-identifier' \
             "$RUNNER_TEMP/buildersbot-entitlements.plist" | grep -Fx 'ZTRDTUL87R'
           /usr/libexec/PlistBuddy -c 'Print :com.apple.security.device.audio-input' \

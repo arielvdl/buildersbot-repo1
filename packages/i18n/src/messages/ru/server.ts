@@ -247,7 +247,7 @@ export const messages = {
     "Посмотрите, что Builders Bot хранит на диске этого сервера, и освободите место.",
   "server.settings.hostedSitesTitle": "Сайты",
   "server.settings.hostedSitesDescription":
-    "Статические сайты, которые агенты этого сервера опубликовали на openbot.site.",
+    "Статические сайты, которые агенты этого сервера опубликовали на sites.buildersbot.culturabuilder.com.",
   "server.settings.importTitle": "Импорт",
   "server.settings.importDescription": "Перенесите своих агентов из Grok Bot или Hermes Agent на этот сервер.",
   "server.settings.transferTitle": "Перенос",

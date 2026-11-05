@@ -34,7 +34,7 @@ index 897e18978b1cca852872afcf42c698a0766311d4..f657d50bc9f56b44dbfb600efd2b5e2d
  	const y = createMemo(() => props.position.split("-")[0]);
  	const x = createMemo(() => props.position.split("-")[1]);
 -	const heightIndex = createMemo(() => Math.max(0, props.heights.findIndex((height) => height.toastId === props.toast.id)));
-+	// OpenBot patch: stack in list order, not mount order. Toasts raised in one tick mount together and
++	// BuildersBot patch: stack in list order, not mount order. Toasts raised in one tick mount together and
 +	// each prepends its height, so `heights` came out reversed and a toast past `visibleToasts` held an
 +	// empty slot between the visible ones. A toast being removed has no height and takes no slot.
 +	const measuredToasts = createMemo(() => props.toasts.filter((toast) => props.heights.some((height) => height.toastId === toast.id)));
@@ -50,7 +50,7 @@ index 897e18978b1cca852872afcf42c698a0766311d4..f657d50bc9f56b44dbfb600efd2b5e2d
  	const isDocumentHidden = useIsDocumentHidden();
 -	createEffect(() => {
 -		remainingTime = duration();
-+	// OpenBot patch: a toast that mounts behind another is still collapsed and scaled down, and its
++	// BuildersBot patch: a toast that mounts behind another is still collapsed and scaled down, and its
 +	// height animates. Measure the natural layout height, which no transform or transition changes.
 +	function layoutHeight(element) {
 +		const originalHeight = element.style.height;
@@ -255,7 +255,7 @@ index 182e62e6b58b336cb75f31b92e30012d9a9f6f67..38ebcf50731d4b5d63c5a79b2227b4bf
  	const y = createMemo(() => props.position.split("-")[0]);
  	const x = createMemo(() => props.position.split("-")[1]);
 -	const heightIndex = createMemo(() => Math.max(0, props.heights.findIndex((height) => height.toastId === props.toast.id)));
-+	// OpenBot patch: stack in list order, not mount order. Toasts raised in one tick mount together and
++	// BuildersBot patch: stack in list order, not mount order. Toasts raised in one tick mount together and
 +	// each prepends its height, so `heights` came out reversed and a toast past `visibleToasts` held an
 +	// empty slot between the visible ones. A toast being removed has no height and takes no slot.
 +	const measuredToasts = createMemo(() => props.toasts.filter((toast) => props.heights.some((height) => height.toastId === toast.id)));
@@ -271,7 +271,7 @@ index 182e62e6b58b336cb75f31b92e30012d9a9f6f67..38ebcf50731d4b5d63c5a79b2227b4bf
  	const isDocumentHidden = useIsDocumentHidden();
 -	createEffect(() => {
 -		remainingTime = duration();
-+	// OpenBot patch: a toast that mounts behind another is still collapsed and scaled down, and its
++	// BuildersBot patch: a toast that mounts behind another is still collapsed and scaled down, and its
 +	// height animates. Measure the natural layout height, which no transform or transition changes.
 +	function layoutHeight(element) {
 +		const originalHeight = element.style.height;

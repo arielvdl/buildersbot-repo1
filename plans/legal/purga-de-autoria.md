@@ -2,7 +2,7 @@
 
 **Objetivo:** o Builders Bot passa a ser obra da Cultura Builder — titularidade, licença, nomes, infraestrutura, lojas e história. Nenhuma referência, URL, conta, certificado, classe ou crédito do projeto anterior. Nada quebra para quem já usa.
 
-**Base medida:** `/Users/arielsilva/Projects/openbot-local`, branch `builders-bot`, exportada com `git archive` para `/Users/arielsilva/Projects/buildersbot-repo1` (commit de origem em `docs/titulo/dossie.md`). O espelho arqueológico está em `/Users/arielsilva/Projects/.archive/openbot-local.git`.
+**Base medida:** `/Users/arielsilva/Projects/buildersbot-local`, branch `builders-bot`, exportada com `git archive` para `/Users/arielsilva/Projects/buildersbot-repo1` (commit de origem em `docs/titulo/dossie.md`). O espelho arqueológico está em `/Users/arielsilva/Projects/.archive/buildersbot-local.git`.
 **Status:** F0, F2, F4 (com os identificadores persistidos mantidos), F6 e F7 executadas em 02/11/2026. Restam F1 (contrato), F3 (DNS e serviços próprios), F5 (certificados e lojas) e F8 (verificação em máquina limpa).
 **Portão duro:** nenhum build de cliente sai antes da F1 assinada.
 
@@ -19,7 +19,7 @@ A titularidade é da pessoa jurídica abaixo, e é ela que assina a cessão, fig
 | Repositório novo | `https://github.com/nextlevelcommunity/buildersbot-repo1.git` |
 | Pasta de trabalho nova | `/Users/arielsilva/Projects/buildersbot-repo1` |
 
-O desenvolvimento passa a acontecer **no repositório novo, com história nova**. O `openbot-local` deixa de ser local de trabalho e vira apenas espelho arqueológico: nada de `upstream`, nada de tags, nada de SHA antigo no que for publicado. A árvore é exportada, não clonada com `.git`.
+O desenvolvimento passa a acontecer **no repositório novo, com história nova**. O `buildersbot-local` deixa de ser local de trabalho e vira apenas espelho arqueológico: nada de `upstream`, nada de tags, nada de SHA antigo no que for publicado. A árvore é exportada, não clonada com `.git`.
 
 ---
 
@@ -49,7 +49,7 @@ Isso é uma posição excelente: **um contrato resolve 90%**. O resto é cauda c
 
 ### 0.2 O defeito que ninguém viu
 
-O `CLA.md` atual chama-se "Builders Bot Contributor Assignment Agreement", mas foi escrito em 2026-10-16 e assinado por gente que contribuía para `nightly-labs/openbot`; o texto da assinatura aponta para `github.com/nightly-labs/openbot`. O contrato define "Project" como o repositório `Hub-Next-Level/buildersbot-cb`. Ou seja: **as 47 assinaturas existentes cobrem mal o trabalho feito antes do fork**. Precisa de CLA v2, com a cessionária identificada por razão social e CNPJ, e com:
+O `CLA.md` atual chama-se "Builders Bot Contributor Assignment Agreement", mas foi escrito em 2026-10-16 e assinado por gente que contribuía para o repositório do Ciclo I; o texto da assinatura aponta para o repositório antecessor. O contrato define "Project" como o repositório `Hub-Next-Level/buildersbot-cb`. Ou seja: **as 47 assinaturas existentes cobrem mal o trabalho feito antes do fork**. Precisa de CLA v2, com a cessionária identificada por razão social e CNPJ, e com:
 
 - definição de "Project" que inclua o repositório antecessor e todo commit anterior;
 - cláusula retroativa com anexo de SHAs;
@@ -69,11 +69,11 @@ O `CLA.md` atual chama-se "Builders Bot Contributor Assignment Agreement", mas f
 | Nome antigo | 423 linhas / 167 arquivos | `apps/`, `src/`, `packages/`, `scripts/`, `docs/` |
 | Hosts de runtime do projeto anterior | 6 domínios | `invite-links.ts`, `auth-api`, `site-router`, `mobile`, `remote/` |
 | Analytics de terceiro deles | 2 hosts + client ID | `scripts/telemetry-destinations.ts` |
-| Bundle mobile | `run.openbot.mobile` + 2 extensões | `apps/mobile/app.json` |
-| Firebase | `openbot-a3328` | `apps/mobile/google-services.json` |
-| Imagem Docker | `ghcr.io/nightly-labs/openbot` | `release.yml`, `docs/aws-ecs.md` |
-| Handles | `@OpenBot_`, `@meetOpenBot` | docs, site, rodapé |
-| Pastas/banco/Keychain | `.openbot`, `openbot.db`, `OpenBot Safe Storage` | migração |
+| Bundle mobile | `run.buildersbot.mobile` + 2 extensões | `apps/mobile/app.json` |
+| Firebase | `buildersbot-a3328` | `apps/mobile/google-services.json` |
+| Imagem Docker | `ghcr.io/nextlevelcommunity/buildersbot-repo1` | `release.yml`, `docs/aws-ecs.md` |
+| Handles | `@BuildersBot_`, `@meetBuildersBot` | docs, site, rodapé |
+| Pastas/banco/Keychain | `.buildersbot`, `buildersbot.db`, `BuildersBot Safe Storage` | migração |
 
 ### 1.2 Rastro jurídico e de marca
 
@@ -81,7 +81,7 @@ O `CLA.md` atual chama-se "Builders Bot Contributor Assignment Agreement", mas f
 |---|---:|---|
 | `polyform` | **54 linhas / 30 arquivos** | `LICENSE`, `NOTICE`, `package.json` (3), `Dockerfile`, `flake.nix`, `nix/package.nix`, podspecs, páginas do site, FAQ, `llms-txt`, comparativos |
 | `Synthetify` | 17 linhas | `LICENSE`, `NOTICE`, README, rodapé, termos, página de licença comercial, página de download, `docs/RELEASING.md`, `release.yml` |
-| `nightly-labs` | 93 linhas | docs, links, badges, manifests |
+| org antecessor | 93 linhas | docs, links, badges, manifests |
 | `Required Notice:` | `LICENSE` e `NOTICE` | some por completo com a cessão |
 | "derivado"/"derived"/"proprietary" | README, rodapé, termos, licença | precisa virar "nosso" |
 
@@ -115,13 +115,13 @@ Classificar cada nome em três grupos:
 
 ### F0 — Congelar, criar o repositório novo e as guardas (1–2 dias) — **feito**
 
-- `git clone --mirror` do `openbot-local` para fora do disco de trabalho, com todos os refs. É o arquivo morto; o `openbot-local` sai do circuito.
+- `git clone --mirror` do `buildersbot-local` para fora do disco de trabalho, com todos os refs. É o arquivo morto; o `buildersbot-local` sai do circuito.
 - Criar `/Users/arielsilva/Projects/buildersbot-repo1` **sem `.git` herdado**: exportar a árvore com `git archive` (ou cópia sem `.git`, `node_modules`, `dist`, `out`, `*.tsbuildinfo`, `.buildersbot-build`), e `git init` com branch `main`.
 - Primeiro commit: árvore exportada, autor `Cultura Builder <dev@culturabuilder.com>`, mensagem `Builders Bot` — sem trailer, sem coautor, sem SHA antigo.
 - `git remote add origin https://github.com/nextlevelcommunity/buildersbot-repo1.git`; **nenhum remote de upstream**.
 - Congelar os outros cinco clones como leitura.
 - Quatro guardas novas, todas no CI, todas falhando fechado:
-  - `scripts/license-provenance-guard.ts` — reprova `polyform`, `polyformproject.org`, `synthetify`, `nightly-labs`, `openbot`, `Required Notice`, "derivado", "proprietary". Allowlist começa cheia e **termina vazia**.
+  - `scripts/license-provenance-guard.ts` — reprova `polyform`, `polyformproject.org`, `synthetify`, o org antecessor, `buildersbot`, `Required Notice`, "derivado", "proprietary". Allowlist começa cheia e **termina vazia**.
   - `scripts/network-egress-guard.ts` — lista fechada de hosts, varre fonte, config, workflow, build e pacote.
   - `scripts/metadata-guard.ts` — reprova autor, e-mail, trailer, tag, remote e URL de repositório não aprovados; o único remote permitido é o `origin` novo.
   - `scripts/fingerprint-guard.ts` — reprova identificadores distintivos que sobrarem depois da F4 (lista versionada).
@@ -160,7 +160,7 @@ Classificar cada nome em três grupos:
   Copyright 2026 CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA (CNPJ 62.995.760/0001-33)
   ```
 
-- `NOTICE` novo: só dependências de terceiro (Blobatar, Font Awesome, moby, recharts) — **nenhuma menção ao projeto anterior, a Synthetify ou a `openbot`**. A titularidade do produto aparece no topo com a razão social e o CNPJ.
+- `NOTICE` novo: só dependências de terceiro (Blobatar, Font Awesome, moby, recharts) — **nenhuma menção ao projeto anterior, a Synthetify ou a `buildersbot`**. A titularidade do produto aparece no topo com a razão social e o CNPJ.
 - `package.json`: `license` novo (3 arquivos), `author` = razão social, CNPJ e `licenses@culturabuilder.com`, `contributors`, `repository` = `git+https://github.com/nextlevelcommunity/buildersbot-repo1.git`, `homepage` e `bugs` no repositório novo.
 - Página de licença comercial reescrita: uma camada só, sem "derivative", sem "earlier work", sem "required notices".
 - Termos de uso, rodapé do site, página de download, FAQ, `llms-txt`, comparativos.
@@ -169,7 +169,7 @@ Classificar cada nome em três grupos:
 - `README` e `AGENTS.md` sem "derivado de", sem crédito, sem link.
 - Remover `Required Notice:` de tudo.
 
-**Aceite:** `license-provenance-guard` verde com allowlist vazia; nenhuma ocorrência de `polyform`, `synthetify`, `nightly-labs`, `Required Notice`, `derived`, `derivado` no HEAD.
+**Aceite:** `license-provenance-guard` verde com allowlist vazia; nenhuma ocorrência de `polyform`, `synthetify`, org antecessor, `Required Notice`, `derived`, `derivado` no HEAD.
 
 ### F3 — Infraestrutura própria, zero ping (1–2 semanas)
 
@@ -179,16 +179,16 @@ Mapa de domínios:
 |---|---|---|
 | App/landing/API | `buildersbot.culturabuilder.com` | mantém |
 | Fallback de auth | `auth-buildersbot.culturabuilder.com` | mantém |
-| Signal | `signal.openbot.run` | `signal.buildersbot.culturabuilder.com` |
-| TURN | `turn.openbot.run` | `turn.buildersbot.culturabuilder.com` |
-| Sites publicados | `*.openbot.site` | `*.bb.culturabuilder.com` (curto) ou `*.sites.buildersbot.culturabuilder.com` |
+| Signal | `signal.buildersbot.culturabuilder.com` | `signal.buildersbot.culturabuilder.com` |
+| TURN | `turn.buildersbot.culturabuilder.com` | `turn.buildersbot.culturabuilder.com` |
+| Sites publicados | `*.sites.buildersbot.culturabuilder.com` | `*.bb.culturabuilder.com` (curto) ou `*.sites.buildersbot.culturabuilder.com` |
 | Feed de update | inexistente | `updates.buildersbot.culturabuilder.com` (R2) |
-| Status | `status.openbot.run` | `status.buildersbot.culturabuilder.com` |
-| Docs | `openbot.run/docs` | `buildersbot.culturabuilder.com/docs` |
-| Convite | `api.openbot.run/join` | `buildersbot.culturabuilder.com/join` |
+| Status | `status.buildersbot.culturabuilder.com` | `status.buildersbot.culturabuilder.com` |
+| Docs | `buildersbot.culturabuilder.com/docs` | `buildersbot.culturabuilder.com/docs` |
+| Convite | `api.buildersbot.culturabuilder.com/join` | `buildersbot.culturabuilder.com/join` |
 | E-mail | domínio deles | `send.buildersbot.culturabuilder.com` |
 | Analytics | OpenPanel deles | `analytics.buildersbot.culturabuilder.com` (próprio) ou desligado |
-| Firebase | `openbot-a3328` | projeto novo nosso |
+| Firebase | `buildersbot-a3328` | projeto novo nosso |
 
 Ordem: DNS/certificados → Signal/TURN próprios → feed assinado → wildcard de sites com 301 → analytics → status/docs/links/e-mail → Firebase. Dupla escrita e rollback por serviço em cada passo.
 
@@ -238,7 +238,7 @@ O repositório já nasce órfão na F0, então aqui só se publica o que passou 
 - Se a história intermediária de trabalho tiver sido commitada em `main`, achatar antes do push com `git reset --soft` no commit inicial, para não sobrar mensagem de fase.
 - Mirror arqueológico guardado fora do disco de trabalho.
 
-**Aceite:** `git remote -v` só mostra `origin`; `git log --format='%an %ae'` só nosso; sem tag, trailer ou mensagem antiga; `git log -S openbot` vazio no HEAD.
+**Aceite:** `git remote -v` só mostra `origin`; `git log --format='%an %ae'` só nosso; sem tag, trailer ou mensagem antiga; `git log -S buildersbot` vazio no HEAD.
 
 Executado: repositório público `nextlevelcommunity/buildersbot-repo1`, um único commit, `origin` único, tag `v1.0.0` assinada, release publicada, `cla-signatures` criado, branch `main` protegida por ruleset com os checks `guards` e `check`.
 
@@ -292,7 +292,7 @@ Regra: **nome novo escreve, nome antigo lê**. Se precisar escrever nome antigo,
 | 0 — nossa casa | `*.culturabuilder.com` | única saída padrão |
 | 1 — provedores escolhidos pelo usuário | OpenAI, Anthropic, xAI e endpoints dos CLIs | permitido, visível na UI |
 | 2 — dependências | npm, GitHub Releases de runtime, FCM/APNs | permitido, cache local quando possível |
-| 3 — proibido | `*.openbot.run`, `*.openbot.site`, `api.openpanel.dev`, `discord.openbot.run`, `status.openbot.run`, `ghcr.io/nightly-labs/*` | falha a guarda |
+| 3 — proibido | `*.buildersbot.culturabuilder.com`, `*.sites.buildersbot.culturabuilder.com`, `api.openpanel.dev`, `discord.buildersbot.culturabuilder.com`, `status.buildersbot.culturabuilder.com`, caminho de registro do org antecessor | falha a guarda |
 | 4 — proibido por padrão | Sentry/PostHog/GA de terceiro | só com justificativa escrita |
 
 Fonte da verdade única em `scripts/network-policy.ts`, consumida pela guarda de fonte, de pacote e pelo E2E.
@@ -340,7 +340,7 @@ Fonte da verdade única em `scripts/network-policy.ts`, consumida pela guarda de
 
 **Técnicos**
 - [ ] `git remote -v` só mostra `origin` = `nextlevelcommunity/buildersbot-repo1`.
-- [ ] `grep -ri` de `openbot|polyform|synthetify|nightly-labs` no HEAD: zero.
+- [ ] `grep -ri` dos marcadores legais e do org antecessor no HEAD: zero.
 - [ ] `git log` só com identidade nossa; sem tags, trailers ou remotes antigos.
 - [ ] App usado sem uma conexão fora da matriz de rede.
 - [ ] `strings` nos cinco formatos de binário: zero rastro.
@@ -377,7 +377,7 @@ Total: **~6 a 10 semanas**, com F1 e F3 em paralelo. F1 é o caminho crítico e 
 
 - Licença: EULA proprietária + licença comercial por assento.
 - Analytics: mantido o OpenPanel, com o projeto existente.
-- Mobile: bundle `run.openbot.mobile` mantido enquanto houver base instalada.
+- Mobile: bundle `run.buildersbot.mobile` mantido enquanto houver base instalada.
 - Sites: `*.sites.buildersbot.culturabuilder.com`.
 - Nível 1: provedores direto, sem proxy nosso na frente.
 - Registro do contrato: cartório de Presidente Prudente.
@@ -394,7 +394,7 @@ Total: **~6 a 10 semanas**, com F1 e F3 em paralelo. F1 é o caminho crítico e 
 
 - Licença: EULA proprietária + licença comercial por assento.
 - Sites: `*.sites.buildersbot.culturabuilder.com`.
-- Mobile: bundle `run.openbot.mobile` mantido enquanto houver base instalada.
+- Mobile: bundle `run.buildersbot.mobile` mantido enquanto houver base instalada.
 - Analytics: OpenPanel mantido, no projeto existente.
 - Nível 1: provedores direto, sem proxy nosso na frente.
 - Registro do contrato: cartório de Presidente Prudente.

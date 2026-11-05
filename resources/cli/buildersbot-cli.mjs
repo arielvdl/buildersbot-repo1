@@ -41,11 +41,11 @@ class CliError extends Error {
 }
 
 /**
- * The automation folder: `BUILDERSBOT_AUTOMATION_DIR`, the old `OPENBOT_AUTOMATION_DIR` of a shell
+ * The automation folder: `BUILDERSBOT_AUTOMATION_DIR`, the old `BUILDERSBOT_AUTOMATION_DIR` of a shell
  * profile written before the rename, or the folder of the installed app.
  */
 function automationDir() {
-  const override = process.env.BUILDERSBOT_AUTOMATION_DIR || process.env.OPENBOT_AUTOMATION_DIR;
+  const override = process.env.BUILDERSBOT_AUTOMATION_DIR || process.env.BUILDERSBOT_AUTOMATION_DIR;
   if (override) return override;
   if (process.platform === "darwin")
     return join(homedir(), "Library", "Application Support", "Builders Bot", "automation");

@@ -15,8 +15,8 @@ import { promisify } from "node:util";
 import { createBuildersBotLogger } from "@buildersbot/logging";
 import { bootedSimulatorIds, hasMobileRuntime } from "./dev-mobile";
 
-const BUNDLE_ID = "run.openbot.mobile";
-const APP_GROUP = "group.run.openbot.mobile";
+const BUNDLE_ID = "run.buildersbot.mobile";
+const APP_GROUP = "group.run.buildersbot.mobile";
 // The key and the payload shape of expo-sharing (`ios/shared/Constants.swift`, `ShareProtocol.swift`).
 const PAYLOAD_KEY = "expo-sharing";
 const SHARE_LINK = "buildersbot://expo-sharing";
@@ -151,7 +151,7 @@ async function main(): Promise<void> {
 
   const cases: ShareCase[] = [
     { name: "text", coldStart: false, text: [{ type: "text", value: "Builders Bot share E2E text" }] },
-    { name: "link", coldStart: false, text: [{ type: "url", value: "https://openbot.run/" }] },
+    { name: "link", coldStart: false, text: [{ type: "url", value: "https://buildersbot.culturabuilder.com/" }] },
     {
       name: "image",
       coldStart: false,

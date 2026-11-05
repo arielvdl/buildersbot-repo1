@@ -70,8 +70,8 @@ describe("Hermes import reader", () => {
     );
     // The folder of the export skill that a user installed before the rename.
     await write(
-      join(root, "skills", "openbot-export", "SKILL.md"),
-      "---\nname: openbot-export\ndescription: Exports agents.\n---\n",
+      join(root, "skills", "buildersbot-export", "SKILL.md"),
+      "---\nname: buildersbot-export\ndescription: Exports agents.\n---\n",
     );
     await write(join(root, "profiles", "coder", ".env"), `CODER_KEY=${SECRETS[9]}`);
     await write(join(root, "profiles", "coder", "SOUL.md"), "You review pull requests.");
@@ -116,7 +116,7 @@ describe("Hermes import reader", () => {
     ]);
     expect(hermes?.items.find((item) => item.id === "skipped-skill:leaky")?.reason).toBe("unsafeFile");
     expect(hermes?.items.map((item) => item.id)).not.toContain("skill:buildersbot-export");
-    expect(hermes?.items.map((item) => item.id)).not.toContain("skill:openbot-export");
+    expect(hermes?.items.map((item) => item.id)).not.toContain("skill:buildersbot-export");
     const tracker = profiles?.[0]?.mcpServers.find((server) => server.name === "tracker");
     expect(tracker).toMatchObject({ enabled: false, env: [{ key: "TRACKER_TOKEN", value: "" }] });
     expect(profiles?.[0]?.mcpServers.find((server) => server.name === "remote")).toMatchObject({

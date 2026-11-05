@@ -1,9 +1,9 @@
 import { isAppScheme } from "./app-scheme";
 import { isBuildersBotTeamApiHostname } from "./validation";
 
-export const LEGACY_INVITE_ORIGIN = "https://openbot.run";
+export const LEGACY_INVITE_ORIGIN = "https://buildersbot.culturabuilder.com";
 export const BUILDERSBOT_INVITE_PATH = "/join";
-export const LEGACY_CONTROL_PLANE_ORIGIN = "https://api.openbot.run";
+export const LEGACY_CONTROL_PLANE_ORIGIN = "https://api.buildersbot.culturabuilder.com";
 /** The Builders Bot account service on the Cultura Builder side. It runs the same Worker. */
 export const BUILDERSBOT_CONTROL_PLANE_ORIGIN = "https://buildersbot.culturabuilder.com";
 /**

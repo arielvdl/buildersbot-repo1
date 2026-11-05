@@ -27,7 +27,7 @@ export const messages = {
   "onboarding.setup.defaultProvider": "默认服务商",
   "onboarding.setup.defaultProviderHint": "用于新建的本地助手，之后可以逐个更改。",
   "onboarding.setup.invitation": "主机邀请",
-  "onboarding.setup.invitationPlaceholder": "粘贴 https://openbot.run/join 邀请链接",
+  "onboarding.setup.invitationPlaceholder": "粘贴 https://buildersbot.culturabuilder.com/join 邀请链接",
   "onboarding.setup.otherInvitation": "使用其他邀请",
   "onboarding.setup.joinNote": "你将以 {email} 的身份加入。邮箱邀请仅对收到它的地址有效。",
   "onboarding.setup.connect": "连接到主机",

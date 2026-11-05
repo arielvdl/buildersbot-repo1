@@ -56,7 +56,7 @@ export const messages = {
   "sitePage.billing.cancelledBody": "Er is niets in rekening gebracht. Ga terug naar Builders Bot.",
   "sitePage.report.pageTitle": "Een gehoste site melden — Builders Bot",
   "sitePage.report.title": "Een gehoste site melden",
-  "sitePage.report.intro": "Stuur een melding over schadelijke of onrechtmatige inhoud op een openbot.site-adres.",
+  "sitePage.report.intro": "Stuur een melding over schadelijke of onrechtmatige inhoud op een sites.buildersbot.culturabuilder.com-adres.",
   "sitePage.report.hostnameLabel": "Siteadres",
   "sitePage.report.hostnameMissing": "Vul het siteadres in",
   "sitePage.report.reasonLabel": "Reden",

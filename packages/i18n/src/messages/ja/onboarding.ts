@@ -30,7 +30,7 @@ export const messages = {
   "onboarding.setup.defaultProviderHint":
     "新しいローカルエージェントに使われます。後でエージェントごとに変更できます。",
   "onboarding.setup.invitation": "ホストの招待",
-  "onboarding.setup.invitationPlaceholder": "https://openbot.run/join の招待リンクを貼り付けてください",
+  "onboarding.setup.invitationPlaceholder": "https://buildersbot.culturabuilder.com/join の招待リンクを貼り付けてください",
   "onboarding.setup.otherInvitation": "別の招待を使う",
   "onboarding.setup.joinNote": "{email} として参加します。メールでの招待は、招待を受け取ったアドレスでのみ使えます。",
   "onboarding.setup.connect": "ホストに接続",

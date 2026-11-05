@@ -9,7 +9,7 @@ import { isDynamicRecord, isNumber, isOneOf } from "./runtime-values";
 
 export const WEB_MESSAGING_INSTALL_CHANNEL = "buildersbot:messaging-install";
 /** The same channel of a page or a tab made before the rename. Both channels are used, so either side may be old. */
-export const WEB_MESSAGING_INSTALL_CHANNEL_LEGACY = "openbot:messaging-install";
+export const WEB_MESSAGING_INSTALL_CHANNEL_LEGACY = "buildersbot:messaging-install";
 
 /** The same as the host's connect link: the host forgets the install's key after this time. */
 export const WEB_MESSAGING_INSTALL_TTL_MS = 15 * 60_000;
@@ -19,7 +19,7 @@ export type WebMessagingInstallPlatform = (typeof WEB_MESSAGING_INSTALL_PLATFORM
 
 export const WEB_MESSAGING_INSTALL_KEY_PREFIX = "buildersbot:messaging-install:";
 /** The same prefix of a mark that a tab made before the rename. It is read after the new one. */
-export const WEB_MESSAGING_INSTALL_KEY_PREFIX_LEGACY = "openbot:messaging-install:";
+export const WEB_MESSAGING_INSTALL_KEY_PREFIX_LEGACY = "buildersbot:messaging-install:";
 
 /** The local storage key that marks an install the client started. */
 export function webMessagingInstallKey(nonce: string): string {

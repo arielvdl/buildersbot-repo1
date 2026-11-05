@@ -53,7 +53,7 @@ interface SignalMachine {
 }
 
 /**
- * Keeps `signal.openbot.run` on a Signal machine that answers. The entry machine runs the bots and
+ * Keeps `signal.buildersbot.culturabuilder.com` on a Signal machine that answers. The entry machine runs the bots and
  * takes the tickets without a `signal` claim (`remote/api/src/entry.ts`), so the name must move when
  * that machine stops.
  *

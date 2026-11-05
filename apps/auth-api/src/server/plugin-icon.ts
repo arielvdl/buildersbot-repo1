@@ -2,7 +2,7 @@ import { Effect, Result, Schema } from "effect";
 
 class PluginIconError extends Schema.TaggedError<PluginIconError>()("PluginIconError", {}) {}
 
-// A listing's own icon, served from openbot.run rather than from the developer who published it.
+// A listing's own icon, served from buildersbot.culturabuilder.com rather than from the developer who published it.
 //
 // The catalog carries an `iconUrl` on each listing and each of its apps, and those addresses are
 // the developer's own servers. The desktop app fetches them directly; a public page must not, because
@@ -17,7 +17,7 @@ import { findPlugin } from "../lib/plugins";
 
 /**
  * A day, not a year: the catalog is a literal in this repository today and becomes a document
- * fetched from openbot.run, so a listing can change its icon without the page's address changing.
+ * fetched from buildersbot.culturabuilder.com, so a listing can change its icon without the page's address changing.
  * `stale-while-revalidate` is what keeps that from costing a reader the wait.
  */
 const ICON_CACHE_CONTROL = "public, max-age=86400, stale-while-revalidate=604800";
@@ -27,7 +27,7 @@ const notFound = () => new Response("Not found", { status: 404 });
 /**
  * SVG is left out on purpose. It is the one image type that carries script, and a file served from
  * this origin runs as this origin: a listing whose icon became an SVG would otherwise be a way to
- * run code on openbot.run.
+ * run code on buildersbot.culturabuilder.com.
  */
 function isServableImage(contentType: string): boolean {
   const type = contentType.split(";")[0]?.trim().toLowerCase() ?? "";

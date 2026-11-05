@@ -23,10 +23,10 @@ export const HOSTED_SITE_UNLINKED_LIMIT = 1;
 /** The request headers that tie a site request to a registered server: its host id and machine token. */
 export const HOSTED_SITE_HOST_ID_HEADER = "X-BuildersBot-Host-Id";
 /** The same header of a host made before the rename. */
-export const HOSTED_SITE_HOST_ID_LEGACY = "OpenBot-Host-Id";
+export const HOSTED_SITE_HOST_ID_LEGACY = "BuildersBot-Host-Id";
 export const HOSTED_SITE_HOST_TOKEN_HEADER = "X-BuildersBot-Host-Token";
 /** The same header of a host made before the rename. */
-export const HOSTED_SITE_HOST_TOKEN_LEGACY = "OpenBot-Host-Token";
+export const HOSTED_SITE_HOST_TOKEN_LEGACY = "BuildersBot-Host-Token";
 
 /** The MIME types allowed for each file extension. The desktop sends the first one. */
 export const HOSTED_SITE_MIME_TYPES: Readonly<Record<string, readonly [string, ...string[]]>> = {

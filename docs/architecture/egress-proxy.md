@@ -37,7 +37,7 @@ section hides "A password is saved" while the host, the port or the user differ 
 The default bypass list keeps local and control-plane traffic direct: `localhost`, `127.0.0.0/8`,
 `::1`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `fc00::/7`, `fe80::/10`,
 `*.local`, the Tailscale network (`100.64.0.0/10`, `fd7a:115c:a1e0::/48` and `*.ts.net`),
-`culturabuilder.com` and `*.culturabuilder.com`, `openbot.run` and `*.openbot.run`. Sign-in, the
+`culturabuilder.com` and `*.culturabuilder.com`, `buildersbot.culturabuilder.com` and `*.buildersbot.culturabuilder.com`. Sign-in, the
 account service and Signal never go through the proxy, and a proxy in another country cannot reach
 the machines of the tailnet. Loopback is always direct, also when an admin removes it from the list:
 the gateway and the agents' own local servers are there.

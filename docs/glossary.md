@@ -9,12 +9,12 @@ table, IPC channel or product string, or when a term in the code disagrees with 
   (`ipc-marketplace-agents.ts`). **teammate** is prompt and marketing text, never a type.
   Human members use `TeamMemberSummary`.
 - **agent template**: a public, link-only copy of one agent's instructions, skills and routines
-  (`ipc-agent-templates.ts`, `agent-templates:*`, D1 `agent_templates`, `openbot.run/agents/<id>`).
+  (`ipc-agent-templates.ts`, `agent-templates:*`, D1 `agent_templates`, `buildersbot.culturabuilder.com/agents/<id>`).
   It holds no workspace files and no memories. It is not a marketplace agent: it has no review and
   no listing.
 - **browser profile**: a named, persistent browser session on the computer that runs the agents
   (`browser_profiles`, `BrowserProfileSummary`, `AgentBrowserProfile`, `agent:admin:*-browser-profile*`,
-  `persist:openbot-browser-profile-<id>`). The built-in choices "Shared" and "Only this agent" (shown
+  `persist:buildersbot-browser-profile-<id>`). The built-in choices "Shared" and "Only this agent" (shown
   only to an agent that already uses it) are also profiles in the UI, but they have no row. It is not an **agent profile** (`AgentProfile`, the
   display data of an agent) or the account profile (`v1/me/profile`).
 - **bot**: do not use for new product code. Keep released names: Team API v1-v3

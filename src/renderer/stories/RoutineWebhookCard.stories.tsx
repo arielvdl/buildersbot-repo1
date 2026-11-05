@@ -56,7 +56,7 @@ const meta = {
   args: {
     routineName: "Triage new GitHub issues",
     action: "created",
-    url: "https://signal.openbot.run/v1/webhooks/0f3c9d2e-4b1a-4c55-9a87-2f6d1e0b7c34",
+    url: "https://signal.buildersbot.culturabuilder.com/v1/webhooks/0f3c9d2e-4b1a-4c55-9a87-2f6d1e0b7c34",
     connected: true,
     secret: null,
     eventType: "",

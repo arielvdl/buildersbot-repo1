@@ -53,7 +53,7 @@ export const messages = {
   "sitePage.billing.cancelledBody": "요금이 청구되지 않았어요. Builders Bot으로 돌아가 주세요.",
   "sitePage.report.pageTitle": "호스팅 사이트 신고 — Builders Bot",
   "sitePage.report.title": "호스팅 사이트 신고",
-  "sitePage.report.intro": "openbot.site 주소의 유해하거나 불법적인 콘텐츠를 신고해 주세요.",
+  "sitePage.report.intro": "sites.buildersbot.culturabuilder.com 주소의 유해하거나 불법적인 콘텐츠를 신고해 주세요.",
   "sitePage.report.hostnameLabel": "사이트 주소",
   "sitePage.report.hostnameMissing": "사이트 주소를 입력해 주세요",
   "sitePage.report.reasonLabel": "사유",

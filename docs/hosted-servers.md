@@ -382,7 +382,7 @@ Worker, and all worktrees share it, so you sign in one time.
 Each developer who has `DOTENV_PRIVATE_KEY_DEV` can create a server with any account.
 The command decrypts
 `HOSTED_SERVERS_DEVELOPER_KEY` from `.env.dev`, and main sends it in the
-`OpenBot-Hosting-Developer-Key` header of each hosted server request. The test Worker has the same
+`BuildersBot-Hosting-Developer-Key` header of each hosted server request. The test Worker has the same
 key and lets the account create servers. A clone of the repository cannot decrypt the key. Main
 removes the key from its environment at the start, so agents do not get it, and a packaged build
 never sends it. To change the key, update `HOSTED_SERVERS_DEVELOPER_KEY` in `.env.dev` with a
@@ -599,16 +599,16 @@ it. A release without all of its `resources/hosting` files cannot update a serve
 A server that has no updater, such as one made from a template before 0.26.0, needs one upgrade by
 hand. With a boat key that has command and file access: upload `scripts/hosting/` to
 `/tmp/buildersbot-upgrade`, run `sudo systemctl stop buildersbot.service`, run `sudo bash /tmp/buildersbot-upgrade/provision.sh user <AppImage URL> <SHA-256>
-https://api.openbot.run` as a detached command, and start the service again. The data in the home
+https://api.buildersbot.culturabuilder.com` as a detached command, and start the service again. The data in the home
 folder and in `/srv` stays.
 
 ### Upgrade from the old name
 
-A server that an earlier release made still has the old product name on disk: `/opt/OpenBot`,
-`/srv/openbot-hosted`, `~/.config/openbot-hosted`, `/etc/apparmor.d/openbot-hosted` and the
-`openbot.service` and `openbot-update*` units. The same `provision.sh` command moves all of them,
+A server that an earlier release made still has the old product name on disk: `/opt/BuildersBot`,
+`/srv/buildersbot-hosted`, `~/.config/buildersbot-hosted`, `/etc/apparmor.d/buildersbot-hosted` and the
+`buildersbot.service` and `buildersbot-update*` units. The same `provision.sh` command moves all of them,
 before it unpacks or copies the new release. The move uses `mv`, which keeps the filesystem, and
-`/opt/OpenBot` stays as a symlink to `/opt/BuildersBot` for a binary that is still running. The old
+`/opt/BuildersBot` stays as a symlink to `/opt/BuildersBot` for a binary that is still running. The old
 units and the old AppArmor profile are removed, the new ones enabled, and the server starts on the
 new paths. Each step does nothing when the old path is already gone, so the command runs again
 safely, and a server that never had the old name installs as before. The upgrade also runs the

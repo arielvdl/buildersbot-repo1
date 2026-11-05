@@ -309,18 +309,18 @@ uninstall_command() {
   systemctl daemon-reload
   # A server that an older release installed can still carry the old names of a profile and a command
   # that the migration did not reach.
-  for entry in /etc/apparmor.d/buildersbot-hosted /etc/apparmor.d/openbot-hosted; do
+  for entry in /etc/apparmor.d/buildersbot-hosted /etc/apparmor.d/buildersbot-hosted; do
     if [ -f "$entry" ] && command -v apparmor_parser >/dev/null && [ -d /sys/kernel/security/apparmor ]; then
       apparmor_parser --remove "$entry" 2>/dev/null || true
     fi
   done
-  rm -f /etc/apparmor.d/buildersbot-hosted /etc/apparmor.d/openbot-hosted \
-    /usr/local/bin/buildersbot /usr/local/bin/openbot
+  rm -f /etc/apparmor.d/buildersbot-hosted /etc/apparmor.d/buildersbot-hosted \
+    /usr/local/bin/buildersbot /usr/local/bin/buildersbot
   # The desktop .deb also installs into /opt/BuildersBot, so only the entries of a server go.
   for entry in app hosted staged staged.ready .applying; do rm -rf "${INSTALL:?}/$entry"; done
   rmdir "$INSTALL" 2>/dev/null || true
   # A server that an older release installed keeps a symlink of the old name to the folder above.
-  if [ -L /opt/OpenBot ] && [ ! -e /opt/OpenBot/ ]; then rm -f /opt/OpenBot; fi
+  if [ -L /opt/BuildersBot ] && [ ! -e /opt/BuildersBot/ ]; then rm -f /opt/BuildersBot; fi
   home=$(getent passwd "$user" | cut -d: -f6)
   echo "Removed Builders Bot. The data stays in ${home:-the home folder of $user} and /srv/buildersbot-hosted."
   echo "To install again with this data: the install command, with --user $user."

@@ -12,7 +12,7 @@ import { z } from "zod";
 import type { McpProbeOutcome } from "../mcp-probe";
 import type { McpGateway, McpGatewayFailed } from "./mcp-gateway";
 import { profileToolErrorMessage } from "./profile-tools";
-import { type BuildersBotToolResponse, openBotToolFailure, openBotToolResult } from "./routine-tools";
+import { type BuildersBotToolResponse, buildersBotToolFailure, buildersBotToolResult } from "./routine-tools";
 import { ToolOperationFailed, toolStep } from "./tool-operation";
 
 /**
@@ -150,7 +150,7 @@ export interface McpServerToolCall {
  * argument out of range, with the MCP secrets masked.
  */
 export const handleMcpServerTool = (servers: AgentMcpServers, call: McpServerToolCall) => {
-  const failed = (error: unknown) => Effect.succeed(openBotToolFailure(servers.redact(profileToolErrorMessage(error))));
+  const failed = (error: unknown) => Effect.succeed(buildersBotToolFailure(servers.redact(profileToolErrorMessage(error))));
   return runMcpServerTool(servers, call).pipe(
     Effect.catch((failure) => failed(failure.cause)),
     Effect.catchDefect(failed),
@@ -164,7 +164,7 @@ const runMcpServerTool = Effect.fn("McpServerTools.handle")(function* (
   switch (call.tool) {
     case "list_mcp_servers": {
       const signIns = servers.signIns();
-      return openBotToolResult({ servers: servers.list().map((config) => describeServer(config, signIns)) });
+      return buildersBotToolResult({ servers: servers.list().map((config) => describeServer(config, signIns)) });
     }
     case "test_mcp_server": {
       const { name } = yield* toolStep(() => namedServerSchema.parse(call.arguments));
@@ -178,21 +178,21 @@ const runMcpServerTool = Effect.fn("McpServerTools.handle")(function* (
       // A configuration the store would refuse is corrected before the user is asked about it.
       const errors = mcpConfigErrors(config);
       const invalid = errors.name ?? errors.command ?? errors.url;
-      if (invalid) return openBotToolFailure(invalid);
+      if (invalid) return buildersBotToolFailure(invalid);
       // The keys of a row were given for its server. A change that points them at another server, or
       // that drops them with the other transport, is the user's to make in Server settings.
       if (existing && holdsKeys(existing) && serverMoves(existing, config))
-        return openBotToolFailure(sourceText("error.agent.mcpServerKeysMove", { name: existing.name }));
+        return buildersBotToolFailure(sourceText("error.agent.mcpServerKeysMove", { name: existing.name }));
       const key = existing ? "status.agent.mcpServerChange" : "status.agent.mcpServerAdd";
       // The command line can quote a key the user typed: the reason also reaches Slack and the phone.
       const reason = servers.redact(sourceText(key, { name: config.name, target: serverTarget(config) }));
       if (!(yield* call.approve(reason, config.transport === "stdio" ? config.workingDirectory || null : null)))
-        return openBotToolFailure(sourceText("error.agent.mcpServerDeclined"));
+        return buildersBotToolFailure(sourceText("error.agent.mcpServerDeclined"));
       // A server that does not answer is not saved, so no agent is given a broken entry. A server that
       // needs a sign-in or a key is saved: the sign-in and the key belong to a saved row.
       const outcome = yield* servers.inspect(config);
       if (outcome.error !== null && outcome.needs === null)
-        return openBotToolFailure(
+        return buildersBotToolFailure(
           servers.redact(sourceText("error.agent.mcpServerNotSaved", { error: outcome.error })),
         );
       yield* servers.save(config);
@@ -203,17 +203,17 @@ const runMcpServerTool = Effect.fn("McpServerTools.handle")(function* (
       const config = yield* findServer(servers, name);
       const key = enabled ? "status.agent.mcpServerEnable" : "status.agent.mcpServerDisable";
       if (!(yield* call.approve(sourceText(key, { name: config.name }))))
-        return openBotToolFailure(sourceText("error.agent.mcpServerDeclined"));
+        return buildersBotToolFailure(sourceText("error.agent.mcpServerDeclined"));
       yield* servers.setEnabled(config.id, enabled);
-      return openBotToolResult({ name: config.name, enabled, appliesFrom: "the next turn of each agent" });
+      return buildersBotToolResult({ name: config.name, enabled, appliesFrom: "the next turn of each agent" });
     }
     case "remove_mcp_server": {
       const { name } = yield* toolStep(() => namedServerSchema.parse(call.arguments));
       const config = yield* findServer(servers, name);
       if (!(yield* call.approve(sourceText("status.agent.mcpServerRemove", { name: config.name }))))
-        return openBotToolFailure(sourceText("error.agent.mcpServerDeclined"));
+        return buildersBotToolFailure(sourceText("error.agent.mcpServerDeclined"));
       yield* servers.remove(config.id);
-      return openBotToolResult({ name: config.name, removed: true, appliesFrom: "the next turn of each agent" });
+      return buildersBotToolResult({ name: config.name, removed: true, appliesFrom: "the next turn of each agent" });
     }
   }
 });
@@ -275,7 +275,7 @@ const report = Effect.fnUntraced(function* (
   const saved = servers.list().find((candidate) => candidate.name === config.name) ?? config;
   const server = describeServer(saved, servers.signIns());
   if (outcome.error === null)
-    return openBotToolResult({
+    return buildersBotToolResult({
       status: "ready",
       server,
       toolCount: outcome.toolCount,
@@ -285,20 +285,20 @@ const report = Effect.fnUntraced(function* (
   const error = servers.redact(outcome.error);
   if (outcome.needs === "sign_in") {
     yield* call.requestSignIn(saved);
-    return openBotToolResult({
+    return buildersBotToolResult({
       status: "needs_sign_in",
       server,
       next: SIGN_IN_NEXT,
     });
   }
   if (outcome.needs === "key")
-    return openBotToolResult({
+    return buildersBotToolResult({
       status: "needs_key",
       server,
       error,
       next: "Ask the user to enter the key in Server settings, MCP. Do not ask for the key in the chat.",
     });
-  return openBotToolResult({ status: "error", server, error });
+  return buildersBotToolResult({ status: "error", server, error });
 });
 
 /** A new server from the input, or the saved one with the input over it. Headers and environment stay. */

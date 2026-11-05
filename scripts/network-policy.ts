@@ -5,7 +5,10 @@
 //
 // A host is written without a scheme. An entry without `*.` matches the host itself and every
 // subdomain; an entry with `*.` matches subdomains only. The most specific match wins, so
-// `ghcr.io/nightly-labs/*` beats `ghcr.io`.
+// `ghcr.io/<upstream-org>/*` beats `ghcr.io`.
+
+/** A stand-in org used by checks that reject the previous project's registry path. */
+const UPSTREAM_REGISTRY_HOST = `ghcr.io/example-upstream/*`;
 //
 // Level 3 and level 4 have no permanent entry: they live in TRANSITION, because both are debt.
 // Level 3 is a host of the previous project that must stop being called; level 4 is a third-party
@@ -193,28 +196,15 @@ const DEPENDENCIES: readonly EgressEntry[] = [
 export const TRANSITION: readonly TransitionEntry[] = [
   {
     level: 3,
-    host: "openbot.run",
-    until: "F3",
-    reason:
-      "the previous project's account API, site, Signal, TURN and status hosts; a link, a smoke check or a default still names them",
-  },
-  {
-    level: 3,
-    host: "openbot.site",
-    until: "F3",
-    reason: "a site published under the previous project's wildcard; the smoke check and a fixture still open one",
-  },
-  {
-    level: 3,
     host: "api.openpanel.dev",
     until: "F3",
     reason: "the OpenPanel service of the previous project: the account Worker still sends product events there",
   },
   {
     level: 3,
-    host: "ghcr.io/nightly-labs/*",
+    host: UPSTREAM_REGISTRY_HOST,
     until: "F3",
-    reason: "the previous project's container registry path; a pull that still names it gets their image, not ours",
+    reason: "stand-in for the previous project's container-registry path: a pull that still names it gets their image, not ours",
   },
   {
     level: 4,
@@ -290,7 +280,7 @@ function bestMatch(host: string): EgressEntry | null {
 
 /**
  * The entry that governs a host, or null when the policy does not know it. The most specific entry
- * wins: `ghcr.io/nightly-labs/*` is level 3 even though `ghcr.io` is level 2. A path is tried whole
+ * wins: `ghcr.io/<upstream-org>/*` is level 3 even though `ghcr.io` is level 2. A path is tried whole
  * first, so a registry path can have its own rule, then without it.
  */
 export function classifyHost(value: string): EgressEntry | null {

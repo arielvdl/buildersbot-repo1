@@ -57,7 +57,7 @@ function hostedSiteMarkerHostname(value: string): string | null {
   if (!value || value.length > INPUT_LIMITS.hostname || value !== value.toLowerCase()) return null;
   try {
     const parsed = new URL(`https://${value}`);
-    return parsed.hostname === value && parsed.port === "" && value.endsWith(".openbot.site") ? value : null;
+    return parsed.hostname === value && parsed.port === "" && value.endsWith(".sites.buildersbot.culturabuilder.com") ? value : null;
   } catch {
     return null;
   }

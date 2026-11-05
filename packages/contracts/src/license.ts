@@ -39,7 +39,7 @@ export const LICENSE_PLANS: readonly LicensePlan[] = LICENSE_TIERS.flatMap((tier
 /** The Stripe Price lookup key of the Team monthly license. A license from before the tiers uses it. */
 export const LICENSE_LOOKUP_KEY = "buildersbot_license_month";
 /** The same lookup key of a Price made before the rename. */
-export const LICENSE_LOOKUP_KEY_LEGACY = "openbot_license_month";
+export const LICENSE_LOOKUP_KEY_LEGACY = "buildersbot_license_month";
 
 /** The Stripe Price lookup key of one license plan. `stripe-bootstrap.ts` creates them. */
 export function licenseLookupKey(plan: LicensePlan): string {
@@ -53,8 +53,8 @@ export function licenseLookupKey(plan: LicensePlan): string {
 export function licenseLookupKeyLegacy(plan: LicensePlan): string {
   const bundle = plan.bundle ? "bundle_" : "";
   return plan.tier === "team"
-    ? `openbot_license_${bundle}${plan.interval}`
-    : `openbot_license_starter_${bundle}${plan.interval}`;
+    ? `buildersbot_license_${bundle}${plan.interval}`
+    : `buildersbot_license_starter_${bundle}${plan.interval}`;
 }
 
 /** The lookup keys of all license Prices, under both prefixes. */
@@ -65,7 +65,7 @@ export const LICENSE_LOOKUP_KEYS: readonly string[] = [
 /** The Stripe Product of the license. */
 export const LICENSE_PRODUCT_ID = "buildersbot_license";
 /** The same Product of a Price made before the rename. */
-export const LICENSE_PRODUCT_ID_LEGACY = "openbot_license";
+export const LICENSE_PRODUCT_ID_LEGACY = "buildersbot_license";
 
 /** Whether a Stripe Product is the license, under either name. */
 export function isLicenseProductId(value: unknown): boolean {
@@ -98,13 +98,13 @@ export const LICENSE_METADATA = {
 } as const;
 /** The same keys of a subscription made before the rename. They are read after the new ones. */
 export const LICENSE_METADATA_LEGACY = {
-  kind: "openbot_kind",
-  paidUsers: "openbot_paid_users",
-  paidPeriodEnd: "openbot_paid_period_end",
-  tier: "openbot_license_tier",
-  interval: "openbot_license_interval",
-  bundle: "openbot_license_bundle",
-  orderSubscription: "openbot_order_subscription",
+  kind: "buildersbot_kind",
+  paidUsers: "buildersbot_paid_users",
+  paidPeriodEnd: "buildersbot_paid_period_end",
+  tier: "buildersbot_license_tier",
+  interval: "buildersbot_license_interval",
+  bundle: "buildersbot_license_bundle",
+  orderSubscription: "buildersbot_order_subscription",
 } as const;
 
 /** Stripe metadata, whose values arrive untrusted. */
@@ -134,10 +134,10 @@ export const ORDER_METADATA = {
 } as const;
 /** The same keys of an order made before the rename. They are read after the new ones. */
 export const ORDER_METADATA_LEGACY = {
-  licenseTier: "openbot_order_license_tier",
-  licenseUsers: "openbot_order_license_users",
-  licenseInterval: "openbot_order_license_interval",
-  licenseTrialEnd: "openbot_order_license_trial_end",
+  licenseTier: "buildersbot_order_license_tier",
+  licenseUsers: "buildersbot_order_license_users",
+  licenseInterval: "buildersbot_order_license_interval",
+  licenseTrialEnd: "buildersbot_order_license_trial_end",
 } as const;
 
 /** An order metadata value under its new key or the one from before the rename. */

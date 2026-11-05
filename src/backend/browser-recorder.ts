@@ -95,7 +95,7 @@ export class BrowserRecorder {
       const startedAt = Date.now();
       const path = join(
         this.#downloadsRoot,
-        `openbot-browser-${new Date(startedAt).toISOString().replace(/[:.]/g, "-")}-${randomUUID().slice(0, 8)}.webm`,
+        `buildersbot-browser-${new Date(startedAt).toISOString().replace(/[:.]/g, "-")}-${randomUUID().slice(0, 8)}.webm`,
       );
       let retained = false;
       let openedWindow: BrowserWindow | undefined;

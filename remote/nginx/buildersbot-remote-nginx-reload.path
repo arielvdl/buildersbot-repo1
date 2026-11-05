@@ -2,7 +2,7 @@
 Description=Watch Builders Bot Remote TLS certificate
 
 [Path]
-PathChanged=/var/lib/docker/volumes/buildersbot-remote_acme-data/_data/certificates/signal.openbot.run.crt
+PathChanged=/var/lib/docker/volumes/buildersbot-remote_acme-data/_data/certificates/signal.buildersbot.culturabuilder.com.crt
 Unit=buildersbot-remote-nginx-reload.service
 
 [Install]

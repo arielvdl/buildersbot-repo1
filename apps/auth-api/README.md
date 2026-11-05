@@ -157,9 +157,9 @@ exercise real delivery locally, put a full set in the ignored `.dev.vars` file:
 ```dotenv
 EMAIL_SMTP_HOST=mail.privateemail.com
 EMAIL_SMTP_PORT=465
-EMAIL_SMTP_USERNAME=hello@openbot.run
+EMAIL_SMTP_USERNAME=hello@buildersbot.culturabuilder.com
 EMAIL_SMTP_PASSWORD=<PRIVATE_EMAIL_APP_PASSWORD>
-EMAIL_FROM=hello@openbot.run
+EMAIL_FROM=hello@buildersbot.culturabuilder.com
 ```
 
 `bun run env:set:smtp` encrypts the app password into `.env.production` only.
@@ -221,7 +221,7 @@ The contact form on `/contact` posts to `/v1/contact`. The Worker sends each mes
 The D1 counter of sign-in allows 3 messages for each IP address and 15 in total in each 15-minute
 window, so the form cannot spend the quota that sign-in codes need. A Cloudflare rate-limit binding
 counts in each location separately, so it cannot hold a total. Without SMTP the route answers 503
-`email_delivery_not_configured`, and the form tells the visitor to write to `hello@openbot.run`.
+`email_delivery_not_configured`, and the form tells the visitor to write to `hello@buildersbot.culturabuilder.com`.
 
 ## Cloudflare deployment
 
@@ -238,14 +238,14 @@ The service applies limits per email, per IP, per challenge, and per resend.
 
 A deploy replaces every file under `/assets/`. Before a production deploy, CI and `bun run api:deploy`
 run `scripts/keep-previous-assets.ts`. It copies the files of the builds that were live in the last
-24 hours from `https://openbot.run` into the new build, so a tab that is open during a deploy can
+24 hours from `https://buildersbot.culturabuilder.com` into the new build, so a tab that is open during a deploy can
 still load code. The site keeps the list of these files in `/asset-history.json`. When the list or a
 file cannot be read, the deploy continues with fewer files, and such a tab reloads when it next loads
 code.
 
 ## Hosted sites
 
-`/v1/sites` takes two optional headers: `OpenBot-Host-Id` and `OpenBot-Host-Token`, the machine token
+`/v1/sites` takes two optional headers: `BuildersBot-Host-Id` and `BuildersBot-Host-Token`, the machine token
 of a registered server. With them, a request sees only that server's sites, and a new site counts
 against the server plan's limit. A wrong token gets 401 `host_unauthorized`. Without them, a new site
 goes into the account's unlinked bucket of one site; `GET /v1/sites?scope=unlinked` lists only that
@@ -285,7 +285,7 @@ Two optional variables spread hosts over more than one Signal machine. When both
 ticket names `REMOTE_SIGNAL_URL`, as before.
 
 - `REMOTE_SIGNAL_HOMES`: the Signal machines that a host can have as its home, as `id=url,id=url`,
-  for example `a=wss://signal-a.openbot.run/v1/signal,b=wss://signal-b.openbot.run/v1/signal`. An ID
+  for example `a=wss://signal-a.buildersbot.culturabuilder.com/v1/signal,b=wss://signal-b.buildersbot.culturabuilder.com/v1/signal`. An ID
   has 1 to 32 characters from `a-z`, `0-9` and `-`. A URL must use `wss:`, or `ws:` when
   `REMOTE_SIGNAL_URL` uses `ws:`. An invalid value makes each ticket request fail with
   `503 remote_not_configured`. A host ticket request with `signalHome: true` gets a home, which

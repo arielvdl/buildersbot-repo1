@@ -472,7 +472,7 @@ async function main(): Promise<void> {
   const configuredRoot = argumentValue("--smoke-root=");
   const persistencePhase = argumentValue("--persistence-phase=");
   const persistenceOrigin = argumentValue("--persistence-origin=");
-  const temporaryRoot = configuredRoot ?? (await mkdtemp(join(tmpdir(), "openbot-browser-smoke-")));
+  const temporaryRoot = configuredRoot ?? (await mkdtemp(join(tmpdir(), "buildersbot-browser-smoke-")));
   const userDataPath = join(temporaryRoot, "user-data");
   await mkdir(userDataPath, { recursive: true });
   app.setName("Builders Bot");

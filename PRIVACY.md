@@ -62,10 +62,10 @@ of the browser, described in "Product analytics", to the account service, when t
 email codes, credentials, message content, file content, or search queries to telemetry.
 
 Builders Bot desktop, the browser client at `/app`, the mobile app, and the website send no product analytics and no
-error reports. The destination of the events below is the service at `analytics.openbot.run`, and they
+error reports. The destination of the events below is the service at `analytics.buildersbot.culturabuilder.com`, and they
 describe what a build sends once a client runs again.
 
-The events below are the contract of the analytics service at `analytics.openbot.run`. The account service would
+The events below are the contract of the analytics service at `analytics.buildersbot.culturabuilder.com`. The account service would
 send them if the Worker had the `OPENPANEL_CLIENT_ID` and `OPENPANEL_CLIENT_SECRET` secrets.
 
 The account service reports an event to OpenPanel when a paid plan or a hosted server
@@ -203,7 +203,7 @@ the account. On start, the desktop app deletes the failure report queue and the 
 analytics service, so an older build that opens the same profile cannot send them.
 
 This section describes the contract of that service. It receives these events, the error reports, and
-the account ID and normalized email of a signed-in user. The service runs at `analytics.openbot.run`,
+the account ID and normalized email of a signed-in user. The service runs at `analytics.buildersbot.culturabuilder.com`,
 apart from the app.
 
 The production website records anonymous page views using only fixed paths: `/`, `/join`, the
@@ -228,7 +228,7 @@ send only lengths, times, counts, the chosen voice (for example `F1`), whether t
 remote, and whether speech recognition runs on the computer or in the cloud. They never send what
 the user said, the reply, a transcript, or audio.
 
-The production browser client at `/app` on `https://openbot.run` records the same product events
+The production browser client at `/app` on `https://buildersbot.culturabuilder.com` records the same product events
 as the desktop app, with the same limits, and labels them as web. Its **Usage analytics** row in
 account settings covers these events and the error reports.
 
@@ -269,20 +269,20 @@ platform name (or unknown), and the referring domain when available. A recognize
 takes precedence over the referring domain for platform classification; unrecognized tags are not
 sent. Attribution excludes referrer paths, query parameters, fragments, credentials, ports, and
 campaign URLs other than the allowlisted tags described above. Website page and article events carry
-the path of a news article, guide or comparison published on openbot.run, together with the collection name, the
+the path of a news article, guide or comparison published on buildersbot.culturabuilder.com, together with the collection name, the
 reading position reached (start, half, or end), and the section of the page a link was clicked in.
 That path is a published article address and nothing else: it is matched against the site's own list
 of articles, so no other part of a visited URL can be reported through it. Reading position is taken
-from where the article sits on screen, never from how long it was open. Referrals from openbot.run and its subdomains are omitted.
+from where the article sits on screen, never from how long it was open. Referrals from buildersbot.culturabuilder.com and its subdomains are omitted.
 The production website also saves the first visit of the browser in its `localStorage`: the source
 category, the platform name, the first website page, the day, and the allowlisted campaign tags.
 It saves no referrer, IP address or identifier. A later visit does not change it, and it is not used
 after 90 days. When you sign in on the web, or open the page after a desktop checkout in the same
 browser, the browser sends it to the account service. The account service keeps the first one that
 it gets on your account and sends it to OpenPanel with your account ID. To remove it from a
-browser, clear the site data of openbot.run. OpenPanel can also derive
+browser, clear the site data of buildersbot.culturabuilder.com. OpenPanel can also derive
 session, device, browser, operating-system, network, and approximate geographic metadata from a
-request. That service runs apart from Builders Bot and receives the events through `analytics.openbot.run`.
+request. That service runs apart from Builders Bot and receives the events through `analytics.buildersbot.culturabuilder.com`.
 Desktop and web have no analytics switch, because no client sends: **Settings → General → Permissions →
 Usage analytics** shows a note that reads "Off". The saved preference still decides what a build sends
 when a client returns. It is stored locally and disables both UI analytics and lifecycle analytics
@@ -593,11 +593,11 @@ Builders Bot sends sign-in, team invitation, and welcome messages through the co
 provider receives the recipient address and the message content. A sign-in message contains the
 one-time code and its expiration time. A team invitation can contain the inviter address, team name,
 role, and invite URL. When the first cloud server plan of an account starts, a welcome message goes
-to the account address. It contains the plan name and the server name. The HTML version of a message loads the Builders Bot logo from `openbot.run` when
+to the account address. It contains the plan name and the server name. The HTML version of a message loads the Builders Bot logo from `buildersbot.culturabuilder.com` when
 the mail client shows images. The image address is the same in every message and identifies no
 recipient.
 
-The contact form on `openbot.run/contact` sends your message to the Builders Bot mailbox through the same
+The contact form on `buildersbot.culturabuilder.com/contact` sends your message to the Builders Bot mailbox through the same
 SMTP provider. The message contains the email address, topic and text that you enter, and the name and
 company when you enter them. The account service stores none of these values. To limit how many
 messages one address can send, it keeps a hash of your IP address in its rate-limit records. The Builders Bot team receives the message
@@ -614,7 +614,7 @@ computer answers each chat; see [Telegram connections](#telegram-connections). C
 email provider can keep their own security, delivery, and network logs under their own policies. These provider logs are outside the
 Builders Bot application database and its daily maintenance task.
 
-The public status page at `status.openbot.run` is on GitHub Pages. GitHub serves it and keeps its
+The public status page at `status.buildersbot.culturabuilder.com` is on GitHub Pages. GitHub serves it and keeps its
 own request logs under its own policy. The page has no analytics and no cookies, and it loads
 nothing from other sites. A GitHub Actions workflow checks the Builders Bot services about every 5 minutes
 with plain requests that carry no account or user data. Incidents on the page come from issues
@@ -921,8 +921,8 @@ Network traffic can also occur when:
   `User-Agent: Builders Bot/<version>` and, when a session starts, the client name `buildersbot`, the
   Builders Bot version and the title `<agent name> (Builders Bot)`, so the server can show which agent made a
   change. Nothing else about the user's agents, conversations or files is sent in those requests. The
-  registration names Builders Bot's logo at `openbot.run`; an authorization service that shows it on its
-  sign-in page can make the browser load it from `openbot.run`;
+  registration names Builders Bot's logo at `buildersbot.culturabuilder.com`; an authorization service that shows it on its
+  sign-in page can make the browser load it from `buildersbot.culturabuilder.com`;
 - the user presses Install on the 1Password page. Builders Bot downloads the 1Password CLI release that it
   pins from `cache.agilebits.com`, checks its SHA-256, and keeps it in
   `~/Library/Application Support/Builders Bot/provider-state/1password-cli`. The request carries no user
@@ -980,7 +980,7 @@ Network traffic can also occur when:
   address that GitHub gives, on GitHub's image host. Agents then reach the
   GitHub MCP server at `api.githubcopilot.com` and GitHub itself through `gh` and `git`, with that
   token. So that GitHub shows the Builders Bot app as the author of an agent's work, Builders Bot sends that
-  token to the central account service (`api.openbot.run`) about once an hour, and when you open the
+  token to the central account service (`api.buildersbot.culturabuilder.com`) about once an hour, and when you open the
   repository list. The service uses it
   only to ask GitHub which repositories you can push to, and gets back short-lived installation
   tokens for those repositories. It does not store or log either token, and it gets no chats, files
@@ -1077,7 +1077,7 @@ Builders Bot account that connected it, and the Slack app and bot user IDs. It k
 message. It gives the bot token to the computer encrypted to a key that only that computer has.
 
 Slack sends the workspace's events, which contain the Slack messages in the channels Builders Bot is in
-and its direct messages, to Builders Bot's Signal service (`signal.openbot.run`). Signal checks Slack's
+and its direct messages, to Builders Bot's Signal service (`signal.buildersbot.culturabuilder.com`). Signal checks Slack's
 signature and reads only the app ID and the workspace ID, to find the computer, and the type,
 channel type, thread and bot ID of the event, to know whether it addresses Builders Bot. It passes each
 request to that computer over its Signal connection, in transit only: it does not store or log the
@@ -1120,7 +1120,7 @@ because the app's secret lives there, and revokes the Discord sign-in token that
 records which Builders Bot computer answers the Discord server: the Discord server ID, the computer and the
 Builders Bot account that connected it. It keeps no Discord token and no message.
 
-Discord has one bot token for every server, so only Builders Bot's Signal service (`signal.openbot.run`)
+Discord has one bot token for every server, so only Builders Bot's Signal service (`signal.buildersbot.culturabuilder.com`)
 holds it. Unlike Slack, both directions go through Signal:
 
 - **To the computer.** Signal keeps the bot's connection to Discord. Discord sends it the messages of
@@ -1164,7 +1164,7 @@ has, so Signal cannot read it; a restart of Signal deletes it.
 ## Telegram connections
 
 One Builders Bot Telegram bot serves every user. Its token is only in Builders Bot's Signal service
-(`signal.openbot.run`); no computer has it. The user connects a chat from Builders Bot on their computer:
+(`signal.buildersbot.culturabuilder.com`); no computer has it. The user connects a chat from Builders Bot on their computer:
 the account service gives a one-use code, and the browser opens a `t.me` link with it. When the user
 adds the bot to a group, or starts a direct chat with it, Telegram sends the code in that chat.
 Signal then asks the account service to link the chat to the computer. The account service records
@@ -1211,7 +1211,7 @@ access the user gave them. A hosted server that sleeps starts for a message that
 Signal keeps that message in memory for at most 10 minutes, encrypted to a key that only that server
 has, so Signal cannot read it; a restart of Signal deletes it.
 
-Plugin pages on openbot.run show each listing's own icon. The page asks `openbot.run` for that
+Plugin pages on buildersbot.culturabuilder.com show each listing's own icon. The page asks `buildersbot.culturabuilder.com` for that
 picture, and the website fetches it there from the address the plugin catalog holds, so reading a
 plugin page does not connect your browser to the plugin developer's servers.
 
@@ -1296,7 +1296,7 @@ secrets from these steps first. Command output can contain file contents. Reason
 attachment contents are not sent.
 
 Publishing an agent template from the chat makes its instructions, skills, and routines public to
-anyone with the link at `openbot.run/agents/<id>`, with your account name as the creator. Builders Bot
+anyone with the link at `buildersbot.culturabuilder.com/agents/<id>`, with your account name as the creator. Builders Bot
 stops the publish when a text field looks like a secret. Workspace files and memories are not sent.
 An owner or admin of a server can also publish, update or unpublish an agent of that server from the
 browser client. The host sends the template content and the agent's avatar to that browser for the

@@ -54,8 +54,8 @@ What the workflows do, checked on 2026-10-01:
   `SLACK_SIGNING_SECRET` in this repository does not reach the server by itself.
 - **Desktop.** `release.yml` on a version tag.
 
-Live state on 2026-10-01: `api.openbot.run/.well-known/jwks.json` lists only `buildersbot-remote-1`.
-`/v2/slack/authorize`, `/v2/remote/slack-route/validate` and `signal.openbot.run/v1/slack/events`
+Live state on 2026-10-01: `api.buildersbot.culturabuilder.com/.well-known/jwks.json` lists only `buildersbot-remote-1`.
+`/v2/slack/authorize`, `/v2/remote/slack-route/validate` and `signal.buildersbot.culturabuilder.com/v1/slack/events`
 return 404.
 
 Do the steps in this order:
@@ -78,8 +78,8 @@ Do the steps in this order:
          same value, encrypted with the root `DOTENV_PRIVATE_KEY_PRODUCTION`. It lists only
          `A0C5H5C95NH`. To add the development app, change the repository file with `-fk .env.keys`,
          then copy it to the server.
-   - [ ] Deploy as `docs/remote-session-deployment.md` says, with `remote/nginx/signal.openbot.run.conf`.
-   - [ ] `POST https://signal.openbot.run/v1/slack/events` without a signature gives 401, not 404 or
+   - [ ] Deploy as `docs/remote-session-deployment.md` says, with `remote/nginx/signal.buildersbot.culturabuilder.com.conf`.
+   - [ ] `POST https://signal.buildersbot.culturabuilder.com/v1/slack/events` without a signature gives 401, not 404 or
          503.
 5. **Slack app settings** for `A0C5H5C95NH`:
    - [ ] Verify the request URL in **Event Subscriptions** and **Interactivity**.

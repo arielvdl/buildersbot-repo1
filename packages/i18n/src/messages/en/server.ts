@@ -293,7 +293,7 @@ export const messages = defineMessages("server", {
   "server.settings.storageTitle": "Storage",
   "server.settings.storageDescription": "See what Builders Bot keeps on this server’s disk, and free space.",
   "server.settings.hostedSitesTitle": "Sites",
-  "server.settings.hostedSitesDescription": "The static sites that agents on this server published to openbot.site.",
+  "server.settings.hostedSitesDescription": "The static sites that agents on this server published to sites.buildersbot.culturabuilder.com.",
   "server.settings.importTitle": "Import",
   "server.settings.importDescription": "Move your agents from Grok Bot or Hermes Agent to this server.",
   "server.settings.transferTitle": "Transfer",

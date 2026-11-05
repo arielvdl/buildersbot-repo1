@@ -12,9 +12,9 @@ export const WEBHOOK_TIMESTAMP_HEADER = "x-buildersbot-timestamp";
 export const WEBHOOK_DELIVERY_ID_HEADER = "x-buildersbot-delivery-id";
 export const WEBHOOK_SIGNATURE_HEADER = "x-buildersbot-signature";
 /** The same headers of a sender whose code was written before the rename. They are read after the new ones. */
-export const WEBHOOK_TIMESTAMP_HEADER_LEGACY = "x-openbot-timestamp";
-export const WEBHOOK_DELIVERY_ID_HEADER_LEGACY = "x-openbot-delivery-id";
-export const WEBHOOK_SIGNATURE_HEADER_LEGACY = "x-openbot-signature";
+export const WEBHOOK_TIMESTAMP_HEADER_LEGACY = "x-buildersbot-timestamp";
+export const WEBHOOK_DELIVERY_ID_HEADER_LEGACY = "x-buildersbot-delivery-id";
+export const WEBHOOK_SIGNATURE_HEADER_LEGACY = "x-buildersbot-signature";
 
 // The host refuses a signature whose timestamp is further than this from its clock: a replay.
 export const WEBHOOK_MAX_CLOCK_SKEW_SECONDS = 5 * 60;

@@ -1,6 +1,6 @@
 // The links that Builders Bot makes for a person to open on a phone are on the Builders Bot site and
 // open the web app there. This test fails when one of them is an `buildersbot://` link or an upstream
-// `openbot.run` page again: a server invitation and its QR code, an agent share link, a desktop
+// `buildersbot.culturabuilder.com` page again: a server invitation and its QR code, an agent share link, a desktop
 // download, and the pages that the web app opens.
 
 import { readFileSync } from "node:fs";
@@ -45,7 +45,7 @@ describe("Builders Bot phone links", () => {
     const url = new URL(link);
     expect(url.protocol).toBe("https:");
     expect(`${url.origin}${url.pathname}`).toBe(`${SITE}/join`);
-    expect(link).not.toMatch(/openbot/iu);
+    expect(link).not.toMatch(/buildersbot/iu);
     expect(parseInviteUrl(link)).toEqual(INVITE);
     // The email of an invitation accepts the link.
     expect(isCanonicalInviteUrl(link)).toBe(true);
@@ -56,7 +56,7 @@ describe("Builders Bot phone links", () => {
   });
 
   it("still reads an invitation link of the upstream site", () => {
-    const upstream = new URL("https://openbot.run/join");
+    const upstream = new URL("https://buildersbot.culturabuilder.com/join");
     for (const [field, value] of Object.entries({
       api: INVITE.apiUrl,
       server: INVITE.serverId,

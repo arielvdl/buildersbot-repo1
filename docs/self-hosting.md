@@ -1,7 +1,7 @@
 # Self-hosted remote access
 
 This guide tells you how to run your own account service (the Account API Worker), Signal and TURN
-for remote access. Use it when you do not want `api.openbot.run` and `signal.openbot.run` to carry
+for remote access. Use it when you do not want `api.buildersbot.culturabuilder.com` and `signal.buildersbot.culturabuilder.com` to carry
 your account and connection set-up.
 
 Our Worker does not issue a ticket for another Signal. A ticket gives access to a host, and our key
@@ -11,11 +11,11 @@ self-hosted account service with its own keys. See
 
 ## What changes
 
-- Accounts on your service are separate from accounts on `openbot.run`. Each person signs in again.
+- Accounts on your service are separate from accounts on `buildersbot.culturabuilder.com`. Each person signs in again.
 - Each desktop and phone that connects to a host must use the same service.
 - Invitations are `buildersbot://join` links. Copy a link from the app and send it yourself. The app
   does not send an invitation by email.
-- The browser client at `openbot.run/app` does not work with your service.
+- The browser client at `buildersbot.culturabuilder.com/app` does not work with your service.
 - Hosted servers, the Builders Bot GitHub App, Slack, the Builders Bot Telegram bot and the iPhone Live
   Activity relay stay off. Each needs secrets that only we have.
 - The other network connections in [PRIVACY.md](../PRIVACY.md) do not change.
@@ -122,7 +122,7 @@ Keep the private JWK secret. With it, a person can open each host that uses your
 
 Do these steps on each computer that hosts or connects.
 
-1. If you signed in to `openbot.run` before, sign out in the app. Otherwise the app sends the old
+1. If you signed in to `buildersbot.culturabuilder.com` before, sign out in the app. Otherwise the app sends the old
    session token to your service.
 2. Quit the app. Then start it with the two variables. `BUILDERSBOT_REMOTE_SIGNAL_URL` must be equal to
    the `REMOTE_SIGNAL_URL` of your Worker.
@@ -155,11 +155,11 @@ Do these steps on each computer that hosts or connects.
 
 3. Sign in with an email address. The code comes from your SMTP account.
 4. To connect an iPhone, scan the connection QR code from the desktop app. The phone then uses the
-   service of that desktop. Email sign-in on the phone always uses `openbot.run`, so it cannot
+   service of that desktop. Email sign-in on the phone always uses `buildersbot.culturabuilder.com`, so it cannot
    connect to a self-hosted service.
 
-Set the variables each time that you start the app. Without them, the app uses `openbot.run` and
-sends your session token there. To go back to `openbot.run`, sign out first.
+Set the variables each time that you start the app. Without them, the app uses `buildersbot.culturabuilder.com` and
+sends your session token there. To go back to `buildersbot.culturabuilder.com`, sign out first.
 
 The app does not start, and shows an error, if `BUILDERSBOT_REMOTE_SIGNAL_URL` is not a `wss:` URL, has
 a user name or password, or is set without `BUILDERSBOT_AUTH_API_URL`.

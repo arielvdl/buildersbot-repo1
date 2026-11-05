@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from "storybook-solidjs-vite";
 const preview = {
   serverId: "00000000-0000-4000-8000-000000000000",
   serverName: "Studio host",
-  apiHostname: "story-host.openbot.run",
+  apiHostname: "story-host.buildersbot.culturabuilder.com",
   role: "member" as const,
   expiresAt: "2026-08-21T10:00:00.000Z",
   emailBound: false,
@@ -15,7 +15,7 @@ const preview = {
 
 const args: Parameters<typeof JoinServerDialog>[0] = {
   inviteUrl:
-    "https://openbot.run/join?api=https%3A%2F%2Fstory-host.openbot.run%2F&server=00000000-0000-4000-8000-000000000000&fingerprint=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&invite=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "https://buildersbot.culturabuilder.com/join?api=https%3A%2F%2Fstory-host.buildersbot.culturabuilder.com%2F&server=00000000-0000-4000-8000-000000000000&fingerprint=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&invite=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   accountEmail: "person@example.com",
   onClose: fn(),
   onPreview: fn(async () => preview),
@@ -84,7 +84,7 @@ export const LongIdentity: Story = {
     onPreview: fn(async () => ({
       ...preview,
       serverName: "Product design and research studio host",
-      apiHostname: "product-design-research-studio.openbot.run",
+      apiHostname: "product-design-research-studio.buildersbot.culturabuilder.com",
     })),
   },
 };

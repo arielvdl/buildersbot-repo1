@@ -165,7 +165,7 @@ sheet moves its files into the app cache, the user chooses an agent, and that ch
 text and files, which follow the attachment rules above. The phone reads the response headers of a
 shared link; a link to an image of at most 10 MB is downloaded and comes as a file instead of the link. Permanent invitation metadata comes from the shared Team client; revocation stops
 new joins without removing existing members.
-iOS associates `https://openbot.run/join` and `https://openbot.run/agents/*` with `run.openbot.mobile`. Changes to associated
+iOS associates `https://buildersbot.culturabuilder.com/join` and `https://buildersbot.culturabuilder.com/agents/*` with `run.buildersbot.mobile`. Changes to associated
 domains require a new native app build and deployment of the website association file. Android
 continues to open HTTPS invitations in the browser, whose button opens `buildersbot://join`. Enabling
 verified Android App Links requires the release app-signing certificate's SHA-256 fingerprint,
@@ -263,7 +263,7 @@ Tunnel transport is retired. The old public endpoints return `host_update_requir
 
 The desktop client starts each remote connection with `GET /v1/compatibility`. The response contains the host application version, the minimum and maximum Team API protocol versions, and host capabilities. The client selects the highest protocol in the shared range. Application SemVer does not select or reject a protocol.
 
-The first released Team API protocol is `1`. All later HTTP requests include `OpenBot-Protocol-Version` and `OpenBot-App-Version`. The event socket uses the `buildersbot-team-v1` WebSocket subprotocol. A host without the compatibility endpoint is treated as an old host and is blocked. A request without the required protocol headers is treated as an old client and is blocked.
+The first released Team API protocol is `1`. All later HTTP requests include `BuildersBot-Protocol-Version` and `BuildersBot-App-Version`. The event socket uses the `buildersbot-team-v1` WebSocket subprotocol. A host without the compatibility endpoint is treated as an old host and is blocked. A request without the required protocol headers is treated as an old client and is blocked.
 
 Each protocol has a frozen codec and adapter in `packages/contracts/src/team-protocol`. The v1 HTTP codec owns the fixed route registry and validates JSON requests and responses before the adapter converts current values. Uploads, downloads, and other binary routes use the same negotiated headers and error envelope. The host does not write current service or IPC values directly to the network. Breaking or semantic changes add a new protocol directory and registry entry. A released adapter keeps its original meaning.
 

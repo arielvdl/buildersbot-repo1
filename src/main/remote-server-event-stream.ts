@@ -67,8 +67,8 @@ const HOSTED_SERVER_START_RETRY_MS = 5_000;
 const REMOTE_EVENT_HEALTHY_MS = 30_000;
 const REMOTE_EVENT_PAYLOAD_LIMIT = 1024 * 1024;
 const REMOTE_EVENT_INITIAL_BUFFER_LIMIT = 1_000;
-const REMOTE_EVENT_PROTOCOL = "openbot-events";
-const REMOTE_EVENT_SNAPSHOT_PROTOCOL = "openbot-events-v2";
+const REMOTE_EVENT_PROTOCOL = "buildersbot-events";
+const REMOTE_EVENT_SNAPSHOT_PROTOCOL = "buildersbot-events-v2";
 
 // What the stream needs of the request client: the negotiated range, and the headers that carry it.
 export interface RemoteEventCompatibilitySource {

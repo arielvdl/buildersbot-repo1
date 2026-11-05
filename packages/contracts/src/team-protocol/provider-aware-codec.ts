@@ -44,13 +44,13 @@ export const OPEN_PROVIDER_ID = PROVIDER_ID_PATTERN;
 
 export const TEAM_PROTOCOL_VERSION_HEADER = "X-BuildersBot-Protocol-Version";
 /** The same header of a client or a host made before the rename. Read it after the new one. */
-export const TEAM_PROTOCOL_VERSION_LEGACY = "OpenBot-Protocol-Version";
+export const TEAM_PROTOCOL_VERSION_LEGACY = "BuildersBot-Protocol-Version";
 export const TEAM_APP_VERSION_HEADER = "X-BuildersBot-App-Version";
 /** The same header of a client or a host made before the rename. Read it after the new one. */
-export const TEAM_APP_VERSION_LEGACY = "OpenBot-App-Version";
+export const TEAM_APP_VERSION_LEGACY = "BuildersBot-App-Version";
 export const TEAM_CAPABILITIES_HEADER = "X-BuildersBot-Capabilities";
 /** The same header of a client or a host made before the rename. Read it after the new one. */
-export const TEAM_CAPABILITIES_LEGACY = "OpenBot-Capabilities";
+export const TEAM_CAPABILITIES_LEGACY = "BuildersBot-Capabilities";
 
 export const TEAM_PROTOCOL_ProviderAware_CAPABILITIES = [
   "agent-runtime-snapshots",

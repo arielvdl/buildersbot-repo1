@@ -28,7 +28,7 @@ export const messages = {
   "onboarding.setup.defaultProviderHint":
     "Usato per i nuovi agenti locali. Potrai cambiarlo per ogni agente più tardi.",
   "onboarding.setup.invitation": "Invito all'host",
-  "onboarding.setup.invitationPlaceholder": "Incolla un link di invito https://openbot.run/join",
+  "onboarding.setup.invitationPlaceholder": "Incolla un link di invito https://buildersbot.culturabuilder.com/join",
   "onboarding.setup.otherInvitation": "Usa un altro invito",
   "onboarding.setup.joinNote":
     "Ti unirai come {email}. Gli inviti via email funzionano solo con l'indirizzo che li ha ricevuti.",

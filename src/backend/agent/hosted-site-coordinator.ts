@@ -29,10 +29,10 @@ import {
   hostedSiteEventMessageId,
   hostedSiteTool,
 } from "./hosted-site-events";
-import { type BuildersBotToolResponse, openBotToolResult, siteToolString } from "./routine-tools";
+import { type BuildersBotToolResponse, buildersBotToolResult, siteToolString } from "./routine-tools";
 import { checkAgentFolders, workspaceWritableRoots } from "./workspace-sandbox";
 
-/** The openbot.site host, injected so the backend never depends on the account Worker directly. */
+/** The sites.buildersbot.culturabuilder.com host, injected so the backend never depends on the account Worker directly. */
 export interface AgentHostedSites {
   list(): Effect.Effect<HostedSiteList, HostedSiteOperationFailed>;
   publish(
@@ -88,7 +88,7 @@ interface HostedSiteMutationResult {
 export const HOSTED_SITE_APPROVAL_METHOD = "buildersbot/hosted-site-mutation";
 
 /**
- * Owns publishing to openbot.site: the approval a mutation needs, the mutation itself, and the
+ * Owns publishing to sites.buildersbot.culturabuilder.com: the approval a mutation needs, the mutation itself, and the
  * conversation markers that record it.
  *
  * The markers are the reason this is a class rather than a set of functions. A terminal marker
@@ -252,7 +252,7 @@ export class HostedSiteCoordinator {
       const siteId = yield* siteStep(() => siteToolString(args.siteId, "siteId", INPUT_LIMITS.identifier));
       const site = yield* this.#ownedSiteEffect(siteId);
       return {
-        reason: `Delete ${site.hostname} from openbot.site.`,
+        reason: `Delete ${site.hostname} from sites.buildersbot.culturabuilder.com.`,
         permissions: { fileSystem: { read: [], write: [] }, network: true },
         eventDetails: hostedSiteEventDetails(site, siteId),
       };
@@ -267,7 +267,7 @@ export class HostedSiteCoordinator {
     const permissions = { fileSystem: { read: [sourcePath], write: [] }, network: true };
     if (tool === "publish_site") {
       return {
-        reason: `Publish ${JSON.stringify(title)} as a public site on openbot.site.`,
+        reason: `Publish ${JSON.stringify(title)} as a public site on sites.buildersbot.culturabuilder.com.`,
         permissions,
         eventDetails: { siteId: null, title, hostname: null, url: null },
       };
@@ -305,7 +305,7 @@ export class HostedSiteCoordinator {
       const siteId = yield* siteStep(() => siteToolString(args.siteId, "siteId", INPUT_LIMITS.identifier));
       const host = yield* siteStep(() => this.#requireHostedSites());
       yield* host.delete(siteId);
-      return { response: openBotToolResult({ deleted: true, siteId }), eventDetails: context.eventDetails };
+      return { response: buildersBotToolResult({ deleted: true, siteId }), eventDetails: context.eventDetails };
     }
 
     const sourcePath = yield* siteStep(() => siteToolString(args.sourcePath, "sourcePath", INPUT_LIMITS.path));
@@ -329,7 +329,7 @@ export class HostedSiteCoordinator {
         : yield* siteStep(() => siteToolString(args.siteId, "siteId", INPUT_LIMITS.identifier));
     const host = yield* siteStep(() => this.#requireHostedSites());
     const site = siteId ? yield* host.replace({ ...input, siteId }, roots) : yield* host.publish(input, roots);
-    return { response: openBotToolResult(site), eventDetails: hostedSiteEventDetails(site, siteId) };
+    return { response: buildersBotToolResult(site), eventDetails: hostedSiteEventDetails(site, siteId) };
   });
 
   #recordEvent(

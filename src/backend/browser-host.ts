@@ -445,7 +445,7 @@ export class BrowserHost {
     this.#profileExists = options.profileExists ?? (() => false);
     this.#downloadsRoot = downloadsRoot;
     this.#statePath = statePath;
-    this.#session = session.fromPartition("persist:openbot-browser", { cache: true });
+    this.#session = session.fromPartition("persist:buildersbot-browser", { cache: true });
     this.#recorder = new BrowserRecorder(
       downloadsRoot,
       (tabId, recording) => {

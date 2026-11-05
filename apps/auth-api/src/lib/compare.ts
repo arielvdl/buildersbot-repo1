@@ -147,7 +147,7 @@ export const COMPARE_COLLECTION: ContentCollection<"compare"> = {
       author: NEWS_AUTHOR,
     },
     {
-      // Published first in /news, as openbot-vs-grokbot and then buildersbot-vs-grokbot. Both
+      // Published first in /news, as buildersbot-vs-grokbot and then buildersbot-vs-grokbot. Both
       // URLs answer with a permanent redirect here (routes/news/$slug.tsx and
       // routes/news/buildersbot-vs-grokbot.ts).
       slug: "grok-bot",

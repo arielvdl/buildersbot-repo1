@@ -44,8 +44,8 @@ import { quietRoutineRun } from "./routine-quiet-runs";
 import {
   type BuildersBotToolResponse,
   localTimezone,
-  openBotToolFailure,
-  openBotToolResult,
+  buildersBotToolFailure,
+  buildersBotToolResult,
   routineToolAgentId,
   routineToolArguments,
   routineToolPolicies,
@@ -621,7 +621,7 @@ export class RoutineScheduler implements RoutineDueSource {
       Effect.catchDefect((cause) => Effect.fail(new RoutineOperationFailed({ cause }))),
       Effect.catch((failure) =>
         failure.cause instanceof RoutineInputError
-          ? Effect.succeed(openBotToolFailure(failure.cause.message))
+          ? Effect.succeed(buildersBotToolFailure(failure.cause.message))
           : Effect.fail(failure),
       ),
     );
@@ -659,7 +659,7 @@ export class RoutineScheduler implements RoutineDueSource {
     if (params.tool === "list_routines") {
       const args = routineToolArguments(params.arguments, ["agentId"]);
       const agentId = this.#toolAgentId(args, senderAgentId);
-      return openBotToolResult({
+      return buildersBotToolResult({
         routines: this.list(agentId),
         webhookRoutines: this.#routines
           .listRecords(agentId)
@@ -712,7 +712,7 @@ export class RoutineScheduler implements RoutineDueSource {
         },
         { ...this.#toolMutationOptions(agentId, senderAgentId, params), origin },
       );
-      return openBotToolResult(routine);
+      return buildersBotToolResult(routine);
     }
 
     if (params.tool === CREATE_WEBHOOK_ROUTINE_TOOL) {
@@ -745,7 +745,7 @@ export class RoutineScheduler implements RoutineDueSource {
       // Only the caller's own chat shows the card with the secret: the card needs the turn.
       const turnId = agentId === senderAgentId ? params.turnId : undefined;
       const recorded = this.#recordWebhookEvent(agentId, "created", routine, turnId);
-      return openBotToolResult(webhookRoutineToolResult(routine, recorded && turnId !== undefined));
+      return buildersBotToolResult(webhookRoutineToolResult(routine, recorded && turnId !== undefined));
     }
 
     if (params.tool === UPDATE_WEBHOOK_ROUTINE_TOOL) {
@@ -795,7 +795,7 @@ export class RoutineScheduler implements RoutineDueSource {
       this.#recordUpdate(routine.id, origin, args.instruction !== undefined && args.filters !== undefined);
       const turnId = agentId === senderAgentId ? params.turnId : undefined;
       const recorded = this.#recordWebhookEvent(agentId, "updated", routine, turnId);
-      return openBotToolResult(webhookRoutineToolResult(routine, recorded && turnId !== undefined, true));
+      return buildersBotToolResult(webhookRoutineToolResult(routine, recorded && turnId !== undefined, true));
     }
 
     if (params.tool === "update_routine") {
@@ -839,7 +839,7 @@ export class RoutineScheduler implements RoutineDueSource {
         hasUpdate = true;
       }
       if (!hasUpdate) throw new RoutineInputError("At least one routine update is required.");
-      return openBotToolResult(
+      return buildersBotToolResult(
         this.update(input, { ...this.#toolMutationOptions(input.agentId, senderAgentId, params), origin }),
       );
     }
@@ -854,7 +854,7 @@ export class RoutineScheduler implements RoutineDueSource {
         "routineId is required.",
       );
       yield* this.delete({ agentId, routineId }, agentId === senderAgentId ? { turnId: params.turnId } : {});
-      return openBotToolResult({ deleted: true, agentId, routineId });
+      return buildersBotToolResult({ deleted: true, agentId, routineId });
     }
 
     if (params.tool === "test_routine") {
@@ -866,7 +866,7 @@ export class RoutineScheduler implements RoutineDueSource {
         INPUT_LIMITS.identifier,
         "routineId is required.",
       );
-      return openBotToolResult(yield* this.test({ agentId, routineId }, {}, origin));
+      return buildersBotToolResult(yield* this.test({ agentId, routineId }, {}, origin));
     }
 
     return null;

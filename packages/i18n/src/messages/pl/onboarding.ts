@@ -28,7 +28,7 @@ export const messages = {
   "onboarding.setup.defaultProviderHint":
     "Używany dla nowych agentów lokalnych. Później możesz go zmienić dla każdego agenta.",
   "onboarding.setup.invitation": "Zaproszenie do hosta",
-  "onboarding.setup.invitationPlaceholder": "Wklej link zaproszenia https://openbot.run/join",
+  "onboarding.setup.invitationPlaceholder": "Wklej link zaproszenia https://buildersbot.culturabuilder.com/join",
   "onboarding.setup.otherInvitation": "Użyj innego zaproszenia",
   "onboarding.setup.joinNote":
     "Dołączysz jako {email}. Zaproszenia e-mail działają tylko dla adresu, który je otrzymał.",

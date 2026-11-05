@@ -108,8 +108,8 @@ const EXTERNAL_DESTINATIONS: Record<ExternalDestination, string> = {
   message: "https://x.com/norbertbodziony",
   changelog: "https://buildersbot.culturabuilder.com/changelog",
   guides: "https://buildersbot.culturabuilder.com/guides",
-  // A Redirect Rule in the openbot.run Cloudflare zone sends this to the current Discord invite.
-  discord: "https://discord.openbot.run",
+  // A Redirect Rule in the buildersbot.culturabuilder.com Cloudflare zone sends this to the current Discord invite.
+  discord: "https://discord.buildersbot.culturabuilder.com",
   x: "https://x.com/BuildersBot_",
   "grok-bot-export": GROK_BOT_EXPORT_URL,
   "hosted-server-contact": HOSTED_SERVER_CONTACT_URL,

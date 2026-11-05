@@ -46,12 +46,12 @@ export interface WelcomeEmailInput {
   serverName: string;
 }
 
-const SITE_URL = "https://openbot.run";
+const SITE_URL = "https://buildersbot.culturabuilder.com";
 const WEB_APP_URL = `${SITE_URL}/app`;
 const PLAN_NAMES: Record<BillingPlanId, string> = { starter: "Starter", standard: "Standard", pro: "Pro" };
 const LOGO_URL = `${SITE_URL}/icon-192x192.png`;
 const FOOTER_LINKS = [
-  { label: "openbot.run", href: SITE_URL },
+  { label: "buildersbot.culturabuilder.com", href: SITE_URL },
   { label: "X", href: BUILDERSBOT_LINKS.x },
   { label: "GitHub", href: BUILDERSBOT_LINKS.repository },
 ] as const;
@@ -154,7 +154,7 @@ export function renderContactMessageEmail(input: ContactMessageEmailInput): Rend
   const fullSubject = `${input.topic} from ${input.name ?? input.email}`;
   const subject = fullSubject.length > 150 ? `${fullSubject.slice(0, 149)}…` : fullSubject;
   const preheader = input.message.slice(0, 120);
-  const footer = `Sent from the contact form on openbot.run. Reply to this email to answer ${input.email}.`;
+  const footer = `Sent from the contact form on buildersbot.culturabuilder.com. Reply to this email to answer ${input.email}.`;
   return {
     subject,
     preheader,

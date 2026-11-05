@@ -1,8 +1,8 @@
 # Status webhooks
 
-The status page at `status.openbot.run` can send its incidents and service changes to the tools of
+The status page at `status.buildersbot.culturabuilder.com` can send its incidents and service changes to the tools of
 the Builders Bot team, such as a Slack channel or an on-call service. These webhooks are for the team
-only. The public way to follow the page is its feed, `https://status.openbot.run/feed.xml`.
+only. The public way to follow the page is its feed, `https://status.buildersbot.culturabuilder.com/feed.xml`.
 
 The `notify` job of the `status-page` workflow sends them. It runs after each run that publishes the
 page, so a new event goes out about 5 minutes after it occurs, or a short time after a person edits
@@ -76,7 +76,7 @@ The meaning of a field does not change.
   "id": "incident.updated:201:2026-10-16T11:00:00Z:identified",
   "type": "incident.updated",
   "createdAt": "2026-10-16T11:05:12.000Z",
-  "page": "https://status.openbot.run",
+  "page": "https://status.buildersbot.culturabuilder.com",
   "incident": {
     "id": 201,
     "url": "https://github.com/nextlevelcommunity/buildersbot-repo1/issues/201",

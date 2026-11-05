@@ -86,7 +86,7 @@ const HOSTED_SERVER_CONTACT_BODY = [
  * with a subject and a short message. The message is in English because the Builders Bot team reads it.
  * `encodeURIComponent`, not `URLSearchParams`: mail clients show a `+` as a literal plus sign.
  */
-export const HOSTED_SERVER_CONTACT_URL = `mailto:hello@openbot.run?subject=${encodeURIComponent(
+export const HOSTED_SERVER_CONTACT_URL = `mailto:hello@buildersbot.culturabuilder.com?subject=${encodeURIComponent(
   HOSTED_SERVER_CONTACT_SUBJECT,
 )}&body=${encodeURIComponent(HOSTED_SERVER_CONTACT_BODY)}`;
 /**
@@ -95,7 +95,7 @@ export const HOSTED_SERVER_CONTACT_URL = `mailto:hello@openbot.run?subject=${enc
  */
 export const HOSTING_DEVELOPER_KEY_HEADER = "X-BuildersBot-Hosting-Developer-Key";
 /** The same header of a caller made before the rename. */
-export const HOSTING_DEVELOPER_KEY_LEGACY = "OpenBot-Hosting-Developer-Key";
+export const HOSTING_DEVELOPER_KEY_LEGACY = "BuildersBot-Hosting-Developer-Key";
 
 export interface HostedServerSummary {
   deletionScheduledAt?: number | null;

@@ -75,7 +75,7 @@ export function createDevelopmentWebPushKeys(): Record<string, string> {
   return {
     WEB_PUSH_PUBLIC_KEY: point.toString("base64url"),
     WEB_PUSH_PRIVATE_KEY: JSON.stringify(privateJwk),
-    WEB_PUSH_SUBJECT: "mailto:ops@openbot.run",
+    WEB_PUSH_SUBJECT: "mailto:ops@buildersbot.culturabuilder.com",
   };
 }
 

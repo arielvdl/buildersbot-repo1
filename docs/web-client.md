@@ -120,7 +120,7 @@ mock. The separate web preview implements the browser runtime with that same moc
     on a server with no screen; its sessions do not open the web app.
 - Invitation links that this build makes are `https://buildersbot.culturabuilder.com/join?...`
   (`BUILDERSBOT_INVITE_ORIGIN`), for the Builders Bot service too, also by email. The app and the
-  web app read `/join` links of that site and of the `openbot.run` site; a self-hosted
+  web app read `/join` links of that site and of the `buildersbot.culturabuilder.com` site; a self-hosted
   service keeps the `buildersbot://join` link, which only the desktop app opens. On a phone, the QR code
   opens `/join`, and `/join` opens the invitation in `/app`. Host fingerprints are checked before use.
 - An agent share link is `https://buildersbot.culturabuilder.com/agents/<id>` for the Builders Bot
@@ -254,7 +254,7 @@ Play link or QR code.
 
 - Desktop **Settings > Mobile Connect > Add phone** shows a QR code of `<account service>/app`,
   in production `https://buildersbot.culturabuilder.com/app`. The code and the copied link hold only
-  this address: no sign-in secret, no `buildersbot://` link and no `openbot.run` page. Main
+  this address: no sign-in secret, no `buildersbot://` link and no `buildersbot.culturabuilder.com` page. Main
   makes the address from the origin of the Mobile Connect code (`mobileConnectApiUrl`,
   `createMobileWebAppUrl` in `packages/contracts/src/mobile-connect.ts`), and gives it through
   `auth:get-mobile-web-app-url`. The preload accepts only that `/app` address
@@ -288,7 +288,7 @@ Play link or QR code.
   the host sends `X-BuildersBot-WebRTC-Session` and the `X-BuildersBot-*` Team API headers. The names use
   the compact spelling, because a header name cannot hold a space and `fetch` refuses such a name
   before it sends the request. `scripts/builders-bot-rename.pl`
-  keeps `X-BuildersBot-*` and a closed list of published `OpenBot-*` names, and rewrites other quoted
+  keeps `X-BuildersBot-*` and a closed list of published `BuildersBot-*` names, and rewrites other quoted
   text, such as German prose. The phone flow test runs it on each header name of the code. The Biome
   rule `no-spaced-header-names` (`tools/biome/anti-slop/rules`) rejects a header name with a space in
   a `headers` object, in `headers.get` and in a `*_HEADER` constant.
@@ -334,7 +334,7 @@ loads about 100 relative ES modules, and it starts a module Worker from `import.
 A Service Worker cannot control an opaque iframe. To serve the viewer there, the client would
 have to rewrite and bundle the host's code.
 
-A possible design uses a separate viewer origin, for example `viewer.openbot.run`, on the same
+A possible design uses a separate viewer origin, for example `viewer.buildersbot.culturabuilder.com`, on the same
 Worker. That origin serves only a trusted bootstrap page and a Service Worker. The Service Worker
 sends viewer requests to the web app. The web app sends them over the host connection, limited
 to one remote-screen session. On 2026-09-23 the user decided not to add this origin for the MVP.

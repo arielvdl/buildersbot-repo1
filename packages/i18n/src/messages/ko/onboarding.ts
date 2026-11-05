@@ -28,7 +28,7 @@ export const messages = {
   "onboarding.setup.defaultProvider": "기본 제공자",
   "onboarding.setup.defaultProviderHint": "새 로컬 에이전트에 사용해요. 나중에 에이전트별로 바꿀 수 있어요.",
   "onboarding.setup.invitation": "호스트 초대",
-  "onboarding.setup.invitationPlaceholder": "https://openbot.run/join 초대 링크를 붙여넣으세요",
+  "onboarding.setup.invitationPlaceholder": "https://buildersbot.culturabuilder.com/join 초대 링크를 붙여넣으세요",
   "onboarding.setup.otherInvitation": "다른 초대 사용",
   "onboarding.setup.joinNote": "{email}(으)로 참여해요. 이메일 초대는 받은 주소로만 사용할 수 있어요.",
   "onboarding.setup.connect": "호스트에 연결",

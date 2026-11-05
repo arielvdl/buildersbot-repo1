@@ -26,7 +26,7 @@ export function PrivacyPolicy() {
         together on complex tasks.
       </p>
       <p>
-        This Privacy Policy applies to the Builders Bot website at <a href="https://openbot.run">https://openbot.run</a>
+        This Privacy Policy applies to the Builders Bot website at <a href="https://buildersbot.culturabuilder.com">https://buildersbot.culturabuilder.com</a>
         , its applications, and related services (collectively, the "Services").
       </p>
       <p>
@@ -36,7 +36,7 @@ export function PrivacyPolicy() {
       <p>
         Contact: <PrivacyEmail />
         <br />
-        Website: <a href="https://openbot.run">https://openbot.run</a>
+        Website: <a href="https://buildersbot.culturabuilder.com">https://buildersbot.culturabuilder.com</a>
       </p>
 
       <h2>About Our Services</h2>

@@ -9,7 +9,7 @@ export interface ShareTarget {
 }
 
 function lastShareTargetKey(apiUrl: string, userId: string): string {
-  return `openbot.share-target.v1.${remoteHostFingerprint(JSON.stringify([new URL(apiUrl).origin, userId]))}`;
+  return `buildersbot.share-target.v1.${remoteHostFingerprint(JSON.stringify([new URL(apiUrl).origin, userId]))}`;
 }
 
 /** Null when nothing is saved, or the value cannot be read. */

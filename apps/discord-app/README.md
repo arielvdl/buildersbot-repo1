@@ -19,7 +19,7 @@ Make one application for production and one for development at
   the Gateway.
 - **Installation**: select **Guild Install** only. Set **Install Link** to **None**: servers install
   the app through Builders Bot.
-- **OAuth2 → Redirects**: add `https://api.openbot.run/v2/discord/callback`, or the test Worker's
+- **OAuth2 → Redirects**: add `https://api.buildersbot.culturabuilder.com/v2/discord/callback`, or the test Worker's
   `/v2/discord/callback` for the development app.
 - **Bot**:
   - Turn off **Public Bot** until the launch. When it is off, only the owner of the application can

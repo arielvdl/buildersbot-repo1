@@ -324,7 +324,7 @@ async function main(): Promise<void> {
     "fe80::1",
     "hub.culturabuilder.com",
     "culturabuilder.com",
-    "signal.openbot.run",
+    "signal.buildersbot.culturabuilder.com",
     "printer.local",
     "100.101.102.103",
     "fd7a:115c:a1e0::1",

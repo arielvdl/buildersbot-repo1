@@ -297,7 +297,7 @@ export function decodeHostAgentTemplatePreview(value: unknown): AgentTemplatePre
   };
 }
 
-/** The link is rebuilt from the id on `openbot.run` or the local Worker, so a host cannot name another address. */
+/** The link is rebuilt from the id on `buildersbot.culturabuilder.com` or the local Worker, so a host cannot name another address. */
 export function decodeHostAgentTemplatePublication(value: unknown): AgentTemplatePublication {
   if (
     !isDynamicRecord(value) ||

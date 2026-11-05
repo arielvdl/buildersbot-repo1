@@ -33,7 +33,7 @@ body:
     attributes:
       label: Installation source
       options:
-        - Release download from GitHub or openbot.run
+        - Release download from GitHub or buildersbot.culturabuilder.com
         - In-app update
         - TestFlight or App Store
         - Google Play

@@ -326,8 +326,8 @@ describe("BuildersBotDatabase", () => {
       details: {
         siteId: "site-1",
         title: "Launch page",
-        hostname: "launch-page-23456789ab.openbot.site",
-        url: "https://launch-page-23456789ab.openbot.site",
+        hostname: "launch-page-23456789ab.sites.buildersbot.culturabuilder.com",
+        url: "https://launch-page-23456789ab.sites.buildersbot.culturabuilder.com",
       },
       markerCommandId: "hosted-site-event:chief:operation-1:succeeded",
       createdAt: "2026-09-01T12:00:00.000Z",
@@ -384,8 +384,8 @@ describe("BuildersBotDatabase", () => {
     const details = {
       siteId: "site-1",
       title: "Launch page",
-      hostname: "launch-page-23456789ab.openbot.site",
-      url: "https://launch-page-23456789ab.openbot.site",
+      hostname: "launch-page-23456789ab.sites.buildersbot.culturabuilder.com",
+      url: "https://launch-page-23456789ab.sites.buildersbot.culturabuilder.com",
     };
     const recordActive = (operationId: string, createdAt: string) => {
       database.recordActiveHostedSiteConversationEvent({
@@ -4050,8 +4050,8 @@ function seedLegacyAgent(database: DatabaseSync, legacyId: string, workspacePath
     details: {
       siteId: "site-1",
       title: "Launch page",
-      hostname: "launch-page-23456789ab.openbot.site",
-      url: "https://launch-page-23456789ab.openbot.site",
+      hostname: "launch-page-23456789ab.sites.buildersbot.culturabuilder.com",
+      url: "https://launch-page-23456789ab.sites.buildersbot.culturabuilder.com",
     },
     markerCommandId: `hosted-site-event:${legacyId}:operation-1:succeeded`,
     createdAt: "2026-09-01T12:00:00.000Z",

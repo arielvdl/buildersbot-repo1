@@ -22,7 +22,7 @@ import {
 import { sourceText } from "@buildersbot/i18n/source";
 import { nextValidRoutineOccurrence } from "@buildersbot/team-client/routine-schedule";
 
-const PREVIEW_HOOKS = "https://hooks.openbot.run/wf";
+const PREVIEW_HOOKS = "https://hooks.buildersbot.culturabuilder.com/wf";
 
 /** The next time of a schedule trigger, in its zone. A schedule without a next time, such as a past once, has none. */
 function nextDue(node: WorkflowNode): string | null {

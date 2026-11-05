@@ -237,9 +237,9 @@ fields `ownBrowserSession` and `browserProfileId` (`agent_json`) select it:
 
 | Choice | Partition |
 | --- | --- |
-| Shared (default) | `persist:openbot-browser` |
-| Only this agent | `persist:openbot-browser-agent-<key>`. The key is the first 32 hex characters of the SHA-256 of the agent id. |
-| Named profile | `persist:openbot-browser-profile-<id>`. The id is 32 random hex characters. |
+| Shared (default) | `persist:buildersbot-browser` |
+| Only this agent | `persist:buildersbot-browser-agent-<key>`. The key is the first 32 hex characters of the SHA-256 of the agent id. |
+| Named profile | `persist:buildersbot-browser-profile-<id>`. The id is 32 random hex characters. |
 
 Named profiles are rows of the `browser_profiles` table (migration 45). Many agents can use one
 profile, so they share its sign-ins; a profile has no owner agent, and the tab rules below do not

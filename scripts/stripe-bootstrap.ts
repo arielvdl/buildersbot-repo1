@@ -248,7 +248,7 @@ async function ensureLicensePrice(stripe: StripeAdmin, existing: readonly Price[
     isLicenseProductId(current.product) &&
     current.currency === "eur" &&
     current.recurring?.interval === plan.interval &&
-    (current.metadata?.buildersbot_license_prices ?? current.metadata?.openbot_license_prices) === signature &&
+    (current.metadata?.buildersbot_license_prices ?? current.metadata?.buildersbot_license_prices) === signature &&
     licenseMetadataValue(current.metadata, "tier") === plan.tier &&
     licenseMetadataValue(current.metadata, "interval") === plan.interval &&
     licenseMetadataValue(current.metadata, "bundle") === bundle
@@ -315,7 +315,7 @@ async function defaultPortalConfiguration(stripe: StripeAdmin): Promise<string> 
     await stripe.request(
       "POST",
       "/v1/billing_portal/sessions",
-      new URLSearchParams({ customer: customer.id, return_url: "https://openbot.run" }),
+      new URLSearchParams({ customer: customer.id, return_url: "https://buildersbot.culturabuilder.com" }),
       z.object({ id: z.string() }),
     );
   } finally {

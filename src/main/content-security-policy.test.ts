@@ -7,14 +7,14 @@ describe("buildContentSecurityPolicy", () => {
 
     // The exact list: a host that an upstream merge adds, such as an analytics service, fails it.
     expect(policy.split("; ").find((directive) => directive.startsWith("connect-src "))).toBe(
-      "connect-src 'self' buildersbot-attachment: buildersbot-remote-attachment: ws://127.0.0.1:* wss://*.openbot.run wss://*.culturabuilder.com",
+      "connect-src 'self' buildersbot-attachment: buildersbot-remote-attachment: ws://127.0.0.1:* wss://*.buildersbot.culturabuilder.com wss://*.culturabuilder.com",
     );
   });
 
   it.each([true, false])("allows loopback viewer frames when packaged=%s", (packaged) => {
     const directives = buildContentSecurityPolicy(packaged).split("; ");
     expect(directives.find((directive) => directive.startsWith("frame-src "))).toBe(
-      "frame-src 'self' buildersbot-attachment: buildersbot-remote-attachment: buildersbot-visual: buildersbot-remote-visual: https://*.openbot.run https://*.culturabuilder.com http://127.0.0.1:* http://localhost:*",
+      "frame-src 'self' buildersbot-attachment: buildersbot-remote-attachment: buildersbot-visual: buildersbot-remote-visual: https://*.buildersbot.culturabuilder.com https://*.culturabuilder.com http://127.0.0.1:* http://localhost:*",
     );
     expect(directives.find((directive) => directive.startsWith("script-src "))).toBe("script-src 'self'");
   });

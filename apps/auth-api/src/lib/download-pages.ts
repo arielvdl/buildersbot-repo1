@@ -95,7 +95,7 @@ const COMPUTER_STEP: DownloadStep = {
   text: "Install Builders Bot on the Mac, Windows or Linux computer that runs your agents, and sign in with your Cultura Builder account.",
 };
 // A phone uses the web client at `/app` of the Builders Bot account service, installed from its
-// browser. There is no phone app to get from a store, and no openbot.run address.
+// browser. There is no phone app to get from a store, and no buildersbot.culturabuilder.com address.
 const WEB_APP_PATH = "/app";
 const WEB_APP_ADDRESS = `${new URL(BUILDERSBOT_CONTROL_PLANE_ORIGIN).host}${WEB_APP_PATH}`;
 const PHONE_SIGN_IN_STEP: DownloadStep = {

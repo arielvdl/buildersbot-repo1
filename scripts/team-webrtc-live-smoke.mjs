@@ -4,7 +4,7 @@ app.setName("Builders Bot");
 app.exit(await main());
 
 async function main() {
-  const signalUrl = process.env.BUILDERSBOT_REMOTE_SIGNAL_URL ?? "wss://signal.openbot.run/v1/signal";
+  const signalUrl = process.env.BUILDERSBOT_REMOTE_SIGNAL_URL ?? "wss://signal.buildersbot.culturabuilder.com/v1/signal";
   const hostTicket = process.env.BUILDERSBOT_REMOTE_SMOKE_HOST_TICKET;
   const clientTicket = process.env.BUILDERSBOT_REMOTE_SMOKE_CLIENT_TICKET;
   const iceTransportPolicy = process.env.BUILDERSBOT_REMOTE_SMOKE_ICE_POLICY ?? "all";

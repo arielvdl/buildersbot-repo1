@@ -31,7 +31,7 @@ export function announcementProblems(announcement: string, version: string): str
 }
 
 function changelogUrl(version: string): string {
-  return `https://openbot.run/changelog#${releaseAnchor(version)}`;
+  return `https://buildersbot.culturabuilder.com/changelog#${releaseAnchor(version)}`;
 }
 
 /** Without `roleId`, the message names the role in plain text, so that `check` shows the post. */

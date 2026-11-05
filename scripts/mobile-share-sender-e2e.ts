@@ -50,7 +50,7 @@ function shareRequest(hostId: string) {
     hostPublicKey: "share-e2e-host-key",
     hosted: false,
     agentId: "share-e2e-agent",
-    text: "A shared link https://openbot.run",
+    text: "A shared link https://buildersbot.culturabuilder.com",
     files: [{ name: "photo.png", mimeType: "image/png" }],
     clientMessageId: "share-e2e-message",
     timezone: "Europe/Warsaw",

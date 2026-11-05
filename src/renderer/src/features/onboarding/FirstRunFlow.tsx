@@ -32,8 +32,8 @@ export interface FirstRunFlowProps extends SetupProviderProps {
 }
 
 const TEAM_SIZE = 7;
-const TERMS_URL = "https://openbot.run/terms";
-const PRIVACY_URL = "https://openbot.run/privacy";
+const TERMS_URL = "https://buildersbot.culturabuilder.com/terms";
+const PRIVACY_URL = "https://buildersbot.culturabuilder.com/privacy";
 
 type FirstRunStep = "choose" | "plan" | "computer";
 /** How the user starts: on free models, or on a plan they connect. `null` until they choose. */

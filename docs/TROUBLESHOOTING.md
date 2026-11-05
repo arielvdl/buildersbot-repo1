@@ -236,10 +236,10 @@ Ask the network administrator to allow these hosts over HTTPS (TCP 443) and WebS
 
 | Host | Use |
 | --- | --- |
-| `api.openbot.run` | Accounts, sign-in, teams, and hosted servers |
-| `signal.openbot.run` | Connection setup for teams and remote servers |
-| `openbot.run` | Public site and images in invitation emails |
-| `*.openbot.run` | Hosted servers and sites |
+| `api.buildersbot.culturabuilder.com` | Accounts, sign-in, teams, and hosted servers |
+| `signal.buildersbot.culturabuilder.com` | Connection setup for teams and remote servers |
+| `buildersbot.culturabuilder.com` | Public site and images in invitation emails |
+| `*.buildersbot.culturabuilder.com` | Hosted servers and sites |
 | `github.com`, `*.githubusercontent.com` | Provider CLI releases and the list of blocked provider versions |
 
 Builders Bot sends no usage analytics and no error reports, so it needs no host for them. This version
@@ -251,7 +251,7 @@ Signal names, on the UDP and TCP ports that it names. A filter that blocks WebRT
 connections slow or stops them. Conversations stay on the computer; the [privacy policy](../PRIVACY.md) lists what each
 host receives.
 
-If the filter puts `openbot.run` in a blocked category, the administrator can ask the vendor to
+If the filter puts `buildersbot.culturabuilder.com` in a blocked category, the administrator can ask the vendor to
 review it. For Fortinet, use the FortiGuard web filter lookup.
 
 ## Reset Builders Bot

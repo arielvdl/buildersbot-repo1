@@ -79,7 +79,7 @@ export const STORY_SEED = {
 };
 
 /** A placeholder webhook address: the stories have no webhook service. */
-export const storyWebhook = (id: string) => `https://hooks.openbot.run/wf/${id}`;
+export const storyWebhook = (id: string) => `https://hooks.buildersbot.culturabuilder.com/wf/${id}`;
 
 /* ------------------------------------------------------------ Workflows */
 

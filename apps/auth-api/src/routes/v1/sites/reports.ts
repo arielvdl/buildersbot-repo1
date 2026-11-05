@@ -19,7 +19,7 @@ export const Route = createFileRoute("/v1/sites/reports")({
         runApiResponse(
           Effect.gen(function* () {
             if (!isSameOriginReportRequest(request)) {
-              return apiError(403, "invalid_report_origin", "Open the report form on openbot.run.");
+              return apiError(403, "invalid_report_origin", "Open the report form on buildersbot.culturabuilder.com.");
             }
             const sourceIp = requestSourceIp(request);
             yield* enforceHostedSiteReportRateLimit(sourceIp);

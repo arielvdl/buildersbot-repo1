@@ -1,7 +1,7 @@
 import { isDynamicRecord, isOneOf, isString } from "./runtime-values";
 
 /**
- * The first visit of this browser to openbot.run, as the website saves it. The web client and the
+ * The first visit of this browser to buildersbot.culturabuilder.com, as the website saves it. The web client and the
  * checkout return page send it to the account service, which keeps the first one it gets for an
  * account. ANALYTICS.md describes the attribution; every field is a closed set or a bounded label.
  */
@@ -45,7 +45,7 @@ export const FIRST_TOUCH_CAMPAIGN_FIELDS = ["utmSource", "utmMedium", "utmCampai
 
 export const FIRST_TOUCH_STORAGE_KEY = "buildersbot.first-touch.v1";
 /** The same key of a browser whose first visit came before the rename. It is read after the new one. */
-export const FIRST_TOUCH_STORAGE_KEY_LEGACY = "openbot.first-touch.v1";
+export const FIRST_TOUCH_STORAGE_KEY_LEGACY = "buildersbot.first-touch.v1";
 /** A visit older than this is not a source of a later account: the next visit replaces it. */
 export const FIRST_TOUCH_MAX_AGE_DAYS = 90;
 

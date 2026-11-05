@@ -256,7 +256,7 @@ export const messages = {
   "server.settings.storageTitle": "存储",
   "server.settings.storageDescription": "查看 Builders Bot 在该服务器磁盘上保存的内容，并释放空间。",
   "server.settings.hostedSitesTitle": "站点",
-  "server.settings.hostedSitesDescription": "该服务器上的助手发布到 openbot.site 的静态站点。",
+  "server.settings.hostedSitesDescription": "该服务器上的助手发布到 sites.buildersbot.culturabuilder.com 的静态站点。",
   "server.settings.importTitle": "导入",
   "server.settings.importDescription": "把 Grok Bot 或 Hermes Agent 中的助手迁移到该服务器。",
   "server.settings.transferTitle": "迁移",

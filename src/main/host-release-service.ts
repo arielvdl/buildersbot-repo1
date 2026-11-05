@@ -54,7 +54,7 @@ interface HostReleaseOptions {
 /**
  * Reads only the install marker. No command or application file is executed. The folder is the one
  * that docker/Dockerfile and scripts/hosting install into; a server that an earlier release made
- * answers on the same path, because its `/opt/OpenBot` is a symlink to `/opt/BuildersBot`.
+ * answers on the same path, because its `/opt/BuildersBot` is a symlink to `/opt/BuildersBot`.
  */
 export const readInstallationMode = Effect.fn("HostRelease.readInstallationMode")(function* () {
   return yield* Effect.tryPromise({
@@ -188,12 +188,12 @@ async function fetchLatestRelease(
 
 /**
  * The feed names its files after the product, `Builders Bot-<version>-…`. A feed that a release
- * before the rename published still names them `OpenBot-<version>-…`, so both prefixes are read. The
+ * before the rename published still names them `BuildersBot-<version>-…`, so both prefixes are read. The
  * suffix that carries the platform and the architecture must match.
  */
 function acceptsAsset(target: ReleaseTarget, url: string, version: string): boolean {
   const asset = target.asset(version);
-  return url === asset || url === asset.replace(/^Builders Bot-/u, "OpenBot-");
+  return url === asset || url === asset.replace(/^Builders Bot-/u, "BuildersBot-");
 }
 
 /**

@@ -46,7 +46,7 @@ describe("fetchLatestLinuxRelease", () => {
   });
 
   it("accepts a feed from before the rename, which names the file after the old product", async () => {
-    const manifest = ["version: 0.54.0", "files:", "  - url: OpenBot-0.54.0-arm64.AppImage"].join("\n");
+    const manifest = ["version: 0.54.0", "files:", "  - url: BuildersBot-0.54.0-arm64.AppImage"].join("\n");
 
     await expect(fetchLatestLinuxRelease("arm64", recordingFetch(manifest).request, signal, TEST_FEED)).resolves.toBe(
       "0.54.0",

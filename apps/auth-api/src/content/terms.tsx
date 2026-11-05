@@ -4,7 +4,7 @@
 import { Link } from "@tanstack/solid-router";
 
 const CONTACT_EMAIL = "hello@culturabuilder.com";
-const PRICING_LABEL = "http://openbot.run/pricing";
+const PRICING_LABEL = "http://buildersbot.culturabuilder.com/pricing";
 
 export function Terms() {
   return (

@@ -45,7 +45,7 @@ hash da lista, tendo como commit-base o listado na seção 1.
 - **Tag:** `v1.0.0`, assinada com a chave GPG `BAD0392AD4E7BFF2` (Cultura Builder <dev@culturabuilder.com>).
 - **Release:** `https://github.com/nextlevelcommunity/buildersbot-repo1/releases/tag/v1.0.0`.
 - **Remote único:** `origin` = `https://github.com/nextlevelcommunity/buildersbot-repo1.git`.
-- **Espelho arqueológico:** `/Users/arielsilva/Projects/.archive/openbot-local.git`, fora do disco de trabalho.
+- **Espelho arqueológico:** `/Users/arielsilva/Projects/.archive/buildersbot-local.git`, fora do disco de trabalho.
 
 ## 5. Pendências contratuais em acompanhamento
 
@@ -61,7 +61,7 @@ acompanhadas até conclusão:
 3. **CLA retroativo** — consolidação das assinaturas do CLA v2 com efeito
    retroativo junto aos contribuintes de commits anteriores à criação do
    repositório `nextlevelcommunity/buildersbot-repo1`, cobrindo inclusive
-   contribuições vertidas nos repositórios antecessores (`nightly-labs/openbot` e
+   contribuições vertidas nos repositórios antecessores (o Ciclo I e
    `Hub-Next-Level/buildersbot-cb`) e no ciclo do projeto anterior.
 
 Enquanto não concluídas, estas pendências constituem o mapa de risco jurídico do

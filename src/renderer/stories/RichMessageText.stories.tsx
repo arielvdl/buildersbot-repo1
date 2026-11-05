@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { requireFixture, STORY_AGENTS, STORY_ATTACHMENTS, STORY_INSTALLED_SKILLS } from "./fixtures";
 
 const args: Parameters<typeof RichMessageText>[0] = {
-  body: "Ask @Research to review https://openbot.run/docs before the launch.",
+  body: "Ask @Research to review https://buildersbot.culturabuilder.com/docs before the launch.",
   agents: STORY_AGENTS,
   attachments: [],
   onSelectAgent: fn(),
@@ -186,7 +186,7 @@ export const FileReferenceTypes: Story = {
 export const MixedReferencesStress: Story = {
   name: "Mixed references stress",
   args: {
-    body: `Ask @Research to compare ${serializeAttachmentReference(longAttachment.name, longAttachment.id)} with ${serializeAttachmentReference(secondFileTypeAttachment.name, secondFileTypeAttachment.id)} and https://openbot.run/docs. Keep the decision traceable to the primary paper [1], then verify the compressed handoff in ${serializeAttachmentReference(fourthFileTypeAttachment.name, fourthFileTypeAttachment.id)} before shipping [2].`,
+    body: `Ask @Research to compare ${serializeAttachmentReference(longAttachment.name, longAttachment.id)} with ${serializeAttachmentReference(secondFileTypeAttachment.name, secondFileTypeAttachment.id)} and https://buildersbot.culturabuilder.com/docs. Keep the decision traceable to the primary paper [1], then verify the compressed handoff in ${serializeAttachmentReference(fourthFileTypeAttachment.name, fourthFileTypeAttachment.id)} before shipping [2].`,
     attachments: [longAttachment, secondFileTypeAttachment, fourthFileTypeAttachment],
     citations,
     onOpenAttachment: fn(),
@@ -237,7 +237,7 @@ const allChipKindsBody = [
   serializeAttachmentReference(fourthFileTypeAttachment.name, fourthFileTypeAttachment.id),
   "and ~/Builders Bot/Shared/brief.pdf, then compare",
   serializeAttachmentReference(longAttachment.name, longAttachment.id),
-  "with https://openbot.run/docs [1].",
+  "with https://buildersbot.culturabuilder.com/docs [1].",
 ].join(" ");
 
 const allChipKindsArgs = {

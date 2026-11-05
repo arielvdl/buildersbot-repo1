@@ -265,7 +265,7 @@ const EVENT_PROPERTY_ALLOWLIST = {
 const PENDING_EVENT_LIMIT = 4;
 
 function shouldEnableLandingAnalytics(hostname: string, productionBuild: boolean): boolean {
-  return productionBuild && hostname === "openbot.run";
+  return productionBuild && hostname === "buildersbot.culturabuilder.com";
 }
 
 class LandingAnalytics {

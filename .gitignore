@@ -37,7 +37,7 @@ Shared/
 !apps/chrome-extension/src/shared/
 !apps/chrome-extension/src/shared/**
 index-*.css
-.openbot-browser-test/
+.buildersbot-browser-test/
 .buildersbot-build/
 # The report folder after the rename. Some E2E scripts write here already.
 .buildersbot-build/

@@ -2,11 +2,11 @@
 export const NOTIFICATION_SOUNDS = ["buildersbot", "warm", "mech", "bubble", "press", "default"] as const;
 export type NotificationSound = (typeof NOTIFICATION_SOUNDS)[number];
 /**
- * The sound of a stored preference. `openbot` is the name that the default sound had before the rename,
+ * The sound of a stored preference. `buildersbot` is the name that the default sound had before the rename,
  * and a preference saved then still names it.
  */
 export function notificationSound(value: unknown): NotificationSound | null {
-  if (value === "openbot") return "buildersbot";
+  if (value === "buildersbot") return "buildersbot";
   return NOTIFICATION_SOUNDS.find((known) => known === value) ?? null;
 }
 

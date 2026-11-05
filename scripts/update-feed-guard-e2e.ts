@@ -5,9 +5,9 @@
 // - the effective `publish` setting of each electron-builder config is `null`, for each platform and
 //   target, with the precedence of electron-builder (target, platform, root, then the package.json
 //   `repository`), or a `generic` feed that the update feed policy allows;
-// - `nightly-labs` is not in the build configs, the package.json `repository`, `bugs` and
-//   `homepage`, the product code and its texts (`src`, `packages/*/src`, `apps/mobile`), the server,
-//   container, Nix and macOS Host Manager files and the download pages, except the lines in
+// - the previous project's org is not in the build configs, the package.json `repository`, `bugs`
+//   and `homepage`, the product code and its texts (`src`, `packages/*/src`, `apps/mobile`), the
+//   server, container, Nix and macOS Host Manager files and the download pages, except the lines in
 //   ALLOWED_MENTIONS (tests are not part of a build);
 // - the real `decideUpdateFeed` refuses the upstream app-update.yml, an HTTP feed and a feed on
 //   another origin, and allows a listed origin only when the list is not empty;
@@ -52,7 +52,7 @@ import { readBuilderIdentity } from "./builders-bot-package";
 const logger = createBuildersBotLogger("update-feed-guard-e2e");
 const ROOT = resolve(import.meta.dirname, "..");
 const REPORT_PATH = resolve(ROOT, ".buildersbot-build/update-system/feed-guard-report.json");
-const UPSTREAM = /nightly-labs/iu;
+const UPSTREAM = /example-upstream/iu;
 
 /**
  * The only mentions of the upstream project that can stay: documentation links, comments, checks that
@@ -254,7 +254,7 @@ await check("each electron-builder config publishes no update feed", () => {
 });
 
 const mentions: Array<{ file: string; line: number; text: string; allowed: string | null }> = [];
-await check("nightly-labs appears only in the allowed lines", () => {
+await check("the previous project's org appears only in the allowed lines", () => {
   const packageJson = JSON.parse(readText("package.json"));
   if (!isDynamicRecord(packageJson)) fail("package.json is not an object.");
   for (const field of ["repository", "bugs", "homepage"]) {
@@ -289,7 +289,7 @@ await check("nightly-labs appears only in the allowed lines", () => {
     }
   }
   const refused = mentions.filter((mention) => mention.allowed === null);
-  if (refused.length > 0) fail(`nightly-labs outside the allow-list: ${JSON.stringify(refused)}`);
+  if (refused.length > 0) fail(`previous project's org outside the allow-list: ${JSON.stringify(refused)}`);
   return { searchedFiles: files.length, allowedMentions: mentions.length };
 });
 
@@ -298,7 +298,7 @@ await check("decideUpdateFeed refuses the upstream feed and every feed while the
   const cases = [
     {
       name: "upstream app-update.yml",
-      metadata: "owner: nightly-labs\nrepo: buildersbot\nprovider: github\nupdaterCacheDirName: openbot-updater\n",
+      metadata: "owner: example-upstream\nrepo: upstream-app\nprovider: github\nupdaterCacheDirName: upstream-updater\n",
       origins: ["https://github.com"],
       allowed: false,
     },
@@ -569,10 +569,10 @@ await check("the updater folders and the Windows installer use Builders Bot name
   // Squirrel.Mac names its folder `<bundle id>.ShipIt`.
   if (SHIPIT_DIRECTORY_NAME !== `${appId}.ShipIt`) fail("The Squirrel.Mac folder name is wrong.");
   const mainSources = filesUnder("src/main").filter((file) => !/\.test\.tsx?$/u.test(file));
-  const upstreamFolders = mainSources.filter((file) =>
-    /openbot-updater|app\.openbot\.desktop\.ShipIt/u.test(readText(file)),
-  );
-  if (upstreamFolders.length > 0) fail(`The upstream updater folders are named in: ${upstreamFolders.join(", ")}`);
+  const strayUpdaterFolders = mainSources
+    .flatMap((file) => [...readText(file).matchAll(/["'`]([A-Za-z0-9._]*-updater)["'`]/gu)].map((m) => m[1]))
+    .filter((name) => name !== UPDATER_CACHE_DIRECTORY_NAME && name !== "electron-updater");
+  if (strayUpdaterFolders.length > 0) fail(`A non-product updater folder is named in: ${[...new Set(strayUpdaterFolders)].join(", ")}`);
   const installer = readText("build/installer.nsh");
   // The workspace folder and the user data folder, by product name (`$PROFILE` and `$APPDATA`).
   const protectedFolders = [

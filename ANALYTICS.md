@@ -1,7 +1,7 @@
 # Product analytics
 
 > **No build sends these events.** The destination is the OpenPanel project at
-> `analytics.openbot.run`, which runs apart from the app. The telemetry destination guard
+> `analytics.buildersbot.culturabuilder.com`, which runs apart from the app. The telemetry destination guard
 > (`bun run test:telemetry-guard`) fails when a client or transport comes back: the
 > `Telemetry destination guard` workflow runs it on each pull request and each push to `main`, the
 > package scripts run it on `out/` and on the packaged app, and the package checks scan `app.asar`.
@@ -105,7 +105,7 @@ lifecycle. A malformed preference fails closed.
 
 From web generation 2, the web app (`/app`) sends the desktop product events with `surface: web`
 and `platform: web`, through the same allowlists. It sends only from a production build on
-`https://openbot.run`. The **Usage analytics** row of the web app covers these events and the failure
+`https://buildersbot.culturabuilder.com`. The **Usage analytics** row of the web app covers these events and the failure
 reports. The preference is stored in the browser, and a storage failure turns it off. A change of the
 preference first sends one `analytics_preference_changed` event.
 
@@ -188,8 +188,8 @@ preference first sends one `analytics_preference_changed` event.
 | `revenue` | How much did accounts pay for servers and licenses? | Verified paid invoices only. From account service generation 11, `product` is `server` or `license`, and a license adds `users`. `__revenue` and `amount_usd` in USD cents; `original_amount`, `original_currency`, `fx_rate`, `fx_date`, `plan`, `interval`, `payment_kind`, and optional `recovery` and `first_touch_*` properties. Zero-amount invoices do not emit revenue. |
 | `billing_snapshot` | What is recurring revenue at the sample time? | Daily aggregate without a profile. `snapshot_date`, `as_of`, `reported_at`, `currency`, `mrr`, `arr`, `overdue_mrr`, `paying_accounts`, `paid_servers`, `cancellations_scheduled`, `checkout_mature_accounts`, `checkout_converted_accounts`, `checkout_pending_accounts`, `skipped_subscriptions` (subscriptions left out because Stripe has no valid data for them). From account service generation 11, `mrr`, `arr`, `overdue_mrr` and `paying_accounts` count servers only; `license_mrr`, `license_accounts` and `licensed_users` count licenses; `total_mrr` and `total_arr` count both. `skipped_subscriptions` counts both. Money is USD cents. Never sum snapshots across days. |
 | `hosted_server_action` | Do paid hosted servers start, stay in use and come back? | `action`: `provisioned`, `setup_failed`, `idle_stopped`, `woken`, `resized`, `plan_stopped`, `renewed`, or `deleted`, when the account service changes the server. Optional `plan`, `size`, `reason` (`message`, `restart`, `schedule` or `retention`) and `error` (an allowlisted hosted server error code) |
-| `email_sent` | How much of the hourly quota of the SMTP mailbox (500 messages) does the account service use? | One event for each message that the account service tries to send by SMTP from `hello@openbot.run`, after its retries. The webhook delivery does not use the mailbox and sends none. `kind`: `sign_in_code`, `team_invite`, `contact`, or `welcome`. `result`: `accepted`; `rate_limited` (the mail server refused it for its sender limit); `unknown` (the send stopped after the server may have taken the message); or `failed` (also a message that a check stopped before the connection). Count `accepted` and `unknown` against the quota. No `profileId`, address, name or content |
-| `signal_capacity` | How near is the TURN relay to its allocation quota (`total-quota` in `remote/coturn/turnserver.conf`)? | One event every 5 minutes from each Signal host. `turn_host` (`turn.openbot.run`, or `turn2.openbot.run` on the standby); `turn_allocations`, and `turn_allocations_udp`, `_tcp` and `_tls` for the client transports (0 when a transport has none); `signal_sockets` and `signal_peer_connections`. Generation 1 |
+| `email_sent` | How much of the hourly quota of the SMTP mailbox (500 messages) does the account service use? | One event for each message that the account service tries to send by SMTP from `hello@buildersbot.culturabuilder.com`, after its retries. The webhook delivery does not use the mailbox and sends none. `kind`: `sign_in_code`, `team_invite`, `contact`, or `welcome`. `result`: `accepted`; `rate_limited` (the mail server refused it for its sender limit); `unknown` (the send stopped after the server may have taken the message); or `failed` (also a message that a check stopped before the connection). Count `accepted` and `unknown` against the quota. No `profileId`, address, name or content |
+| `signal_capacity` | How near is the TURN relay to its allocation quota (`total-quota` in `remote/coturn/turnserver.conf`)? | One event every 5 minutes from each Signal host. `turn_host` (`turn.buildersbot.culturabuilder.com`, or `turn2.buildersbot.culturabuilder.com` on the standby); `turn_allocations`, and `turn_allocations_udp`, `_tcp` and `_tls` for the client transports (0 when a transport has none); `signal_sockets` and `signal_peer_connections`. Generation 1 |
 
 ## Privacy and runtime validation
 
@@ -366,7 +366,7 @@ the Builders Bot account ID. Filter each row by its `surface` and that surface's
 The three failure events above use a separate local queue and explicit HTTP transport. Other
 product events keep their existing delivery behavior. Only production clients collect reports.
 The browser app uses `surface: web` and `platform: web`; it enables collection only on
-`https://openbot.run`. Each surface accepts a report up to its current generation, so a report from
+`https://buildersbot.culturabuilder.com`. Each surface accepts a report up to its current generation, so a report from
 an earlier generation that is still in the queue is sent. Marketing remains `landing` and does not send app notification events.
 
 A report carries a fixed `operation`, `source`, `severity`, and `cause_code`. Notifications also

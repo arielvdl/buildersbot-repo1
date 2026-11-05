@@ -4,7 +4,7 @@ import { useMobileWorkspace, useMobileWorkspaceActions } from "@/features/worksp
 import { queryKeys } from "@/features/workspace/model/query-keys";
 
 /**
- * The openbot.site sites of one server (`hosted-sites-v1`), as Server settings and its Sites page
+ * The sites.buildersbot.culturabuilder.com sites of one server (`hosted-sites-v1`), as Server settings and its Sites page
  * show them. Both pages read one query, so a deleted site goes from both.
  */
 export function useServerSites(serverId: string) {

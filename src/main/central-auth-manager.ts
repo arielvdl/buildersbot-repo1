@@ -1308,7 +1308,7 @@ export class CentralAuthManager extends EventEmitter<CentralAuthEvents> {
           method: "PUT",
           headers: {
             "Content-Type": image.mimeType,
-            ...(version ? { "X-BuildersBot-Logo-Version": version, "OpenBot-Logo-Version": version } : {}),
+            ...(version ? { "X-BuildersBot-Logo-Version": version, "BuildersBot-Logo-Version": version } : {}),
           },
           body: Buffer.from(image.bytes),
         },

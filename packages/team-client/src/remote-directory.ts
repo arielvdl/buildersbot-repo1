@@ -423,7 +423,7 @@ export class RemoteTeamDirectoryClient {
 
   /**
    * The account service an invitation names. The public website serves the same Worker as
-   * `api.openbot.run`, but an invitation must name `api.openbot.run`: the desktop and mobile apps
+   * `api.buildersbot.culturabuilder.com`, but an invitation must name `api.buildersbot.culturabuilder.com`: the desktop and mobile apps
    * accept only that address.
    */
   #inviteApiUrl(): string {

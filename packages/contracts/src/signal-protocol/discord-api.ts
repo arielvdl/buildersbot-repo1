@@ -11,7 +11,7 @@ import { isBoolean, isDynamicRecord, isNumber, isOneOf, isString } from "../runt
 /** The prefix of the custom id of every button Builders Bot posts: `buildersbot:<action>:<token>`. */
 export const DISCORD_CUSTOM_ID_PREFIX = "buildersbot:";
 /** The same prefix of a button posted before the rename. Discord keeps the message, so a press still counts. */
-export const DISCORD_CUSTOM_ID_PREFIX_LEGACY = "openbot:";
+export const DISCORD_CUSTOM_ID_PREFIX_LEGACY = "buildersbot:";
 
 /** Whether a custom id carries either prefix. */
 export function isDiscordCustomId(value: string): boolean {

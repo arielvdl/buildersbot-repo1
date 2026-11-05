@@ -2,7 +2,7 @@
 // that answers a start in each of its ways. boat can keep a stopped machine in memory and continue it
 // with no boot (`"status": "running"`). Then the flag of the pre-stop hook stays in /run and Builders Bot
 // does not start, so the Worker must run the command that removes the flag and starts the unit. A
-// machine installed before the rename still has only `openbot.service`, so the command falls back to
+// machine installed before the rename still has only `buildersbot.service`, so the command falls back to
 // it. A start with a boot (`"status": "resuming"`) and a refused start must not run a command, and a
 // failed command must not fail the wake. The command runs after the wake reply.
 //
@@ -120,7 +120,7 @@ function commandClearsOnlyTheFlag(commands: { path: string; body: unknown }[]) {
     text.includes(`sudo -n rm -f ${FLAG}`) &&
     text.includes("sudo -n systemctl start --no-block buildersbot.service") &&
     // A host installed before the rename has only the old unit, so the start must fall back to it.
-    text.includes("|| sudo -n systemctl start --no-block openbot.service") &&
+    text.includes("|| sudo -n systemctl start --no-block buildersbot.service") &&
     typeof body.timeoutSeconds === "number" &&
     body.timeoutSeconds <= 15
   );

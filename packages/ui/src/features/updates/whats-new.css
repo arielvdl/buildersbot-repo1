@@ -1,6 +1,6 @@
 /* The "What's new" dialog after an app update. One centred card: the logo and version on top, the
  * notes in a scroll area, and the actions in a footer. The groups use the colours of the
- * changelog page on openbot.run, so a reader sees the same notes in the same way. */
+ * changelog page on buildersbot.culturabuilder.com, so a reader sees the same notes in the same way. */
 
 .whats-new-dialog {
   position: relative;

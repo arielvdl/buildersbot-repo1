@@ -220,10 +220,10 @@ try {
     return value.ok === true && value.agents.length === 1 && value.agents[0].name === "Ada";
   });
   // A shell profile written before the rename sets only the old variable.
-  const legacyEnv: NodeJS.ProcessEnv = { ...process.env, OPENBOT_AUTOMATION_DIR: root };
+  const legacyEnv: NodeJS.ProcessEnv = { ...process.env, BUILDERSBOT_AUTOMATION_DIR: root };
   delete legacyEnv.BUILDERSBOT_AUTOMATION_DIR;
   await check(
-    "the old OPENBOT_AUTOMATION_DIR still finds the folder",
+    "the old BUILDERSBOT_AUTOMATION_DIR still finds the folder",
     ["list", "--json"],
     0,
     (run) => parsed(run).ok === true,

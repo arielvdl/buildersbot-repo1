@@ -104,7 +104,7 @@ const LEASE_EXTEND_BEFORE_MS = 60 * 60_000;
  */
 const HELD_RESUME_START_COMMAND =
   "if [ -e /run/buildersbot-pre-stop ]; then sudo -n rm -f /run/buildersbot-pre-stop && " +
-  "(sudo -n systemctl start --no-block buildersbot.service || sudo -n systemctl start --no-block openbot.service) && " +
+  "(sudo -n systemctl start --no-block buildersbot.service || sudo -n systemctl start --no-block buildersbot.service) && " +
   "echo started; fi";
 const HELD_RESUME_START_TIMEOUT_SECONDS = 10;
 /**
@@ -2551,7 +2551,7 @@ export class HostedServerService {
     const ticketKey = this.#ticketKey;
     if (!ticketKey) return null;
     const privateValue = yield* hostedValidate(() => ticketPrivateValue(ticketKey));
-    this.#legacyClaimSecret ??= yield* deriveSecret(privateValue, "openbot-hosted-claim-key:v1").pipe(
+    this.#legacyClaimSecret ??= yield* deriveSecret(privateValue, "buildersbot-hosted-claim-key:v1").pipe(
       Effect.mapError(hostedFailure),
     );
     return this.#legacyClaimSecret;

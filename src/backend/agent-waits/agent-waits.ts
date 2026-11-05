@@ -2,7 +2,7 @@ import { INPUT_LIMITS } from "@buildersbot/contracts/input-limits";
 import type { AgentEvent, AgentWait, AgentWaitsSnapshot } from "@buildersbot/contracts/ipc";
 import { sourceText } from "@buildersbot/i18n/source";
 import { z } from "zod";
-import { type BuildersBotToolResponse, openBotToolFailure, openBotToolResult } from "../agent/routine-tools";
+import { type BuildersBotToolResponse, buildersBotToolFailure, buildersBotToolResult } from "../agent/routine-tools";
 import type { MailboxStore } from "../mailbox-store";
 import type { DynamicToolCallParams } from "../protocol";
 import { AgentWaitError, AgentWaitLimitError, type AgentWaitStore } from "./agent-wait-store";
@@ -119,32 +119,32 @@ export class AgentWaits {
       if (params.tool === LIST_WAITS_TOOL) return this.#listWaits(params, caller);
       return null;
     } catch (error) {
-      if (error instanceof AgentWaitError) return openBotToolFailure(error.message);
+      if (error instanceof AgentWaitError) return buildersBotToolFailure(error.message);
       throw error;
     }
   }
 
   #awaitEvent(params: DynamicToolCallParams, caller: AgentWaitCaller): BuildersBotToolResponse {
     const parsed = awaitEventToolSchema.safeParse(params.arguments);
-    if (!parsed.success) return openBotToolFailure(sourceText("error.backend.agentWaitNoteRequired"));
+    if (!parsed.success) return buildersBotToolFailure(sourceText("error.backend.agentWaitNoteRequired"));
     const { note, routineId } = parsed.data;
-    if (caller.inExecutionThread) return openBotToolFailure(sourceText("error.backend.agentWaitOwnChatOnly"));
+    if (caller.inExecutionThread) return buildersBotToolFailure(sourceText("error.backend.agentWaitOwnChatOnly"));
     const deliveries = this.#mailbox.findDeliveriesByTurn(caller.agentId, params.turnId);
     // A run that continues waits keeps them: leaving a wait open waits for the next run again.
     const continued = deliveries.flatMap((context) => this.#store.wokenBy(context.delivery.id));
     if (continued.length > 0)
-      return openBotToolResult({
+      return buildersBotToolResult({
         waitIds: continued.map((wait) => wait.id),
         note: "This run continues these open waits. To wait again, leave them open and end your turn. Open a new wait only for a different request.",
       });
     // The user's message comes first; a routine run that waits serves its own instruction.
     const request =
       deliveries.findLast((context) => context.delivery.sender.kind === "user") ?? deliveries.at(0) ?? null;
-    if (!request) return openBotToolFailure(sourceText("error.backend.agentWaitNoRequest"));
+    if (!request) return buildersBotToolFailure(sourceText("error.backend.agentWaitNoRequest"));
     if (routineId && !this.#hooks.ownsRoutine(caller.agentId, routineId))
-      return openBotToolFailure(sourceText("error.backend.agentWaitRoutineGone"));
+      return buildersBotToolFailure(sourceText("error.backend.agentWaitRoutineGone"));
     if (!this.#hooks.hasRoutine(caller.agentId))
-      return openBotToolFailure(sourceText("error.backend.agentWaitNoRoutine"));
+      return buildersBotToolFailure(sourceText("error.backend.agentWaitNoRoutine"));
     let wait: AgentWait;
     try {
       wait = this.#store.open({
@@ -172,7 +172,7 @@ export class AgentWaits {
     }
     this.#changed(caller.agentId);
     const openWaits = this.#store.count(caller.agentId);
-    return openBotToolResult({
+    return buildersBotToolResult({
       waitId: wait.id,
       openWaits,
       limit: INPUT_LIMITS.agentWaits,
@@ -191,19 +191,19 @@ export class AgentWaits {
 
   #closeWait(params: DynamicToolCallParams, caller: AgentWaitCaller): BuildersBotToolResponse {
     const parsed = closeWaitToolSchema.safeParse(params.arguments);
-    if (!parsed.success) return openBotToolFailure(z.prettifyError(parsed.error));
+    if (!parsed.success) return buildersBotToolFailure(z.prettifyError(parsed.error));
     const agentId = this.#waitOwner(parsed.data.agentId, caller);
     if (!this.#store.delete(agentId, parsed.data.waitId))
-      return openBotToolFailure(sourceText("error.backend.agentWaitGone"));
+      return buildersBotToolFailure(sourceText("error.backend.agentWaitGone"));
     this.#changed(agentId);
-    return openBotToolResult({ closed: parsed.data.waitId });
+    return buildersBotToolResult({ closed: parsed.data.waitId });
   }
 
   #listWaits(params: DynamicToolCallParams, caller: AgentWaitCaller): BuildersBotToolResponse {
     const parsed = listWaitsToolSchema.safeParse(params.arguments ?? {});
-    if (!parsed.success) return openBotToolFailure(z.prettifyError(parsed.error));
+    if (!parsed.success) return buildersBotToolFailure(z.prettifyError(parsed.error));
     const agentId = this.#waitOwner(parsed.data.agentId, caller);
-    return openBotToolResult({
+    return buildersBotToolResult({
       agentId,
       limit: INPUT_LIMITS.agentWaits,
       waits: this.#store.list(agentId).map(waitSummary),

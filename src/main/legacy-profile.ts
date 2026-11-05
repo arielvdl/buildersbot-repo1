@@ -14,12 +14,12 @@ import { migrateLegacyPreferenceFiles } from "../backend/database/legacy-prefere
 export { migrateLegacyPreferenceFiles };
 
 /** The application name before the rename. The profile folder and the keychain item use it. */
-export const LEGACY_APP_NAME = "OpenBot";
+export const LEGACY_APP_NAME = "BuildersBot";
 const LEGACY_PROFILE_FOLDER = LEGACY_APP_NAME;
 const CURRENT_PROFILE_FOLDER = "Builders Bot";
 
 /** The workspace state folder before the rename. */
-export const LEGACY_WORKSPACE_STATE = ".openbot";
+export const LEGACY_WORKSPACE_STATE = ".buildersbot";
 export const WORKSPACE_STATE = ".buildersbot";
 
 function isEmptyFolder(path: string): boolean {

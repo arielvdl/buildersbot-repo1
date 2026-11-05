@@ -3,7 +3,7 @@
  * in the app, and the browser client's entry for it.
  *
  * ```
- * https://openbot.run/plugins/<slug>    the link a person shares and the app copies
+ * https://buildersbot.culturabuilder.com/plugins/<slug>    the link a person shares and the app copies
  * buildersbot://plugins/<slug>              the link the page button opens
  * /app?plugin=<slug>                    the page's link to the browser client, on the same origin
  * ```
@@ -22,7 +22,7 @@
 
 import { isAppScheme } from "./app-scheme";
 
-export const BUILDERSBOT_PLUGIN_ORIGIN = "https://openbot.run";
+export const BUILDERSBOT_PLUGIN_ORIGIN = "https://buildersbot.culturabuilder.com";
 export const BUILDERSBOT_PLUGIN_PATH_PREFIX = "/plugins/";
 export const BUILDERSBOT_PLUGIN_HOST = "plugins";
 export const WEB_APP_PLUGIN_PARAM = "plugin";
@@ -91,7 +91,7 @@ export function parsePluginUrl(value: string): string {
   }
 
   /* The origin is compared as one string. An `endsWith` or a host expression here is what lets
-     `openbot.run.example.com` through. */
+     `buildersbot.culturabuilder.com.example.com` through. */
   const canonical =
     url.protocol === "https:" &&
     url.origin === BUILDERSBOT_PLUGIN_ORIGIN &&

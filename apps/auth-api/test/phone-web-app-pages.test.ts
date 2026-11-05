@@ -34,7 +34,7 @@ describe("phone pages of the website", () => {
       expect(JSON.stringify(DOWNLOAD_PAGES[platform])).not.toMatch(/buildersbot\.run|buildersbot:\/\//u);
     }
     // The upstream install script installs the upstream release as root.
-    expect(pages).not.toMatch(/nightly-labs|install-server\.sh/u);
+    expect(pages).not.toMatch(/example-upstream|install-server\.sh/u);
     expect(pages).not.toMatch(/code from the email|email code/iu);
     for (const platform of MOBILE_APP_ORDER) {
       const steps = DOWNLOAD_PAGES[platform].installSteps.map((step) => step.text).join(" ");

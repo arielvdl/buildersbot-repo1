@@ -15,7 +15,7 @@
     }
   },
   "oauth_config": {
-    "redirect_urls": ["https://api.openbot.run/v2/slack/callback"],
+    "redirect_urls": ["https://api.buildersbot.culturabuilder.com/v2/slack/callback"],
     "scopes": {
       "bot": [
         "app_mentions:read",
@@ -38,7 +38,7 @@
   },
   "settings": {
     "event_subscriptions": {
-      "request_url": "https://signal.openbot.run/v1/slack/events",
+      "request_url": "https://signal.buildersbot.culturabuilder.com/v1/slack/events",
       "bot_events": [
         "app_mention",
         "channel_created",
@@ -52,7 +52,7 @@
     },
     "interactivity": {
       "is_enabled": true,
-      "request_url": "https://signal.openbot.run/v1/slack/events"
+      "request_url": "https://signal.buildersbot.culturabuilder.com/v1/slack/events"
     },
     "org_deploy_enabled": false,
     "socket_mode_enabled": false,

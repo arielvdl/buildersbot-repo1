@@ -195,7 +195,7 @@ export class BrowserUploads {
             yield* attachmentSync(() => this.#reserve(tabId, reservationId, currentReservation));
             // Node cannot cancel this allocation. Record its path before interruption can run cleanup.
             yield* Effect.gen(function* () {
-              stagingRoot = yield* attachmentCall(() => mkdtemp(join(tmpdir(), "openbot-browser-upload-")));
+              stagingRoot = yield* attachmentCall(() => mkdtemp(join(tmpdir(), "buildersbot-browser-upload-")));
               currentReservation.root = stagingRoot;
             }).pipe(Effect.uninterruptible);
             if (reservation.invalidated)

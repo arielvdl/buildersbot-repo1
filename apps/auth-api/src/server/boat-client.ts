@@ -12,7 +12,7 @@ const REQUEST_TIMEOUT_MS = 15_000;
 // A sandbox whose disk comes from before the rename still has the helper under the old path.
 const HOSTED_SERVER_SETUP_SCRIPT =
   "if [ -x /opt/BuildersBot/hosted/buildersbot-hosted-env ]; then exec /opt/BuildersBot/hosted/buildersbot-hosted-env; fi\n" +
-  "exec /opt/OpenBot/hosted/openbot-hosted-env\n";
+  "exec /opt/BuildersBot/hosted/buildersbot-hosted-env\n";
 
 export type BoatSandboxType = "small" | "default" | "large";
 

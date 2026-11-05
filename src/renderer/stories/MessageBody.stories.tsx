@@ -8,7 +8,7 @@ import { STORY_AGENTS, STORY_ATTACHMENTS, STORY_REPLY_QUOTE_BODY } from "./fixtu
 const message: AgentMessage = {
   id: "message-body-1",
   author: "agent",
-  body: "Here is the latest brief. You can also review https://openbot.run/docs or ask @Research.",
+  body: "Here is the latest brief. You can also review https://buildersbot.culturabuilder.com/docs or ask @Research.",
   time: "10:00",
   status: "Ready to review",
   attachments: STORY_ATTACHMENTS,
@@ -346,7 +346,7 @@ export const DataTableLongText: Story = {
       body: [
         "| Step | Owner | Notes | Reference |",
         "| --- | --- | --- | --- |",
-        "| Migrate | Research | Copy every workspace to the new layout, then confirm that each conversation still opens with its attachments and its full history. | https://openbot.run/docs/guides/workspaces/migrating-an-existing-workspace-to-the-new-layout |",
+        "| Migrate | Research | Copy every workspace to the new layout, then confirm that each conversation still opens with its attachments and its full history. | https://buildersbot.culturabuilder.com/docs/guides/workspaces/migrating-an-existing-workspace-to-the-new-layout |",
         "| Verify | Review | Run the checks on a clean profile and compare the results with the previous release before you approve the change. | `bun run test:desktop -- src/renderer/src/features/conversation/MessageRendering.test.tsx` |",
         "| Ship | Release | Write the release notes. | `BUILDERSBOT_RELEASE_CHANNEL_OVERRIDE_FOR_INTERNAL_TESTING_ONLY` |",
       ].join("\n"),

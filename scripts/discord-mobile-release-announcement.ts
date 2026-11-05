@@ -24,7 +24,7 @@ import { MOBILE_CHANGELOG, MOBILE_STORES, parseStoreDates } from "./release-note
 // Only this release post of the native app names its store pages. The apps, the website and the
 // desktop offer a phone the web client at `/app`.
 const IOS_APP_STORE_URL = "https://apps.apple.com/us/app/buildersbot-run/id6807024266";
-const ANDROID_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=run.openbot.mobile";
+const ANDROID_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=run.buildersbot.mobile";
 
 export const MOBILE_ANNOUNCEMENT_FILE = "apps/mobile/release-announcement.json";
 const DOCS = "apps/mobile/README.md#discord-announcement";
@@ -48,7 +48,7 @@ export function mobileAnnouncementProblems(announcement: string, version: string
 }
 
 function changelogUrl(version: string): string {
-  return `https://openbot.run/changelog?platform=mobile#mobile-${releaseAnchor(version)}`;
+  return `https://buildersbot.culturabuilder.com/changelog?platform=mobile#mobile-${releaseAnchor(version)}`;
 }
 
 /** Without `roleId`, the message names the role in plain text, so that `check` shows the post. */

@@ -105,7 +105,7 @@ export interface WorkerBindings {
   ADMIN_USER_IDS?: string;
   /**
    * A request with this key in `X-BuildersBot-Hosting-Developer-Key`, or in the released
-   * `OpenBot-Hosting-Developer-Key`, can create hosted servers. Test Worker only.
+   * `BuildersBot-Hosting-Developer-Key`, can create hosted servers. Test Worker only.
    */
   HOSTED_SERVERS_DEVELOPER_KEY?: string;
   /** The boat named snapshot that new hosted servers start from. */

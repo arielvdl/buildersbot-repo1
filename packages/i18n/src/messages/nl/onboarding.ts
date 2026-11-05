@@ -28,7 +28,7 @@ export const messages = {
   "onboarding.setup.defaultProvider": "Standaardaanbieder",
   "onboarding.setup.defaultProviderHint": "Gebruikt voor nieuwe lokale agents. Je kunt dit later per agent wijzigen.",
   "onboarding.setup.invitation": "Hostuitnodiging",
-  "onboarding.setup.invitationPlaceholder": "Plak een uitnodigingslink van https://openbot.run/join",
+  "onboarding.setup.invitationPlaceholder": "Plak een uitnodigingslink van https://buildersbot.culturabuilder.com/join",
   "onboarding.setup.otherInvitation": "Andere uitnodiging gebruiken",
   "onboarding.setup.joinNote":
     "Je doet mee als {email}. Uitnodigingen per e-mail werken alleen voor het adres dat ze heeft ontvangen.",

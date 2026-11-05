@@ -57,7 +57,7 @@ export const messages = {
   "sitePage.billing.cancelledBody": "No se cobró nada. Vuelve a Builders Bot.",
   "sitePage.report.pageTitle": "Denunciar un sitio alojado — Builders Bot",
   "sitePage.report.title": "Denunciar un sitio alojado",
-  "sitePage.report.intro": "Envía una denuncia sobre contenido dañino o ilegal en una dirección de openbot.site.",
+  "sitePage.report.intro": "Envía una denuncia sobre contenido dañino o ilegal en una dirección de sites.buildersbot.culturabuilder.com.",
   "sitePage.report.hostnameLabel": "Dirección del sitio",
   "sitePage.report.hostnameMissing": "Introduce la dirección del sitio",
   "sitePage.report.reasonLabel": "Motivo",

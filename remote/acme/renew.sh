@@ -2,7 +2,7 @@
 set -eu
 
 lego_args="--path /acme --email ${ACME_EMAIL} --accept-tos --dns cloudflare --domains ${SIGNAL_DOMAIN} --domains ${TURN_DOMAIN}"
-# A standby host adds its own names, such as signal2.openbot.run, separated by spaces.
+# A standby host adds its own names, such as signal2.buildersbot.culturabuilder.com, separated by spaces.
 for domain in ${ACME_EXTRA_DOMAINS:-}; do
   lego_args="$lego_args --domains $domain"
 done

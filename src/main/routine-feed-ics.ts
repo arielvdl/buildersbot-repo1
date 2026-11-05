@@ -39,7 +39,7 @@ export function routineFeedIcs(calendar: RoutineCalendar, text: RoutineFeedText,
     lines.push(
       "BEGIN:VEVENT",
       // The same run keeps its id across reads, so a calendar app moves it rather than adding another.
-      `UID:${icsText(`${run.routineId}-${start}@routines.openbot.run`)}`,
+      `UID:${icsText(`${run.routineId}-${start}@routines.buildersbot.culturabuilder.com`)}`,
       `DTSTAMP:${stamp}`,
       `DTSTART:${start}`,
       `DURATION:${EVENT_DURATION}`,

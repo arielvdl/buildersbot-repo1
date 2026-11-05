@@ -5,11 +5,11 @@ const APPLE_APP_SITE_ASSOCIATION = {
     apps: [],
     details: [
       {
-        appID: "ZTRDTUL87R.app.openbot.desktop",
+        appID: "ZTRDTUL87R.app.buildersbot.desktop",
         paths: ["/join"],
       },
       {
-        appID: "ZTRDTUL87R.run.openbot.mobile",
+        appID: "ZTRDTUL87R.run.buildersbot.mobile",
         // The mobile app opens a shared agent's preview; the desktop reads that page in the browser.
         paths: ["/join", "/agents/*"],
       },

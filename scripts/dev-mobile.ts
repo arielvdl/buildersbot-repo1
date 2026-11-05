@@ -15,7 +15,7 @@ import { connectToDevApp } from "./dev-automation/cdp-client";
 import { type DevInstanceRecord, readDevInstanceRecords, selectDevInstance } from "./dev-automation/instance-registry";
 
 const projectRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const MOBILE_BUNDLE_ID = "run.openbot.mobile";
+const MOBILE_BUNDLE_ID = "run.buildersbot.mobile";
 const DEFAULT_METRO_PORT = 8081;
 const DESKTOP_TIMEOUT_MS = 5 * 60_000;
 // The first native build takes minutes.

@@ -2,7 +2,7 @@
 
 The Builders Bot image is the Linux release, run as a [self-hosted server](self-hosted-server.md) in
 a container. It is a normal Remote host of your account. You use it from the desktop app, the iPhone
-app or `openbot.run/app`. It is for `linux/amd64` and `linux/arm64`.
+app or `buildersbot.culturabuilder.com/app`. It is for `linux/amd64` and `linux/arm64`.
 
 > [!IMPORTANT]
 > Builders Bot has no published image and no release feed yet. Build an image from
@@ -78,7 +78,7 @@ For Amazon ECS, see [AWS ECS](aws-ecs.md).
 The container publishes no port. Builders Bot only connects out: to the account server, to the providers,
 and to Signal and TURN for remote use. The Team API listens on `127.0.0.1` in the container.
 The container does not serve a web interface. After `buildersbot login`, use
-[`openbot.run/app`](https://openbot.run/app) with the same account to select the server. A web
+[`buildersbot.culturabuilder.com/app`](https://buildersbot.culturabuilder.com/app) with the same account to select the server. A web
 client at your own origin is not included in this image. The
 [self-hosted account service](self-hosting.md#what-changes) is a separate deployment with its own
 client limits.

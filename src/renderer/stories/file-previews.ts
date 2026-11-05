@@ -27,7 +27,7 @@ Builders Bot keeps workspaces, conversations, and attachments on **your** comput
 
 - A file preview panel for markdown, text, images, and PDFs
 - Resizable panels that remember their width
-- Links that open in the embedded browser: [openbot.run](https://openbot.run)
+- Links that open in the embedded browser: [buildersbot.culturabuilder.com](https://buildersbot.culturabuilder.com)
 
 ## Configuration
 

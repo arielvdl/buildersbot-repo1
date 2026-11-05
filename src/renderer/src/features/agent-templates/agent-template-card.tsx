@@ -6,7 +6,7 @@ import { flush } from "solid-js";
 import { loadImage, loadSvg, withAlpha } from "../../avatar-canvas";
 
 /*
- * The share card: the image X and other sites show for an `openbot.run/agents/<id>` link.
+ * The share card: the image X and other sites show for an `buildersbot.culturabuilder.com/agents/<id>` link.
  *
  * It is drawn here, at publish time, because this is where the agent's avatar is: a generated Bloub
  * or the photo the owner uploaded. The Worker only checks its size and stores it.
@@ -168,7 +168,7 @@ async function drawColumn(
   context.fillText(label, x + 32, pillTop + 38);
   context.font = `500 24px ${FONT}`;
   context.fillStyle = colors.muted;
-  context.fillText("openbot.run", x + pillWidth + 24, pillTop + 38);
+  context.fillText("buildersbot.culturabuilder.com", x + pillWidth + 24, pillTop + 38);
 }
 
 /** The app mark from `@buildersbot/brand`, with its CSS colours written onto the shapes. */

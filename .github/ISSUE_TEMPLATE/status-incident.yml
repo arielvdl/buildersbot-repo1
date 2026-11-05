@@ -1,12 +1,12 @@
 name: Status incident (maintainers)
-description: Post an incident or planned maintenance on status.openbot.run. The page shows only issues from maintainers.
+description: Post an incident or planned maintenance on status.buildersbot.culturabuilder.com. The page shows only issues from maintainers.
 title: "[Status]: "
 labels: [status]
 body:
   - type: markdown
     attributes:
       value: |
-        Only maintainers use this form. The page at https://status.openbot.run shows the issue within about 5 minutes. Each comment from a maintainer is an update. Start a comment with `Identified:`, `Monitoring:` or `Resolved:` to set its stage. Close the issue when the incident is resolved, or as "not planned" to remove a false alarm from the page.
+        Only maintainers use this form. The page at https://status.buildersbot.culturabuilder.com shows the issue within about 5 minutes. Each comment from a maintainer is an update. Start a comment with `Identified:`, `Monitoring:` or `Resolved:` to set its stage. Close the issue when the incident is resolved, or as "not planned" to remove a false alarm from the page.
 
         To report a problem with the app, use the bug report form.
 

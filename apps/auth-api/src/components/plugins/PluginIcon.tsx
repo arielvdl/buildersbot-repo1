@@ -16,7 +16,7 @@ export interface PluginIconProps {
  * The icon the catalog carries for a listing, at the sizes it was made for.
  *
  * The address is this origin's: the Worker reads the developer's URL from the catalog and fetches
- * it, so the page asks openbot.run for the picture and a reader connects to nobody else. See
+ * it, so the page asks buildersbot.culturabuilder.com for the picture and a reader connects to nobody else. See
  * `src/server/plugin-icon.ts`.
  *
  * `alt=""`, because the row beside it already says the name. An icon that announced itself would

@@ -2,7 +2,7 @@
 
 A self-hosted server is the Linux Builders Bot build on your own computer with no screen: a VPS, a home
 server or a cloud VM. It is a normal Remote host of your account. You use it from the desktop app or
-from `openbot.run/app`, in a browser or as the web app on a phone, as you use a
+from `buildersbot.culturabuilder.com/app`, in a browser or as the web app on a phone, as you use a
 [hosted server](hosted-servers.md). You install and control it from a terminal.
 
 To run it in a container, see [Docker](docker.md).
@@ -32,7 +32,7 @@ sign in to Builders Bot with that email, the server is in their server list.
 
 ```sh
 printf '{"email":"%s"}' owner@example.com |
-  curl --fail -sS -X POST https://api.openbot.run/v2/admin/server-claims \
+  curl --fail -sS -X POST https://api.buildersbot.culturabuilder.com/v2/admin/server-claims \
     -H @server-claims.header -H 'content-type: application/json' --data-binary @- |
   sed -n 's/.*"claim":"\([A-Za-z0-9_-]*\)".*/\1/p' |
   sudo buildersbot login --claim --name <name>
@@ -70,10 +70,10 @@ open a database that a newer one migrated. It also refuses a computer that is a 
 ### Upgrade from the old name
 
 A server that an earlier release installed still has the old product name on disk:
-`/opt/OpenBot`, `/srv/openbot-hosted`, `~/.config/openbot-hosted`, `/etc/apparmor.d/openbot-hosted`
-and the `openbot.service` and `openbot-update*` units. The install moves all of them once, before
+`/opt/BuildersBot`, `/srv/buildersbot-hosted`, `~/.config/buildersbot-hosted`, `/etc/apparmor.d/buildersbot-hosted`
+and the `buildersbot.service` and `buildersbot-update*` units. The install moves all of them once, before
 it copies the new release, so a reinstall is the whole upgrade. It moves with `mv`, which keeps the
-filesystem, and leaves `/opt/OpenBot` as a symlink to `/opt/BuildersBot` for a binary that is still
+filesystem, and leaves `/opt/BuildersBot` as a symlink to `/opt/BuildersBot` for a binary that is still
 running. It then removes the old units and the old AppArmor profile and enables the new ones. Each
 step does nothing when the old path is already gone, so the install runs again safely.
 

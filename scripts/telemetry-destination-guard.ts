@@ -63,7 +63,7 @@ const ALLOWED_MENTIONS: ReadonlyArray<{ file: string | RegExp; line: RegExp; rea
   },
   {
     file: /^(?:ANALYTICS|PRIVACY)\.md$|^docs\/architecture\/analytics\.md$/u,
-    line: /analytics\.openbot\.run/u,
+    line: /analytics\.buildersbot\.run/u,
     reason: "documentation of the analytics service that runs at that address",
   },
   {
@@ -73,42 +73,42 @@ const ALLOWED_MENTIONS: ReadonlyArray<{ file: string | RegExp; line: RegExp; rea
   },
   {
     file: "apps/auth-api/src/lib/site-metadata.ts",
-    line: /^const BUILDERSBOT_PRODUCTION_HOSTS = new Set\(\["openbot\.run", "api\.openbot\.run"\]\);$/u,
+    line: /^const BUILDERSBOT_PRODUCTION_HOSTS = new Set\(\["buildersbot\.run", "api\.buildersbot\.run"\]\);$/u,
     reason: "compares the request host and sends nothing",
   },
   {
     file: "apps/auth-api/src/server/avatar-storage.ts",
-    line: /^\s*const url = new URL\(avatarUrl, "https:\/\/api\.openbot\.run"\);$/u,
+    line: /^\s*const url = new URL\(avatarUrl, "https:\/\/api\.buildersbot\.run"\);$/u,
     reason: "base to read a relative avatar address, with no request",
   },
   {
     file: /^apps\/slack-app\/(?:development|production)\/manifest\.json$/u,
-    line: /"redirect_urls": \["https:\/\/(?:buildersbot-auth-api-test\.internal9671\.workers\.dev|api\.openbot\.run)\/v2\/slack\/callback"\],$/u,
+    line: /"redirect_urls": \["https:\/\/(?:buildersbot-auth-api-test\.internal9671\.workers\.dev|api\.buildersbot\.run)\/v2\/slack\/callback"\],$/u,
     reason: "Slack install callback of the released Slack app",
   },
   {
     file: "apps/status/scripts/update.ts",
-    line: /^\s*api: "https:\/\/api\.openbot\.run",$/u,
+    line: /^\s*api: "https:\/\/api\.buildersbot\.run",$/u,
     reason: "status page probe of the health route, with no user data",
   },
   {
     file: /^remote\/\.env\.(?:example|production)$/u,
-    line: /^REMOTE_(?:TICKET_JWKS|CONTROL_PLANE)_URL=https:\/\/api\.openbot\.run(?:\/\.well-known\/jwks\.json)?$/u,
+    line: /^REMOTE_(?:TICKET_JWKS|CONTROL_PLANE)_URL=https:\/\/api\.buildersbot\.run(?:\/\.well-known\/jwks\.json)?$/u,
     reason: "Signal reads the account keys of the account service",
   },
   {
     file: "scripts/publish-production-catalog.ts",
-    line: /^const productionApiUrl = "https:\/\/api\.openbot\.run";$/u,
+    line: /^const productionApiUrl = "https:\/\/api\.buildersbot\.run";$/u,
     reason: "catalog publish tool",
   },
   {
     file: "scripts/hosting/release-boat-template.sh",
-    line: /^\s*--auth-api-url=https:\/\/api\.openbot\.run$/u,
+    line: /^\s*--auth-api-url=https:\/\/api\.buildersbot\.run$/u,
     reason: "hosted server template release",
   },
   {
     file: ".github/workflows/ci.yml",
-    line: /^\s*curl --fail --silent --show-error --retry 5 --retry-all-errors https:\/\/api\.openbot\.run\/health\/(?:live|ready) >\/dev\/null$/u,
+    line: /^\s*curl --fail --silent --show-error --retry 5 --retry-all-errors https:\/\/api\.buildersbot\.run\/health\/(?:live|ready) >\/dev\/null$/u,
     reason: "deploy smoke check of the health routes (ci.yml runs only for main)",
   },
 ];
@@ -243,19 +243,19 @@ await check("no interface text or served page promises an analytics service or s
 await check("the matcher ignores case and refuses a Markdown paragraph that does not name the upstream project", () => {
   const capitals = findMentionsInText(
     "src/sample.ts",
-    'const url = "https://ANALYTICS.OPENBOT.RUN/api";',
+    'const url = "https://ANALYTICS.BUILDERSBOT.CULTURABUILDER.COM/api";',
     BLOCKED_ANALYTICS_STRINGS,
   );
   if (capitals.length !== 1 || capitals[0]?.allowed !== null) fail("A host in capital letters was not refused.");
   const table = findMentionsInText(
     "docs/sample.md",
-    "| Host | Use |\n| --- | --- |\n| `*.openbot.run` | Sites, and `analytics.openbot.run` |\n",
+    "| Host | Use |\n| --- | --- |\n| `*.buildersbot.culturabuilder.com` | Sites, and `analytics.buildersbot.culturabuilder.com` |\n",
     BLOCKED_ANALYTICS_STRINGS,
   );
   if (table.length !== 1 || table[0]?.allowed !== null) fail("A Markdown table that allows the host was not refused.");
   const history = findMentionsInText(
     "docs/sample.md",
-    "Earlier versions sent events to the upstream\nproject (`analytics.openbot.run`).\n",
+    "Earlier versions sent events to the upstream\nproject (`analytics.buildersbot.culturabuilder.com`).\n",
     BLOCKED_ANALYTICS_STRINGS,
   );
   if (history.length !== 1 || history[0]?.allowed !== MARKDOWN_UPSTREAM_REASON) {

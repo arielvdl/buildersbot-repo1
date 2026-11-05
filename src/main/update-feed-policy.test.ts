@@ -10,12 +10,12 @@ import {
 } from "./update-feed-policy";
 import { type UpdateAdapter, UpdateService } from "./update-service";
 
-// The app-update.yml that an upstream Builders Bot build carries.
+// The app-update.yml that an upstream build carries.
 const UPSTREAM_METADATA = [
-  "owner: nightly-labs",
-  "repo: buildersbot",
+  "owner: example-upstream",
+  "repo: upstream-app",
   "provider: github",
-  "updaterCacheDirName: openbot-updater",
+  "updaterCacheDirName: upstream-updater",
 ].join("\n");
 const TEST_ORIGIN = "https://updates.example.test";
 
@@ -82,8 +82,8 @@ describe("decideUpdateFeed", () => {
     expect(decideUpdateFeed(generic(`${TEST_ORIGIN}/feed`, "buildersbot-updater"), [TEST_ORIGIN]).allowed).toBe(true);
   });
 
-  it("refuses a feed that names another cache folder, such as the upstream one", () => {
-    expect(decideUpdateFeed(generic(`${TEST_ORIGIN}/feed`, "openbot-updater"), [TEST_ORIGIN])).toEqual({
+  it("refuses a feed that names another cache folder, such as an upstream one", () => {
+    expect(decideUpdateFeed(generic(`${TEST_ORIGIN}/feed`, "upstream-updater"), [TEST_ORIGIN])).toEqual({
       allowed: false,
       reason: "cache-not-allowed",
     });

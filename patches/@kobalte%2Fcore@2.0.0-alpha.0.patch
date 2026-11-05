@@ -492,7 +492,7 @@ index fde40e74ee904abceeb2c1daa3ce86f8dd9e38c8..f8ae7e07bd35e976d4e2d3c54da7d666
  	}, { preventDefault: false });
 -	onSettled(() => {
 -		if (!ref$1()) return;
-+	// OpenBot patch: register the layer when the ref is set. Under Solid 2.0.0-rc.18 a dialog's
++	// BuildersBot patch: register the layer when the ref is set. Under Solid 2.0.0-rc.18 a dialog's
 +	// onSettled can run before its ref is set, so the layer was never added and Escape did nothing.
 +	createEffect(() => ({
 +		node: ref$1(),
@@ -539,7 +539,7 @@ index 725bd171d1c95781d497718917d1dc3ebd363276..c9f9d4be2e4306c0dd1c8c2dc73875f5
  	}, { preventDefault: false });
 -	onSettled(() => {
 -		if (!ref()) return;
-+	// OpenBot patch: register the layer when the ref is set. Under Solid 2.0.0-rc.18 a dialog's
++	// BuildersBot patch: register the layer when the ref is set. Under Solid 2.0.0-rc.18 a dialog's
 +	// onSettled can run before its ref is set, so the layer was never added and Escape did nothing.
 +	createEffect(() => ({
 +		node: ref(),
@@ -897,7 +897,7 @@ index 99232b6df91ac600326db388fdd42a96e396c343..b0b6ea2c013e5d6e7eaa8d300c7ce071
  	};
 -	onSettled(() => {
 -		context.state.setThumbEditable(index(), !context.state.isDisabled());
-+	// OpenBot patch: mark the thumb editable once it has an index. Under Solid 2.0.0-rc.18 its
++	// BuildersBot patch: mark the thumb editable once it has an index. Under Solid 2.0.0-rc.18 its
 +	// onSettled can run before the thumb joins the collection, so index() was -1, thumb 0 never became
 +	// editable, and every key press and drag was ignored.
 +	createEffect(() => index(), (thumbIndex) => {

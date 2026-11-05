@@ -22,7 +22,7 @@ import { Deferred, Effect, Schema, Semaphore } from "effect";
 import { z } from "zod";
 import type { ConversationRuntime } from "../agent/conversation-runtime";
 import type { TaskLanes } from "../agent/drain-scheduler";
-import { type BuildersBotToolResponse, openBotToolFailure, openBotToolResult } from "../agent/routine-tools";
+import { type BuildersBotToolResponse, buildersBotToolFailure, buildersBotToolResult } from "../agent/routine-tools";
 import {
   type AgentThreadOrigin,
   type AgentThreadRecord,
@@ -450,8 +450,8 @@ export class AgentTasks implements TaskLanes {
   ): Effect.fn.Return<BuildersBotToolResponse | null> {
     if (params.tool !== START_TASK_TOOL) return null;
     const parsed = startTaskToolSchema.safeParse(params.arguments);
-    if (!parsed.success) return openBotToolFailure(sourceText("error.backend.taskToolInvalid"));
-    if (caller.inExecutionThread) return openBotToolFailure(sourceText("error.backend.taskOwnChatOnly"));
+    if (!parsed.success) return buildersBotToolFailure(sourceText("error.backend.taskToolInvalid"));
+    if (caller.inExecutionThread) return buildersBotToolFailure(sourceText("error.backend.taskOwnChatOnly"));
     const idempotencyKey = `start-task:${createHash("sha256")
       .update(JSON.stringify([caller.agentId, params.turnId, params.callId]))
       .digest("hex")}`;
@@ -461,7 +461,7 @@ export class AgentTasks implements TaskLanes {
     if (startedTask) return startedTaskResult(startedTask);
     const open = this.#store.openTaskIds(caller.agentId).length;
     if (open >= AGENT_STARTED_OPEN_TASKS)
-      return openBotToolFailure(sourceText("error.backend.taskOpenLimit", { count: AGENT_STARTED_OPEN_TASKS }));
+      return buildersBotToolFailure(sourceText("error.backend.taskOpenLimit", { count: AGENT_STARTED_OPEN_TASKS }));
     const task = this.create(caller.agentId, parsed.data.title, "agent", parsed.data.brief);
     const queued = yield* this.#mailbox
       .enqueue({
@@ -484,7 +484,7 @@ export class AgentTasks implements TaskLanes {
       );
     if (!queued) {
       this.discard(task);
-      return openBotToolFailure(sourceText("error.backend.taskStartFailed"));
+      return buildersBotToolFailure(sourceText("error.backend.taskStartFailed"));
     }
     this.changed(caller.agentId);
     this.#hooks.queued(caller.agentId);
@@ -648,7 +648,7 @@ function branchTitle(sourceTitle: string, titles: readonly string[]): string {
 }
 
 function startedTaskResult(task: AgentThreadRecord): BuildersBotToolResponse {
-  return openBotToolResult({
+  return buildersBotToolResult({
     taskId: task.taskId,
     title: task.title,
     note: "The task runs in its own conversation beside this chat, and the user follows it in the task list. Its result stays in the task: you do not receive it here. Tell the user in one sentence that the task started, and continue with other work or end your turn.",

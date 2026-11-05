@@ -15,7 +15,7 @@ import {
 import type { GeneratedAttachmentSource, MailboxStore } from "../mailbox-store";
 import { isWithin, rebaseLegacyWorkspacePath, sharedPathFromInput, workspacePathFromInput } from "../workspace-paths";
 import type { ConversationRuntime } from "./conversation-runtime";
-import { type BuildersBotToolResponse, openBotToolResult } from "./routine-tools";
+import { type BuildersBotToolResponse, buildersBotToolResult } from "./routine-tools";
 
 export interface AttachmentGatewayHooks {
   emit(event: AgentEvent): void;
@@ -198,7 +198,7 @@ export class AttachmentGateway {
     const existing = snapshot.messages.find((message) => message.id === messageId);
     if (existing) {
       return yield* attachmentCall(() =>
-        openBotToolResult({
+        buildersBotToolResult({
           status: "attached",
           messageId,
           attachments: (existing.attachments ?? []).map((attachment) => ({
@@ -264,7 +264,7 @@ export class AttachmentGateway {
             }
           }
           return yield* attachmentCall(() =>
-            openBotToolResult({
+            buildersBotToolResult({
               status: "attached",
               messageId,
               attachments: attachments.map((attachment) => ({ id: attachment.id, name: attachment.name })),

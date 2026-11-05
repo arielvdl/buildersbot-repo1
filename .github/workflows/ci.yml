@@ -1219,22 +1219,22 @@ jobs:
               fail "$3 has no response header that matches '$2'."
             fi
           }
-          curl --fail --silent --show-error --retry 5 --retry-all-errors https://openbot.run/ >/dev/null
+          curl --fail --silent --show-error --retry 5 --retry-all-errors https://buildersbot.culturabuilder.com/ >/dev/null
           join_status="$(curl --silent --show-error --retry 5 --retry-all-errors \
             --max-redirs 0 --dump-header "$verification_dir/join.headers" \
             --output "$verification_dir/join.html" --write-out '%{http_code}' \
-            https://openbot.run/join)"
-          require_status "$join_status" 200 https://openbot.run/join
-          require_header "$verification_dir/join.headers" '^cache-control:.*no-store' https://openbot.run/join
-          require_header "$verification_dir/join.headers" '^referrer-policy:.*no-referrer' https://openbot.run/join
-          association_url=https://openbot.run/.well-known/apple-app-site-association
+            https://buildersbot.culturabuilder.com/join)"
+          require_status "$join_status" 200 https://buildersbot.culturabuilder.com/join
+          require_header "$verification_dir/join.headers" '^cache-control:.*no-store' https://buildersbot.culturabuilder.com/join
+          require_header "$verification_dir/join.headers" '^referrer-policy:.*no-referrer' https://buildersbot.culturabuilder.com/join
+          association_url=https://buildersbot.culturabuilder.com/.well-known/apple-app-site-association
           association_status="$(curl --silent --show-error --retry 5 --retry-all-errors \
             --max-redirs 0 --dump-header "$verification_dir/association.headers" \
             --output "$verification_dir/association.json" --write-out '%{http_code}' \
             "$association_url")"
           require_status "$association_status" 200 "$association_url"
           require_header "$verification_dir/association.headers" '^content-type: application/json' "$association_url"
-          if ! jq -e '.applinks.details == [{"appID":"ZTRDTUL87R.app.openbot.desktop","paths":["/join"]},{"appID":"ZTRDTUL87R.run.openbot.mobile","paths":["/join","/agents/*"]}]' \
+          if ! jq -e '.applinks.details == [{"appID":"ZTRDTUL87R.app.buildersbot.desktop","paths":["/join"]},{"appID":"ZTRDTUL87R.run.buildersbot.mobile","paths":["/join","/agents/*"]}]' \
             "$verification_dir/association.json" >/dev/null; then
             echo "Response headers of $association_url:"
             tr -d '\r' < "$verification_dir/association.headers"
@@ -1243,9 +1243,9 @@ jobs:
             echo
             fail "$association_url does not have the expected applinks.details."
           fi
-          curl --fail --silent --show-error --retry 5 --retry-all-errors https://api.openbot.run/health/live >/dev/null
-          curl --fail --silent --show-error --retry 5 --retry-all-errors https://api.openbot.run/health/ready >/dev/null
-          site_url=https://deployment-smoke-check.openbot.site/
+          curl --fail --silent --show-error --retry 5 --retry-all-errors https://api.buildersbot.culturabuilder.com/health/live >/dev/null
+          curl --fail --silent --show-error --retry 5 --retry-all-errors https://api.buildersbot.culturabuilder.com/health/ready >/dev/null
+          site_url=https://deployment-smoke-check.sites.buildersbot.culturabuilder.com/
           site_status="$(curl --silent --show-error --retry 5 --retry-all-errors \
             --max-redirs 0 --dump-header "$verification_dir/site-router.headers" \
             --output "$verification_dir/site-router.txt" --write-out '%{http_code}' \

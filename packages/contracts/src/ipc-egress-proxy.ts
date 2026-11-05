@@ -44,8 +44,8 @@ export const EGRESS_DEFAULT_BYPASS: readonly string[] = [
   "*.ts.net",
   "culturabuilder.com",
   "*.culturabuilder.com",
-  "openbot.run",
-  "*.openbot.run",
+  "buildersbot.culturabuilder.com",
+  "*.buildersbot.culturabuilder.com",
 ];
 
 export const EGRESS_PROXY_STATES = ["off", "active", "error"] as const;

@@ -6,7 +6,7 @@ import { pluginMonogram } from "../../lib/plugins";
 //
 // This is the convention `packages/brand/src/ProviderLogo.tsx` already sets for a
 // developer's own mark: the path is a module constant, the official source is named
-// above it, and the file is served from openbot.run like every other byte of the
+// above it, and the file is served from buildersbot.culturabuilder.com like every other byte of the
 // page. The catalog's `iconUrl` is never used here, because it points at the
 // developer's own servers and PRIVACY.md describes no such connection.
 //
@@ -96,7 +96,7 @@ const UPRIGHT_MARKS: Record<string, PluginMark> = {
 
 /**
  * The listings whose mark is drawn below. A card leads with the drawn mark where there is one,
- * because it is one colour on the card's own gradient and it is served from openbot.run; a listing
+ * because it is one colour on the card's own gradient and it is served from buildersbot.culturabuilder.com; a listing
  * that is not here has its catalog icon fetched instead. Adding a mark below means adding its slug
  * here, or the card keeps showing the icon.
  */

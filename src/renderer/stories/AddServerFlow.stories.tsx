@@ -144,7 +144,7 @@ function AddServerFlow(props: FlowProps) {
               ...serverDefaults(),
               id: pending().id,
               name: pending().name,
-              apiUrl: `https://${pending().id}.hosted.openbot.run`,
+              apiUrl: `https://${pending().id}.hosted.buildersbot.culturabuilder.com`,
               role: "owner",
             })
           }

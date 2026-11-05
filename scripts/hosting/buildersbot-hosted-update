@@ -189,7 +189,7 @@ stage_release() {
 
 recover() {
   # The second folder is what a release with the old name left when a stop interrupted it.
-  rm -rf "$SCRATCH"/buildersbot-update.* "$SCRATCH"/openbot-update.*
+  rm -rf "$SCRATCH"/buildersbot-update.* "$SCRATCH"/buildersbot-update.*
 }
 
 set_state() {
@@ -216,12 +216,12 @@ download() {
 # folder, the AppImage, the keyring folder, the units and the AppArmor profile all carried it. An
 # upgrade moves them once, before the new release goes into place, so an installed server upgrades
 # instead of breaking. Every step is a no-op when the old path is gone, and no step fails the upgrade.
-LEGACY_INSTALL=/opt/OpenBot
-LEGACY_SERVER=/srv/openbot-hosted
-LEGACY_PROFILE=/etc/apparmor.d/openbot-hosted
-LEGACY_UNITS=(openbot.service openbot-update.service openbot-update.timer openbot-update-apply.service
-  openbot-update-request.path openbot-update-request.service)
-LEGACY_STATE=.config/openbot-hosted
+LEGACY_INSTALL=/opt/BuildersBot
+LEGACY_SERVER=/srv/buildersbot-hosted
+LEGACY_PROFILE=/etc/apparmor.d/buildersbot-hosted
+LEGACY_UNITS=(buildersbot.service buildersbot-update.service buildersbot-update.timer buildersbot-update-apply.service
+  buildersbot-update-request.path buildersbot-update-request.service)
+LEGACY_STATE=.config/buildersbot-hosted
 
 # Moves $1 to $2 unless the old path is gone or the new one exists already, and never fails.
 legacy_move() {
@@ -247,7 +247,7 @@ migrate_legacy_names() {
       echo "Could not move $LEGACY_INSTALL to $INSTALL. The server keeps the old folder." >&2
     fi
   fi
-  legacy_move "$INSTALL/OpenBot.AppImage" "$INSTALL/BuildersBot.AppImage"
+  legacy_move "$INSTALL/BuildersBot.AppImage" "$INSTALL/BuildersBot.AppImage"
 
   # The keyring and the boat files of a hosted server.
   legacy_move "$LEGACY_SERVER" /srv/buildersbot-hosted
@@ -265,17 +265,17 @@ migrate_legacy_names() {
   # The units. `--now` stops the timer and the path unit, which would otherwise act on the old paths
   # while the new ones are installed. The caller stopped Builders Bot already.
   if command -v systemctl >/dev/null &&
-    { [ -e "$UNIT_DIRECTORY/openbot.service" ] || [ -e "$UNIT_DIRECTORY/openbot-update.timer" ]; }; then
-    systemctl disable --now --quiet openbot-update.timer openbot-update-request.path openbot.service \
+    { [ -e "$UNIT_DIRECTORY/buildersbot.service" ] || [ -e "$UNIT_DIRECTORY/buildersbot-update.timer" ]; }; then
+    systemctl disable --now --quiet buildersbot-update.timer buildersbot-update-request.path buildersbot.service \
       2>/dev/null || true
     rm -f "${LEGACY_UNITS[@]/#/$UNIT_DIRECTORY/}" 2>/dev/null || true
     systemctl daemon-reload 2>/dev/null || true
   fi
 
   # The terminal command of a self-hosted server, when it points into an install folder.
-  if [ -L /usr/local/bin/openbot ]; then
-    case $(readlink /usr/local/bin/openbot) in
-      /opt/OpenBot/* | /opt/BuildersBot/*) rm -f /usr/local/bin/openbot 2>/dev/null || true ;;
+  if [ -L /usr/local/bin/buildersbot ]; then
+    case $(readlink /usr/local/bin/buildersbot) in
+      /opt/BuildersBot/* | /opt/BuildersBot/*) rm -f /usr/local/bin/buildersbot 2>/dev/null || true ;;
     esac
   fi
 
@@ -367,9 +367,9 @@ stage() {
   # Only for the percent. A Linux manifest has one file, the AppImage.
   size=$(sed -n 's/^ *size: *//p' <<<"$manifest" | head -n 1)
   [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "The release manifest has no valid version."
-  # A manifest written before the rename names `OpenBot-...`. Both are the same file.
+  # A manifest written before the rename names `BuildersBot-...`. Both are the same file.
   case $path in
-    "Builders Bot-$version-$architecture.AppImage" | "OpenBot-$version-$architecture.AppImage") ;;
+    "Builders Bot-$version-$architecture.AppImage" | "BuildersBot-$version-$architecture.AppImage") ;;
     *) fail "The release manifest names another file." ;;
   esac
   [[ $sha512 =~ ^[A-Za-z0-9+/]{86}==$ ]] || fail "The release manifest has no valid SHA-512."

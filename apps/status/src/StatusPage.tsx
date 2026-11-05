@@ -33,7 +33,7 @@ import {
 import "./status.css";
 
 export const ISSUES_URL = "https://github.com/nextlevelcommunity/buildersbot-repo1/issues?q=label%3Astatus";
-const SITE_URL = "https://openbot.run";
+const SITE_URL = "https://buildersbot.culturabuilder.com";
 /** A scheduled run can start late, but a check older than this means that the checks stopped. */
 const LATE_CHECK_MS = 30 * 60_000;
 
@@ -279,7 +279,7 @@ export function StatusPage(props: StatusPageProps) {
 
       <footer class="status-footer">
         <a class="status-link" href={SITE_URL}>
-          openbot.run
+          buildersbot.culturabuilder.com
         </a>
         <span class="status-muted">Times are in UTC. The page updates every minute.</span>
       </footer>

@@ -54,7 +54,7 @@ export const messages = {
   "sitePage.billing.cancelledBody": "Nic nie zostało pobrane. Wróć do Builders Bot.",
   "sitePage.report.pageTitle": "Zgłoś hostowaną stronę — Builders Bot",
   "sitePage.report.title": "Zgłoś hostowaną stronę",
-  "sitePage.report.intro": "Wyślij zgłoszenie o szkodliwych lub nielegalnych treściach pod adresem openbot.site.",
+  "sitePage.report.intro": "Wyślij zgłoszenie o szkodliwych lub nielegalnych treściach pod adresem sites.buildersbot.culturabuilder.com.",
   "sitePage.report.hostnameLabel": "Adres strony",
   "sitePage.report.hostnameMissing": "Wpisz adres strony",
   "sitePage.report.reasonLabel": "Powód",

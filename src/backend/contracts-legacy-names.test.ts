@@ -56,36 +56,36 @@ function storageOf(values: Readonly<Record<string, string>>) {
 
 describe("links made before the rename", () => {
   it("reads the old custom scheme and still builds the new one", () => {
-    const payload = { apiUrl: "https://api.openbot.run", serverId: SERVER_ID, fingerprint: SECRET, token: SECRET };
+    const payload = { apiUrl: "https://api.buildersbot.culturabuilder.com", serverId: SERVER_ID, fingerprint: SECRET, token: SECRET };
     const invite = new URL(createBuildersBotInviteUrl(payload));
     expect(invite.protocol).toBe("buildersbot:");
-    const legacy = invite.toString().replace("buildersbot:", "openbot:");
+    const legacy = invite.toString().replace("buildersbot:", "buildersbot:");
     expect(parseInviteUrl(legacy).serverId).toBe(SERVER_ID);
   });
 
   it("reads a plugin link on the old scheme and on the old site", () => {
-    expect(parsePluginUrl("openbot://plugins/demo")).toBe("demo");
+    expect(parsePluginUrl("buildersbot://plugins/demo")).toBe("demo");
     expect(parsePluginUrl(`${createPluginShareUrl("demo")}`)).toBe("demo");
-    expect(parsePluginUrl("https://openbot.run/plugins/demo")).toBe("demo");
+    expect(parsePluginUrl("https://buildersbot.culturabuilder.com/plugins/demo")).toBe("demo");
   });
 
   it("reads an agent link on the old scheme and on the old site", () => {
     const id = "A".repeat(22);
-    expect(parseAgentTemplateUrl(`openbot://agents/${id}`)).toBe(id);
-    expect(parseAgentTemplateUrl(createAgentTemplateShareUrl(id, "https://openbot.run"))).toBe(id);
+    expect(parseAgentTemplateUrl(`buildersbot://agents/${id}`)).toBe(id);
+    expect(parseAgentTemplateUrl(createAgentTemplateShareUrl(id, "https://buildersbot.culturabuilder.com"))).toBe(id);
   });
 
   it("reads a Mobile Connect code on the old scheme", () => {
-    const url = createMobileConnectUrl({ apiUrl: "https://api.openbot.run", ticket: TICKET }).replace(
+    const url = createMobileConnectUrl({ apiUrl: "https://api.buildersbot.culturabuilder.com", ticket: TICKET }).replace(
       "buildersbot:",
-      "openbot:",
+      "buildersbot:",
     );
     expect(parseMobileConnectUrl(url)?.ticket).toBe(TICKET);
   });
 
   it("reads a Discord button id with the old prefix", () => {
-    expect(isDiscordCustomId("openbot:approve:token")).toBe(true);
-    expect(withoutDiscordCustomIdPrefix("openbot:approve:token")).toBe("approve:token");
+    expect(isDiscordCustomId("buildersbot:approve:token")).toBe(true);
+    expect(withoutDiscordCustomIdPrefix("buildersbot:approve:token")).toBe("approve:token");
   });
 });
 
@@ -97,28 +97,28 @@ describe("values stored before the rename", () => {
   });
 
   it("reads the old default sound as its new name", () => {
-    expect(notificationSound("openbot")).toBe("buildersbot");
-    expect(pushNotificationSound("openbot")).toBe("buildersbot");
+    expect(notificationSound("buildersbot")).toBe("buildersbot");
+    expect(pushNotificationSound("buildersbot")).toBe("buildersbot");
     expect(pushNotificationSound("none")).toBe("none");
   });
 
   it("reads the old network route and link target kind", () => {
-    expect(readRemoteNetworkRoute("openbot")).toBe("buildersbot");
+    expect(readRemoteNetworkRoute("buildersbot")).toBe("buildersbot");
     expect(readRemoteNetworkRoute("private")).toBe("private");
-    expect(decodeExternalLinkTarget({ kind: "openbot" })).toEqual({ kind: "buildersbot" });
+    expect(decodeExternalLinkTarget({ kind: "buildersbot" })).toEqual({ kind: "buildersbot" });
   });
 
   it("reads the old MCP ids", () => {
-    expect(isComputerUseMcpServerId("openbot-computer-use")).toBe(true);
-    expect(isGithubConnectorMcpServerId("openbot-github")).toBe(true);
+    expect(isComputerUseMcpServerId("buildersbot-computer-use")).toBe(true);
+    expect(isGithubConnectorMcpServerId("buildersbot-github")).toBe(true);
   });
 });
 
 describe("Stripe values written before the rename", () => {
   it("reads the old subscription metadata keys", () => {
-    expect(billingMetadataValue({ openbot_user_id: "user" }, "userId")).toBe("user");
+    expect(billingMetadataValue({ buildersbot_user_id: "user" }, "userId")).toBe("user");
     expect(billingMetadataValue({ buildersbot_user_id: "new" }, "userId")).toBe("new");
-    expect(BILLING_METADATA_LEGACY.userId).toBe("openbot_user_id");
+    expect(BILLING_METADATA_LEGACY.userId).toBe("buildersbot_user_id");
   });
 
   it("reads the old plan and license lookup keys", () => {

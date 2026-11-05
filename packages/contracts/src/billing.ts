@@ -94,7 +94,7 @@ export function siteLimitForPlan(plan: BillingPlanId | null): number {
  */
 export const BILLING_METADATA = { userId: "buildersbot_user_id", serverId: "buildersbot_server_id" } as const;
 /** The same keys of a subscription made before the rename. They are read after the new ones. */
-export const BILLING_METADATA_LEGACY = { userId: "openbot_user_id", serverId: "openbot_server_id" } as const;
+export const BILLING_METADATA_LEGACY = { userId: "buildersbot_user_id", serverId: "buildersbot_server_id" } as const;
 
 /** Stripe metadata, whose values arrive untrusted. */
 export type BillingMetadata = { readonly [key: string]: unknown };
@@ -112,8 +112,8 @@ export function billingMetadataValue(
 export const BILLING_PLAN_METADATA = "buildersbot_plan";
 export const BILLING_INTERVAL_METADATA = "buildersbot_interval";
 /** The same keys of a Price made before the rename. They are read after the new ones. */
-export const BILLING_PLAN_METADATA_LEGACY = "openbot_plan";
-export const BILLING_INTERVAL_METADATA_LEGACY = "openbot_interval";
+export const BILLING_PLAN_METADATA_LEGACY = "buildersbot_plan";
+export const BILLING_INTERVAL_METADATA_LEGACY = "buildersbot_interval";
 
 /** The Stripe Price lookup key for one plan and interval. `stripe-bootstrap.ts` creates these keys. */
 export function billingLookupKey(plan: BillingPlanId, interval: BillingInterval): string {
@@ -122,13 +122,13 @@ export function billingLookupKey(plan: BillingPlanId, interval: BillingInterval)
 
 /** The same lookup key of a Price made before the rename. */
 export function billingLookupKeyLegacy(plan: BillingPlanId, interval: BillingInterval): string {
-  return `openbot_${plan}_${interval}`;
+  return `buildersbot_${plan}_${interval}`;
 }
 
 /** Returns null for a lookup key that does not name a plan and interval, under either prefix. */
 export function parseBillingLookupKey(value: unknown): { plan: BillingPlanId; interval: BillingInterval } | null {
   if (!isString(value)) return null;
-  const match = /^(?:buildersbot|openbot)_([a-z]+)_([a-z]+)$/u.exec(value);
+  const match = /^(?:buildersbot|buildersbot)_([a-z]+)_([a-z]+)$/u.exec(value);
   if (!match) return null;
   const [, plan, interval] = match;
   if (!isOneOf(BILLING_PLAN_IDS, plan) || !isOneOf(BILLING_INTERVALS, interval)) return null;

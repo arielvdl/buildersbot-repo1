@@ -21,19 +21,19 @@ function profile(): string {
 describe("migrateLegacyPreferenceFiles", () => {
   it("renames every preference file of the old prefix", () => {
     const root = profile();
-    writeFileSync(join(root, "openbot-setup-v2.json"), "setup");
-    writeFileSync(join(root, "openbot-browser-state-v1.json"), "state");
+    writeFileSync(join(root, "buildersbot-setup-v2.json"), "setup");
+    writeFileSync(join(root, "buildersbot-browser-state-v1.json"), "state");
 
     migrateLegacyPreferenceFiles(root);
 
     expect(readFileSync(join(root, "buildersbot-setup-v2.json"), "utf8")).toBe("setup");
     expect(readFileSync(join(root, "buildersbot-browser-state-v1.json"), "utf8")).toBe("state");
-    expect(existsSync(join(root, "openbot-setup-v2.json"))).toBe(false);
+    expect(existsSync(join(root, "buildersbot-setup-v2.json"))).toBe(false);
   });
 
   it("keeps a file that already exists under the new name", () => {
     const root = profile();
-    writeFileSync(join(root, "openbot-update-preference-v1.json"), "old");
+    writeFileSync(join(root, "buildersbot-update-preference-v1.json"), "old");
     writeFileSync(join(root, "buildersbot-update-preference-v1.json"), "current");
 
     migrateLegacyPreferenceFiles(root);

@@ -18,8 +18,8 @@ describe("support log", () => {
   });
 
   it("keeps only the origin and path of a request URL", () => {
-    expect(supportLogUrl("https://user:secret@api.openbot.run/v1/mobile-auth/session?ticket=abc#frag")).toBe(
-      "https://api.openbot.run/v1/mobile-auth/session",
+    expect(supportLogUrl("https://user:secret@api.buildersbot.culturabuilder.com/v1/mobile-auth/session?ticket=abc#frag")).toBe(
+      "https://api.buildersbot.culturabuilder.com/v1/mobile-auth/session",
     );
   });
 

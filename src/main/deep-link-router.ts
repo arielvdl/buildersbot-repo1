@@ -1,6 +1,6 @@
 /**
- * What a `buildersbot://` link, or the `openbot://` one of an installation made before the rename, or
- * a `https://openbot.run/...` link means.
+ * What a `buildersbot://` link, or the `buildersbot://` one of an installation made before the rename, or
+ * a `https://buildersbot.culturabuilder.com/...` link means.
  *
  * The scheme carries more than one kind of link now, so the decision of which kind a URL is has one
  * home rather than one `try` per entry point. `src/main/index.ts` has four ways a link arrives -

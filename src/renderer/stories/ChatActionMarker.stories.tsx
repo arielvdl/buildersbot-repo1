@@ -422,8 +422,8 @@ function siteMarker(
     operationId: `${action}-${status}`,
     siteId: hasPublishedSite ? "site-1" : null,
     title: "Launch page",
-    hostname: hasPublishedSite ? "launch-page-23456789ab.openbot.site" : null,
-    url: hasPublishedSite ? "https://launch-page-23456789ab.openbot.site" : null,
+    hostname: hasPublishedSite ? "launch-page-23456789ab.sites.buildersbot.culturabuilder.com" : null,
+    url: hasPublishedSite ? "https://launch-page-23456789ab.sites.buildersbot.culturabuilder.com" : null,
     timestamp,
   };
 }

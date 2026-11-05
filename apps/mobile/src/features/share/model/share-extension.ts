@@ -53,7 +53,7 @@ declare class ShareExtensionModule extends NativeModule {
 const native = requireOptionalNativeModule<ShareExtensionModule>("BuildersBotShareExtension");
 
 /** The App Group of the app and its extensions. `app.json` names the same group. */
-const APP_GROUP = "group.run.openbot.mobile";
+const APP_GROUP = "group.run.buildersbot.mobile";
 /** `plugins/share-extension/ShareExtensionData.swift` reads this file. */
 const DIRECTORY_FILE = "share-extension.json";
 /** `plugins/share-extension/ShareView.swift` reads the pictures from this folder. */

@@ -38,7 +38,7 @@ const MAX_JOBS = 200;
  * Builders Bot's own export skill, which a user adds to Hermes. It is never imported back. The old
  * name is the folder of a user who installed it before the rename.
  */
-const EXPORT_SKILL_NAMES = new Set(["buildersbot-export", "openbot-export"]);
+const EXPORT_SKILL_NAMES = new Set(["buildersbot-export", "buildersbot-export"]);
 /** Files a skill can run: anything in `scripts/` or `bin/`, and source files anywhere in the skill. */
 const SKILL_CODE =
   /^(?:scripts|bin)\/|\.(?:sh|bash|zsh|fish|py|js|mjs|cjs|ts|rb|pl|php|ps1|bat|cmd|exe|go|rs|lua|jar)$/iu;

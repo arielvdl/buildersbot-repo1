@@ -16,7 +16,7 @@ export const Route = createFileRoute("/v1/contact")({
         runApiResponse(
           Effect.gen(function* () {
             if (!isSameOriginReportRequest(request)) {
-              return apiError(403, "invalid_contact_origin", "Open the contact form on openbot.run.");
+              return apiError(403, "invalid_contact_origin", "Open the contact form on buildersbot.culturabuilder.com.");
             }
             const body = yield* readJsonObject(request);
             yield* sendContactMessage(requestContactMessageServices(), body, requestSourceIp(request));

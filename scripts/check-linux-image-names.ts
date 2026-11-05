@@ -1,7 +1,7 @@
 // Fails when the names that the Linux server image uses do not agree (docs/docker.md#build). The
 // image unpacks the Linux AppImage, and the server scripts unpack it again into the install folder:
 // they start `/opt/BuildersBot/app/buildersbot` and back up the user data folder of the app. A server
-// of the old name keeps `/opt/OpenBot`, which the migration still reads. A merge from upstream, or
+// of the old name keeps `/opt/BuildersBot`, which the migration still reads. A merge from upstream, or
 // scripts/builders-bot-rename.pl, can change one side only. Then the image does not start, or a
 // backup does not find the database.
 //

@@ -368,15 +368,15 @@ One-time setup:
 3. Keep the iOS distribution certificate and provisioning profiles configured in EAS. CI downloads
    these existing credentials. If they expire or need repair, update them interactively through
    EAS before retrying; the upload API key is not passed to the build step. Each target has its own
-   profile: the app, `ExpoWidgetsTarget` (`run.openbot.mobile.ExpoWidgetsTarget`),
-   `BuildersBotNotificationService` (`run.openbot.mobile.NotificationService`, the Notification Service
-   Extension) and `expo-sharing-extension` (`run.openbot.mobile.ShareExtension`, the share extension).
-   Each extension needs the App Group `group.run.openbot.mobile`. When a release adds a
+   profile: the app, `ExpoWidgetsTarget` (`run.buildersbot.mobile.ExpoWidgetsTarget`),
+   `BuildersBotNotificationService` (`run.buildersbot.mobile.NotificationService`, the Notification Service
+   Extension) and `expo-sharing-extension` (`run.buildersbot.mobile.ShareExtension`, the share extension).
+   Each extension needs the App Group `group.run.buildersbot.mobile`. When a release adds a
    target, set up its profile interactively once (`bunx eas-cli credentials -p ios`) before CI builds
    it. Keep the saved push key; do not let EAS make a new one.
 4. Keep the OpenPanel variables in EAS `production` with `Plain text` or `Sensitive` visibility.
    `Secret` variables are unavailable to this local build. Do not copy these values into source.
-5. Ensure App Store Connect has the app `run.openbot.mobile` and the intended TestFlight group.
+5. Ensure App Store Connect has the app `run.buildersbot.mobile` and the intended TestFlight group.
 
 After this workflow is merged into `main`, authenticate GitHub CLI with `gh auth login`, then run
 from the repository root:
@@ -440,7 +440,7 @@ One-time setup:
    same as in `release-ios`. The Google secret is the full JSON key of a Google Cloud service account.
 3. In the Google Cloud project of that service account, enable the Google Play Android Developer API.
    In Play Console, under **Users and permissions**, invite the service account email and give it
-   access to `run.openbot.mobile` with the release permissions for testing tracks.
+   access to `run.buildersbot.mobile` with the release permissions for testing tracks.
 4. Keep the Android upload keystore configured in EAS as the default build credentials. CI downloads
    it. Play App Signing keeps the app signing key; the EAS keystore is the upload key.
 5. Keep the OpenPanel variables in EAS `production`, as for iOS.
@@ -450,7 +450,7 @@ One-time setup:
    published release, Play accepts only draft releases: dispatch with `release_status` set to `draft`
    and roll out the release in Play Console.
 7. Commit `apps/mobile/google-services.json`, the Firebase file of the Android app
-   `run.openbot.mobile`. `app.config.js` adds it when it exists. Without it the build has no Firebase,
+   `run.buildersbot.mobile`. `app.config.js` adds it when it exists. Without it the build has no Firebase,
    and Android gets no notifications. The file has public identifiers only. The account service has
    the key that sends (`FCM_SERVICE_ACCOUNT` in [the account service](../auth-api/README.md)).
 
@@ -523,7 +523,7 @@ have the version in `apps/mobile/CHANGELOG.md`, and the file must be for that ve
 ## OpenPanel product analytics
 
 > **The app sends no product analytics and no error reports.** The destination is the OpenPanel service
-> that runs apart from the app (`analytics.openbot.run`), which Builders Bot does not control. The
+> that runs apart from the app (`analytics.buildersbot.culturabuilder.com`), which Builders Bot does not control. The
 > analytics folder still defines every event, but the module has no SDK client and no error report
 > queue, so it drops each event. The EAS variables below have no effect. The telemetry destination
 > guard (`bun run test:telemetry-guard`) fails when a client or transport comes back. The rest of this
@@ -531,13 +531,13 @@ have the version in `apps/mobile/CHANGELOG.md`, and the file must be for that ve
 > receive them.
 
 The client is the official OpenPanel React Native SDK with `expo-application`, with the endpoint fixed
-to `https://analytics.openbot.run/api`, the central analytics service. No analytics credentials are committed.
+to `https://analytics.buildersbot.culturabuilder.com/api`, the central analytics service. No analytics credentials are committed.
 
 ### Production configuration
 
-1. In the self-hosted OpenPanel dashboard, open the existing **Openbot** project used by desktop and the
+1. In the self-hosted OpenPanel dashboard, open the existing **Buildersbot** project used by desktop and the
    website (that is the project name in OpenPanel).
-   Do not create or select a separate **Openbot Mobile** project.
+   Do not create or select a separate **Buildersbot Mobile** project.
    Create a separate client for Builders Bot Mobile with **write** access only. Copy its Client ID and
    Client Secret. Do not use an organization/root client or a client with read access.
 2. In the Expo dashboard, open the **buildersbot** project → **Environment variables**, select the
@@ -640,7 +640,7 @@ Opt-out and process exit discard the buffer. Sign-out ends the previous account'
 new signed-out activity can be claimed by the next sign-in. There is no disk queue.
 Existing anonymous events already sent by older builds are not reassigned by this fix.
 If the mobile credentials belong to a different OpenPanel project, replace both production variables
-with credentials for a write-only client in **Openbot**, then ship a build or compatible update with
+with credentials for a write-only client in **Buildersbot**, then ship a build or compatible update with
 those values.
 
 Mobile schema generation 2 adds safe error diagnostics. Native error alerts and chat send errors

@@ -1,10 +1,10 @@
 // The environment variables of an installation, a script or a deployment made before the rename.
 //
 // Every variable is read under `BUILDERSBOT_`. A shell profile, a systemd unit or a deployment that
-// still sets `OPENBOT_` keeps working: the value is copied to the new name once, at start, and the
+// still sets `BUILDERSBOT_` keeps working: the value is copied to the new name once, at start, and the
 // old name is never read again after this point.
 
-const LEGACY_PREFIX = "OPENBOT_";
+const LEGACY_PREFIX = "BUILDERSBOT_";
 const PREFIX = "BUILDERSBOT_";
 
 type Environment = Record<string, string | undefined>;

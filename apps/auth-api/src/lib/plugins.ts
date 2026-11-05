@@ -162,7 +162,7 @@ export function pluginPath(slug: string): string {
 
 /**
  * Where a listing's own icon is asked for: this origin, never the developer's. The Worker route
- * behind it reads the address from the catalog, so a reader of a plugin page connects to openbot.run
+ * behind it reads the address from the catalog, so a reader of a plugin page connects to buildersbot.culturabuilder.com
  * and to nothing else. `app` names one of the listing's apps, which can carry its own icon.
  */
 export function pluginIconPath(slug: string, appId?: string): string {
@@ -182,7 +182,7 @@ export function pluginIndexUrl(siteUrl: string = BUILDERSBOT_SITE_URL): string {
  * The address a listing's link row is allowed to open, or `null` for one it is not.
  *
  * The catalog is a literal in this repository today, but `docs/plugin-distribution.md` says it
- * becomes a document fetched from openbot.run. A link row is the one place a listing's own strings
+ * becomes a document fetched from buildersbot.culturabuilder.com. A link row is the one place a listing's own strings
  * reach an `href`, so the scheme is checked here rather than trusted: `javascript:`, `data:` and
  * anything else that is not a web address never reaches the page, and a listing that carries one
  * loses that row instead of the page losing its meaning. `new URL` also rejects the whitespace and
@@ -262,7 +262,7 @@ export function matchesPluginTags(plugin: SitePlugin, selected: readonly string[
  * Whatever a listing shows, the site never renders the catalog's `iconUrl`: it points at the
  * developer's own servers, and drawing it here would make every visitor's browser call a third
  * party that PRIVACY.md does not describe. The marks the site does draw are its own bytes, served
- * from openbot.run like the rest of the page. The app is a different case and shows the real icon.
+ * from buildersbot.culturabuilder.com like the rest of the page. The app is a different case and shows the real icon.
  */
 export function pluginMonogram(name: string): string {
   return [...name.trim()][0]?.toUpperCase() ?? "?";

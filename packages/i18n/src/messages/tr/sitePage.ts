@@ -56,7 +56,7 @@ export const messages = {
   "sitePage.billing.cancelledBody": "Hiçbir ücret alınmadı. Builders Bot'a dönün.",
   "sitePage.report.pageTitle": "Barındırılan siteyi bildir — Builders Bot",
   "sitePage.report.title": "Barındırılan siteyi bildir",
-  "sitePage.report.intro": "Bir openbot.site adresindeki zararlı veya yasa dışı içerik hakkında bildirim gönderin.",
+  "sitePage.report.intro": "Bir sites.buildersbot.culturabuilder.com adresindeki zararlı veya yasa dışı içerik hakkında bildirim gönderin.",
   "sitePage.report.hostnameLabel": "Site adresi",
   "sitePage.report.hostnameMissing": "Site adresini girin",
   "sitePage.report.reasonLabel": "Neden",

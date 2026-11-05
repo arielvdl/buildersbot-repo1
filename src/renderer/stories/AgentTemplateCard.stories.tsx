@@ -5,7 +5,7 @@ import { renderAgentTemplateCard } from "../src/features/agent-templates/agent-t
 import { storyAgentTemplatePreview } from "../src/preview/agent-template-fixtures";
 
 /**
- * The PNG a publish uploads as the link preview of `openbot.run/agents/<id>`. The story draws it with
+ * The PNG a publish uploads as the link preview of `buildersbot.culturabuilder.com/agents/<id>`. The story draws it with
  * the same function the publish dialog uses and shows the result at its real size.
  */
 function CardPreview(props: { preview: () => Promise<AgentTemplatePreview> }) {

@@ -72,10 +72,10 @@ launchctl bootstrap system /Library/LaunchDaemons/app.buildersbot.host-manager.p
 for tenant in "$@"; do
   tenant_uid=$(id -u "$tenant")
   # A host that an earlier install set up still has the agent under the old product name.
-  launchctl bootout "gui/$tenant_uid/app.openbot.desktop.relaunch" >/dev/null 2>&1 || true
+  launchctl bootout "gui/$tenant_uid/app.buildersbot.desktop.relaunch" >/dev/null 2>&1 || true
   if ! launchctl bootstrap "gui/$tenant_uid" /Library/LaunchAgents/app.buildersbot.desktop.relaunch.plist; then
     echo "LaunchAgent for $tenant will load at the next GUI login."
   fi
 done
-rm -f /Library/LaunchAgents/app.openbot.desktop.relaunch.plist
+rm -f /Library/LaunchAgents/app.buildersbot.desktop.relaunch.plist
 ls -ld /Applications/Builders Bot.app "$ROOT"

@@ -30,8 +30,8 @@ export const RESERVED_MCP_SERVER_NAMES = [
   "buildersbot",
   "buildersbot_browser",
   // The same names of a configuration made before the rename. A user row still may not take them.
-  "openbot",
-  "openbot_browser",
+  "buildersbot",
+  "buildersbot_browser",
 ] as const;
 
 /**
@@ -46,7 +46,7 @@ export const RESERVED_MCP_SERVER_NAMES = [
 export const COMPUTER_USE_MCP_SERVER_NAME = "computer_use";
 export const COMPUTER_USE_MCP_SERVER_ID = "buildersbot-computer-use";
 /** The same id in an agent configuration written before the rename. */
-export const COMPUTER_USE_MCP_SERVER_ID_LEGACY = "openbot-computer-use";
+export const COMPUTER_USE_MCP_SERVER_ID_LEGACY = "buildersbot-computer-use";
 
 /** Whether a server id is the Computer Use driver, under either name. */
 export function isComputerUseMcpServerId(id: string): boolean {
@@ -60,7 +60,7 @@ export function isComputerUseMcpServerId(id: string): boolean {
  */
 export const GITHUB_CONNECTOR_MCP_SERVER_ID = "buildersbot-github";
 /** The same id in a configuration written before the rename. */
-export const GITHUB_CONNECTOR_MCP_SERVER_ID_LEGACY = "openbot-github";
+export const GITHUB_CONNECTOR_MCP_SERVER_ID_LEGACY = "buildersbot-github";
 
 /** Whether a server id is the built-in GitHub connection, under either name. */
 export function isGithubConnectorMcpServerId(id: string): boolean {

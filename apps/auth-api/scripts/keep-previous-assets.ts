@@ -15,7 +15,7 @@ import { Option, Schema } from "effect";
 const logger = createBuildersBotLogger("keep-previous-assets");
 
 const ASSET_HISTORY_FILE = "asset-history.json";
-const PRODUCTION_ORIGIN = "https://openbot.run";
+const PRODUCTION_ORIGIN = "https://buildersbot.culturabuilder.com";
 /** A tab that stays open for longer than this after a deploy reloads when it next loads code. */
 const RETENTION_MS = 24 * 60 * 60 * 1000;
 /** A Workers static asset version holds at most 20,000 files. One build has about 850. */

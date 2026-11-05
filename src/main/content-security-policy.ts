@@ -21,10 +21,10 @@ export function buildContentSecurityPolicy(
     // from an object URL of the bytes that the main process sent. Neither matches `default-src`.
     "media-src 'self' blob: buildersbot-attachment: buildersbot-remote-attachment:",
     // No analytics host: the app sends no product analytics and no failure reports.
-    `connect-src 'self' buildersbot-attachment: buildersbot-remote-attachment: ws://127.0.0.1:* wss://*.openbot.run wss://*.culturabuilder.com${selfHostedSignalSource}${developmentSources}`,
+    `connect-src 'self' buildersbot-attachment: buildersbot-remote-attachment: ws://127.0.0.1:* wss://*.buildersbot.culturabuilder.com wss://*.culturabuilder.com${selfHostedSignalSource}${developmentSources}`,
     "object-src 'none'",
     // The remote desktop viewer uses a loopback proxy in packaged apps too.
-    "frame-src 'self' buildersbot-attachment: buildersbot-remote-attachment: buildersbot-visual: buildersbot-remote-visual: https://*.openbot.run https://*.culturabuilder.com http://127.0.0.1:* http://localhost:*",
+    "frame-src 'self' buildersbot-attachment: buildersbot-remote-attachment: buildersbot-visual: buildersbot-remote-visual: https://*.buildersbot.culturabuilder.com https://*.culturabuilder.com http://127.0.0.1:* http://localhost:*",
     "base-uri 'none'",
   ].join("; ");
 }

@@ -125,7 +125,7 @@ import {
 import { apiKeyFormSpec, browserUserControlResult, commandText } from "./prompts";
 import { ROUTINE_NO_UPDATE_TOOL, ROUTINE_REPORT_FAILURE_TOOL } from "./routine-quiet-runs";
 import type { RoutineScheduler } from "./routine-scheduler";
-import { type BuildersBotToolResponse, openBotToolFailure, openBotToolResult } from "./routine-tools";
+import { type BuildersBotToolResponse, buildersBotToolFailure, buildersBotToolResult } from "./routine-tools";
 import {
   captureScreenToolSchema,
   type ScreenCaptureFailed,
@@ -196,7 +196,7 @@ const MARKETPLACE_APP_IDS: readonly string[] = [
 
 /** The reason says what to grant or to correct, and holds no screen content. */
 function captureFailure(failure: ScreenCaptureFailed) {
-  return openBotToolFailure(failure.reason);
+  return buildersBotToolFailure(failure.reason);
 }
 
 export interface BuildersBotToolRouterHooks {
@@ -566,14 +566,14 @@ export class BuildersBotToolRouter {
                 this.#requireAgent(agentId);
                 result = discoverTools(params, granted);
               } catch {
-                client.respond(request.id, openBotToolFailure(sourceText("error.agent.toolRequestInvalid")));
+                client.respond(request.id, buildersBotToolFailure(sourceText("error.agent.toolRequestInvalid")));
                 return;
               }
               const signIns = yield* this.#searchSignIns(agentId, params);
               if (request.signal?.aborted || !client.running) return;
               client.respond(
                 request.id,
-                openBotToolResult(signIns.length > 0 ? { ...result, mcpServers: signIns } : result),
+                buildersBotToolResult(signIns.length > 0 ? { ...result, mcpServers: signIns } : result),
               );
               return;
             }
@@ -588,7 +588,7 @@ export class BuildersBotToolRouter {
               const granted = gatedAgentId ? yield* this.#grantedNamespaces(gatedAgentId, params) : new Set<string>();
               const resolved = resolveDeferredTool(params, granted);
               if (!resolved) {
-                client.respond(request.id, openBotToolFailure(sourceText("error.agent.toolRequestInvalid")));
+                client.respond(request.id, buildersBotToolFailure(sourceText("error.agent.toolRequestInvalid")));
                 return;
               }
               params = resolved;
@@ -600,13 +600,13 @@ export class BuildersBotToolRouter {
           ) {
             const scope = this.#conversation.historyScope(params.threadId, client);
             if (!scope || this.#channels.store.channelForThread(scope.threadId)) {
-              client.respond(request.id, openBotToolFailure(sourceText("error.agent.historyUnavailable")));
+              client.respond(request.id, buildersBotToolFailure(sourceText("error.agent.historyUnavailable")));
               return;
             }
             const result = yield* this.#history.call(scope.agentId, scope.threadId, params.tool, params.arguments).pipe(
-              Effect.catch(() => Effect.succeed(openBotToolFailure(sourceText("error.agent.historyUnavailable")))),
+              Effect.catch(() => Effect.succeed(buildersBotToolFailure(sourceText("error.agent.historyUnavailable")))),
               Effect.catchDefect(() =>
-                Effect.succeed(openBotToolFailure(sourceText("error.agent.historyUnavailable"))),
+                Effect.succeed(buildersBotToolFailure(sourceText("error.agent.historyUnavailable"))),
               ),
             );
             const currentScope = this.#conversation.historyScope(params.threadId, client);
@@ -615,7 +615,7 @@ export class BuildersBotToolRouter {
                 request.id,
                 currentScope?.threadId === scope.threadId
                   ? result
-                  : openBotToolFailure(sourceText("error.agent.historyUnavailable")),
+                  : buildersBotToolFailure(sourceText("error.agent.historyUnavailable")),
               );
             return;
           }
@@ -776,7 +776,7 @@ export class BuildersBotToolRouter {
                 const message = this.#hooks.redactMcp(profileToolErrorMessage(error));
                 if (!(error instanceof z.ZodError))
                   logger.warn("An Builders Bot tool failed.", { tool, error: message });
-                return openBotToolFailure(message);
+                return buildersBotToolFailure(message);
               });
             const correctable = PROFILE_TOOL_NAMES.has(tool) || tool === "attach_files_to_response";
             // An own outside tool: the router's record says whether it ran, and a resumed turn that
@@ -793,7 +793,7 @@ export class BuildersBotToolRouter {
                 if (!toolRequest.signal?.aborted && client.running)
                   client.respond(
                     toolRequest.id,
-                    openBotToolResult({
+                    buildersBotToolResult({
                       alreadyDone: true,
                       tool: own,
                       instruction:
@@ -864,7 +864,7 @@ export class BuildersBotToolRouter {
     const agentId = this.#conversation.agentForThread(params.threadId);
     if (!agentId) throw new Error("The calling Builders Bot agent is unknown.");
     const tools = this.#hubConnections;
-    if (!tools) return openBotToolFailure("Connections are not available on this Builders Bot server.");
+    if (!tools) return buildersBotToolFailure("Connections are not available on this Builders Bot server.");
     const publicParams = { ...params, threadId: this.#conversation.publicThreadId(agentId, params.threadId) };
     const ask = (reason: string) =>
       this.#attention
@@ -923,7 +923,7 @@ export class BuildersBotToolRouter {
    * person answers or the turn ends. The agent can correct a refused block, so it gets the reason.
    */
   #askUi(client: AgentClient, request: AppServerRequest, params: DynamicToolCallParams): void {
-    const refuse = (message: string) => client.respond(request.id, openBotToolFailure(message));
+    const refuse = (message: string) => client.respond(request.id, buildersBotToolFailure(message));
     const parsed = askUiToolSchema.safeParse(params.arguments);
     if (!parsed.success) {
       refuse(`${z.prettifyError(parsed.error)}\nCorrect the arguments and retry.`);
@@ -955,42 +955,42 @@ export class BuildersBotToolRouter {
     const agentId = this.#conversation.agentForThread(params.threadId);
     if (!agentId) throw new Error("The calling Builders Bot agent is unknown.");
     const apiKeys = this.#apiKeys;
-    if (!apiKeys) return openBotToolFailure("This Builders Bot server cannot save API keys.");
+    if (!apiKeys) return buildersBotToolFailure("This Builders Bot server cannot save API keys.");
     const failed = (failure: { cause: unknown }) =>
       Effect.succeed(
-        openBotToolFailure(
+        buildersBotToolFailure(
           failure.cause instanceof Error ? failure.cause.message : sourceText("error.backend.apiKeySaveFailed"),
         ),
       );
     if (params.tool === "list_api_keys")
       return yield* apiKeys.list(agentId).pipe(
-        Effect.map((keys) => openBotToolResult({ keys })),
+        Effect.map((keys) => buildersBotToolResult({ keys })),
         Effect.catch(failed),
       );
     if (params.tool === "remove_api_key") {
       const parsed = removeApiKeyToolSchema.safeParse(params.arguments);
       if (!parsed.success)
-        return openBotToolFailure(`${z.prettifyError(parsed.error)}\nCorrect the arguments and retry.`);
+        return buildersBotToolFailure(`${z.prettifyError(parsed.error)}\nCorrect the arguments and retry.`);
       return yield* apiKeys.remove(agentId, parsed.data.name).pipe(
         Effect.map((removed) =>
-          openBotToolResult({ status: removed ? "removed" : "not_found", name: parsed.data.name }),
+          buildersBotToolResult({ status: removed ? "removed" : "not_found", name: parsed.data.name }),
         ),
         Effect.catch(failed),
       );
     }
     const parsed = requestApiKeyToolSchema.safeParse(params.arguments);
     if (!parsed.success)
-      return openBotToolFailure(`${z.prettifyError(parsed.error)}\nCorrect the arguments and retry.`);
+      return buildersBotToolFailure(`${z.prettifyError(parsed.error)}\nCorrect the arguments and retry.`);
     // A key that the Vault has is used as it is: a copy for this agent would not follow a change in the Vault.
     const keys = yield* apiKeys.list(agentId).pipe(Effect.catch(() => Effect.succeed<SavedApiKey[]>([])));
     const vaultKey = keys.find((key) => key.name === parsed.data.name && key.source === "vault");
-    if (vaultKey) return openBotToolResult({ status: "saved", ...vaultKey });
+    if (vaultKey) return buildersBotToolResult({ status: "saved", ...vaultKey });
     if (this.#messaging.store.linkForThread(this.#conversation.publicThreadId(agentId, params.threadId)))
-      return openBotToolFailure(
+      return buildersBotToolFailure(
         "request_api_key does not work in a Slack, Discord or Telegram chat. Ask the user to give you the key in Builders Bot.",
       );
     const spec = apiKeyFormSpec(parsed.data);
-    if (!spec) return openBotToolFailure("Builders Bot could not show this form. Use a shorter title and retry.");
+    if (!spec) return buildersBotToolFailure("Builders Bot could not show this form. Use a shorter title and retry.");
     this.#attention.surfaceUiBlock(client, request, {
       blockId: randomUUID(),
       spec,
@@ -1005,7 +1005,7 @@ export class BuildersBotToolRouter {
    * person who is away.
    */
   #acknowledgeRequest(client: AgentClient, request: AppServerRequest, params: DynamicToolCallParams): void {
-    const refuse = (message: string) => client.respond(request.id, openBotToolFailure(message));
+    const refuse = (message: string) => client.respond(request.id, buildersBotToolFailure(message));
     const agentId = this.#conversation.agentForThread(params.threadId);
     const agent = agentId ? this.#store.list().find((candidate) => candidate.id === agentId) : undefined;
     if (!agent || !agentQuickAcknowledgementEnabled(agent, this.#store.agentDefaults())) {
@@ -1137,7 +1137,7 @@ export class BuildersBotToolRouter {
         });
       return yield* Effect.gen({ self: this }, function* () {
         if (!this.#localSkillTools) throw new Error("Local skill tools are unavailable.");
-        const result = openBotToolResult(
+        const result = buildersBotToolResult(
           yield* runLocalSkillTool(
             this.#localSkillTools(),
             senderAgentId,
@@ -1190,7 +1190,7 @@ export class BuildersBotToolRouter {
       // Only the agent that answers a platform conversation, in that conversation's own thread.
       const link = this.#messaging.store.linkForThread(executionThreadId);
       if (!link || link.agentId !== senderAgentId)
-        return openBotToolFailure(
+        return buildersBotToolFailure(
           "Messaging tools work only in a turn that answers a Slack, Discord or Telegram message.",
         );
       return yield* this.#messaging.tool(link, params.turnId, params.callId, params.tool, params.arguments);
@@ -1198,7 +1198,7 @@ export class BuildersBotToolRouter {
     const channelId = this.#channels.store.channelForThread(executionThreadId);
     if (channelId && (params.tool.startsWith("channel_") || params.tool === "send_message")) {
       if (params.tool === "send_message") throw new Error("Use channel_assign or channel_transfer for channel work.");
-      return openBotToolResult(
+      return buildersBotToolResult(
         yield* this.#channels.tool(
           channelId,
           senderAgentId,
@@ -1230,7 +1230,7 @@ export class BuildersBotToolRouter {
     }
 
     if (params.tool === "list_sites") {
-      return openBotToolResult(yield* this.#hostedSites.listSites());
+      return buildersBotToolResult(yield* this.#hostedSites.listSites());
     }
 
     if (isHostedSiteMutationTool(params.tool)) throw new Error("Hosted site changes require user approval.");
@@ -1281,7 +1281,7 @@ export class BuildersBotToolRouter {
             ...(openWaits.has(agent.id) ? { openWaits: openWaits.get(agent.id) } : {}),
           };
         });
-      return openBotToolResult({ agents });
+      return buildersBotToolResult({ agents });
     }
 
     if (params.tool === "list_models") {
@@ -1326,13 +1326,13 @@ export class BuildersBotToolRouter {
     if (params.tool === "start_new_chat") {
       const agent = this.#store.list().find((candidate) => candidate.id === senderAgentId);
       if (!agent || !agentNewChatAllowed(agent, this.#store.agentDefaults()))
-        return openBotToolFailure(
+        return buildersBotToolFailure(
           "The user has not allowed you to start a new chat. Ask the user to allow it in your settings, or to start a new chat there.",
         );
       if (agent.threadId !== this.#conversation.publicThreadId(senderAgentId, params.threadId))
-        return openBotToolFailure("You can start a new chat only from your own chat, not from a task or a channel.");
+        return buildersBotToolFailure("You can start a new chat only from your own chat, not from a task or a channel.");
       this.#hooks.requestNewChat(senderAgentId);
-      return openBotToolResult({
+      return buildersBotToolResult({
         status: "requested",
         note: "The new chat starts when this turn ends and your queue is empty. A queued message that runs first ends the request. Finish your answer now.",
       });
@@ -1340,8 +1340,8 @@ export class BuildersBotToolRouter {
 
     if (params.tool === ROUTINE_NO_UPDATE_TOOL) {
       const outcome = this.#hooks.requestNoUpdate(senderAgentId, executionThreadId, params.turnId);
-      if (outcome === null) return openBotToolFailure("Use this tool only in a routine run.");
-      return openBotToolResult(
+      if (outcome === null) return buildersBotToolFailure("Use this tool only in a routine run.");
+      return buildersBotToolResult(
         outcome === "quiet"
           ? { status: "quiet", note: "This run ends without a message or a notification. End your turn now." }
           : { status: "shown", note: "Someone waits for this answer. Report the result as usual." },
@@ -1351,8 +1351,8 @@ export class BuildersBotToolRouter {
     if (params.tool === ROUTINE_REPORT_FAILURE_TOOL) {
       const { reason } = routineReportFailureToolSchema.parse(params.arguments ?? {});
       if (!this.#hooks.reportRoutineFailure(senderAgentId, params.turnId, reason))
-        return openBotToolFailure("Use this tool only in a routine run.");
-      return openBotToolResult({ status: "failed", note: "This run ends as failed. Give your answer as usual." });
+        return buildersBotToolFailure("Use this tool only in a routine run.");
+      return buildersBotToolResult({ status: "failed", note: "This run ends as failed. Give your answer as usual." });
     }
 
     const sidebarResult = yield* handleSidebarTool(
@@ -1407,7 +1407,7 @@ export class BuildersBotToolRouter {
       const args = params.arguments;
       if (!isRecord(args) || !isString(args.app)) throw new Error("app must be a Marketplace app slug.");
       if (!MARKETPLACE_APP_IDS.includes(args.app)) {
-        return openBotToolResult({ status: "not_found", app: args.app, apps: MARKETPLACE_APP_IDS });
+        return buildersBotToolResult({ status: "not_found", app: args.app, apps: MARKETPLACE_APP_IDS });
       }
       this.#postSystemCard(senderAgentId, executionThreadId, params.turnId, {
         itemType: marketplaceSuggestionItemType({ appId: args.app }),
@@ -1415,7 +1415,7 @@ export class BuildersBotToolRouter {
         eventType: "marketplace.suggested",
         detail: { appId: args.app },
       });
-      return openBotToolResult({ status: "suggested", app: args.app });
+      return buildersBotToolResult({ status: "suggested", app: args.app });
     }
 
     if (params.tool === "react_to_user_message") return yield* this.#react(params, senderAgentId);
@@ -1435,13 +1435,13 @@ export class BuildersBotToolRouter {
   ) {
     // The agent can correct its page, so it gets the reason. The reason does not repeat the page.
     const parsed = htmlRenderToolSchema.safeParse(params.arguments, { reportInput: true });
-    if (!parsed.success) return openBotToolFailure(profileToolErrorMessage(parsed.error));
+    if (!parsed.success) return buildersBotToolFailure(profileToolErrorMessage(parsed.error));
     const args = parsed.data;
     const messageId = visualReplyMessageId(params.threadId, params.turnId, params.callId);
     if (
       this.#conversation.ensureSnapshot(senderAgentId, executionThreadId).messages.some(({ id }) => id === messageId)
     ) {
-      return openBotToolResult({ status: "shown", messageId });
+      return buildersBotToolResult({ status: "shown", messageId });
     }
     yield* this.#addGeneratedMessage({
       agentId: senderAgentId,
@@ -1458,7 +1458,7 @@ export class BuildersBotToolRouter {
       eventType: "response.visual-added",
       detail: (attachmentId) => ({ turnId: params.turnId, messageId, attachmentId }),
     });
-    return openBotToolResult({ status: "shown", messageId });
+    return buildersBotToolResult({ status: "shown", messageId });
   });
 
   /**
@@ -1523,11 +1523,11 @@ export class BuildersBotToolRouter {
     params: DynamicToolCallParams,
   ) {
     const parsed = htmlPreviewToolSchema.safeParse(params.arguments, { reportInput: true });
-    if (!parsed.success) return openBotToolFailure(profileToolErrorMessage(parsed.error));
+    if (!parsed.success) return buildersBotToolFailure(profileToolErrorMessage(parsed.error));
     const args = parsed.data;
     const preview = this.#visualPreview;
     if (!preview)
-      return openBotToolFailure("This Builders Bot cannot draw a page. Call html_render without a preview.");
+      return buildersBotToolFailure("This Builders Bot cannot draw a page. Call html_render without a preview.");
     return yield* preview
       .capture({
         html: args.html,
@@ -1544,7 +1544,7 @@ export class BuildersBotToolRouter {
             ],
           }),
         ),
-        Effect.catchTag("ChatVisualPreviewFailed", (failure) => Effect.succeed(openBotToolFailure(failure.reason))),
+        Effect.catchTag("ChatVisualPreviewFailed", (failure) => Effect.succeed(buildersBotToolFailure(failure.reason))),
       );
   });
 
@@ -1560,28 +1560,28 @@ export class BuildersBotToolRouter {
   ) {
     const agentId = this.#conversation.agentForThread(params.threadId);
     const agent = agentId ? this.#hooks.listAgents().find((candidate) => candidate.id === agentId) : undefined;
-    if (!agent) return openBotToolFailure(sourceText("error.agent.toolRequestInvalid"));
-    if (!agentComputerUseEnabled(agent)) return openBotToolFailure(sourceText("error.agent.screenCaptureOff"));
+    if (!agent) return buildersBotToolFailure(sourceText("error.agent.toolRequestInvalid"));
+    if (!agentComputerUseEnabled(agent)) return buildersBotToolFailure(sourceText("error.agent.screenCaptureOff"));
     const host = this.#screenCapture;
-    if (!host) return openBotToolFailure(sourceText("error.agent.screenCaptureUnavailable"));
+    if (!host) return buildersBotToolFailure(sourceText("error.agent.screenCaptureUnavailable"));
     const threadId = this.#conversation.publicThreadId(agent.id, params.threadId);
     // A Slack, Discord or Telegram link sends each agent attachment of the turn to the platform. The
     // screen of this computer must stay on this computer.
     if (this.#messaging.store.linkForThread(threadId)) {
-      return openBotToolFailure(sourceText("error.agent.screenCaptureShared"));
+      return buildersBotToolFailure(sourceText("error.agent.screenCaptureShared"));
     }
     // A channel shows the image to each member who reads it, so each capture asks, with Full access too.
     const channelId = this.#channels.store.channelForThread(threadId);
     if (params.tool === "list_capture_sources") {
       const sources = yield* Effect.result(host.listSources());
-      return Result.isFailure(sources) ? captureFailure(sources.failure) : openBotToolResult(sources.success);
+      return Result.isFailure(sources) ? captureFailure(sources.failure) : buildersBotToolResult(sources.success);
     }
     const parsed = captureScreenToolSchema.safeParse(params.arguments, { reportInput: true });
-    if (!parsed.success) return openBotToolFailure(profileToolErrorMessage(parsed.error));
+    if (!parsed.success) return buildersBotToolFailure(profileToolErrorMessage(parsed.error));
     const capture = parsed.data;
     const messageId = responseAttachmentMessageId(params.threadId, params.turnId, params.callId);
     if (this.#conversation.ensureSnapshot(agent.id, threadId).messages.some(({ id }) => id === messageId)) {
-      return openBotToolResult({ status: "shown", messageId });
+      return buildersBotToolResult({ status: "shown", messageId });
     }
     const target = yield* this.#captureApprovalReason(host, capture);
     if (typeof target !== "string") return target;
@@ -1607,7 +1607,7 @@ export class BuildersBotToolRouter {
       },
       { alwaysAsk: channelId !== null },
     );
-    if (decision !== "accept") return openBotToolFailure(sourceText("error.agent.screenCaptureDeclined"));
+    if (decision !== "accept") return buildersBotToolFailure(sourceText("error.agent.screenCaptureDeclined"));
     const image = yield* Effect.result(host.capture(capture));
     if (Result.isFailure(image)) return captureFailure(image.failure);
     return yield* this.#showCapture(agent.id, threadId, params, messageId, image.success);
@@ -1627,7 +1627,7 @@ export class BuildersBotToolRouter {
   ) {
     const agentId = this.#conversation.agentForThread(request.params.threadId);
     const chrome = this.#chromeTabs;
-    if (!agentId || !chrome?.enabled()) return openBotToolFailure(sourceText("error.agent.toolRequestInvalid"));
+    if (!agentId || !chrome?.enabled()) return buildersBotToolFailure(sourceText("error.agent.toolRequestInvalid"));
     const origin = this.#chromeOrigin(agentId, request.params);
     const threadId = this.#conversation.publicThreadId(agentId, request.params.threadId);
     const requested = { ...request.params, threadId, ownerAgentId: agentId };
@@ -1720,7 +1720,7 @@ export class BuildersBotToolRouter {
     const agentId = this.#conversation.agentForThread(params.threadId);
     const servers = this.#mcpServers;
     if (!agentId || !servers || !isMcpServerTool(params.tool))
-      return openBotToolFailure(sourceText("error.agent.toolRequestInvalid"));
+      return buildersBotToolFailure(sourceText("error.agent.toolRequestInvalid"));
     const threadId = this.#conversation.publicThreadId(agentId, params.threadId);
     return yield* handleMcpServerTool(servers, {
       tool: params.tool,
@@ -1858,13 +1858,13 @@ export class BuildersBotToolRouter {
     const sources = listed.success;
     if (capture.target === "window") {
       const window = sources.windows.find(({ id }) => id === capture.windowId);
-      if (!window) return openBotToolFailure(sourceText("error.agent.screenCaptureWindowMissing"));
+      if (!window) return buildersBotToolFailure(sourceText("error.agent.screenCaptureWindowMissing"));
       return sourceText("status.agent.screenCaptureWindow", { name: window.name });
     }
     const display = capture.displayId
       ? sources.displays.find(({ id }) => id === capture.displayId)
       : sources.displays.find(({ primary }) => primary);
-    if (capture.displayId && !display) return openBotToolFailure(sourceText("error.agent.screenCaptureDisplayMissing"));
+    if (capture.displayId && !display) return buildersBotToolFailure(sourceText("error.agent.screenCaptureDisplayMissing"));
     return display?.name
       ? sourceText("status.agent.screenCaptureDisplay", { name: display.name })
       : sourceText("status.agent.screenCaptureScreen");
@@ -2057,7 +2057,7 @@ export class BuildersBotToolRouter {
       if (!sender) throw new Error("The calling agent no longer exists.");
       const target = this.#requireAgent(agentId);
       if (widensAgentSettings(target, access, computerUse)) {
-        return openBotToolFailure(sourceText("error.agent.onlyUserWidensSettings"));
+        return buildersBotToolFailure(sourceText("error.agent.onlyUserWidensSettings"));
       }
       // Checked before anything is written, so a model the provider does not list leaves the name
       // and every other field of the same call unchanged.
@@ -2080,7 +2080,7 @@ export class BuildersBotToolRouter {
           ? undefined
           : requestedBackupModels(backupModels, this.#hooks.listModels(), this.#hooks.providerAccounts, own);
       if (widensBackupModels(target, senderAgentId, backups)) {
-        return openBotToolFailure(sourceText("error.agent.onlyUserWidensBackups"));
+        return buildersBotToolFailure(sourceText("error.agent.onlyUserWidensBackups"));
       }
       const image =
         avatarPath === undefined
@@ -2159,7 +2159,7 @@ export class BuildersBotToolRouter {
       const snapshot = this.#conversation.ensureSnapshot(senderAgentId, params.threadId);
       this.#mailboxSync.syncMailboxMessages(snapshot);
       this.#conversation.emitConversation(snapshot);
-      return openBotToolResult({ status: "reacted", messageId: delivery.delivery.id, emoji: args.emoji });
+      return buildersBotToolResult({ status: "reacted", messageId: delivery.delivery.id, emoji: args.emoji });
     },
     Effect.catchDefect((cause) => Effect.fail(new ToolOperationFailed({ cause }))),
     Effect.uninterruptible,

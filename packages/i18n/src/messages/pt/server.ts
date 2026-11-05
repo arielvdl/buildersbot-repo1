@@ -258,7 +258,7 @@ export const messages = {
   "server.settings.storageDescription": "Veja o que o Builders Bot mantém no disco deste servidor e libere espaço.",
   "server.settings.hostedSitesTitle": "Sites",
   "server.settings.hostedSitesDescription":
-    "Os sites estáticos que os agentes deste servidor publicaram em openbot.site.",
+    "Os sites estáticos que os agentes deste servidor publicaram em sites.buildersbot.culturabuilder.com.",
   "server.settings.importTitle": "Importar",
   "server.settings.importDescription": "Mova seus agentes do Grok Bot ou do Hermes Agent para este servidor.",
   "server.settings.transferTitle": "Transferência",

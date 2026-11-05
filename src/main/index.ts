@@ -1012,7 +1012,7 @@ async function presentApplication(): Promise<void> {
       logger.warn("Unable to register the buildersbot:// scheme. Invitation links will not open Builders Bot.");
     }
     // A link made before the rename still opens this app.
-    app.setAsDefaultProtocolClient("openbot");
+    app.setAsDefaultProtocolClient("buildersbot");
   }
 }
 

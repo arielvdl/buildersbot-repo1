@@ -16,7 +16,7 @@ export const Route = createFileRoute("/guides/$slug")({
   loader: ({ params }) => {
     // The guide was published under the earlier product name. A 308 keeps saved links and search
     // results on the page that replaced it.
-    if (params.slug === "openbot-hosted-servers") {
+    if (params.slug === "buildersbot-hosted-servers") {
       throw redirect({ to: "/guides/$slug", params: { slug: "buildersbot-hosted-servers" }, statusCode: 308 });
     }
     if (params.slug === "write-a-guide-for-buildersbot") {

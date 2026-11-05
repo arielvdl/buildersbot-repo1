@@ -11,7 +11,7 @@ import {
   updateAgentsToolSchema,
   widensAgentSettings,
 } from "./profile-tools";
-import { type BuildersBotToolResponse, openBotToolResult } from "./routine-tools";
+import { type BuildersBotToolResponse, buildersBotToolResult } from "./routine-tools";
 import { ToolOperationFailed, toolStep } from "./tool-operation";
 
 const logger = createBuildersBotLogger("update-agents-tool");
@@ -93,7 +93,7 @@ export const handleUpdateAgentsTool = Effect.fn("UpdateAgentsTool.handle")(
       ),
     );
     const updatedCount = results.filter((result) => result.ok).length;
-    return openBotToolResult({ updated: updatedCount, failed: results.length - updatedCount, results });
+    return buildersBotToolResult({ updated: updatedCount, failed: results.length - updatedCount, results });
   },
   Effect.catchDefect((cause) => Effect.fail(new ToolOperationFailed({ cause }))),
 );

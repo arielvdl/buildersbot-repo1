@@ -41,7 +41,7 @@ was older than #1520. It had no `/v1/webhooks` route and refused webhook-only in
 First read `commit` from the public health route:
 
 ```sh
-curl -fsS https://signal.openbot.run/health/live
+curl -fsS https://signal.buildersbot.culturabuilder.com/health/live
 ```
 
 If `commit` is missing (a build from before this field) or `unknown` (built without
@@ -74,11 +74,11 @@ changes that are live now.
   A new `hello` field or a new public route that released clients use needs this Signal before those
   clients ship.
 - **Account service.** A new Signal call to the Worker (for example `/v2/remote/<x>-route/...`) must
-  exist in the deployed Worker. An unauthenticated `POST https://api.openbot.run/<path>` gives 401
+  exist in the deployed Worker. An unauthenticated `POST https://api.buildersbot.culturabuilder.com/<path>` gives 401
   when the route exists and 404 when it does not.
 - **`remote/compose.yaml`.** A new variable with `:?` stops the start when the host file lacks it.
 - **`remote/api/Dockerfile`.** A new workspace package must be copied before `bun install`.
-- **`remote/nginx/signal.openbot.run.conf`.** The host uses its own copy at
+- **`remote/nginx/signal.buildersbot.culturabuilder.com.conf`.** The host uses its own copy at
   `/etc/nginx/conf.d/buildersbot-remote.conf`. A new `location` in the repository needs the same change on
   the host, after a backup, `nginx -t` and `systemctl reload nginx`. Without it, the request goes
   through `location /`, which has the default 1 MB body limit and writes the path to the access log.
@@ -120,8 +120,8 @@ Report the results of steps 1 to 3 and get approval. Then follow "Deployment pro
 
 - `docker inspect buildersbot-remote-remote-api-1 --format '{{.Image}} {{.State.Health.Status}}'` shows
   the new image and `healthy`.
-- `curl --fail https://signal.openbot.run/health/ready` succeeds.
-- `curl --fail https://signal.openbot.run/health/live` shows `commit` equal to the tag commit (tags
+- `curl --fail https://signal.buildersbot.culturabuilder.com/health/ready` succeeds.
+- `curl --fail https://signal.buildersbot.culturabuilder.com/health/live` shows `commit` equal to the tag commit (tags
   from before this field show no `commit`; use the checksums then).
 - The container `sha256sum` of `/app/remote/api/src/*.ts` matches the tag.
 - `docker logs --since <deploy time> buildersbot-remote-remote-api-1 2>&1 | grep -iE 'error|disabled|off|telegram|discord|slack'`
@@ -132,7 +132,7 @@ Report the results of steps 1 to 3 and get approval. Then follow "Deployment pro
 Then deploy the same tag to the standby on the ssh host `signal2` (see "Standby Signal" in the
 deployment document) with the same steps, `before-<tag>` image and rollback. Do the step 3 key
 comparison against `signal2` too, and copy each added encrypted line into its host file. Make the
-same Nginx change there. `https://signal2.openbot.run/health/ready` must succeed, and `/health/live` must show
+same Nginx change there. `https://signal2.buildersbot.culturabuilder.com/health/ready` must succeed, and `/health/live` must show
 the tag commit.
 
 If a check fails, use the rollback commands of the deployment document with the `before-<tag>` image.

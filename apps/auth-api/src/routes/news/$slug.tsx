@@ -10,7 +10,7 @@ import { NEWS_COLLECTION } from "../../lib/news";
 function loadNewsArticle(slug: string): CollectionArticle {
   // The comparison was published as a news article under the earlier product name.
   // A 308 keeps saved links and search results on the page that replaced it.
-  if (slug === "openbot-vs-grokbot") {
+  if (slug === "buildersbot-vs-grokbot") {
     throw redirect({ to: "/compare/$slug", params: { slug: "grok-bot" }, statusCode: 308 });
   }
   const article = findArticle(NEWS_COLLECTION, slug);

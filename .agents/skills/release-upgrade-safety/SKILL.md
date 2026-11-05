@@ -128,7 +128,7 @@ a gate can be selected without opening anything:
 - **H. Signal** — no reference file.
   always triggered: an earlier release can have left Signal behind, so a range with no `remote/`
   change does not prove that Signal is current. Signal is not deployed by CI or by the release
-  workflow. Read `commit` from `curl -fsS https://signal.openbot.run/health/live`; if it is missing,
+  workflow. Read `commit` from `curl -fsS https://signal.buildersbot.culturabuilder.com/health/live`; if it is missing,
   `unknown`, or not a commit in this repository, the verdict is **needs a human**. Pass when
   `git diff --quiet <running commit> HEAD -- remote packages/contracts/src/signal-protocol`
   succeeds. Otherwise the verdict is **deploy Signal from the new tag** before the tag is pushed

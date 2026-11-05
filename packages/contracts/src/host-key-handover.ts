@@ -52,7 +52,7 @@ export function hostKeyHandoverStatementLegacy(
   handover: Pick<HostKeyHandover, "hostId" | "issuedAt" | "previousPublicKey" | "publicKey">,
 ): string {
   return JSON.stringify([
-    "openbot-host-key-handover-v1",
+    "buildersbot-host-key-handover-v1",
     handover.hostId,
     handover.issuedAt,
     handover.previousPublicKey,

@@ -32,7 +32,7 @@ const STORE_PAGES: Partial<Record<"ios" | "android", { readonly app: string; rea
 const storePage = () => STORE_PAGES[isIOS ? "ios" : "android"];
 
 /** The public changelog, for when the notes cannot load. */
-export const MOBILE_CHANGELOG_URL = "https://openbot.run/changelog?platform=mobile";
+export const MOBILE_CHANGELOG_URL = "https://buildersbot.culturabuilder.com/changelog?platform=mobile";
 const NOTES_TIMEOUT_MS = 10_000;
 // The notes of a version do not change after the store has it.
 const NOTES_STALE_MS = 10 * 60_000;

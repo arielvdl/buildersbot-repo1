@@ -2,7 +2,7 @@
 // both the migration and the tail of the latest schema.
 //
 // A browser profile is a named browser session on this computer. The id names the Chromium
-// partition (`persist:openbot-browser-profile-<id>`); the name is only a label, so a rename moves no
+// partition (`persist:buildersbot-browser-profile-<id>`); the name is only a label, so a rename moves no
 // data. Configuration, written directly. Agents point at a profile from their `agent_json`, so no
 // foreign key: a delete moves those agents to the shared session first. The hue is one of the agent
 // avatar hues (`AVATAR_HUES`); the profile's labels use its color.

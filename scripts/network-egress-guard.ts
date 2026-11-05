@@ -179,10 +179,11 @@ await check("the policy levels are the five of the plan, and a level 3 host is n
   if (levels !== "0,1,2,3,4") fail(`The levels are ${levels}, not 0,1,2,3,4.`);
   const wrong = TRANSITION.filter((entry) => entry.level !== 3 && entry.level !== 4);
   if (wrong.length > 0) fail(`Level 3 and 4 only in TRANSITION: ${wrong.map((entry) => entry.host).join(", ")}.`);
-  const openbot = classifyHost("api.openbot.run");
-  if (openbot?.level !== 3) fail("api.openbot.run is not level 3: the previous project's hosts must fail.");
-  const registry = classifyHost("ghcr.io/nightly-labs/openbot");
-  if (registry?.level !== 3) fail("ghcr.io/nightly-labs/openbot is not level 3: the specific path must beat ghcr.io.");
+  const upstreamRegistry = "ghcr.io/example-upstream/upstream";
+  const registry = classifyHost(upstreamRegistry);
+  if (registry?.level !== 3) fail(`${upstreamRegistry} is not level 3: the previous project's registry path must beat ghcr.io.`);
+  const ownRegistry = classifyHost("ghcr.io/nextlevelcommunity/buildersbot-repo1");
+  if (ownRegistry?.level !== 2) fail("ghcr.io/nextlevelcommunity/buildersbot-repo1 is not level 2.");
   const ours = classifyHost("signal.buildersbot.culturabuilder.com");
   if (ours?.level !== 0) fail("a culturabuilder.com subdomain is not level 0.");
   const provider = classifyHost("api.openai.com");

@@ -9,7 +9,7 @@ const tabs = [
   {
     id: "docs",
     title: "Builders Bot documentation",
-    url: "https://openbot.run/docs",
+    url: "https://buildersbot.culturabuilder.com/docs",
     loading: false,
     ownerThreadId: "chief",
     ownerAgentId: "chief",

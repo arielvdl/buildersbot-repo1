@@ -62,7 +62,7 @@ done
 
 [ -n "$RELEASES" ] || fail "The Builders Bot server install is not available in this version. Nothing was downloaded."
 
-[ "$(uname -s)" = Linux ] || fail "This install is for Linux. Download the desktop app at https://openbot.run."
+[ "$(uname -s)" = Linux ] || fail "This install is for Linux. Download the desktop app at https://buildersbot.culturabuilder.com."
 [ "$(id -u)" -eq 0 ] || fail "Run this with sudo."
 [ -d /run/systemd/system ] || fail "Builders Bot needs systemd."
 command -v apt-get >/dev/null || fail "Builders Bot needs Ubuntu 24.04 or a newer Ubuntu or Debian."
@@ -91,9 +91,9 @@ version=$(sed -n 's/^version: *//p' <<<"$manifest" | head -n 1)
 path=$(sed -n 's/^path: *//p' <<<"$manifest" | head -n 1)
 sha512=$(sed -n 's/^sha512: *//p' <<<"$manifest" | head -n 1)
 [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "The release manifest has no valid version."
-# A manifest written before the rename names `OpenBot-...`. Both are the same file.
+# A manifest written before the rename names `BuildersBot-...`. Both are the same file.
 case $path in
-  "Builders Bot-$version-$architecture.AppImage" | "OpenBot-$version-$architecture.AppImage") ;;
+  "Builders Bot-$version-$architecture.AppImage" | "BuildersBot-$version-$architecture.AppImage") ;;
   *) fail "The release manifest names another file." ;;
 esac
 [[ $sha512 =~ ^[A-Za-z0-9+/]{86}==$ ]] || fail "The release manifest has no valid SHA-512."

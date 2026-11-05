@@ -127,7 +127,7 @@ export function avatarObjectKey(userId: string, version: string): string {
 function avatarVersion(avatarUrl: string | null, expectedUserId: string): string | null {
   if (!avatarUrl) return null;
   try {
-    const url = new URL(avatarUrl, "https://api.openbot.run");
+    const url = new URL(avatarUrl, "https://api.buildersbot.culturabuilder.com");
     const match = url.pathname.match(/^\/v1\/avatars\/([^/]+)$/u);
     const userId = decodeURIComponent(match?.[1] ?? "");
     const version = url.searchParams.get("v") ?? "";

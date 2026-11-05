@@ -9,9 +9,9 @@
     "scheme": "buildersbot",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "run.openbot.mobile",
+      "bundleIdentifier": "run.buildersbot.mobile",
       "supportsTablet": true,
-      "associatedDomains": ["applinks:openbot.run"],
+      "associatedDomains": ["applinks:buildersbot.culturabuilder.com"],
       "infoPlist": {
         "NSLocalNetworkUsageDescription": "Allow Builders Bot to connect to your desktop during local development.",
         "NSHumanReadableCopyright": "Copyright 2026 CULTURA BUILDER EDUCACAO E TECNOLOGIA LTDA (CNPJ 62.995.760/0001-33).",
@@ -23,7 +23,7 @@
       "icon": "./assets/icons/app-icon.icon"
     },
     "android": {
-      "package": "run.openbot.mobile",
+      "package": "run.buildersbot.mobile",
       "icon": "./assets/icons/app-icon.png",
       "predictiveBackGestureEnabled": false,
       "permissions": ["android.permission.CAMERA"],
@@ -121,8 +121,8 @@
         {
           "ios": {
             "enabled": true,
-            "appGroupId": "group.run.openbot.mobile",
-            "extensionBundleIdentifier": "run.openbot.mobile.ShareExtension",
+            "appGroupId": "group.run.buildersbot.mobile",
+            "extensionBundleIdentifier": "run.buildersbot.mobile.ShareExtension",
             "activationRule": {
               "supportsText": true,
               "supportsWebUrlWithMaxCount": 1,
@@ -204,8 +204,8 @@
       [
         "expo-widgets",
         {
-          "bundleIdentifier": "run.openbot.mobile.ExpoWidgetsTarget",
-          "groupIdentifier": "group.run.openbot.mobile",
+          "bundleIdentifier": "run.buildersbot.mobile.ExpoWidgetsTarget",
+          "groupIdentifier": "group.run.buildersbot.mobile",
           "enablePushNotifications": true,
           "frequentUpdates": true
         }
@@ -214,8 +214,8 @@
         "./plugins/with-notification-service",
         {
           "targetName": "BuildersBotNotificationService",
-          "bundleIdentifier": "run.openbot.mobile.NotificationService",
-          "groupIdentifier": "group.run.openbot.mobile"
+          "bundleIdentifier": "run.buildersbot.mobile.NotificationService",
+          "groupIdentifier": "group.run.buildersbot.mobile"
         }
       ]
     ],
