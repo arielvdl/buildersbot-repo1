@@ -1348,7 +1348,7 @@ function signedBun(folder: string, name: string, identifier: string, identity: s
 }
 
 const TEAM_DESIGNATED =
-  'designated => identifier "app.buildersbot.desktop" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = ZTRDTUL87R';
+  'designated => identifier "app.buildersbot.desktop" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = HCT8F2D969';
 
 async function sectionD(peerAddon: string) {
   section = "D";
@@ -1379,7 +1379,7 @@ async function sectionD(peerAddon: string) {
       "an ad-hoc app, another identifier or another team has no channel, so the bridge stays off",
       packagedSigning(await designatedRequirement(adHoc)) === null &&
         packagedSigning(designated.replace("app.buildersbot.desktop", "app.buildersbot.other")) === null &&
-        packagedSigning(TEAM_DESIGNATED.replace("ZTRDTUL87R", "AAAAAAAAAA")) === null,
+        packagedSigning(TEAM_DESIGNATED.replace("HCT8F2D969", "AAAAAAAAAA")) === null,
     );
     check("the team's Developer ID reads as the store channel", packagedSigning(TEAM_DESIGNATED)?.channel === "store");
 

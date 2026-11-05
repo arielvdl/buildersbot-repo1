@@ -13,7 +13,7 @@ import { Schema } from "effect";
 
 /** The signed host inside the app bundle (`scripts/build-chrome-host.ts`). */
 const STORE_HOST_REQUIREMENT =
-  'anchor apple generic and certificate leaf[subject.OU] = "ZTRDTUL87R" and identifier "app.buildersbot.chrome-host"';
+  'anchor apple generic and certificate leaf[subject.OU] = "HCT8F2D969" and identifier "app.buildersbot.chrome-host"';
 
 /** The signing identifier of the host that `scripts/sign-local-macos.sh` puts in a locally signed app. */
 export const LOCAL_HOST_IDENTIFIER = "app.buildersbot.chrome-host-local";
@@ -137,7 +137,7 @@ export type PackagedSigning =
   | { readonly channel: "local"; readonly certificate: string };
 
 const TEAM_REQUIREMENT =
-  /^designated => identifier "app\.buildersbot\.desktop" and anchor apple generic and .*certificate leaf\[subject\.OU\] = "?ZTRDTUL87R"?$/mu;
+  /^designated => identifier "app\.buildersbot\.desktop" and anchor apple generic and .*certificate leaf\[subject\.OU\] = "?HCT8F2D969"?$/mu;
 const LOCAL_REQUIREMENT =
   /^designated => identifier "app\.buildersbot\.desktop" and certificate leaf = H"([0-9a-f]{40})"$/mu;
 

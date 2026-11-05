@@ -41,7 +41,7 @@ Create the `release` environment in `nextlevelcommunity/buildersbot`, then add t
 - `MAC_PROVISIONING_PROFILE` — the base64-encoded Developer ID provisioning profile for
   `app.buildersbot.desktop`, with the `applinks:buildersbot.culturabuilder.com` entitlement.
 - `CSC_KEY_PASSWORD` — the application `.p12` export password.
-- `CSC_INSTALLER_LINK` — a base64-encoded **Developer ID Installer** `.p12` file for team `ZTRDTUL87R`.
+- `CSC_INSTALLER_LINK` — a base64-encoded **Developer ID Installer** `.p12` file for team `HCT8F2D969`.
 - `CSC_INSTALLER_KEY_PASSWORD` — the installer `.p12` export password.
 - `APPLE_ID` — the Apple Account used for notarization.
 - `APPLE_APP_SPECIFIC_PASSWORD` — a dedicated app-specific password for `notarytool`.
@@ -805,7 +805,7 @@ After verifying Builders Bot.app, the macOS job:
 3. compiles standalone ARM64 `host-manager` and `buildersbot-host` executables with Bun, and the native
    account helper with Swift; no target-machine runtime or compiler is required;
 4. signs all executables with **Developer ID Application**, hardened runtime and timestamp, and
-   checks their fixed identifiers and team `ZTRDTUL87R`;
+   checks their fixed identifiers and team `HCT8F2D969`;
 5. creates the fixed root:wheel package payload and signs the PKG with **Developer ID Installer**;
 6. expands it and rejects extra files, symlinks, unsafe modes/owners, version mismatches, changed
    installer scripts, unexpected destinations, or non-system dynamic runtime dependencies;

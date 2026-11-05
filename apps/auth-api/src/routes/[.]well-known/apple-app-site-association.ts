@@ -5,7 +5,7 @@ const APPLE_APP_SITE_ASSOCIATION = {
     apps: [],
     details: [
       {
-        appID: "ZTRDTUL87R.app.buildersbot.desktop",
+        appID: "HCT8F2D969.app.buildersbot.desktop",
         paths: ["/join"],
       },
       {

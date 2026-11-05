@@ -107,7 +107,7 @@ jobs:
             https://buildersbot.culturabuilder.com/.well-known/apple-app-site-association)"
           test "$association_status" = "200"
           tr -d '\r' < "$verification_dir/association.headers" | grep -Eiq '^content-type: application/json'
-          jq -e '.applinks.details == [{"appID":"ZTRDTUL87R.app.buildersbot.desktop","paths":["/join"]},{"appID":"ZTRDTUL87R.run.buildersbot.mobile","paths":["/join","/agents/*"]}]' \
+          jq -e '.applinks.details == [{"appID":"HCT8F2D969.app.buildersbot.desktop","paths":["/join"]},{"appID":"ZTRDTUL87R.run.buildersbot.mobile","paths":["/join","/agents/*"]}]' \
             "$verification_dir/association.json" >/dev/null
 
   host-signing:
@@ -402,14 +402,14 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.associated-domains:0' \
             "$RUNNER_TEMP/buildersbot-entitlements.plist" | grep -Fx 'applinks:buildersbot.culturabuilder.com'
           /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.team-identifier' \
-            "$RUNNER_TEMP/buildersbot-entitlements.plist" | grep -Fx 'ZTRDTUL87R'
+            "$RUNNER_TEMP/buildersbot-entitlements.plist" | grep -Fx 'HCT8F2D969'
           /usr/libexec/PlistBuddy -c 'Print :com.apple.security.device.audio-input' \
             "$RUNNER_TEMP/buildersbot-entitlements.plist" | grep -Fx 'true'
           /usr/libexec/PlistBuddy -c 'Print :com.apple.security.automation.apple-events' \
             "$RUNNER_TEMP/buildersbot-entitlements.plist" | grep -Fx 'true'
           plutil -extract NSUserActivityTypes.0 raw "$app_path/Contents/Info.plist" \
             | grep -Fx 'NSUserActivityTypeBrowsingWeb'
-          plutil -extract ElectronTeamID raw "$app_path/Contents/Info.plist" | grep -Fx 'ZTRDTUL87R'
+          plutil -extract ElectronTeamID raw "$app_path/Contents/Info.plist" | grep -Fx 'HCT8F2D969'
           spctl --assess --type execute --verbose=2 "$app_path"
           # `stapler` reads the ticket from Apple's ticket service. The connection to it can drop
           # (Error 68 in v0.38.1), so the check gets five attempts. It must pass to continue.

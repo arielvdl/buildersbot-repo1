@@ -10,7 +10,7 @@
 # HOST_INSTALLER_IDENTITY and host_signing_dir.
 
 umask 077
-test "$APPLE_TEAM_ID" = ZTRDTUL87R
+test "$APPLE_TEAM_ID" = HCT8F2D969
 host_signing_dir="$(mktemp -d "$RUNNER_TEMP/buildersbot-host-signing.XXXXXX")"
 export HOST_SIGNING_KEYCHAIN="$host_signing_dir/host.keychain-db"
 # `codesign --keychain` restricts which keychain is searched, it does not open one outside the
@@ -41,8 +41,8 @@ security import "$host_signing_dir/application.p12" -k "$HOST_SIGNING_KEYCHAIN" 
 security import "$host_signing_dir/installer.p12" -k "$HOST_SIGNING_KEYCHAIN" -P "$CSC_INSTALLER_KEY_PASSWORD" -T /usr/bin/productsign -T /usr/bin/pkgbuild >/dev/null
 security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$host_keychain_password" "$HOST_SIGNING_KEYCHAIN" >/dev/null
 security list-keychains -d user -s "$HOST_SIGNING_KEYCHAIN" ${host_previous_keychains[@]+"${host_previous_keychains[@]}"} >/dev/null
-export HOST_APPLICATION_IDENTITY="$(security find-identity -v -p codesigning "$HOST_SIGNING_KEYCHAIN" | sed -n 's/.*"\(Developer ID Application:.*(ZTRDTUL87R)\)".*/\1/p')"
-export HOST_INSTALLER_IDENTITY="$(security find-identity -v -p basic "$HOST_SIGNING_KEYCHAIN" | sed -n 's/.*"\(Developer ID Installer:.*(ZTRDTUL87R)\)".*/\1/p')"
+export HOST_APPLICATION_IDENTITY="$(security find-identity -v -p codesigning "$HOST_SIGNING_KEYCHAIN" | sed -n 's/.*"\(Developer ID Application:.*(HCT8F2D969)\)".*/\1/p')"
+export HOST_INSTALLER_IDENTITY="$(security find-identity -v -p basic "$HOST_SIGNING_KEYCHAIN" | sed -n 's/.*"\(Developer ID Installer:.*(HCT8F2D969)\)".*/\1/p')"
 test -n "$HOST_APPLICATION_IDENTITY" || { echo 'Developer ID Application identity missing.' >&2; exit 1; }
 test -n "$HOST_INSTALLER_IDENTITY" || { echo 'Developer ID Installer identity missing.' >&2; exit 1; }
 # Prove codesign can reach the identity before a caller spends minutes building binaries it cannot

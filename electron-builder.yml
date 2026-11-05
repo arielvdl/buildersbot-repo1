@@ -154,7 +154,7 @@ mac:
   darkModeSupport: true
   extendInfo:
     CFBundleIconName: Icon
-    ElectronTeamID: ZTRDTUL87R
+    ElectronTeamID: HCT8F2D969
     # Each process of the bundle registers with LaunchServices as a UI element, before its script runs.
     # The desktop app becomes a regular app with a Dock tile at its first line, and a server on this
     # computer becomes background-only (`setMacApplicationTypeAtStart`). Without this key, each start of

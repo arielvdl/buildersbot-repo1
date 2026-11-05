@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { HOST_MANAGER_DIRECTORY } from "../src/main/host-update-files";
 
-export const HOST_TEAM_ID = "ZTRDTUL87R";
+export const HOST_TEAM_ID = "HCT8F2D969";
 export const HOST_PACKAGE_ID = "app.buildersbot.host";
 export const HOST_DAEMON_PLIST = "/Library/LaunchDaemons/app.buildersbot.host-manager.plist";
 /** The label of the per-tenant Aqua agent. It follows the bundle identifier, as the file name does. */

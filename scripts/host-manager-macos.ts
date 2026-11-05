@@ -10,7 +10,7 @@ const exec = promisify(execFile);
 export const SHARED_APP = "/Applications/Builders Bot.app";
 const STAGING = "/Applications/.buildersbot-host-stage";
 const SIGNING_REQUIREMENT =
-  '=anchor apple generic and identifier "app.buildersbot.desktop" and certificate leaf[subject.OU] = "ZTRDTUL87R"';
+  '=anchor apple generic and identifier "app.buildersbot.desktop" and certificate leaf[subject.OU] = "HCT8F2D969"';
 
 export async function hostCommand(file: string, args: string[], timeout = 60_000): Promise<string> {
   const result = await exec(file, args, {

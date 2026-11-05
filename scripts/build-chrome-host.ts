@@ -4,7 +4,7 @@
  *
  *   bun scripts/build-chrome-host.ts --channel e2e --app-requirement 'cdhash H"…"'
  *   bun scripts/build-chrome-host.ts --channel dev
- *   bun scripts/build-chrome-host.ts --channel store --sign-identity "Developer ID Application: … (ZTRDTUL87R)"
+ *   bun scripts/build-chrome-host.ts --channel store --sign-identity "Developer ID Application: … (HCT8F2D969)"
  *   bun scripts/build-chrome-host.ts --channel local --sign-identity "Builder Studio Local Signing" \
  *     --app-requirement 'identifier "app.buildersbot.desktop" and certificate leaf = H"…"'
  *
@@ -14,7 +14,7 @@
  *
  * - `store`: needs the store extension ID (`EXTENSION_IDS.store`) and a Developer ID identity. It is
  *   signed with the hardened runtime and a timestamp, as `app.buildersbot.chrome-host`, and checks that
- *   the app on the socket is Builders Bot of team ZTRDTUL87R. The app's notarization then covers it.
+ *   the app on the socket is Builders Bot of team HCT8F2D969. The app's notarization then covers it.
  * - `local`: the local extension ID (`EXTENSION_IDS.local`), for an app that its owner signed with their
  *   own certificate (`scripts/sign-local-macos.sh`, which builds it). `--app-requirement` is the
  *   designated requirement of that signed app: its identifier and the hash of the certificate. It is
@@ -43,7 +43,7 @@ import {
 
 const ROOT = resolve(import.meta.dirname, "..");
 const SOURCE = join(ROOT, "native/chrome-host/main.swift");
-const APP_TEAM = "ZTRDTUL87R";
+const APP_TEAM = "HCT8F2D969";
 const APP_IDENTIFIER = "app.buildersbot.desktop";
 const STORE_APP_REQUIREMENT = `anchor apple generic and certificate leaf[subject.OU] = "${APP_TEAM}" and identifier "${APP_IDENTIFIER}"`;
 export const CHROME_HOST_SIGNING_IDENTIFIER = "app.buildersbot.chrome-host";
