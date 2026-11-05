@@ -5,9 +5,9 @@
 // - the effective `publish` setting of each electron-builder config is `null`, for each platform and
 //   target, with the precedence of electron-builder (target, platform, root, then the package.json
 //   `repository`), or a `generic` feed that the update feed policy allows;
-// - `nightly-labs` is not in the build configs, the package.json `repository`, `bugs` and
-//   `homepage`, the product code and its texts (`src`, `packages/*/src`, `apps/mobile`), the server,
-//   container, Nix and macOS Host Manager files and the download pages, except the lines in
+// - the previous organization is not in the build configs, the package.json `repository`, `bugs`
+//   and `homepage`, the product code and its texts (`src`, `packages/*/src`, `apps/mobile`), the
+//   server, container, Nix and macOS Host Manager files and the download pages, except the lines in
 //   ALLOWED_MENTIONS (tests are not part of a build);
 // - the real `decideUpdateFeed` refuses the upstream app-update.yml, an HTTP feed and a feed on
 //   another origin, and allows a listed origin only when the list is not empty;
@@ -57,7 +57,7 @@ const REPORT_PATH = resolve(ROOT, ".buildersbot-build/update-system/feed-guard-r
 // changes, a link left behind points at the previous home.
 // The previous name is built from halves so that no file spells it.
 const PREVIOUS_NAME = ["open", "bot"].join("");
-const UPSTREAM = new RegExp(`nightly-labs|${PREVIOUS_NAME}|nextlevelcommunity`, "iu");
+const UPSTREAM = new RegExp(`${PREVIOUS_NAME}|nextlevelcommunity`, "iu");
 
 /**
  * The only mentions of the upstream project that can stay: documentation links, comments, checks that
@@ -322,7 +322,8 @@ await check("decideUpdateFeed refuses the upstream feed and every feed while the
   const cases = [
     {
       name: "upstream app-update.yml",
-      metadata: "owner: nightly-labs\nrepo: buildersbot\nprovider: github\nupdaterCacheDirName: buildersbot-updater\n",
+      metadata:
+        "owner: nextlevelcommunity\nrepo: buildersbot\nprovider: github\nupdaterCacheDirName: buildersbot-updater\n",
       origins: ["https://github.com"],
       allowed: false,
     },

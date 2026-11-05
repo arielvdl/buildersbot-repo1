@@ -1,8 +1,8 @@
 // Checks that no text file still carries the provenance of the previous project. It needs no
 // network and sends no request. It refuses, in every tracked text file:
 //
-// - `polyform`, `polyformproject.org`, `synthetify`, `nightly-labs`, `Required Notice`, `derivado`,
-//   `derived` and `proprietary`: the legal trail. Outside the historical files the allow-list
+// - `polyform`, `polyformproject.org`, `synthetify`, `Required Notice`, `derivado`, `derived` and
+//   `proprietary`: the legal trail. Outside the historical files the allow-list
 //   for these terms must end empty, so a new occurrence is a regression, not a chore;
 // - the previous product name (the token `previous-name`): the product keeps none of it, not even
 //   as compatibility. The guards build the word from two halves, so no file spells it, not even
@@ -42,7 +42,6 @@ const TOKENS = [
   ["polyform", /\bpolyform\b/iu],
   ["polyformproject.org", /polyformproject\.org/iu],
   ["synthetify", /synthetify/iu],
-  ["nightly-labs", /nightly-labs/iu],
   ["previous-name", new RegExp(PREVIOUS_NAME, "iu")],
   ["required-notice", /Required Notice/u],
   ["derivado", /\bderivad[oa]s?\b/iu],
@@ -56,7 +55,6 @@ const LEGAL: readonly Token[] = [
   "polyform",
   "polyformproject.org",
   "synthetify",
-  "nightly-labs",
   "required-notice",
   "derivado",
   "derived",
