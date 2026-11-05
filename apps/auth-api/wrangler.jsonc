@@ -79,7 +79,7 @@
     "LICENSE_TRIAL_END": "2026-12-01T00:00:00Z",
     // The public Client ID of the BuildersBotGit GitHub App. Its private key is the optional secret
     // GITHUB_APP_PRIVATE_KEY (PKCS #8). Without the key, agents act on GitHub as the signed-in user.
-    "GITHUB_APP_CLIENT_ID": "Iv23lik5pzHz70cb0RUL",
+    "GITHUB_APP_CLIENT_ID": "Iv23linuwLOXdmwBehrp",
     "APNS_TEAM_ID": "ZTRDTUL87R",
     "APNS_TOPIC": "run.buildersbot.mobile",
     // Hosted sites. Production deploys use --keep-vars, so these stay as set in the dashboard;
@@ -249,7 +249,7 @@
         // The test Worker never moves the production entry name.
         "SIGNAL_ENTRY_ZONE_ID": "",
         "HOSTED_SERVERS_ENABLED": "true",
-        "GITHUB_APP_CLIENT_ID": "Iv23lik5pzHz70cb0RUL",
+        "GITHUB_APP_CLIENT_ID": "Iv23linuwLOXdmwBehrp",
         "APNS_TEAM_ID": "ZTRDTUL87R",
         "APNS_TOPIC": "run.buildersbot.mobile"
       },

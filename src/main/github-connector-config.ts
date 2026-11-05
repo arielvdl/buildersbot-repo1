@@ -4,7 +4,7 @@
 // public: device flow and refresh need nothing else, and the client secret never ships.
 
 /** The GitHub App "BuildersBotGit" of Cultura Builder. With no Client ID, the connection is not offered. */
-const GITHUB_APP_CLIENT_ID = "Iv23lik5pzHz70cb0RUL";
+const GITHUB_APP_CLIENT_ID = "Iv23linuwLOXdmwBehrp";
 const GITHUB_APP_SLUG = "buildersbotgit";
 
 export interface GitHubAppConfig {
