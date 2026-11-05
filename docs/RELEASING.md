@@ -670,6 +670,39 @@ release updates the download links with no change to the site.
   on purpose, so a link never leads to a release without installers. Merge it to `main`; the
   production deploy picks it up.
 
+### Sign and notarize locally
+
+A build for other people needs the Developer ID Application identity and a notarized DMG; a
+self-signed build only satisfies Gatekeeper on the machine that made it. One command does the whole
+path on this Mac, without asking for a password:
+
+```sh
+./scripts/sign-and-notarize-macos.sh [dist/mac-arm64/Builders Bot.app]
+```
+
+The script signs the nested code, the Chrome host, the app and the DMG, submits the DMG to the
+notary service, waits, staples and validates the ticket, and prints the DMG path beside the app.
+Without an argument it takes the app from `dist/mac-arm64` or `dist/mac`. It refuses to start when
+the identity or the notary profile is missing.
+
+Two things make it password-free, and both are one-time:
+
+- **Identity.** The Developer ID Application and Developer ID Installer certificates are in the
+  **login** keychain, and their items are partitioned for `codesign`, `pkgbuild` and `productsign`
+  (`security set-key-partition-list -S apple-tool:,apple:,codesign:,productsign:,pkgbuild:`). Without
+  the partition list macOS asks for the keychain password on every signature. A separate keychain
+  does not help: nobody knows its password, and it is not the Mac's.
+- **Notary credentials.** `xcrun notarytool store-credentials bb-notary --apple-id <Apple ID>
+  --team-id HCT8F2D969 --password <app-specific password>` keeps them in the login keychain. The
+  app-specific password is created once at `account.apple.com` > Sign-In and Security > App-Specific
+  Passwords; the account is `financeiro@culturabuilder.com`, of team `HCT8F2D969`.
+
+The team is `HCT8F2D969` (Cultura Builder). The mobile app is under `ZTRDTUL87R`, so the
+`apple-app-site-association` route carries both app IDs and only the desktop one changes.
+
+The release workflow does not use any of this: it builds its own keychain from the `CSC_*` secrets
+and notarizes with `APPLE_*`, so CI needs no keychain of the machine.
+
 ### Ask for a new build
 
 Release packages are built by `.github/workflows/release.yml` on a tag, never on a developer
