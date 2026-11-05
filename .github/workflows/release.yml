@@ -82,10 +82,9 @@ jobs:
             exit 1
           fi
           bun scripts/check-release-notes.ts
-          # The `discord-announce` job of a tag push needs the role, so stop before the release.
+          # The Discord post is optional: the `discord-announce` job skips it with no role or no webhook.
           if [[ "$GITHUB_EVENT_NAME" == "push" && -z "$DISCORD_RELEASE_ROLE_ID" ]]; then
-            echo "DISCORD_RELEASE_ROLE_ID is not set. See docs/RELEASING.md#discord-announcement." >&2
-            exit 1
+            echo "::notice::DISCORD_RELEASE_ROLE_ID is not set, so the release will not post to Discord."
           fi
           bun scripts/discord-release-announcement.ts check "$package_version"
           echo "version=$package_version" >> "$GITHUB_OUTPUT"
@@ -1107,7 +1106,12 @@ jobs:
           DISCORD_RELEASE_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK_URL }}
           DISCORD_RELEASE_ROLE_ID: ${{ vars.DISCORD_RELEASE_ROLE_ID }}
           RELEASE_VERSION: ${{ needs.validate.outputs.release_version }}
-        run: bun scripts/discord-release-announcement.ts send "$RELEASE_VERSION"
+        run: |
+          if [[ -z "$DISCORD_RELEASE_WEBHOOK_URL" || -z "$DISCORD_RELEASE_ROLE_ID" ]]; then
+            echo "::notice::The Discord announcement is not set up, so nothing was posted."
+            exit 0
+          fi
+          bun scripts/discord-release-announcement.ts send "$RELEASE_VERSION"
 
   hosted-release:
     name: Publish boat server snapshot

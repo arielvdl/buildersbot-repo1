@@ -41,13 +41,13 @@ for (const name of [
   "APPLE_APP_SPECIFIC_PASSWORD",
   "APPLE_TEAM_ID",
   "MAC_PROVISIONING_PROFILE",
-  "DISCORD_RELEASE_WEBHOOK_URL",
 ]) {
   if (!releaseSecrets.split("\n").some((line) => line.startsWith(`${name}\t`))) {
     failures.push(`GitHub release secret ${name} is missing`);
   }
 }
-// The Discord post mentions this role. Without it, the post job fails after the release.
+// The Discord post is optional: the post job skips with no webhook or no role. A role that is set must be
+// a Discord role ID, and a role with no webhook is a half setup worth a warning.
 try {
   const roleId = run("gh", [
     "variable",
@@ -57,7 +57,10 @@ try {
     "--jq",
     `.[] | select(.name == "${ROLE_VARIABLE}") | .value`,
   ]);
-  failures.push(...roleIdProblems(`GitHub repository variable ${ROLE_VARIABLE}`, roleId, true));
+  failures.push(...roleIdProblems(`GitHub repository variable ${ROLE_VARIABLE}`, roleId, false));
+  if (!roleId || !releaseSecrets.split("\n").some((line) => line.startsWith("DISCORD_RELEASE_WEBHOOK_URL\t"))) {
+    logger.warn("The Discord announcement is not set up, so the release will not post to Discord.");
+  }
 } catch {
   failures.push(`GitHub repository variable ${ROLE_VARIABLE} could not be inspected`);
 }

@@ -483,10 +483,12 @@ It notifies only that role, not `@everyone` or `@here`. Run
 `bun run release:preflight` stop when the file is not for the release version, has fewer than 3 or
 more than 5 highlights, has a highlight that is empty or has a placeholder, a line break or a
 mention, or makes a message longer than 2000 characters. They also stop when the
-`DISCORD_RELEASE_ROLE_ID` repository variable is not set or is not a Discord role ID. After the GitHub Release, the Docker image and the
+`DISCORD_RELEASE_ROLE_ID` repository variable is set but is not a Discord role ID. The Discord post
+itself is optional: with no `DISCORD_RELEASE_ROLE_ID` variable or no `DISCORD_RELEASE_WEBHOOK_URL` secret,
+the preflight warns and the release goes out with no post. After the GitHub Release, the Docker image and the
 boat snapshot are published, the `discord-announce` job posts the message as Builders Bot through the
 channel webhook in the `DISCORD_RELEASE_WEBHOOK_URL` secret of the `release` environment. The job
-fails, and posts nothing, when `DISCORD_RELEASE_ROLE_ID` is not set. A failed post does not undo the
+skips, and posts nothing, when either one is not set. A failed post does not undo the
 release: re-run the job. A re-run after a successful post posts the message again.
 
 One-time setup:
